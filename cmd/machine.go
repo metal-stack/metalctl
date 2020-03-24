@@ -215,6 +215,17 @@ should be removed with --remove.`,
 		PreRun: bindPFlags,
 	}
 
+	machineReinstallCmd = &cobra.Command{
+		Use:   "reinstall <machine ID>",
+		Short: "reinstalls an already allocated machine",
+		Long: `reinstalls an already allocated machine. If it is not yet allocated, nothing happens, otherwise only the machine's primary disk
+is wiped and the new image will subsequently be installed on that device`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineReinstall(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
 	machineConsoleCmd = &cobra.Command{
 		Use: "console <machine ID>",
 		Short: `console access to a machine, machine must be created with a ssh public key, authentication is done with your private key.
@@ -313,6 +324,11 @@ func init() {
 	machineLockCmd.Flags().StringP("description", "d", "", "description of the reason for the lock.")
 	machineLockCmd.Flags().BoolP("remove", "r", false, "remove the lock.")
 	machineCmd.AddCommand(machineLockCmd)
+
+	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
+	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
+	machineReinstallCmd.MarkFlagRequired("image")
+	machineCmd.AddCommand(machineReinstallCmd)
 
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
@@ -646,6 +662,22 @@ func machineLock(driver *metalgo.Driver, args []string) error {
 		if err != nil {
 			return fmt.Errorf("machine lock error:%v", err)
 		}
+	}
+	return printer.Print(resp.Machine)
+}
+
+func machineReinstall(driver *metalgo.Driver, args []string) error {
+	machineID, err := getMachineID(args)
+	if err != nil {
+		return err
+	}
+	imageID := viper.GetString("image")
+	description := viper.GetString("description")
+
+	var resp *metalgo.MachineGetResponse
+	resp, err = driver.MachineReinstall(machineID, imageID, description)
+	if err != nil {
+		return fmt.Errorf("machine reinstall error:%v", err)
 	}
 	return printer.Print(resp.Machine)
 }
