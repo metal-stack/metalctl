@@ -1,0 +1,37 @@
+name: Build from pull request
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  GCS_BUCKET: images.metal-pod.io
+      
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '278.0.0'
+          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+      - name: Build
+        uses: metal-stack/action-docker-make@master
+        with:
+          args: >
+            --no-cache
+            --build-only metalctl-slug
+            -x rule2,rule3
+            --summary
+      - name: Prepare image upload
+        run: |
+          export PULL_REQUEST_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
+          mkdir -p metalctl/pull-requests/${PULL_REQUEST_NUMBER}-${GITHUB_HEAD_REF##*/}
+          mv result/* metalctl/pull-requests/${PULL_REQUEST_NUMBER}-${GITHUB_HEAD_REF##*/}
+      - name: Upload image tarballs to GCS
+        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+    
