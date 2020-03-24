@@ -24,6 +24,7 @@ jobs:
       - name: Build
         uses: metal-stack/action-docker-make@master
         with:
+          username: metalstackci
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           args: >
             --no-cache
