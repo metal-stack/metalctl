@@ -24,13 +24,12 @@ jobs:
       - name: Build
         uses: metal-stack/action-docker-make@master
         with:
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
           args: >
             --no-cache
             --build-only metalctl-slug
             -x rule2,rule3
             --summary
-        env:
-          DOCKER_MAKE_REGISTRY_LOGIN_PASSWORD: ${{ secrets.DOCKER_HUB_TOKEN }}
       - name: Prepare image upload
         run: |
           mkdir -p metalctl/pull-requests/${TAG_NAME}
