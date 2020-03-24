@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	metalgo "github.com/metal-stack/metal-go"
 	imagemodel "github.com/metal-stack/metal-go/api/client/image"
@@ -82,6 +83,8 @@ func init() {
 	imageCreateCmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
 	imageCreateCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
 	imageCreateCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
+	imageCreateCmd.Flags().StringP("time-format", "", "2006-01-02", "the time format used to parse validto")
+	imageCreateCmd.Flags().StringP("validto", "", "", "The maximum usage date, of not given defaults to 3 month [optional]")
 
 	// TODO howto cope with these errors ?
 	// err := imageUpdateCmd.MarkFlagRequired("file")
@@ -138,12 +141,17 @@ func imageCreate(driver *metalgo.Driver) error {
 		}
 		icr = iars[0]
 	} else {
+		validTo, err := time.Parse(viper.GetString("time-format"), viper.GetString("validto"))
+		if err != nil {
+			return err
+		}
 		icr = metalgo.ImageCreateRequest{
 			Description: viper.GetString("description"),
 			ID:          viper.GetString("id"),
 			Name:        viper.GetString("name"),
 			URL:         viper.GetString("url"),
 			Features:    viper.GetStringSlice("features"),
+			ValidTo:     validTo,
 		}
 	}
 	resp, err := driver.ImageCreate(icr)

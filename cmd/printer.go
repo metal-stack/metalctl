@@ -730,10 +730,11 @@ func (m MetalImageTablePrinter) Print(data []*models.V1ImageResponse) {
 		features := strings.Join(image.Features, ",")
 		name := image.Name
 		description := image.Description
-		row := []string{id, name, description, features}
+		validTo := image.Validto
+		row := []string{id, name, description, features, validTo.String()}
 		m.addShortData(row, image)
 	}
-	m.shortHeader = []string{"ID", "Name", "Description", "Features"}
+	m.shortHeader = []string{"ID", "Name", "Description", "Features", "ValidTo"}
 	m.render()
 }
 

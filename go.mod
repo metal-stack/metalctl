@@ -5,7 +5,11 @@ go 1.13
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
+	github.com/go-openapi/errors v0.19.3
 	github.com/go-openapi/loads v0.19.5 // indirect
+	github.com/go-openapi/strfmt v0.19.4
+	github.com/go-openapi/swag v0.19.7
+	github.com/go-openapi/validate v0.19.6
 	github.com/lestrrat-go/jwx v0.9.1 // indirect
 	github.com/metal-stack/metal-go v0.3.3
 	github.com/metal-stack/metal-lib v0.3.4
