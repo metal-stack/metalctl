@@ -38,6 +38,16 @@ jobs:
           cp result/* metalctl/${TAG_NAME}
       - name: Upload image tarballs to GCS
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: metal-hammer ${{ github.ref }}
+          draft: false
+          prerelease: false
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.1
         env:
