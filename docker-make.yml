@@ -17,7 +17,7 @@ after:
 builds:
   - name: metalctl-slug
     tags:
-      - ${CI_COMMIT_REF_NAME}
+      - ${TAG_NAME}
   - name: metalctl-master
     tags:
       - latest
