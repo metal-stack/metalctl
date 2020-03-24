@@ -27,6 +27,9 @@ jobs:
             --build-only metalctl-slug
             -x rule2,rule3
             --summary
+        env:
+          DOCKER_MAKE_REGISTRY_LOGIN_PASSWORD: ${{ secrets.DOCKER_MAKE_REGISTRY_LOGIN_PASSWORD }}
+          DOCKER_MAKE_REGISTRY_LOGIN_USER: ${{ secrets.DOCKER_MAKE_REGISTRY_LOGIN_USER }}
       - name: Prepare image upload
         run: |
           export PULL_REQUEST_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')
