@@ -34,6 +34,7 @@ jobs:
       - name: Prepare image upload
         run: |
           mkdir -p metalctl/pull-requests/${TAG_NAME}
+          sudo chown -R $(id -u):$(id -g) result
           mv result/* metalctl/pull-requests/${TAG_NAME}
       - name: Upload image tarballs to GCS
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET

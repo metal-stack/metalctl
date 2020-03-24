@@ -8,7 +8,6 @@ after:
   - mkdir -p result
   # the second latest built container is the builder, which contains the platform binaries
   - docker cp $(docker create $(docker image ls --format '{{ .ID }}' | sed -n 2p)):/work/bin tmp
-  - sudo chown -R $(id -u):$(id -g) tmp
   - mv tmp/bin/metalctl-linux-amd64 result
   - mv tmp/bin/metalctl-windows-amd64 result
   - mv tmp/bin/metalctl-darwin-amd64 result
