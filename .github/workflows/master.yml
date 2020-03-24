@@ -1,0 +1,38 @@
+name: master
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  GCS_BUCKET: images.metal-pod.io
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '278.0.0'
+          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+      - name: Build
+        uses: metal-stack/action-docker-make@master
+        with:
+          username: metalstackci
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          args: >
+            --no-cache
+            --build-only metalctl-master
+            -x rule2,rule3
+            --summary
+      - name: Prepare upload
+        run: |
+          mkdir -p metalctl
+          sudo chown -R $(id -u):$(id -g) result
+          mv result/* metalctl
+      - name: Upload image tarballs to GCS
+        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET

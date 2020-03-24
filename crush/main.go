@@ -1,8 +1,8 @@
 package main
 
 import (
-	"git.f-i-ts.de/cloud-native/metal/metalctl/crush/cmd"
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metalctl/crush/cmd"
 	"github.com/spf13/viper"
 )
 

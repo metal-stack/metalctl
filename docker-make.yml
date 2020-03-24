@@ -1,19 +1,23 @@
 ---
 version: '1'
 name: metalctl
-username: metal
-registry-host: registry.fi-ts.io
-default-build-args:
-  - http_proxy=${HTTP_PROXY}
-  - https_proxy=${HTTP_PROXY}
-  - HTTP_PROXY=${HTTP_PROXY}
-  - HTTPS_PROXY=${HTTP_PROXY}
-  - NO_PROXY=${NO_PROXY}
-  - no_proxy=${NO_PROXY}
+username: metalstack
+registry-host: docker.io
+after:
+  - mkdir -p tmp
+  - mkdir -p result
+  # the second latest built container is the builder, which contains the platform binaries
+  - docker cp $(docker create $(docker image ls --format '{{ .ID }}' | sed -n 2p)):/work/bin tmp
+  - mv tmp/bin/metalctl-linux-amd64 result
+  - mv tmp/bin/metalctl-windows-amd64 result
+  - mv tmp/bin/metalctl-darwin-amd64 result
+  - md5sum result/metalctl-linux-amd64 > result/metalctl-linux-amd64.md5
+  - md5sum result/metalctl-windows-amd64 > result/metalctl-windows-amd64.md5
+  - md5sum result/metalctl-darwin-amd64 > result/metalctl-darwin-amd64.md5
 builds:
   - name: metalctl-slug
     tags:
-      - ${CI_COMMIT_REF_NAME}
+      - ${TAG_NAME}
   - name: metalctl-master
     tags:
       - latest

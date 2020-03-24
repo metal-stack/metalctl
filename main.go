@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.f-i-ts.de/cloud-native/metal/metalctl/cmd"
+	"github.com/metal-stack/metalctl/cmd"
 )
 
 func main() {

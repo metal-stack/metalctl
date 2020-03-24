@@ -1,4 +1,5 @@
 FROM metalstack/builder:latest as builder
+RUN make platforms
 
 FROM alpine:3.11
 LABEL maintainer="Metal Stack Authors <info@metal-stack.io>"
