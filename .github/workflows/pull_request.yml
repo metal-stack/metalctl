@@ -31,7 +31,7 @@ jobs:
             --build-only metalctl-slug
             -x rule2,rule3
             --summary
-      - name: Prepare image upload
+      - name: Prepare upload
         run: |
           mkdir -p metalctl/pull-requests/${TAG_NAME}
           sudo chown -R $(id -u):$(id -g) result
