@@ -35,7 +35,7 @@ jobs:
         run: |
           mkdir -p metalctl/${TAG_NAME}
           sudo chown -R $(id -u):$(id -g) result
-          mv result/* metalctl/${TAG_NAME}
+          cp result/* metalctl/${TAG_NAME}
       - name: Upload image tarballs to GCS
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
       - name: Upload Release Asset
@@ -44,7 +44,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./metalctl/${GITHUB_REF##*/}/metalctl-linux-amd64
+          asset_path: result/metalctl-linux-amd64
           asset_name: metalctl-linux-amd64
           asset_content_type: application/octet-stream
       - name: Upload Release Asset
@@ -53,7 +53,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./metalctl/${GITHUB_REF##*/}/metalctl-windows-amd64
+          asset_path: result/metalctl-windows-amd64
           asset_name: metalctl-windows-amd64
           asset_content_type: application/octet-stream
       - name: Upload Release Asset
@@ -62,6 +62,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./metalctl/${GITHUB_REF##*/}/metalctl-darwin-amd64
+          asset_path: result/metalctl-darwin-amd64
           asset_name: metalctl-darwin-amd64
           asset_content_type: application/octet-stream
