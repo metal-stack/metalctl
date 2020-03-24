@@ -31,7 +31,6 @@ jobs:
             --summary
         env:
           DOCKER_MAKE_REGISTRY_LOGIN_PASSWORD: ${{ secrets.DOCKER_HUB_TOKEN }}
-          DOCKER_MAKE_REGISTRY_LOGIN_USER: metalstackci
       - name: Prepare image upload
         run: |
           mkdir -p metalctl/pull-requests/${TAG_NAME}
