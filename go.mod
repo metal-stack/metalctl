@@ -1,4 +1,4 @@
-module git.f-i-ts.de/cloud-native/metal/metalctl
+module github.com/metal-stack/metalctl
 
 go 1.13
 

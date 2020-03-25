@@ -1,7 +1,6 @@
 BINARY := metalctl
-MAINMODULE := git.f-i-ts.de/cloud-native/metal/metalctl
-COMMONDIR := $(or ${COMMONDIR},../common)
-SWAGGER_VERSION := $(or ${SWAGGER_VERSION},v0.19.0)
+MAINMODULE := github.com/metal-stack/metalctl
+COMMONDIR := $(or ${COMMONDIR},../builder)
 
 include $(COMMONDIR)/Makefile.inc
 
