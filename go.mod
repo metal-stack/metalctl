@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/swag v0.19.7
 	github.com/go-openapi/validate v0.19.6
 	github.com/lestrrat-go/jwx v0.9.1 // indirect
-	github.com/metal-stack/metal-go v0.3.4-0.20200324105122-6de4f792b6da
+	github.com/metal-stack/metal-go v0.3.4-0.20200325134733-d192f577e3bc
 	github.com/metal-stack/metal-lib v0.3.4
 	github.com/metal-stack/updater v1.0.1
 	github.com/metal-stack/v v1.0.2
