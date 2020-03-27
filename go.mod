@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.9.0
 	github.com/go-openapi/loads v0.19.5 // indirect
 	github.com/lestrrat-go/jwx v0.9.1 // indirect
-	github.com/metal-stack/metal-go v0.3.4-0.20200327091030-a3421fed999f
+	github.com/metal-stack/metal-go v0.4.0
 	github.com/metal-stack/metal-lib v0.3.4
 	github.com/metal-stack/updater v1.0.1
 	github.com/metal-stack/v v1.0.2
