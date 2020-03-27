@@ -234,6 +234,8 @@ github.com/mattn/go-runewidth v0.0.8/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/metal-stack/metal-go v0.3.4-0.20200327083051-27a68bc4f8c5 h1:MJZQsYar7VEG3YhApLe5A7//3rQP6pE8wb+RAZjZWg8=
 github.com/metal-stack/metal-go v0.3.4-0.20200327083051-27a68bc4f8c5/go.mod h1:RuV3BLGDb4eZ1+9eYw2DqQ3FVYmXiRH9JmLrSbqwkW4=
+github.com/metal-stack/metal-go v0.3.4-0.20200327091030-a3421fed999f h1:R7ge8e6/Ob/ctvOmIHXLY0F8i6oWbacxL5Cj7zWTxmk=
+github.com/metal-stack/metal-go v0.3.4-0.20200327091030-a3421fed999f/go.mod h1:RuV3BLGDb4eZ1+9eYw2DqQ3FVYmXiRH9JmLrSbqwkW4=
 github.com/metal-stack/metal-lib v0.3.4 h1:tEsRpXvHMYvAg4YqV8rv4bWFbcG6BT9cNhJPXr6maoI=
 github.com/metal-stack/metal-lib v0.3.4/go.mod h1:11c537QgemtnJB4r35/tocyS4m5QmBqYnCMd6gkyrMU=
 github.com/metal-stack/security v0.0.0-20200213101721-0aed751953ac h1:BWOrxnGFcVUFLptpayuqUa4/LF4QLBZoCv7YgpRRDtg=
