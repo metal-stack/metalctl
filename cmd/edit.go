@@ -12,7 +12,7 @@ func edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 		editor = "vi"
 	}
 
-	tmpfile, err := ioutil.TempFile("", "metalctl")
+	tmpfile, err := ioutil.TempFile("", "metalctl*.yaml")
 	if err != nil {
 		return err
 	}
