@@ -153,34 +153,27 @@ func imageCreate(driver *metalgo.Driver) error {
 	return detailer.Detail(resp.Image)
 }
 func imageUpdate(driver *metalgo.Driver) error {
-	iars, err := readImageCreateRequests(viper.GetString("file"))
+	iar, err := readImageCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
-	if len(iars) != 1 {
-		return fmt.Errorf("image update error more or less than one image given:%d", len(iars))
-	}
-	resp, err := driver.ImageUpdate(iars[0])
+	resp, err := driver.ImageUpdate(iar)
 	if err != nil {
 		return fmt.Errorf("image update error:%v", err)
 	}
 	return detailer.Detail(resp.Image)
 }
 
-func readImageCreateRequests(filename string) ([]metalgo.ImageCreateRequest, error) {
-	var iars []metalgo.ImageCreateRequest
+func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error) {
 	var iar metalgo.ImageCreateRequest
 	err := readFrom(filename, &iar, func(data interface{}) {
 		doc := data.(*metalgo.ImageCreateRequest)
-		iars = append(iars, *doc)
+		iar = *doc
 	})
 	if err != nil {
-		return iars, err
+		return iar, err
 	}
-	if len(iars) != 1 {
-		return iars, fmt.Errorf("image update error more or less than one image given:%d", len(iars))
-	}
-	return iars, nil
+	return iar, nil
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
@@ -257,14 +250,12 @@ func imageEdit(driver *metalgo.Driver, args []string) error {
 		return content, nil
 	}
 	updateFunc := func(filename string) error {
-		iars, err := readImageCreateRequests(filename)
+		iar, err := readImageCreateRequests(filename)
 		if err != nil {
 			return err
 		}
-		if len(iars) != 1 {
-			return fmt.Errorf("image update error more or less than one image given:%d", len(iars))
-		}
-		uresp, err := driver.ImageUpdate(iars[0])
+		fmt.Printf("new image classification:%s\n", *iar.Classification)
+		uresp, err := driver.ImageUpdate(iar)
 		if err != nil {
 			return fmt.Errorf("image update error:%v", err)
 		}
