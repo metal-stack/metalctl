@@ -732,7 +732,7 @@ func (m MetalImageTablePrinter) Print(data []*models.V1ImageResponse) {
 		description := image.Description
 		expiration := ""
 		if image.ExpirationDate != nil {
-			expiration = humanizeDuration(time.Time(*image.ExpirationDate).Sub(time.Now()))
+			expiration = humanizeDuration(time.Until(time.Time(*image.ExpirationDate)))
 		}
 		status := image.Classification
 		row := []string{id, name, description, features, expiration, status}
@@ -756,14 +756,24 @@ func (m MetalPartitionTablePrinter) Print(data []*models.V1PartitionResponse) {
 // Print a PartitionCapacity in a table
 func (m MetalPartitionCapacityTablePrinter) Print(pcs []*models.V1PartitionCapacity) {
 	sort.SliceStable(pcs, func(i, j int) bool { return *pcs[i].ID < *pcs[j].ID })
+	total := int32(0)
+	free := int32(0)
+	allocated := int32(0)
+	faulty := int32(0)
 	for _, pc := range pcs {
 		sort.SliceStable(pc.Servers, func(i, j int) bool { return *pc.Servers[i].Size < *pc.Servers[j].Size })
 		for _, c := range pc.Servers {
 			id := strValue(c.Size)
 			row := []string{*pc.ID, id, fmt.Sprintf("%d", *c.Total), fmt.Sprintf("%d", *c.Free), fmt.Sprintf("%d", *c.Allocated), fmt.Sprintf("%d", *c.Faulty)}
+			total += *c.Total
+			free += *c.Free
+			allocated += *c.Allocated
+			faulty += *c.Faulty
 			m.addShortData(row, pc)
 		}
 	}
+	footerRow := ([]string{"Total", "", fmt.Sprintf("%d", total), fmt.Sprintf("%d", free), fmt.Sprintf("%d", allocated), fmt.Sprintf("%d", faulty)})
+	m.addShortData(footerRow, nil)
 	m.shortHeader = []string{"Partition", "Size", "Total", "Free", "Allocated", "Faulty"}
 	m.render()
 }
@@ -875,7 +885,7 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 
 	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper)
 	for i := 0; i < max; i++ {
-		id += fmt.Sprint("\n\u2502")
+		id += "\n\u2502"
 	}
 	shortRow := []string{id, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortPrefixUsage, shortIPUsage}
 	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper}
