@@ -278,11 +278,21 @@ func init() {
 	machineListCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineListCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	machineListCmd.Flags().SetAnnotation("partition", cobra.BashCompCustom, []string{"__metalctl_get_partitions"})
-	machineListCmd.Flags().SetAnnotation("image", cobra.BashCompCustom, []string{"__metalctl_get_images"})
-	machineListCmd.Flags().SetAnnotation("size", cobra.BashCompCustom, []string{"__metalctl_get_sizes"})
-	machineListCmd.Flags().SetAnnotation("project", cobra.BashCompCustom, []string{"__metalctl_get_projects"})
-	machineListCmd.Flags().SetAnnotation("id", cobra.BashCompCustom, []string{"__metalctl_get_machines"})
+	machineListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion(driver)
+	})
+	machineListCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return sizeListCompletion(driver)
+	})
+	machineListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion(driver)
+	})
+	machineListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineListCompletion(driver)
+	})
+	machineListCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return imageListCompletion(driver)
+	})
 
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
@@ -294,11 +304,18 @@ func init() {
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineIpmiCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	machineIpmiCmd.Flags().SetAnnotation("partition", cobra.BashCompCustom, []string{"__metalctl_get_partitions"})
-	machineIpmiCmd.Flags().SetAnnotation("image", cobra.BashCompCustom, []string{"__metalctl_get_images"})
-	machineIpmiCmd.Flags().SetAnnotation("size", cobra.BashCompCustom, []string{"__metalctl_get_sizes"})
-	machineIpmiCmd.Flags().SetAnnotation("project", cobra.BashCompCustom, []string{"__metalctl_get_projects"})
-	machineIpmiCmd.Flags().SetAnnotation("id", cobra.BashCompCustom, []string{"__metalctl_get_machines"})
+	machineIpmiCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion(driver)
+	})
+	machineIpmiCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return sizeListCompletion(driver)
+	})
+	machineIpmiCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion(driver)
+	})
+	machineIpmiCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineListCompletion(driver)
+	})
 
 	machineCmd.AddCommand(machineListCmd)
 	machineCmd.AddCommand(machineDestroyCmd)
@@ -392,13 +409,28 @@ MODE can be omitted or one of:
 	cmd.MarkFlagRequired("project")
 
 	// Completion for arguments
-	cmd.Flags().SetAnnotation("networks", cobra.BashCompCustom, []string{"__metalctl_get_networks"})
-	cmd.Flags().SetAnnotation("ips", cobra.BashCompCustom, []string{"__metalctl_get_ips"})
-	cmd.Flags().SetAnnotation("image", cobra.BashCompCustom, []string{"__metalctl_get_images"})
-	cmd.Flags().SetAnnotation("partition", cobra.BashCompCustom, []string{"__metalctl_get_partitions"})
-	cmd.Flags().SetAnnotation("size", cobra.BashCompCustom, []string{"__metalctl_get_sizes"})
-	cmd.Flags().SetAnnotation("id", cobra.BashCompCustom, []string{"__metalctl_get_machines"})
-	cmd.Flags().SetAnnotation("project", cobra.BashCompCustom, []string{"__metalctl_get_projects"})
+	cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return networkListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("ips", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return ipListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return sizeListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineListCompletion(driver)
+	})
+	cmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return imageListCompletion(driver)
+	})
+
 }
 
 func machineCreate(driver *metalgo.Driver) error {
