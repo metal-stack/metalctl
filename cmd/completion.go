@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	metalgo "github.com/metal-stack/metal-go"
 	"github.com/spf13/cobra"
 )
 
@@ -48,84 +49,101 @@ rm -f ~/.zcompdump*
 	},
 }
 
-const bashCompletionFunc = `
-__metalctl_get_images()
-{
-    local template
-    template="{{ .id }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl image list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func imageListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.ImageList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, i := range resp.Image {
+		names = append(names, *i.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
-__metalctl_get_partitions()
-{
-    local template
-    template="{{ .id }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl partition list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func partitionListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.PartitionList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, p := range resp.Partition {
+		names = append(names, *p.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
-__metalctl_get_sizes()
-{
-    local template
-    template="{{ .id }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl size list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func sizeListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.SizeList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, s := range resp.Size {
+		names = append(names, *s.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
-__metalctl_get_machines()
-{
-    local template
-    template="{{ .id }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl machine list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func machineListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.MachineList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, m := range resp.Machines {
+		names = append(names, *m.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
+func networkListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.NetworkList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, n := range resp.Networks {
+		names = append(names, *n.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
-__metalctl_get_networks()
-{
-    local template
-    template="{{ .id }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl network list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func ipListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.IPList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, i := range resp.IPs {
+		names = append(names, *i.Ipaddress)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
-
-__metalctl_get_ips()
-{
-    local template
-    template="{{ .ipaddress }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl network ip list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func projectListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.ProjectList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, p := range resp.Project {
+		names = append(names, p.Meta.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
-
-__metalctl_get_projects()
-{
-    local template
-    template="{{ if .allocation }} {{ .allocation.project }} {{ end }}"
-    local metalctl_out
-    if metalctl_out=$(metalctl machine list -o template --template="${template}" 2>/dev/null); then
-        COMPREPLY=( $( compgen -W "${metalctl_out}[*]" -- "$cur" ) )
-    fi
+func contextListCompletion() ([]string, cobra.ShellCompDirective) {
+	ctxs, err := getContexts()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for name := range ctxs.Contexts {
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
-
-__metalctl_get_output_formats()
-{
-    COMPREPLY=( $( compgen -W "table wide markdown json yaml template" -- "$cur" ) )
+func outputFormatListCompletion() ([]string, cobra.ShellCompDirective) {
+	return []string{"table", "wide", "markdown", "json", "yaml", "template"}, cobra.ShellCompDirectiveDefault
 }
-
-__metalctl_get_orders()
-{
-    COMPREPLY=( $( compgen -W "size id status event when partition project" -- "$cur" ) )
+func outputOrderListCompletion() ([]string, cobra.ShellCompDirective) {
+	return []string{"size", "id", "status", "event", "when", "partition", "project"}, cobra.ShellCompDirectiveDefault
 }
-`

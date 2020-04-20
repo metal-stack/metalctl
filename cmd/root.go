@@ -49,8 +49,7 @@ var (
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initPrinter()
 		},
-		SilenceUsage:           true,
-		BashCompletionFunction: bashCompletionFunc,
+		SilenceUsage: true,
 	}
 
 	markdownCmd = &cobra.Command{
@@ -114,8 +113,12 @@ Example image update:
 # metalctl image update -f ubuntu.yaml
 `)
 
-	rootCmd.PersistentFlags().SetAnnotation("output-format", cobra.BashCompCustom, []string{"__metalctl_get_output_formats"})
-	rootCmd.PersistentFlags().SetAnnotation("order", cobra.BashCompCustom, []string{"__metalctl_get_orders"})
+	rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return outputFormatListCompletion()
+	})
+	rootCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return outputOrderListCompletion()
+	})
 
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(zshCompletionCmd)
