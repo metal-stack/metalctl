@@ -30,6 +30,13 @@ var (
 		Aliases: []string{"ctx"},
 		Short:   "manage metalctl context",
 		Long:    "context defines the backend to which metalctl talks to.",
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+			return contextListInternal()
+		},
+
 		Example: `
 ~/.metalctl/config.yaml
 ---
@@ -60,23 +67,11 @@ contexts:
 		PreRun: bindPFlags,
 	}
 
-	contextListCmd = &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list all contexts",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return contextList()
-		},
-	}
 	defaultCtx = Context{
 		ApiURL:    "http://localhost:8080/metal",
 		IssuerURL: "http://localhost:8080/",
 	}
 )
-
-func init() {
-	contextCmd.AddCommand(contextListCmd)
-}
 
 func contextSet(args []string) error {
 	if len(args) < 1 {
@@ -101,6 +96,18 @@ func contextList() error {
 		return err
 	}
 	return printer.Print(ctxs)
+}
+
+func contextListInternal() ([]string, cobra.ShellCompDirective) {
+	ctxs, err := getContexts()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for name := range ctxs.Contexts {
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveDefault
 }
 
 func mustDefaultContext() Context {
