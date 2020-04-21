@@ -966,6 +966,8 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		ipAddress := ""
 		mac := ""
 		bpn := ""
+		cs := ""
+		ps := ""
 		bmcVersion := ""
 		ipmi := i.IPMI
 		if ipmi != nil {
@@ -975,6 +977,8 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 			fru := ipmi.Fru
 			if fru != nil {
 				bpn = fru.BoardPartNumber
+				cs = fru.ChassisPartSerial
+				ps = fru.ProductSerial
 			}
 		}
 		biosVersion := ""
@@ -984,9 +988,12 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		}
 
 		row := []string{id, statusEmoji, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition}
+		wide := []string{id, statusEmoji, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition}
 		m.addShortData(row, m)
+		m.addWideData(wide, i)
 	}
 	m.shortHeader = []string{"ID", "", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
+	m.wideHeader = []string{"ID", "", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
 	m.render()
 }
 
