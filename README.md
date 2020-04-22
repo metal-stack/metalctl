@@ -1,6 +1,6 @@
-# Metal CLI
+# metalctl
 
-*metalctl* is the command line client to access metal.
+*metalctl* is the command line client to access the [metal-api](https://github.com/metal-stack/metal-api).
 
 ## Installation
 
