@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
 	networkmodel "github.com/metal-stack/metal-go/api/client/network"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -139,6 +141,15 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+
+	networkIPIssuesCmd = &cobra.Command{
+		Use:   "issues",
+		Short: `display ips which are in a potential bad state`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return ipIssues(driver)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -185,6 +196,7 @@ func init() {
 	networkIPCmd.AddCommand(networkIPFreeCmd)
 	networkIPCmd.AddCommand(networkIPApplyCmd)
 	networkIPCmd.AddCommand(networkIPEditCmd)
+	networkIPCmd.AddCommand(networkIPIssuesCmd)
 
 	networkPrefixAddCmd.Flags().StringP("prefix", "", "", "prefix to add.")
 	networkPrefixRemoveCmd.Flags().StringP("prefix", "", "", "prefix to remove.")
@@ -600,4 +612,50 @@ func getNetworkID(args []string) (string, error) {
 		return "", fmt.Errorf("network with ID:%s does not exist", networkID)
 	}
 	return networkID, nil
+}
+
+func ipIssues(driver *metalgo.Driver) error {
+	ml, err := driver.MachineList()
+	if err != nil {
+		return fmt.Errorf("machine list error:%v", err)
+	}
+	machines := make(map[string]*models.V1MachineResponse)
+	for _, m := range ml.Machines {
+		machines[*m.ID] = m
+	}
+
+	var resp []*models.V1IPResponse
+
+	iplist, err := driver.IPList()
+	if err != nil {
+		return fmt.Errorf("IP list error:%v", err)
+	}
+	for _, ip := range iplist.IPs {
+		if *ip.Type == metalgo.IPTypeStatic {
+			continue
+		}
+		if ip.Description == "autoassigned" && len(ip.Tags) == 0 {
+			ip.Description = fmt.Sprintf("%s, but no tags", ip.Description)
+			resp = append(resp, ip)
+		}
+		if strings.HasPrefix(ip.Name, "metallb-") && len(ip.Tags) == 0 {
+			ip.Description = fmt.Sprintf("metallb ip without tags %s", ip.Description)
+			resp = append(resp, ip)
+		}
+
+		for _, t := range ip.Tags {
+			if strings.HasPrefix(t, tag.MachineID+"=") {
+				parts := strings.Split(t, "=")
+				m := machines[parts[1]]
+				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
+					ip.Description = fmt.Sprint("bound to unallocated machine")
+					resp = append(resp, ip)
+				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
+					ip.Description = fmt.Sprint("hostname mismatch")
+					resp = append(resp, ip)
+				}
+			}
+		}
+	}
+	return printer.Print(resp)
 }
