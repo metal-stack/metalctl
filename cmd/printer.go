@@ -924,12 +924,13 @@ func (m MetalIPTablePrinter) Print(data []*models.V1IPResponse) {
 			}
 		}
 		name := truncate(i.Name, "...", 30)
-		row := []string{ipaddress, name, network, project, ipType, strings.Join(shortTags, "\n")}
+		description := truncate(i.Description, "...", 30)
+		row := []string{ipaddress, description, name, network, project, ipType, strings.Join(shortTags, "\n")}
 		wide := []string{ipaddress, i.Description, i.Name, network, project, ipType, strings.Join(i.Tags, "\n")}
 		m.addShortData(row, i)
 		m.addWideData(wide, i)
 	}
-	m.shortHeader = []string{"IP", "Name", "Network", "Project", "Type", "Tags"}
+	m.shortHeader = []string{"IP", "Description", "Name", "Network", "Project", "Type", "Tags"}
 	m.wideHeader = []string{"IP", "Description", "Name", "Network", "Project", "Type", "Tags"}
 	m.render()
 }
