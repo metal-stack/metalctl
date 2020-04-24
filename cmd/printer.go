@@ -822,7 +822,7 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 		m.addWideData(wide, s)
 	}
 	m.shortHeader = []string{"ID", "Partition", "Rack", "Status"}
-	m.wideHeader = []string{"ID", "Partition", "Rack", "Sync Age", "Sync Duration", "Sync Error"}
+	m.wideHeader = []string{"ID", "Partition", "Rack", "Last Sync", "Sync Duration", "Last Sync Error"}
 	m.render()
 }
 
