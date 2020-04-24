@@ -20,13 +20,15 @@ import (
 )
 
 const (
-	nbr         = "\U00002007"
-	skull       = "\U0001F480"
-	lock        = "\U0001F512"
-	bark        = "\U0001F6A7"
-	question    = "\U00002753"
-	circle      = "\U000021BB"
-	blueDiamond = "\U0001F539"
+	bark            = "\U0001F6A7"
+	blueDiamond     = "\U0001F539"
+	circle          = "\U000021BB"
+	dot             = "\U000025CF"
+	exclamationMark = "\U00002757"
+	lock            = "\U0001F512"
+	nbr             = "\U00002007"
+	question        = "\U00002753"
+	skull           = "\U0001F480"
 )
 
 type (
@@ -788,10 +790,39 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 			partition = strValue(s.Partition.ID)
 		}
 		rack := strValue(s.RackID)
-		row := []string{id, partition, rack}
+
+		syncAgeStr := ""
+		syncDurStr := ""
+		syncError := ""
+		shortStatus := nbr
+		if s.LastSync != nil {
+			t := time.Time(*s.LastSync.Time)
+			syncAge := time.Since(t)
+			syncDur := time.Duration(*s.LastSync.Duration).Round(time.Millisecond)
+			if syncAge >= time.Minute*10 || syncDur >= 30*time.Second {
+				shortStatus += color.RedString(dot)
+			} else if syncAge >= time.Minute*1 || syncDur >= 20*time.Second {
+				shortStatus += color.YellowString(dot)
+			} else {
+				shortStatus += color.GreenString(dot)
+			}
+
+			syncAgeStr = humanizeDuration(syncAge)
+			syncDurStr = fmt.Sprintf("%v", syncDur)
+		}
+
+		if s.LastSyncError != nil {
+			syncAge := time.Since(time.Time(*s.LastSync.Time))
+			syncError = fmt.Sprintf("%s ago: %s", syncAge, strValue(s.LastSyncError.Error))
+		}
+
+		row := []string{id, partition, rack, shortStatus}
+		wide := []string{id, partition, rack, syncAgeStr, syncDurStr, syncError}
 		m.addShortData(row, s)
+		m.addWideData(wide, s)
 	}
-	m.shortHeader = []string{"ID", "Partition", "Rack"}
+	m.shortHeader = []string{"ID", "Partition", "Rack", "Status"}
+	m.wideHeader = []string{"ID", "Partition", "Rack", "Last Sync", "Sync Duration", "Last Sync Error"}
 	m.render()
 }
 
@@ -846,12 +877,6 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 }
 
 func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1NetworkResponse) {
-	const (
-		nbr             = "\U00002007"
-		exclamationMark = "\U00002757"
-		circle          = "●"
-	)
-
 	id := fmt.Sprintf("%s%s", prefix, strValue(n.ID))
 
 	prefixes := strings.Join(n.Prefixes, ",")
@@ -867,11 +892,11 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 	ipUse := float64(*n.Usage.UsedIps) / float64(*n.Usage.AvailableIps)
 	shortIPUsage := nbr
 	if ipUse >= 0.9 {
-		shortIPUsage += color.RedString(circle)
+		shortIPUsage += color.RedString(dot)
 	} else if ipUse >= 0.7 {
-		shortIPUsage += color.YellowString(circle)
+		shortIPUsage += color.YellowString(dot)
 	} else {
-		shortIPUsage += color.GreenString(circle)
+		shortIPUsage += color.GreenString(dot)
 	}
 
 	shortPrefixUsage := ""
