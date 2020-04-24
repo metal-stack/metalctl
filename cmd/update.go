@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	downloadURLPrefix = "https://blobstore.fi-ts.io/metal/" + programName + "/"
+	downloadURLPrefix = "http://images.metal-pod.io/" + programName + "/"
 )
 
 var (
