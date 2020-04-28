@@ -504,7 +504,7 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 func machineList(driver *metalgo.Driver) error {
 	var resp *metalgo.MachineListResponse
 	var err error
-	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname") ||
+	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname", "mac") ||
 		atLeastOneViperStringSliceFlagGiven("tags") {
 		mfr := &metalgo.MachineFindRequest{}
 		if filterOpts.ID != "" {
