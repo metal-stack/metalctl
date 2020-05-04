@@ -11,8 +11,9 @@ import (
 
 // Contexts contains all configuration contexts of metalctl
 type Contexts struct {
-	CurrentContext string `yaml:"current"`
-	Contexts       map[string]Context
+	CurrentContext  string `yaml:"current"`
+	PreviousContext string `yaml:"previous"`
+	Contexts        map[string]Context
 }
 
 // Context configure metalctl behaviour
@@ -29,7 +30,7 @@ var (
 		Use:     "context <name>",
 		Aliases: []string{"ctx"},
 		Short:   "manage metalctl context",
-		Long:    "context defines the backend to which metalctl talks to.",
+		Long:    "context defines the backend to which metalctl talks to. You can switch back and forth with \"-\"",
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
@@ -77,16 +78,32 @@ func contextSet(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no context name given")
 	}
+	if args[0] == "-" {
+		return previous()
+	}
 	ctxs, err := getContexts()
 	if err != nil {
 		return err
 	}
-	defaultCtxName := args[0]
-	_, ok := ctxs.Contexts[defaultCtxName]
+	curr := args[0]
+	_, ok := ctxs.Contexts[curr]
 	if !ok {
-		return fmt.Errorf("context %s not found", defaultCtxName)
+		return fmt.Errorf("context %s not found", curr)
 	}
-	ctxs.CurrentContext = defaultCtxName
+	ctxs.PreviousContext = ctxs.CurrentContext
+	ctxs.CurrentContext = curr
+	return writeContexts(ctxs)
+}
+
+func previous() error {
+	ctxs, err := getContexts()
+	if err != nil {
+		return err
+	}
+	prev := ctxs.PreviousContext
+	curr := ctxs.CurrentContext
+	ctxs.PreviousContext = curr
+	ctxs.CurrentContext = prev
 	return writeContexts(ctxs)
 }
 
