@@ -101,6 +101,9 @@ func previous() error {
 		return err
 	}
 	prev := ctxs.PreviousContext
+	if prev == "" {
+		prev = ctxs.CurrentContext
+	}
 	curr := ctxs.CurrentContext
 	ctxs.PreviousContext = curr
 	ctxs.CurrentContext = prev
