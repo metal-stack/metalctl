@@ -59,6 +59,8 @@ func newTableDetailer(format string) TableDetailer {
 		table.SetColumnSeparator("")
 		table.SetRowSeparator("")
 		table.SetRowLine(false)
+		table.SetTablePadding("\t") // pad with tabs
+		table.SetNoWhiteSpace(true) // no whitespace in front of every line
 	}
 	return TableDetailer{
 		table: table,
