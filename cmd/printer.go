@@ -762,21 +762,23 @@ func (m MetalPartitionCapacityTablePrinter) Print(pcs []*models.V1PartitionCapac
 	free := int32(0)
 	allocated := int32(0)
 	faulty := int32(0)
+	other := int32(0)
 	for _, pc := range pcs {
 		sort.SliceStable(pc.Servers, func(i, j int) bool { return *pc.Servers[i].Size < *pc.Servers[j].Size })
 		for _, c := range pc.Servers {
 			id := strValue(c.Size)
-			row := []string{*pc.ID, id, fmt.Sprintf("%d", *c.Total), fmt.Sprintf("%d", *c.Free), fmt.Sprintf("%d", *c.Allocated), fmt.Sprintf("%d", *c.Faulty)}
+			row := []string{*pc.ID, id, fmt.Sprintf("%d", *c.Total), fmt.Sprintf("%d", *c.Free), fmt.Sprintf("%d", *c.Allocated), fmt.Sprintf("%d", *c.Other), fmt.Sprintf("%d", *c.Faulty)}
 			total += *c.Total
 			free += *c.Free
 			allocated += *c.Allocated
+			other += *c.Other
 			faulty += *c.Faulty
 			m.addShortData(row, pc)
 		}
 	}
-	footerRow := ([]string{"Total", "", fmt.Sprintf("%d", total), fmt.Sprintf("%d", free), fmt.Sprintf("%d", allocated), fmt.Sprintf("%d", faulty)})
+	footerRow := ([]string{"Total", "", fmt.Sprintf("%d", total), fmt.Sprintf("%d", free), fmt.Sprintf("%d", allocated), fmt.Sprintf("%d", other), fmt.Sprintf("%d", faulty)})
 	m.addShortData(footerRow, nil)
-	m.shortHeader = []string{"Partition", "Size", "Total", "Free", "Allocated", "Faulty"}
+	m.shortHeader = []string{"Partition", "Size", "Total", "Free", "Allocated", "Other", "Faulty"}
 	m.render()
 }
 
