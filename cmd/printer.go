@@ -797,9 +797,10 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 		syncDurStr := ""
 		syncError := ""
 		shortStatus := nbr
+		var syncTime time.Time
 		if s.LastSync != nil {
-			t := time.Time(*s.LastSync.Time)
-			syncAge := time.Since(t)
+			syncTime = time.Time(*s.LastSync.Time)
+			syncAge := time.Since(syncTime)
 			syncDur := time.Duration(*s.LastSync.Duration).Round(time.Millisecond)
 			if syncAge >= time.Minute*10 || syncDur >= 30*time.Second {
 				shortStatus += color.RedString(dot)
@@ -814,8 +815,10 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 		}
 
 		if s.LastSyncError != nil {
-			syncAge := time.Since(time.Time(*s.LastSync.Time))
-			syncError = fmt.Sprintf("%s ago: %s", syncAge, strValue(s.LastSyncError.Error))
+			errorTime := time.Time(*s.LastSyncError.Time)
+			if errorTime.After(syncTime) {
+				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), strValue(s.LastSyncError.Error))
+			}
 		}
 
 		row := []string{id, partition, rack, shortStatus}
