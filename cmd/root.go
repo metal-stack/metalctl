@@ -12,7 +12,6 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/pkg/errors"
 
-	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/v"
 
 	"github.com/spf13/cobra"
@@ -181,13 +180,11 @@ func initConfig() {
 	}
 	apiToken := viper.GetString("apitoken")
 
-	// if there is no api token explicitly specified we try to pull it out of
-	// the kubeconfig context
+	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
-		kubeconfig := viper.GetString("kubeconfig")
-		authContext, err := auth.CurrentAuthContext(kubeconfig)
+		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
 		// if there is an error, no kubeconfig exists for us ... this is not really an error
-		// if metalctl is used in scripting with an hmac-key
+		// since metalctl can be used in scripting with an hmac-key
 		if err == nil {
 			apiToken = authContext.IDToken
 		}

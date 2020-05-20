@@ -22,8 +22,12 @@ var loginCmd = &cobra.Command{
 			// do not print to console
 			handler = printTokenHandler
 		} else {
+			cs, err := getContexts()
+			if err != nil {
+				return err
+			}
 			console = os.Stdout
-			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeConfig"), console)
+			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeConfig"), console, auth.WithContextName(formatContextName(cloudContext, cs.CurrentContext)))
 		}
 
 		config := auth.Config{
