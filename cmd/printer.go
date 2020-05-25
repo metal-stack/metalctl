@@ -668,10 +668,16 @@ func (m MetalFirewallTablePrinter) Print(data []*models.V1FirewallResponse) {
 		networks := strings.Join(nws, "\n")
 
 		firewallID := *firewall.ID
-		row := []string{firewallID, hostname, project, networks, ips, partition}
+
+		age := ""
+		if alloc.Created != nil && !time.Time(*alloc.Created).IsZero() {
+			age = humanizeDuration(time.Since(time.Time(*alloc.Created)))
+		}
+
+		row := []string{firewallID, age, hostname, project, networks, ips, partition}
 		m.addShortData(row, firewall)
 	}
-	m.shortHeader = []string{"ID", "Hostname", "Project", "Networks", "IPs", "Partition"}
+	m.shortHeader = []string{"ID", "AGE", "Hostname", "Project", "Networks", "IPs", "Partition"}
 	m.render()
 }
 
