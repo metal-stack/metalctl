@@ -537,18 +537,11 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 	m.Order(data)
 	m.shortHeader = []string{"ID", "", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition"}
 	m.wideHeader = []string{"ID", "", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Console Password", "Tags", "Lock/Reserve"}
-	atLeastOneLEDOn := false
-	for _, machine := range data {
-		if machine.Ledstate != nil && *machine.Ledstate.Value == "LED-ON" {
-			atLeastOneLEDOn = true
-			break
-		}
-	}
 	for _, machine := range data {
 		machineID := *machine.ID
-		led := ""
 		if machine.Ledstate != nil && *machine.Ledstate.Value == "LED-ON" {
-			led = blueDiamond
+			blue := color.New(color.FgBlue).SprintFunc()
+			machineID = blue(machineID)
 		}
 
 		alloc := machine.Allocation
@@ -633,13 +626,6 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 
 		row := []string{machineID, lockEmoji, statusEmoji, lastEventEmoji, when, age, truncatedHostname, project, sizeID, image, partitionID}
 		wide := []string{machineID, status, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, alloc.ConsolePassword, tags, reserved}
-
-		if atLeastOneLEDOn {
-			m.shortHeader = append([]string{""}, m.shortHeader...)
-			m.wideHeader = append([]string{""}, m.wideHeader...)
-			row = append([]string{led}, row...)
-			wide = append([]string{led}, wide...)
-		}
 
 		m.addShortData(row, machine)
 		m.addWideData(wide, machine)
