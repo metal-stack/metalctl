@@ -221,7 +221,7 @@ func searchSSHIdentity() (string, error) {
 	}
 	homeDir := currentUser.HomeDir
 	defaultDir := filepath.Join(homeDir, "/.ssh/")
-	keys := []string{"id_rsa", "id_dsa"}
+	keys := []string{"id_ed25519", "id_rsa", "id_dsa"}
 	var key string
 	for _, k := range keys {
 		possibleKey := filepath.Join(defaultDir, k)

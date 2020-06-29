@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"os"
 	"os/exec"
+	"os/user"
+	"path/filepath"
 	"strings"
 
 	"fmt"
@@ -457,7 +459,17 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	if len(sshPublicKeyArgument) == 0 {
-		sshPublicKeyArgument, _ = readFromFile("~/.ssh/id_rsa.pub")
+		currentUser, err := user.Current()
+		homeDir := currentUser.HomeDir
+		defaultDir := filepath.Join(homeDir, "/.ssh/")
+		keys := []string{"id_ed25519.pub", "id_rsa.pub", "id_dsa.pub"}
+		for _, k := range keys {
+			defaultKey := filepath.Join(defaultDir, k)
+			sshPublicKeyArgument, err = readFromFile(defaultKey)
+			if err == nil {
+				break
+			}
+		}
 	}
 
 	var keys []string
