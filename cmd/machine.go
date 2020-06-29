@@ -371,7 +371,7 @@ func addMachineCreateFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().StringP("sshpublickey", "p", "",
 		`SSH public key for access via ssh and console. [optional]
 Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
-If ~/.ssh/id_rsa.pub is present it will be picked as default.`)
+If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default.`)
 	cmd.Flags().StringSlice("tags", []string{}, "tags to add to the "+name+", use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().StringP("userdata", "", "", `cloud-init.io compatible userdata. [optional]
 Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".`)
