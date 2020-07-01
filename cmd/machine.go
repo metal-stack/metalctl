@@ -457,9 +457,10 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	if len(sshPublicKeyArgument) == 0 {
-		sshPublicKey, _ := searchSSHKey(defaultSSHPublicKeys)
+		sshKey, _ := searchSSHKey()
+		sshKey += ".pub"
 		var err error
-		sshPublicKeyArgument, err = readFromFile(sshPublicKey)
+		sshPublicKeyArgument, err = readFromFile(sshKey)
 		if err != nil {
 			return nil, err
 		}
@@ -790,7 +791,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 
 	key := viper.GetString("sshidentity")
 	if key == "" {
-		key, err = searchSSHKey(defaultSSHPrivateKeys)
+		key, err = searchSSHKey()
 		if err != nil {
 			return fmt.Errorf("machine console error:%v", err)
 		}
