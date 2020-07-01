@@ -457,9 +457,12 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	if len(sshPublicKeyArgument) == 0 {
-		sshKey, _ := searchSSHKey()
-		sshKey += ".pub"
 		var err error
+		sshKey, err := searchSSHKey()
+		if err != nil {
+			return nil, err
+		}
+		sshKey += ".pub"
 		sshPublicKeyArgument, err = readFromFile(sshKey)
 		if err != nil {
 			return nil, err
