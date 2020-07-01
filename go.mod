@@ -20,9 +20,12 @@ require (
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.6.1
 	go.mongodb.org/mongo-driver v1.3.4 // indirect
-	golang.org/x/crypto v0.0.0-20200604202706-70a84ac30bf9
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	gopkg.in/ini.v1 v1.57.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
+replace (
+	github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
+	github.com/metal-stack/metal-go => ../metal-go
+)
