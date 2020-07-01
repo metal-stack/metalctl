@@ -26,11 +26,12 @@ const (
 )
 
 var (
-	ctx       Context
-	printer   Printer
-	detailer  Detailer
-	driverURL string
-	driver    *metalgo.Driver
+	ctx            Context
+	printer        Printer
+	detailer       Detailer
+	driverURL      string
+	driver         *metalgo.Driver
+	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
 
 	// will bind all viper flags to subcommands and
 	// prevent overwrite of identical flag names from other commands
@@ -214,16 +215,15 @@ func initPrinter() {
 	}
 }
 
-func searchSSHIdentity() (string, error) {
+func searchSSHKey() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%v", err)
 	}
 	homeDir := currentUser.HomeDir
 	defaultDir := filepath.Join(homeDir, "/.ssh/")
-	keys := []string{"id_rsa", "id_dsa"}
 	var key string
-	for _, k := range keys {
+	for _, k := range defaultSSHKeys {
 		possibleKey := filepath.Join(defaultDir, k)
 		_, err := ioutil.ReadFile(possibleKey)
 		if err == nil {
