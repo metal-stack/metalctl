@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"os"
 	"os/exec"
-	"os/user"
-	"path/filepath"
 	"strings"
 
 	"fmt"
@@ -459,16 +457,11 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	if len(sshPublicKeyArgument) == 0 {
-		currentUser, err := user.Current()
-		homeDir := currentUser.HomeDir
-		defaultDir := filepath.Join(homeDir, "/.ssh/")
-		keys := []string{"id_ed25519.pub", "id_rsa.pub", "id_dsa.pub"}
-		for _, k := range keys {
-			defaultKey := filepath.Join(defaultDir, k)
-			sshPublicKeyArgument, err = readFromFile(defaultKey)
-			if err == nil {
-				break
-			}
+		sshPublicKey, _ := searchSSHKey(defaultSSHPublicKeys)
+		var err error
+		sshPublicKeyArgument, err = readFromFile(sshPublicKey)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -797,7 +790,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 
 	key := viper.GetString("sshidentity")
 	if key == "" {
-		key, err = searchSSHIdentity()
+		key, err = searchSSHKey(defaultSSHPrivateKeys)
 		if err != nil {
 			return fmt.Errorf("machine console error:%v", err)
 		}
