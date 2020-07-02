@@ -729,10 +729,17 @@ func (m MetalImageTablePrinter) Print(data []*models.V1ImageResponse) {
 			expiration = humanizeDuration(time.Until(time.Time(*image.ExpirationDate)))
 		}
 		status := image.Classification
-		row := []string{id, name, description, features, expiration, status}
+		usedBy := fmt.Sprintf("%d", len(image.Usedby))
+		if m.wide {
+			usedBy = strings.Join(image.Usedby, "\n")
+		}
+
+		row := []string{id, name, description, features, expiration, status, usedBy}
 		m.addShortData(row, image)
+		m.addWideData(row, image)
 	}
-	m.shortHeader = []string{"ID", "Name", "Description", "Features", "Expiration", "Status"}
+	m.shortHeader = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
+	m.wideHeader = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 	m.render()
 }
 
