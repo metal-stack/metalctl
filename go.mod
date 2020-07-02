@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
-	github.com/metal-stack/metal-go v0.7.7
+	github.com/metal-stack/metal-go v0.7.8
 	github.com/metal-stack/metal-lib v0.5.0
 	github.com/metal-stack/updater v1.0.1
 	github.com/metal-stack/v v1.0.2
@@ -25,7 +25,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-replace (
-	github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
-	github.com/metal-stack/metal-go => ../metal-go
-)
+replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
