@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	downloadURLPrefix = "https://images.metal-pod.io/" + programName + "/"
+	downloadURLPrefix = "https://images.metal-stack.io/" + programName + "/"
 )
 
 var (

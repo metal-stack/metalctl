@@ -7,7 +7,7 @@ on:
 
 env:
   GCS_BUCKET: images.metal-pod.io
-      
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -38,4 +38,3 @@ jobs:
           mv result/* metalctl/pull-requests/${TAG_NAME}
       - name: Upload image tarballs to GCS
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
-    
