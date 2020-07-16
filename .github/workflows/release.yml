@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 env:
-  GCS_BUCKET: images.metal-pod.io
-      
+  GCS_BUCKET: images.metal-stack.io
+
 jobs:
   build:
     runs-on: ubuntu-latest
