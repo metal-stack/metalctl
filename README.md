@@ -6,43 +6,36 @@
 
 Download locations:
 
-* [metalctl-linux-amd64](https://images.metal-pod.io/metalctl/metalctl-linux-amd64)
-* [metalctl-darwin-amd64](https://images.metal-pod.io/metalctl/metalctl-darwin-amd64)
-* [metalctl-windows-amd64](https://images.metal-pod.io/cloud-native/metalctl/metalctl-windows-amd64)
-
-Via pre-build package:
-
-```bash
-sudo curl -fsSL https://images.metal-pod.io/metalctl/metalctl -o /usr/local/bin/metalctl
-sudo chmod +x /usr/local/bin/metalctl
-```
-
-Self-build:
-
-```bash
-make
-sudo ln -sf $(pwd)/bin/metalctl /usr/local/bin/metalctl
-```
+* [metalctl-linux-amd64](https://images.metal-stack.io/metalctl/metalctl-linux-amd64)
+* [metalctl-darwin-amd64](https://images.metal-stack.io/metalctl/metalctl-darwin-amd64)
+* [metalctl-windows-amd64](https://images.metal-stack.io/metalctl/metalctl-windows-amd64)
 
 ### Installation on Linux
 
 ```bash
-sudo curl -fsSL https://images.metal-pod.io/metalctl/metalctl-linux-amd64 -o /usr/local/bin/metalctl
+sudo curl -fsSL https://images.metal-stack.io/metalctl/metalctl-linux-amd64 -o /usr/local/bin/metalctl
 sudo chmod +x /usr/local/bin/metalctl
 ```
 
 ### Installation on MacOS
 
 ```bash
-sudo curl -fsSL https://images.metal-pod.io/metalctl/metalctl-darvin-amd64 -o /usr/local/bin/metalctl
+sudo curl -fsSL https://images.metal-stack.io/metalctl/metalctl-darwin-amd64 -o /usr/local/bin/metalctl
 sudo chmod +x /usr/local/bin/metalctl
 ```
 
 ### Installation on Windows
 
 ```bash
-curl -LO https://blobstore.fi-ts.io/cloud-native/metalctl/metalctl-windows-amd64
+curl -LO https://images.metal-stack.io/metalctl/metalctl-windows-amd64
 copy metalctl-windows-amd64 metalctl.exe
+```
+
+### Built from project
+
+```bash
+make
+sudo ln -sf $(pwd)/bin/metalctl /usr/local/bin/metalctl
 ```
 
 ## Configuration
