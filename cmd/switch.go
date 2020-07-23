@@ -116,7 +116,7 @@ func switchUpdate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.SwitchUpdate(surs[0])
 	if err != nil {
-		return fmt.Errorf("partition update error:%v", err)
+		return fmt.Errorf("switch update error:%v", err)
 	}
 	return detailer.Detail(resp.Switch)
 }
@@ -145,7 +145,7 @@ func switchEdit(driver *metalgo.Driver, args []string) error {
 		}
 		uresp, err := driver.SwitchUpdate(items[0])
 		if err != nil {
-			return fmt.Errorf("partition update error:%v", err)
+			return fmt.Errorf("switch update error:%v", err)
 		}
 		return detailer.Detail(uresp.Switch)
 	}
@@ -173,7 +173,7 @@ func switchReplace(driver *metalgo.Driver, args []string) error {
 	}
 	uresp, err := driver.SwitchUpdate(sur)
 	if err != nil {
-		return fmt.Errorf("partition update error:%v", err)
+		return fmt.Errorf("switch update error:%v", err)
 	}
 	return detailer.Detail(uresp.Switch)
 }
