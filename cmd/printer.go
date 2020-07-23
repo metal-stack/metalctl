@@ -819,13 +819,13 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 			}
 		}
 
-		mode := s.Mode
-		if s.Mode == "" {
-			mode = "operational"
-		}
-
-		if s.Mode == "replace" {
+		var mode string
+		switch s.Mode {
+		case "replace":
 			shortStatus = nbr + color.RedString(dot)
+			mode = "replace"
+		default:
+			mode = "operational"
 		}
 
 		row := []string{id, partition, rack, shortStatus}
