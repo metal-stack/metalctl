@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
-	github.com/metal-stack/metal-go v0.7.8
+	github.com/metal-stack/metal-go v0.8.2-0.20200728041954-234e0bc8dc52
 	github.com/metal-stack/metal-lib v0.5.0
 	github.com/metal-stack/updater v1.1.0
 	github.com/metal-stack/v v1.0.2
