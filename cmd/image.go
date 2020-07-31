@@ -59,8 +59,9 @@ var (
 		PreRun: bindPFlags,
 	}
 	imageDeleteCmd = &cobra.Command{
-		Use:   "delete <imageID>",
-		Short: "delete a image",
+		Use:     "delete <imageID>",
+		Aliases: []string{"rm"},
+		Short:   "delete a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return imageDelete(driver, args)
 		},
