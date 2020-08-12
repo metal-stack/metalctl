@@ -158,6 +158,7 @@ func init() {
 	networkCreateCmd.Flags().StringP("name", "n", "", "name of the network to create. [optional]")
 	networkCreateCmd.Flags().StringP("partition", "p", "", "partition where this network should exist.")
 	networkCreateCmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
+	networkCreateCmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
 	networkCreateCmd.Flags().StringSlice("destinationprefixes", []string{}, "destination prefixes in this network.")
 	networkCreateCmd.Flags().BoolP("primary", "", false, "set primary flag of network, if set to true, this network is used to start machines there.")
 	networkCreateCmd.Flags().BoolP("nat", "", false, "set nat flag of network, if set to true, traffic from this network will be natted.")
@@ -328,6 +329,10 @@ func networkCreate(driver *metalgo.Driver) error {
 		}
 		ncr = ncrs[0]
 	} else {
+		lbs, err := annotationsAsMap(viper.GetStringSlice("labels"))
+		if err != nil {
+			return err
+		}
 		ncr = metalgo.NetworkCreateRequest{
 			Description:         viper.GetString("description"),
 			Name:                viper.GetString("name"),
@@ -339,6 +344,7 @@ func networkCreate(driver *metalgo.Driver) error {
 			Underlay:            viper.GetBool("underlay"),
 			Vrf:                 viper.GetInt64("vrf"),
 			VrfShared:           viper.GetBool("vrfshared"),
+			Labels:              lbs,
 		}
 		id := viper.GetString("id")
 		if len(id) > 0 {

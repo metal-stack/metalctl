@@ -920,7 +920,7 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 		}
 	}
 	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Prefixes", "", "IPs"}
-	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Prefixes", "Usage", "PrivateSuper"}
+	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
 	m.render()
 }
 
@@ -960,8 +960,14 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 	for i := 0; i < max; i++ {
 		id += "\n\u2502"
 	}
+
+	var as []string
+	for k, v := range n.Labels {
+		as = append(as, k+"="+v)
+	}
+	annotations := strings.Join(as, "\n")
 	shortRow := []string{id, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortPrefixUsage, shortIPUsage}
-	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper}
+	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper, annotations}
 	m.addShortData(shortRow, n)
 	m.addWideData(wideRow, n)
 }
