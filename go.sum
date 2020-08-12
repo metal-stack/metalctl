@@ -372,6 +372,8 @@ github.com/metal-stack/metal-go v0.8.2-0.20200805121016-2b832f7fbbf5 h1:G8pYKZ41
 github.com/metal-stack/metal-go v0.8.2-0.20200805121016-2b832f7fbbf5/go.mod h1:rnUREZDzYWsZlBJIaFZDrCBb2ZRLEW44uoNyMJyAAc0=
 github.com/metal-stack/metal-go v0.8.2 h1:HPYt8+rU3+ICKwkVyNnJTqXZgHRNuBEf6UbrzCDGkMM=
 github.com/metal-stack/metal-go v0.8.2/go.mod h1:rnUREZDzYWsZlBJIaFZDrCBb2ZRLEW44uoNyMJyAAc0=
+github.com/metal-stack/metal-go v0.8.3-0.20200812064618-b34528d636b6 h1:ZsXWmmqPDszY5wgWv6s5LTPjM3LY5LZHMP61UswtSw4=
+github.com/metal-stack/metal-go v0.8.3-0.20200812064618-b34528d636b6/go.mod h1:rnUREZDzYWsZlBJIaFZDrCBb2ZRLEW44uoNyMJyAAc0=
 github.com/metal-stack/metal-lib v0.5.0 h1:C3QScS7+wNWMiERB+j0x06WpRuTHW6A3rpuILMOAgss=
 github.com/metal-stack/metal-lib v0.5.0/go.mod h1:Vxr1OwM8fef1gtIv9fUiVU4Gq5mkd4ElHMpTjfuuSFQ=
 github.com/metal-stack/security v0.3.0 h1:YJL0qlsXlvA9O3iIWuk5YqF02IX9f6I60n93FkQpV4k=
