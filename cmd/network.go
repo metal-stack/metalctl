@@ -38,6 +38,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	networkDescribeCmd = &cobra.Command{
+		Use:   "describe",
+		Short: "describe a network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return networkDescribe(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
 	networkAllocateCmd = &cobra.Command{
 		Use:   "allocate",
 		Short: "allocate a network",
@@ -221,6 +229,7 @@ func init() {
 	networkCmd.AddCommand(networkIPCmd)
 	networkCmd.AddCommand(networkListCmd)
 	networkCmd.AddCommand(networkCreateCmd)
+	networkCmd.AddCommand(networkDescribeCmd)
 	networkCmd.AddCommand(networkAllocateCmd)
 	networkCmd.AddCommand(networkFreeCmd)
 	networkCmd.AddCommand(networkPrefixCmd)
@@ -309,6 +318,18 @@ func networkDelete(driver *metalgo.Driver, args []string) error {
 	resp, err := driver.NetworkDelete(nw)
 	if err != nil {
 		return fmt.Errorf("network delete error:%v", err)
+	}
+	return detailer.Detail(resp.Network)
+}
+
+func networkDescribe(driver *metalgo.Driver, args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("no network given")
+	}
+	nw := args[0]
+	resp, err := driver.NetworkGet(nw)
+	if err != nil {
+		return fmt.Errorf("network describe error:%v", err)
 	}
 	return detailer.Detail(resp.Network)
 }
