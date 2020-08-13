@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
 	metalgo "github.com/metal-stack/metal-go"
@@ -315,16 +314,4 @@ func readProjectUpdateRequests(filename string) ([]v1.Project, error) {
 		return pcrs, fmt.Errorf("project update error more or less than one project given:%d", len(pcrs))
 	}
 	return pcrs, nil
-}
-
-func annotationsAsMap(annotations []string) (map[string]string, error) {
-	result := make(map[string]string)
-	for _, a := range annotations {
-		parts := strings.Split(strings.TrimSpace(a), "=")
-		if len(parts) != 2 {
-			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
-		}
-		result[parts[0]] = parts[1]
-	}
-	return result, nil
 }
