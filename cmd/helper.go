@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/metal-stack/metal-lib/auth"
 	"io"
 	"math"
 	"net"
@@ -12,6 +11,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/metal-stack/metal-lib/auth"
 
 	metalgo "github.com/metal-stack/metal-go"
 	"gopkg.in/yaml.v3"
@@ -323,4 +324,16 @@ func formatContextName(prefix string, suffix string) string {
 		contextName = fmt.Sprintf("%s-%s", cloudContext, suffix)
 	}
 	return contextName
+}
+
+func annotationsAsMap(annotations []string) (map[string]string, error) {
+	result := make(map[string]string)
+	for _, a := range annotations {
+		parts := strings.Split(strings.TrimSpace(a), "=")
+		if len(parts) != 2 {
+			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
+		}
+		result[parts[0]] = parts[1]
+	}
+	return result, nil
 }

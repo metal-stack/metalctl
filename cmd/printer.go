@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -408,6 +409,49 @@ func (m MetalMachineTablePrinter) Order(data []*models.V1MachineResponse) {
 				}
 			}
 
+			return false
+		})
+	}
+}
+
+// Order Project
+func (m MetalProjectTablePrinter) Order(data []*models.V1ProjectResponse) {
+	cols := strings.Split(m.order, ",")
+	if len(cols) > 0 {
+		sort.SliceStable(data, func(i, j int) bool {
+			A := data[i]
+			B := data[j]
+			for _, order := range cols {
+				order = strings.ToLower(order)
+				switch order {
+				case "tenant":
+					if A.TenantID == "" {
+						return true
+					}
+					if B.TenantID == "" {
+						return false
+					}
+					if A.TenantID < B.TenantID {
+						return true
+					}
+					if A.TenantID != B.TenantID {
+						return false
+					}
+				case "project":
+					if A.Name == "" {
+						return true
+					}
+					if B.Name == "" {
+						return false
+					}
+					if A.Name < B.Name {
+						return true
+					}
+					if A.Name != B.Name {
+						return false
+					}
+				}
+			}
 			return false
 		})
 	}
@@ -884,7 +928,7 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 		}
 	}
 	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Prefixes", "", "IPs"}
-	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Prefixes", "Usage", "PrivateSuper"}
+	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
 	m.render()
 }
 
@@ -924,8 +968,14 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 	for i := 0; i < max; i++ {
 		id += "\n\u2502"
 	}
+
+	var as []string
+	for k, v := range n.Labels {
+		as = append(as, k+"="+v)
+	}
+	annotations := strings.Join(as, "\n")
 	shortRow := []string{id, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortPrefixUsage, shortIPUsage}
-	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper}
+	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper, annotations}
 	m.addShortData(shortRow, n)
 	m.addWideData(wideRow, n)
 }
@@ -1048,20 +1098,39 @@ func (m MetalMachineLogsPrinter) Print(data []*models.V1MachineProvisioningEvent
 
 // Print all MetalIPs in a table
 func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
-	for _, i := range data {
-		id := ""
-		if i.Meta != nil {
-			id = i.Meta.ID
+	m.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Machines", "IPs", "Labels", "Annotations"}
+	m.shortHeader = m.wideHeader
+	m.Order(data)
+	for _, pr := range data {
+		machineQuota := ""
+		ipQuota := ""
+		if pr.Quotas != nil {
+			qs := pr.Quotas
+			if qs.Machine != nil {
+				mq := "∞"
+				if qs.Machine.Quota != 0 {
+					mq = strconv.FormatInt(int64(qs.Machine.Quota), 10)
+				}
+				machineQuota = fmt.Sprintf("%d/%s", qs.Machine.Used, mq)
+			}
+			if qs.IP != nil {
+				iq := "∞"
+				if qs.IP.Quota != 0 {
+					iq = strconv.FormatInt(int64(qs.IP.Quota), 10)
+				}
+				ipQuota = fmt.Sprintf("%d/%s", qs.IP.Used, iq)
+			}
 		}
-		name := i.Name
-		description := i.Description
-		tenant := i.TenantID
-		row := []string{id, name, tenant}
-		wide := []string{id, name, description, tenant}
-		m.addShortData(row, i)
-		m.addWideData(wide, i)
+		labels := strings.Join(pr.Meta.Labels, "\n")
+		as := []string{}
+		for k, v := range pr.Meta.Annotations {
+			as = append(as, k+"="+v)
+		}
+		annotations := strings.Join(as, "\n")
+
+		wide := []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, machineQuota, ipQuota, labels, annotations}
+		m.addShortData(wide, pr)
+		m.addWideData(wide, pr)
 	}
-	m.shortHeader = []string{"ID", "Name", "Tenant"}
-	m.wideHeader = []string{"ID", "Name", "Description", "Tenant"}
 	m.render()
 }
