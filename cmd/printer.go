@@ -835,7 +835,6 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 			partition = strValue(s.Partition.ID)
 		}
 		rack := strValue(s.RackID)
-
 		syncAgeStr := ""
 		syncDurStr := ""
 		syncError := ""
@@ -864,13 +863,22 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 			}
 		}
 
+		var mode string
+		switch s.Mode {
+		case "replace":
+			shortStatus = nbr + color.RedString(dot)
+			mode = "replace"
+		default:
+			mode = "operational"
+		}
+
 		row := []string{id, partition, rack, shortStatus}
-		wide := []string{id, partition, rack, syncAgeStr, syncDurStr, syncError}
+		wide := []string{id, partition, rack, mode, syncAgeStr, syncDurStr, syncError}
 		m.addShortData(row, s)
 		m.addWideData(wide, s)
 	}
 	m.shortHeader = []string{"ID", "Partition", "Rack", "Status"}
-	m.wideHeader = []string{"ID", "Partition", "Rack", "Last Sync", "Sync Duration", "Last Sync Error"}
+	m.wideHeader = []string{"ID", "Partition", "Rack", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
 	m.render()
 }
 
