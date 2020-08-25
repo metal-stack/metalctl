@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
 	"github.com/metal-stack/v"
@@ -160,7 +161,12 @@ func initConfig() {
 	} else {
 		viper.SetConfigName("config")
 		viper.AddConfigPath(fmt.Sprintf("/etc/%s", programName))
-		viper.AddConfigPath(fmt.Sprintf("$HOME/.%s", programName))
+		h, err := homedir.Dir()
+		if err != nil {
+			log.Printf("unable to figure out user home directory, skipping config lookup path: %v", err)
+		} else {
+			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", programName))
+		}
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
 			usedCfg := viper.ConfigFileUsed()
