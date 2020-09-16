@@ -675,10 +675,10 @@ func ipIssues(driver *metalgo.Driver) error {
 				parts := strings.Split(t, "=")
 				m := machines[parts[1]]
 				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
-					ip.Description = fmt.Sprint("bound to unallocated machine")
+					ip.Description = "bound to unallocated machine"
 					resp = append(resp, ip)
 				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
-					ip.Description = fmt.Sprint("hostname mismatch")
+					ip.Description = "hostname mismatch"
 					resp = append(resp, ip)
 				}
 			}
