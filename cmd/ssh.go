@@ -60,7 +60,12 @@ func SSHClient(user, keyfile, host string, port int) error {
 		if err != nil {
 			return err
 		}
-		defer terminal.Restore(fileDescriptor, originalState)
+		defer func() {
+			err = terminal.Restore(fileDescriptor, originalState)
+			if err != nil {
+				fmt.Printf("error restoring ssh terminal:%v\n", err)
+			}
+		}()
 
 		termWidth, termHeight, err := terminal.GetSize(fileDescriptor)
 		if err != nil {
