@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
-	github.com/metal-stack/masterdata-api v0.8.1
-	github.com/metal-stack/metal-go v0.8.3
-	github.com/metal-stack/metal-lib v0.6.0
+	github.com/metal-stack/masterdata-api v0.8.3
+	github.com/metal-stack/metal-go v0.9.0
+	github.com/metal-stack/metal-lib v0.6.1
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
