@@ -782,8 +782,9 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 			password = ipmipassword
 		}
 
-		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sol", "activate"}
+		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sol", "activate"}
 		fmt.Printf("connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+		args[9] = password
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -820,6 +821,8 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 			return err
 		}
 
+		hidden := "<hidden>"
+		resp.Machine.IPMI.Password = &hidden
 		return detailer.Detail(resp.Machine)
 	}
 
