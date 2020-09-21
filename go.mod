@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
-	github.com/metal-stack/masterdata-api v0.7.3
-	github.com/metal-stack/metal-go v0.8.3
-	github.com/metal-stack/metal-lib v0.5.0
+	github.com/metal-stack/masterdata-api v0.8.3
+	github.com/metal-stack/metal-go v0.9.0
+	github.com/metal-stack/metal-lib v0.6.1
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.6.1
 	go.mongodb.org/mongo-driver v1.4.0 // indirect
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a
 	gopkg.in/ini.v1 v1.57.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
