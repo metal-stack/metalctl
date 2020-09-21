@@ -869,37 +869,80 @@ func machineIssues(driver *metalgo.Driver) error {
 	if err != nil {
 		return fmt.Errorf("machine list error:%v", err)
 	}
-	var machines []*models.V1MachineResponse
+	res := make(MachineIssues)
+
+	asnMap := make(map[int64][]*models.V1MachineResponse)
 	for _, m := range resp.Machines {
+		m := m
+		var issues []string
+
 		if m.Partition == nil {
-			m.Description = "Issue: no Partition"
-			machines = append(machines, m)
-			continue
+			issues = append(issues, "machine with no partition")
 		}
-		if *m.Liveliness != "Alive" {
-			m.Description = "Issue: not Alive"
-			machines = append(machines, m)
-			continue
+
+		if m.Liveliness != nil && *m.Liveliness != "Alive" {
+			issues = append(issues, "machine not alive")
 		}
+
 		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
-			m.Description = "Issue: not allocated, but phones home"
-			machines = append(machines, m)
-			continue
+			issues = append(issues, "machine phones home but not allocated")
 		}
+
 		if m.Events.IncompleteProvisioningCycles != nil &&
 			*m.Events.IncompleteProvisioningCycles != "" &&
 			*m.Events.IncompleteProvisioningCycles != "0" {
-			// Machine which are waiting are not considered to have issues
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
-				continue
+				// Machine which are waiting are not considered to have issues
+			} else {
+				issues = append(issues, "machine has incomplete cycles")
 			}
-			m.Description = "Issue: incomplete cycle"
-			machines = append(machines, m)
-			continue
+		}
+
+		if m.Allocation != nil {
+			// collecting ASN overlaps
+			for _, n := range m.Allocation.Networks {
+				if n.Asn != nil {
+					machines, ok := asnMap[*n.Asn]
+					if !ok {
+						machines = []*models.V1MachineResponse{}
+					}
+					found := false
+					for _, mm := range machines {
+						mm := mm
+						if *mm.ID == *m.ID {
+							found = true
+							break
+						}
+					}
+					if !found {
+						machines = append(machines, m)
+						asnMap[*n.Asn] = machines
+					}
+				}
+			}
+		}
+
+		if len(issues) > 0 {
+			res[m] = issues
 		}
 	}
-	viper.Set("output-format", "wide")
-	return printer.Print(machines)
+
+	for asn, ms := range asnMap {
+		if len(ms) > 1 {
+			var sharedIDs []string
+			for _, m := range ms {
+				sharedIDs = append(sharedIDs, *m.ID)
+			}
+
+			for _, m := range ms {
+				issues := res[m]
+				issues = append(issues, fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs))
+				res[m] = issues
+			}
+		}
+	}
+
+	return printer.Print(res)
 }
 
 func getMachineID(args []string) (string, error) {

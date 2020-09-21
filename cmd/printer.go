@@ -37,6 +37,8 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
+	// MachineIssues is map of a machine response to a list of machine issues
+	MachineIssues map[*models.V1MachineResponse][]string
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
@@ -62,7 +64,10 @@ type (
 	MetalMachineLogsPrinter struct {
 		TablePrinter
 	}
-
+	// MetalMachineIssuesPrinter is a table printer for a MetalMachine issues
+	MetalMachineIssuesTablePrinter struct {
+		TablePrinter
+	}
 	// MetalFirewallTablePrinter is a table printer for a MetalFirewall
 	MetalFirewallTablePrinter struct {
 		TablePrinter
@@ -270,6 +275,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MetalMachineTablePrinter{t}.Print(d)
 	case *models.V1MachineResponse:
 		MetalMachineTablePrinter{t}.Print([]*models.V1MachineResponse{d})
+	case MachineIssues:
+		MetalMachineIssuesTablePrinter{t}.Print(d)
 	case []*models.V1FirewallResponse:
 		MetalFirewallTablePrinter{t}.Print(d)
 	case *models.V1FirewallResponse:
@@ -674,6 +681,38 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		m.addShortData(row, machine)
 		m.addWideData(wide, machine)
 	}
+	m.render()
+}
+
+// Print a MetalSize in a table
+func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
+	for machine, is := range data {
+		id := ""
+		if machine.ID != nil {
+			id = *machine.ID
+		}
+		name := ""
+		if machine.Allocation != nil && machine.Allocation.Name != nil {
+			name = truncate(*machine.Allocation.Name, "...", 30)
+		}
+		partition := ""
+		if machine.Partition != nil && machine.Partition.ID != nil {
+			partition = *machine.Partition.ID
+		}
+		project := ""
+		if machine.Allocation != nil && machine.Allocation.Project != nil {
+			project = *machine.Allocation.Project
+		}
+
+		issues := ""
+		for _, issue := range is {
+			issues += fmt.Sprintf("- %s\n", issue)
+		}
+
+		row := []string{id, name, partition, project, issues}
+		m.addShortData(row, m)
+	}
+	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
 
