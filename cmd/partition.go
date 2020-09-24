@@ -214,30 +214,31 @@ func partitionApply(driver *metalgo.Driver) error {
 	}
 	var response []*models.V1PartitionResponse
 	for _, iar := range iars {
-		p, err := driver.PartitionGet(iar.ID)
+		resp, err := driver.PartitionGet(iar.ID)
 		if err != nil {
-			if e, ok := err.(*partitionmodel.FindPartitionDefault); ok {
+			switch e := err.(type) {
+			case *partitionmodel.FindPartitionDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("partition get error:%v", err)
+					return fmt.Errorf("partition get error:%v", e.Error())
 				}
+			default:
+				return fmt.Errorf("partition get error:%v", err)
 			}
 		}
-		if p.Partition == nil {
+		if resp.Partition == nil {
 			resp, err := driver.PartitionCreate(iar)
-			if err != nil {
-				return fmt.Errorf("partition update error:%v", err)
-			}
-			response = append(response, resp.Partition)
-			continue
-		}
-		if p.Partition.ID != nil {
-			resp, err := driver.PartitionUpdate(iar)
 			if err != nil {
 				return fmt.Errorf("partition create error:%v", err)
 			}
 			response = append(response, resp.Partition)
 			continue
 		}
+
+		updateResponse, err := driver.PartitionUpdate(iar)
+		if err != nil {
+			return fmt.Errorf("partition update error:%v", err)
+		}
+		response = append(response, updateResponse.Partition)
 	}
 	return detailer.Detail(response)
 }
