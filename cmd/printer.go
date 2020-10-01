@@ -37,8 +37,13 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
+	// MachineAndIssues summarizes a machine with issues
+	MachineAndIssues struct {
+		machine models.V1MachineResponse
+		issues  []string
+	}
 	// MachineIssues is map of a machine response to a list of machine issues
-	MachineIssues map[*models.V1MachineResponse][]string
+	MachineIssues map[string]MachineAndIssues
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
@@ -686,11 +691,8 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 
 // Print a MetalSize in a table
 func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
-	for machine, is := range data {
-		id := ""
-		if machine.ID != nil {
-			id = *machine.ID
-		}
+	for id, machineWithIssues := range data {
+		machine := machineWithIssues.machine
 		name := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
 			name = truncate(*machine.Allocation.Name, "...", 30)
@@ -704,14 +706,15 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 			project = *machine.Allocation.Project
 		}
 
-		issues := ""
-		for _, issue := range is {
-			issues += fmt.Sprintf("- %s\n", issue)
+		var issues []string
+		for _, issue := range machineWithIssues.issues {
+			issues = append(issues, fmt.Sprintf("- %s", issue))
 		}
 
-		row := []string{id, name, partition, project, issues}
+		row := []string{id, name, partition, project, strings.Join(issues, "\n")}
 		m.addShortData(row, m)
 	}
+	m.table.SetAutoWrapText(false)
 	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
