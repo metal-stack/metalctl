@@ -693,6 +693,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 	for id, machineWithIssues := range data {
 		machine := machineWithIssues.machine
+
 		name := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
 			name = truncate(*machine.Allocation.Name, "...", 30)

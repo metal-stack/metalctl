@@ -871,9 +871,8 @@ func machineIssues(driver *metalgo.Driver) error {
 	}
 	res := make(MachineIssues)
 
-	asnMap := make(map[int64][]*models.V1MachineResponse)
+	asnMap := make(map[int64][]models.V1MachineResponse)
 	for _, m := range resp.Machines {
-		m := m
 		var issues []string
 
 		if m.Partition == nil {
@@ -901,24 +900,29 @@ func machineIssues(driver *metalgo.Driver) error {
 		if m.Allocation != nil {
 			// collecting ASN overlaps
 			for _, n := range m.Allocation.Networks {
-				if n.Asn != nil {
-					machines, ok := asnMap[*n.Asn]
-					if !ok {
-						machines = []*models.V1MachineResponse{}
-					}
-					found := false
-					for _, mm := range machines {
-						mm := mm
-						if *mm.ID == *m.ID {
-							found = true
-							break
-						}
-					}
-					if !found {
-						machines = append(machines, m)
-						asnMap[*n.Asn] = machines
+				if n.Asn == nil {
+					continue
+				}
+
+				machines, ok := asnMap[*n.Asn]
+				if !ok {
+					machines = []models.V1MachineResponse{}
+				}
+
+				alreadyContained := false
+				for _, mm := range machines {
+					if *mm.ID == *m.ID {
+						alreadyContained = true
+						break
 					}
 				}
+
+				if alreadyContained {
+					continue
+				}
+
+				machines = append(machines, *m)
+				asnMap[*n.Asn] = machines
 			}
 		}
 
@@ -938,7 +942,12 @@ func machineIssues(driver *metalgo.Driver) error {
 			}
 
 			for _, m := range ms {
-				mWithIssues := res[*m.ID]
+				mWithIssues, ok := res[*m.ID]
+				if !ok {
+					mWithIssues = MachineAndIssues{
+						machine: m,
+					}
+				}
 				mWithIssues.issues = append(mWithIssues.issues, fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs))
 				res[*m.ID] = mWithIssues
 			}
