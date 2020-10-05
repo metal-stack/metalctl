@@ -37,6 +37,13 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
+	// MachineAndIssues summarizes a machine with issues
+	MachineAndIssues struct {
+		machine models.V1MachineResponse
+		issues  []string
+	}
+	// MachineIssues is map of a machine response to a list of machine issues
+	MachineIssues map[string]MachineAndIssues
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
@@ -62,7 +69,10 @@ type (
 	MetalMachineLogsPrinter struct {
 		TablePrinter
 	}
-
+	// MetalMachineIssuesPrinter is a table printer for a MetalMachine issues
+	MetalMachineIssuesTablePrinter struct {
+		TablePrinter
+	}
 	// MetalFirewallTablePrinter is a table printer for a MetalFirewall
 	MetalFirewallTablePrinter struct {
 		TablePrinter
@@ -270,6 +280,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MetalMachineTablePrinter{t}.Print(d)
 	case *models.V1MachineResponse:
 		MetalMachineTablePrinter{t}.Print([]*models.V1MachineResponse{d})
+	case MachineIssues:
+		MetalMachineIssuesTablePrinter{t}.Print(d)
 	case []*models.V1FirewallResponse:
 		MetalFirewallTablePrinter{t}.Print(d)
 	case *models.V1FirewallResponse:
@@ -674,6 +686,37 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		m.addShortData(row, machine)
 		m.addWideData(wide, machine)
 	}
+	m.render()
+}
+
+// Print a MetalSize in a table
+func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
+	for id, machineWithIssues := range data {
+		machine := machineWithIssues.machine
+
+		name := ""
+		if machine.Allocation != nil && machine.Allocation.Name != nil {
+			name = truncate(*machine.Allocation.Name, "...", 30)
+		}
+		partition := ""
+		if machine.Partition != nil && machine.Partition.ID != nil {
+			partition = *machine.Partition.ID
+		}
+		project := ""
+		if machine.Allocation != nil && machine.Allocation.Project != nil {
+			project = *machine.Allocation.Project
+		}
+
+		var issues []string
+		for _, issue := range machineWithIssues.issues {
+			issues = append(issues, fmt.Sprintf("- %s", issue))
+		}
+
+		row := []string{id, name, partition, project, strings.Join(issues, "\n")}
+		m.addShortData(row, m)
+	}
+	m.table.SetAutoWrapText(false)
+	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
 
