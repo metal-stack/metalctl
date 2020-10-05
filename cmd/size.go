@@ -238,28 +238,29 @@ func sizeApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		p, err := driver.SizeGet(iar.ID)
 		if err != nil {
-			if e, ok := err.(*sizemodel.FindSizeDefault); ok {
+			switch e := err.(type) {
+			case *sizemodel.FindSizeDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("size get error:%v", err)
+					return fmt.Errorf("size get error:%v", e.Error())
 				}
+			default:
+				return fmt.Errorf("unexpected error on size get:%v", err)
 			}
 		}
 		if p.Size == nil {
 			resp, err := driver.SizeCreate(iar)
-			if err != nil {
-				return fmt.Errorf("size update error:%v", err)
-			}
-			response = append(response, resp.Size)
-			continue
-		}
-		if p.Size.ID != nil {
-			resp, err := driver.SizeUpdate(iar)
 			if err != nil {
 				return fmt.Errorf("size create error:%v", err)
 			}
 			response = append(response, resp.Size)
 			continue
 		}
+
+		resp, err := driver.SizeUpdate(iar)
+		if err != nil {
+			return fmt.Errorf("size update error:%v", err)
+		}
+		response = append(response, resp.Size)
 	}
 	return detailer.Detail(response)
 }

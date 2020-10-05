@@ -222,7 +222,7 @@ func partitionApply(driver *metalgo.Driver) error {
 					return fmt.Errorf("partition get error:%v", e.Error())
 				}
 			default:
-				return fmt.Errorf("partition get error:%v", err)
+				return fmt.Errorf("unexpected error on partition get:%v", err)
 			}
 		}
 		if resp.Partition == nil {
