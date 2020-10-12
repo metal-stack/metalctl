@@ -27,4 +27,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
+replace (
+	github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
+	github.com/metal-stack/metal-go => ../metal-go
+)
