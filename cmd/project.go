@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"strings"
+	"net/http"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
 	metalgo "github.com/metal-stack/metal-go"
+	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 
 	"github.com/spf13/cobra"
@@ -231,9 +232,13 @@ func projectApply() error {
 
 		resp, err := driver.ProjectGet(par.Meta.Id)
 		if err != nil {
-			// TODO: Can be improved after: https://github.com/metal-stack/metal-api/issues/112
-			if !strings.Contains(err.Error(), "code = NotFound") {
-				return fmt.Errorf("project get error:%v", err)
+			switch e := err.(type) {
+			case *projectmodel.FindProjectDefault:
+				if e.Code() != http.StatusNotFound {
+					return fmt.Errorf("project get error:%v", e.Error())
+				}
+			default:
+				return fmt.Errorf("unexpected error on project get:%v", err)
 			}
 		}
 		if resp.Project == nil {
