@@ -902,7 +902,7 @@ func (m MetalSwitchTablePrinter) Print(data []*models.V1SwitchResponse) {
 		if s.LastSyncError != nil {
 			errorTime := time.Time(*s.LastSyncError.Time)
 			if errorTime.After(syncTime) {
-				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), *s.LastSyncError.Error)
+				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
 			}
 		}
 
