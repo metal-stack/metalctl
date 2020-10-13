@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	ipmodel "github.com/metal-stack/metal-go/api/client/ip"
 	networkmodel "github.com/metal-stack/metal-go/api/client/network"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/tag"
@@ -399,37 +400,37 @@ func networkApply(driver *metalgo.Driver) error {
 		if nar.ID == nil {
 			resp, err := driver.NetworkCreate(&nar)
 			if err != nil {
-				return fmt.Errorf("network update error:%v", err)
+				return fmt.Errorf("network create error:%v", err)
 			}
 			response = append(response, resp.Network)
 			continue
 		}
 
-		networkID := *nar.ID
-		p, err := driver.NetworkGet(networkID)
+		resp, err := driver.NetworkGet(*nar.ID)
 		if err != nil {
-			if e, ok := err.(*networkmodel.FindNetworkDefault); ok {
+			switch e := err.(type) {
+			case *networkmodel.FindNetworkDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("network get error:%v", err)
+					return fmt.Errorf("network get error:%v", e.Error())
 				}
+			default:
+				return fmt.Errorf("unexpected error on network get:%v", err)
 			}
 		}
-		if p.Network == nil {
+		if resp.Network == nil {
 			resp, err := driver.NetworkCreate(&nar)
-			if err != nil {
-				return fmt.Errorf("network update error:%v", err)
-			}
-			response = append(response, resp.Network)
-			continue
-		}
-		if p.Network.ID != nil {
-			resp, err := driver.NetworkUpdate(&nar)
 			if err != nil {
 				return fmt.Errorf("network create error:%v", err)
 			}
 			response = append(response, resp.Network)
 			continue
 		}
+
+		detailResp, err := driver.NetworkUpdate(&nar)
+		if err != nil {
+			return fmt.Errorf("network update error:%v", err)
+		}
+		response = append(response, detailResp.Network)
 	}
 	return detailer.Detail(response)
 }
@@ -518,7 +519,17 @@ func ipApply(driver *metalgo.Driver) error {
 		}
 		i, err := driver.IPGet(iar.IPAddress)
 		if err != nil {
-			// specific acquire
+			switch e := err.(type) {
+			case *ipmodel.FindIPDefault:
+				if e.Code() != http.StatusNotFound {
+					return fmt.Errorf("ip get error:%v", e.Error())
+				}
+			default:
+				return fmt.Errorf("unexpected error on ip get:%v", err)
+			}
+		}
+
+		if i == nil {
 			resp, err := driver.IPAllocate(&iar)
 			if err != nil {
 				return fmt.Errorf("IP allocate specific ip error:%v", err)
@@ -526,7 +537,7 @@ func ipApply(driver *metalgo.Driver) error {
 			response = append(response, resp.IP)
 			continue
 		}
-		// update
+
 		iur := metalgo.IPUpdateRequest{
 			IPAddress:   *i.IP.Ipaddress,
 			Name:        iar.Name,

@@ -3,10 +3,12 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/models"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
@@ -221,23 +223,33 @@ func projectApply() error {
 		if par.Meta.Id == "" {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return fmt.Errorf("Unable to create project:%s %v", par.Meta.Id, err)
+				return fmt.Errorf("project create error:%s %v", par.Meta.Id, err)
 			}
 			response = append(response, resp.Project)
 			continue
 		}
-		p, err := driver.ProjectGet(par.Meta.Id)
+
+		resp, err := driver.ProjectGet(par.Meta.Id)
 		if err != nil {
-			return fmt.Errorf("Unable to get project:%s %v", par.Meta.Id, err)
+			// TODO: Can be improved after: https://github.com/metal-stack/metal-api/issues/112
+			if !strings.Contains(err.Error(), "code = NotFound") {
+				return fmt.Errorf("project get error:%v", err)
+			}
 		}
-		if p.Project.Meta != nil {
-			resp, err := driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
+		if resp.Project == nil {
+			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return fmt.Errorf("Unable to update project:%s %v", par.Meta.Id, err)
+				return fmt.Errorf("project create error:%s %v", par.Meta.Id, err)
 			}
 			response = append(response, resp.Project)
 			continue
 		}
+
+		resp, err = driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
+		if err != nil {
+			return fmt.Errorf("project update error:%s %v", par.Meta.Id, err)
+		}
+		response = append(response, resp.Project)
 	}
 	return printer.Print(response)
 }
