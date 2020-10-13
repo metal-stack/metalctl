@@ -844,27 +844,43 @@ func (m MetalPartitionTablePrinter) Print(data []*models.V1PartitionResponse) {
 // Print a PartitionCapacity in a table
 func (m MetalPartitionCapacityTablePrinter) Print(pcs []*models.V1PartitionCapacity) {
 	sort.SliceStable(pcs, func(i, j int) bool { return *pcs[i].ID < *pcs[j].ID })
-	total := int32(0)
-	free := int32(0)
-	allocated := int32(0)
-	faulty := int32(0)
-	other := int32(0)
+	totalCount := int32(0)
+	freeCount := int32(0)
+	allocatedCount := int32(0)
+	faultyCount := int32(0)
+	otherCount := int32(0)
 	for _, pc := range pcs {
 		sort.SliceStable(pc.Servers, func(i, j int) bool { return *pc.Servers[i].Size < *pc.Servers[j].Size })
 		for _, c := range pc.Servers {
 			id := strValue(c.Size)
-			row := []string{*pc.ID, id, fmt.Sprintf("%d", *c.Total), fmt.Sprintf("%d", *c.Free), fmt.Sprintf("%d", *c.Allocated), fmt.Sprintf("%d", *c.Other), fmt.Sprintf("%d", *c.Faulty)}
-			total += *c.Total
-			free += *c.Free
-			allocated += *c.Allocated
-			other += *c.Other
-			faulty += *c.Faulty
+			allocated := fmt.Sprintf("%d", *c.Allocated)
+			total := fmt.Sprintf("%d", *c.Total)
+			free := fmt.Sprintf("%d", *c.Free)
+			faulty := fmt.Sprintf("%d", *c.Faulty)
+			other := fmt.Sprintf("%d", *c.Other)
+			if m.wide {
+				if len(c.Faultymachines) > 0 {
+					faulty = strings.Join(c.Faultymachines, "\n")
+				}
+				if len(c.Othermachines) > 0 {
+					other = strings.Join(c.Othermachines, "\n")
+				}
+			}
+			row := []string{*pc.ID, id, total, free, allocated, other, faulty}
+			totalCount += *c.Total
+			freeCount += *c.Free
+			allocatedCount += *c.Allocated
+			otherCount += *c.Other
+			faultyCount += *c.Faulty
 			m.addShortData(row, pc)
+			m.addWideData(row, pc)
 		}
 	}
-	footerRow := ([]string{"Total", "", fmt.Sprintf("%d", total), fmt.Sprintf("%d", free), fmt.Sprintf("%d", allocated), fmt.Sprintf("%d", other), fmt.Sprintf("%d", faulty)})
+	footerRow := ([]string{"Total", "", fmt.Sprintf("%d", totalCount), fmt.Sprintf("%d", freeCount), fmt.Sprintf("%d", allocatedCount), fmt.Sprintf("%d", otherCount), fmt.Sprintf("%d", faultyCount)})
 	m.addShortData(footerRow, nil)
+	m.addWideData(footerRow, nil)
 	m.shortHeader = []string{"Partition", "Size", "Total", "Free", "Allocated", "Other", "Faulty"}
+	m.wideHeader = m.shortHeader
 	m.render()
 }
 
