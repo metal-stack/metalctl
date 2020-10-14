@@ -986,8 +986,8 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 			m.addNetwork(prefix, c)
 		}
 	}
-	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Prefixes", "", "IPs", "Shared"}
-	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Prefixes", "Usage", "PrivateSuper", "Annotations", "Shared"}
+	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "", "IPs", "Shared"}
+	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
 	m.render()
 }
 
@@ -1032,13 +1032,13 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 	for k, v := range n.Labels {
 		as = append(as, k+"="+v)
 	}
-	shared := ""
+	shared := "false"
 	if n.Shared {
 		shared = "true"
 	}
 	annotations := strings.Join(as, "\n")
-	shortRow := []string{id, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortPrefixUsage, shortIPUsage, shared}
-	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper, annotations, shared}
+	shortRow := []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, shortPrefixUsage, shortIPUsage}
+	wideRow := []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, usage, privateSuper, annotations}
 	m.addShortData(shortRow, n)
 	m.addWideData(wideRow, n)
 }
