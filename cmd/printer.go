@@ -986,7 +986,7 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 			m.addNetwork(prefix, c)
 		}
 	}
-	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "", "IPs", "Shared"}
+	m.shortHeader = []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "", "IPs"}
 	m.wideHeader = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
 	m.render()
 }
