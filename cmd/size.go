@@ -116,7 +116,7 @@ func init() {
 func sizeList(driver *metalgo.Driver) error {
 	resp, err := driver.SizeList()
 	if err != nil {
-		return fmt.Errorf("size list error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Size)
 }
@@ -128,7 +128,7 @@ func sizeDescribe(driver *metalgo.Driver, args []string) error {
 	sizeID := args[0]
 	resp, err := driver.SizeGet(sizeID)
 	if err != nil {
-		return fmt.Errorf("size describe error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Size)
 }
@@ -184,7 +184,7 @@ func sizeCreate(driver *metalgo.Driver) error {
 
 	resp, err := driver.SizeCreate(icr)
 	if err != nil {
-		return fmt.Errorf("size create error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Size)
 }
@@ -199,7 +199,7 @@ func sizeUpdate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.SizeUpdate(icrs[0])
 	if err != nil {
-		return fmt.Errorf("size update error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Size)
 }
@@ -241,16 +241,16 @@ func sizeApply(driver *metalgo.Driver) error {
 			switch e := err.(type) {
 			case *sizemodel.FindSizeDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("size get error:%v", e.Error())
+					return formatSwaggerError(err)
 				}
 			default:
-				return fmt.Errorf("unexpected error on size get:%v", err)
+				return formatSwaggerError(err)
 			}
 		}
 		if p.Size == nil {
 			resp, err := driver.SizeCreate(iar)
 			if err != nil {
-				return fmt.Errorf("size create error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Size)
 			continue
@@ -258,7 +258,7 @@ func sizeApply(driver *metalgo.Driver) error {
 
 		resp, err := driver.SizeUpdate(iar)
 		if err != nil {
-			return fmt.Errorf("size update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		response = append(response, resp.Size)
 	}
@@ -272,7 +272,7 @@ func sizeDelete(driver *metalgo.Driver, args []string) error {
 	sizeID := args[0]
 	resp, err := driver.SizeDelete(sizeID)
 	if err != nil {
-		return fmt.Errorf("size delete error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Size)
 }
@@ -286,7 +286,7 @@ func sizeEdit(driver *metalgo.Driver, args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.SizeGet(sizeID)
 		if err != nil {
-			return nil, fmt.Errorf("size describe error:%v", err)
+			return nil, formatSwaggerError(err)
 		}
 		content, err := yaml.Marshal(resp.Size)
 		if err != nil {
@@ -304,7 +304,7 @@ func sizeEdit(driver *metalgo.Driver, args []string) error {
 		}
 		uresp, err := driver.SizeUpdate(iars[0])
 		if err != nil {
-			return fmt.Errorf("size update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		return detailer.Detail(uresp.Size)
 	}

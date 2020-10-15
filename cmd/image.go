@@ -106,7 +106,7 @@ func init() {
 func imageList(driver *metalgo.Driver) error {
 	resp, err := driver.ImageList()
 	if err != nil {
-		return fmt.Errorf("image list error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Image)
 }
@@ -118,7 +118,7 @@ func imageDescribe(driver *metalgo.Driver, args []string) error {
 	imageID := args[0]
 	resp, err := driver.ImageGet(imageID)
 	if err != nil {
-		return fmt.Errorf("image describe error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Image)
 }
@@ -149,7 +149,7 @@ func imageCreate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.ImageCreate(icr)
 	if err != nil {
-		return fmt.Errorf("image create error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Image)
 }
@@ -160,7 +160,7 @@ func imageUpdate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.ImageUpdate(iar)
 	if err != nil {
-		return fmt.Errorf("image update error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Image)
 }
@@ -197,14 +197,14 @@ func imageApply(driver *metalgo.Driver) error {
 		if err != nil {
 			if e, ok := err.(*imagemodel.FindImageDefault); ok {
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("image get error:%v", err)
+					return formatSwaggerError(err)
 				}
 			}
 		}
 		if image.Image == nil {
 			resp, err := driver.ImageCreate(iar)
 			if err != nil {
-				return fmt.Errorf("image update error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Image)
 			continue
@@ -212,7 +212,7 @@ func imageApply(driver *metalgo.Driver) error {
 		if image.Image.ID != nil {
 			resp, err := driver.ImageUpdate(iar)
 			if err != nil {
-				return fmt.Errorf("image create error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Image)
 			continue
@@ -228,7 +228,7 @@ func imageDelete(driver *metalgo.Driver, args []string) error {
 	imageID := args[0]
 	resp, err := driver.ImageDelete(imageID)
 	if err != nil {
-		return fmt.Errorf("image delete error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Image)
 }
@@ -242,7 +242,7 @@ func imageEdit(driver *metalgo.Driver, args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.ImageGet(imageID)
 		if err != nil {
-			return nil, fmt.Errorf("image describe error:%v", err)
+			return nil, formatSwaggerError(err)
 		}
 		content, err := yaml.Marshal(resp.Image)
 		if err != nil {
@@ -258,7 +258,7 @@ func imageEdit(driver *metalgo.Driver, args []string) error {
 		fmt.Printf("new image classification:%s\n", *iar.Classification)
 		uresp, err := driver.ImageUpdate(iar)
 		if err != nil {
-			return fmt.Errorf("image update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		return detailer.Detail(uresp.Image)
 	}
