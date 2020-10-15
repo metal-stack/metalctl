@@ -128,13 +128,13 @@ func projectList(driver *metalgo.Driver) error {
 		}
 		resp, err := driver.ProjectFind(pfr)
 		if err != nil {
-			return fmt.Errorf("project list error:%v", err)
+			return formatSwaggerError(err)
 		}
 		return printer.Print(resp.Project)
 	}
 	resp, err := driver.ProjectList()
 	if err != nil {
-		return fmt.Errorf("project list error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Project)
 }
@@ -146,7 +146,7 @@ func projectDescribe(driver *metalgo.Driver, args []string) error {
 	projectID := args[0]
 	resp, err := driver.ProjectGet(projectID)
 	if err != nil {
-		return fmt.Errorf("project describe error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Project)
 }
@@ -200,7 +200,7 @@ func projectCreate() error {
 
 	response, err := driver.ProjectCreate(pcr)
 	if err != nil {
-		return err
+		return formatSwaggerError(err)
 	}
 
 	return printer.Print(response.Project)
@@ -224,7 +224,7 @@ func projectApply() error {
 		if par.Meta.Id == "" {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return fmt.Errorf("project create error:%s %v", par.Meta.Id, err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Project)
 			continue
@@ -235,16 +235,16 @@ func projectApply() error {
 			switch e := err.(type) {
 			case *projectmodel.FindProjectDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("project get error:%v", e.Error())
+					return formatSwaggerError(err)
 				}
 			default:
-				return fmt.Errorf("unexpected error on project get:%v", err)
+				return formatSwaggerError(err)
 			}
 		}
 		if resp.Project == nil {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return fmt.Errorf("project create error:%s %v", par.Meta.Id, err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Project)
 			continue
@@ -252,7 +252,7 @@ func projectApply() error {
 
 		resp, err = driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
 		if err != nil {
-			return fmt.Errorf("project update error:%s %v", par.Meta.Id, err)
+			return formatSwaggerError(err)
 		}
 		response = append(response, resp.Project)
 	}
@@ -268,7 +268,7 @@ func projectEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.ProjectGet(id)
 		if err != nil {
-			return nil, fmt.Errorf("project get error:%v", err)
+			return nil, formatSwaggerError(err)
 		}
 		content, err := yaml.Marshal(resp.Project)
 		if err != nil {
@@ -286,7 +286,7 @@ func projectEdit(args []string) error {
 		}
 		uresp, err := driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: purs[0]})
 		if err != nil {
-			return err
+			return formatSwaggerError(err)
 		}
 		return printer.Print(uresp.Project)
 	}
@@ -302,7 +302,7 @@ func projectDelete(args []string) error {
 
 	response, err := driver.ProjectDelete(id)
 	if err != nil {
-		return err
+		return formatSwaggerError(err)
 	}
 
 	return printer.Print(response.Project)
@@ -317,6 +317,7 @@ func projectID(verb string, args []string) (string, error) {
 	}
 	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
 }
+
 func readProjectUpdateRequests(filename string) ([]v1.Project, error) {
 	var pcrs []v1.Project
 	var pcr v1.Project

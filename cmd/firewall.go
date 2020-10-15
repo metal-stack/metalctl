@@ -93,7 +93,7 @@ func firewallCreate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.FirewallCreate(fcr)
 	if err != nil {
-		return fmt.Errorf("firewall create error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Firewall)
 }
@@ -123,7 +123,7 @@ func firewallList(driver *metalgo.Driver) error {
 		resp, err = driver.FirewallList()
 	}
 	if err != nil {
-		return fmt.Errorf("firewall find error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Firewalls)
 }
@@ -135,7 +135,7 @@ func firewallDescribe(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.FirewallGet(firewallID)
 	if err != nil {
-		return fmt.Errorf("firewall describe error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Firewall)
 }
@@ -148,7 +148,7 @@ func firewallDestroy(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachineDelete(firewallID)
 	if err != nil {
-		return fmt.Errorf("firewall destroy error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return printer.Print(resp.Machine)
 }

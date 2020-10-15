@@ -400,7 +400,7 @@ func networkApply(driver *metalgo.Driver) error {
 		if nar.ID == nil {
 			resp, err := driver.NetworkCreate(&nar)
 			if err != nil {
-				return fmt.Errorf("network create error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Network)
 			continue
@@ -411,16 +411,16 @@ func networkApply(driver *metalgo.Driver) error {
 			switch e := err.(type) {
 			case *networkmodel.FindNetworkDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("network get error:%v", e.Error())
+					return formatSwaggerError(err)
 				}
 			default:
-				return fmt.Errorf("unexpected error on network get:%v", err)
+				return formatSwaggerError(err)
 			}
 		}
 		if resp.Network == nil {
 			resp, err := driver.NetworkCreate(&nar)
 			if err != nil {
-				return fmt.Errorf("network create error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.Network)
 			continue
@@ -428,7 +428,7 @@ func networkApply(driver *metalgo.Driver) error {
 
 		detailResp, err := driver.NetworkUpdate(&nar)
 		if err != nil {
-			return fmt.Errorf("network update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		response = append(response, detailResp.Network)
 	}
@@ -447,7 +447,7 @@ func networkPrefixAdd(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.NetworkAddPrefix(nur)
 	if err != nil {
-		return fmt.Errorf("prefix add error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -464,7 +464,7 @@ func networkPrefixRemove(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.NetworkRemovePrefix(nur)
 	if err != nil {
-		return fmt.Errorf("prefix remove error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -512,7 +512,7 @@ func ipApply(driver *metalgo.Driver) error {
 			// acquire
 			resp, err := driver.IPAllocate(&iar)
 			if err != nil {
-				return fmt.Errorf("IP allocate error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.IP)
 			continue
@@ -522,17 +522,17 @@ func ipApply(driver *metalgo.Driver) error {
 			switch e := err.(type) {
 			case *ipmodel.FindIPDefault:
 				if e.Code() != http.StatusNotFound {
-					return fmt.Errorf("ip get error:%v", e.Error())
+					return formatSwaggerError(err)
 				}
 			default:
-				return fmt.Errorf("unexpected error on ip get:%v", err)
+				return formatSwaggerError(err)
 			}
 		}
 
 		if i == nil {
 			resp, err := driver.IPAllocate(&iar)
 			if err != nil {
-				return fmt.Errorf("IP allocate specific ip error:%v", err)
+				return formatSwaggerError(err)
 			}
 			response = append(response, resp.IP)
 			continue
@@ -547,7 +547,7 @@ func ipApply(driver *metalgo.Driver) error {
 		}
 		resp, err := driver.IPUpdate(&iur)
 		if err != nil {
-			return fmt.Errorf("IP update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		response = append(response, resp.IP)
 	}
@@ -564,7 +564,7 @@ func ipEdit(driver *metalgo.Driver, args []string) error {
 	getFunc := func(ip string) ([]byte, error) {
 		resp, err := driver.IPGet(ip)
 		if err != nil {
-			return nil, fmt.Errorf("ip get error:%v", err)
+			return nil, formatSwaggerError(err)
 		}
 		content, err := yaml.Marshal(resp.IP)
 		if err != nil {
@@ -582,7 +582,7 @@ func ipEdit(driver *metalgo.Driver, args []string) error {
 		}
 		uresp, err := driver.IPUpdate(&iurs[0])
 		if err != nil {
-			return fmt.Errorf("size update error:%v", err)
+			return formatSwaggerError(err)
 		}
 		return detailer.Detail(uresp.IP)
 	}
@@ -622,7 +622,7 @@ func ipAllocate(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.IPAllocate(iar)
 	if err != nil {
-		return fmt.Errorf("IP allocate error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.IP)
 }
@@ -634,7 +634,7 @@ func ipFree(driver *metalgo.Driver, args []string) error {
 	ip := args[0]
 	resp, err := driver.IPFree(ip)
 	if err != nil {
-		return fmt.Errorf("IP free error:%v", err)
+		return formatSwaggerError(err)
 	}
 	return detailer.Detail(resp.IP)
 }
@@ -647,7 +647,7 @@ func getNetworkID(args []string) (string, error) {
 	networkID := args[0]
 	_, err := driver.NetworkGet(networkID)
 	if err != nil {
-		return "", fmt.Errorf("network with ID:%s does not exist", networkID)
+		return "", formatSwaggerError(err)
 	}
 	return networkID, nil
 }
@@ -666,7 +666,7 @@ func ipIssues(driver *metalgo.Driver) error {
 
 	iplist, err := driver.IPList()
 	if err != nil {
-		return fmt.Errorf("IP list error:%v", err)
+		return formatSwaggerError(err)
 	}
 	for _, ip := range iplist.IPs {
 		if *ip.Type == metalgo.IPTypeStatic {
