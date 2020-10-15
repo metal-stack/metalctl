@@ -14,7 +14,6 @@ import (
 	"github.com/metal-stack/metal-lib/httperrors"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
-	"gopkg.in/oleiade/reflections.v1"
 
 	"github.com/metal-stack/v"
 
@@ -271,7 +270,7 @@ func readFromFile(filePath string) (string, error) {
 }
 
 func formatSwaggerError(e error) error {
-	obj, err := reflections.GetField(e, "Payload")
+	obj, err := getField(e, "Payload")
 	if err != nil {
 		return e
 	}
