@@ -181,7 +181,6 @@ func init() {
 	networkAllocateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
 	networkAllocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
-	networkAllocateCmd.Flags().BoolP("nat", "", false, "if set to true, packets leaving this network get masqueraded behind interface ip")
 	networkAllocateCmd.MarkFlagRequired("name")
 	networkAllocateCmd.MarkFlagRequired("project")
 	networkAllocateCmd.MarkFlagRequired("partition")
@@ -292,7 +291,6 @@ func networkAllocate(driver *metalgo.Driver) error {
 			PartitionID: viper.GetString("partition"),
 			ProjectID:   viper.GetString("project"),
 			Shared:      viper.GetBool("shared"),
-			Nat:         viper.GetBool("nat"),
 			Labels:      labelsFromTags(viper.GetStringSlice("labels")),
 		}
 	}
