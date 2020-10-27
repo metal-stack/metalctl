@@ -1,9 +1,9 @@
 name: release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types:
+      - published
 
 env:
   GCS_BUCKET: images.metal-pod.io
@@ -21,6 +21,11 @@ jobs:
           service_account_key: ${{ secrets.GCP_SA_KEY }}
       - name: Make tag
         run: echo "::set-env name=TAG_NAME::${GITHUB_REF##*/}"
+      - name: Get release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build
         uses: fi-ts/action-docker-make@master
         with:
@@ -38,22 +43,12 @@ jobs:
           cp result/* metalctl/${TAG_NAME}
       - name: Upload image tarballs to GCS
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: metalctl ${{ github.ref }}
-          draft: false
-          prerelease: false
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-linux-amd64
           asset_name: metalctl-linux-amd64
           asset_content_type: application/octet-stream
@@ -62,7 +57,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-windows-amd64
           asset_name: metalctl-windows-amd64
           asset_content_type: application/octet-stream
@@ -71,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-darwin-amd64
           asset_name: metalctl-darwin-amd64
           asset_content_type: application/octet-stream
@@ -80,7 +75,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-linux-amd64.md5
           asset_name: metalctl-linux-amd64.md5
           asset_content_type: application/octet-stream
@@ -89,7 +84,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-windows-amd64.md5
           asset_name: metalctl-windows-amd64.md5
           asset_content_type: application/octet-stream
@@ -98,7 +93,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: result/metalctl-darwin-amd64.md5
           asset_name: metalctl-darwin-amd64.md5
           asset_content_type: application/octet-stream
