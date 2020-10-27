@@ -6,7 +6,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.9.0
 	github.com/metal-stack/masterdata-api v0.8.3
-	github.com/metal-stack/metal-go v0.10.1-0.20201027131629-4a80d86ecf78
+	github.com/metal-stack/metal-go v0.10.1-0.20201027132527-c60447898db0
 	github.com/metal-stack/metal-lib v0.6.3
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
@@ -27,4 +27,3 @@ require (
 )
 
 replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
-// replace github.com/metal-stack/metal-go => ../metal-go
