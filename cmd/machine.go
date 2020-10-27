@@ -754,7 +754,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 			return formatSwaggerError(err)
 		}
 
-		ipmi := resp.Machine.IPMI
+		ipmi := resp.Machine.Ipmi
 		intf := "lanplus"
 		if *ipmi.Interface != "" {
 			intf = *ipmi.Interface
@@ -822,7 +822,7 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 		}
 
 		hidden := "<hidden>"
-		resp.Machine.IPMI.Password = &hidden
+		resp.Machine.Ipmi.Password = &hidden
 		return detailer.Detail(resp.Machine)
 	}
 
