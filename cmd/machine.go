@@ -550,7 +550,7 @@ func machineList(driver *metalgo.Driver) error {
 		resp, err = driver.MachineList()
 	}
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machines)
 }
@@ -562,7 +562,7 @@ func machineDescribe(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.MachineGet(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Machine)
 }
@@ -575,7 +575,7 @@ func machineDestroy(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachineDelete(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -588,7 +588,7 @@ func machinePowerOn(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachinePowerOn(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -601,7 +601,7 @@ func machinePowerOff(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachinePowerOff(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -614,7 +614,7 @@ func machinePowerReset(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachinePowerReset(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -627,7 +627,7 @@ func machineBootBios(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachineBootBios(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -641,7 +641,7 @@ func machineIdentifyOn(driver *metalgo.Driver, args []string) error {
 	description := viper.GetString("description")
 	resp, err := driver.ChassisIdentifyLEDPowerOn(machineID, description)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -655,7 +655,7 @@ func machineIdentifyOff(driver *metalgo.Driver, args []string) error {
 	description := viper.GetString("description")
 	resp, err := driver.ChassisIdentifyLEDPowerOff(machineID, description)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -672,12 +672,12 @@ func machineReserve(driver *metalgo.Driver, args []string) error {
 	if remove {
 		resp, err = driver.MachineUnReserve(machineID)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 	} else {
 		resp, err = driver.MachineReserve(machineID, description)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 	}
 	return printer.Print(resp.Machine)
@@ -695,12 +695,12 @@ func machineLock(driver *metalgo.Driver, args []string) error {
 	if remove {
 		resp, err = driver.MachineUnLock(machineID)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 	} else {
 		resp, err = driver.MachineLock(machineID, description)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 	}
 	return printer.Print(resp.Machine)
@@ -717,7 +717,7 @@ func machineReinstall(driver *metalgo.Driver, args []string) error {
 	var resp *metalgo.MachineGetResponse
 	resp, err = driver.MachineReinstall(machineID, imageID, description)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machine)
 }
@@ -731,7 +731,7 @@ func machineLogs(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.MachineGet(machineID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	machine := resp.Machine
 	return printer.Print(machine.Events.Log)
@@ -751,7 +751,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 
 		resp, err := driver.MachineIPMIGet(machineID)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 
 		ipmi := resp.Machine.IPMI
@@ -818,7 +818,7 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 		}
 		resp, err := driver.MachineIPMIGet(machineID)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 
 		hidden := "<hidden>"
@@ -859,7 +859,7 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 	}
 	resp, err := driver.MachineIPMIList(mfr)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Machines)
 }
@@ -867,7 +867,7 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 func machineIssues(driver *metalgo.Driver) error {
 	resp, err := driver.MachineList()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	res := make(MachineIssues)
 
@@ -965,7 +965,7 @@ func getMachineID(args []string) (string, error) {
 	machineID := args[0]
 	_, err := driver.MachineGet(machineID)
 	if err != nil {
-		return "", formatSwaggerError(err)
+		return "", err
 	}
 	return machineID, nil
 }

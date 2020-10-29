@@ -108,7 +108,7 @@ func init() {
 func partitionList(driver *metalgo.Driver) error {
 	resp, err := driver.PartitionList()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Partition)
 }
@@ -120,14 +120,14 @@ func partitionDescribe(driver *metalgo.Driver, args []string) error {
 	partitionID := args[0]
 	resp, err := driver.PartitionGet(partitionID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Partition)
 }
 func partitionCapacity(driver *metalgo.Driver, args []string) error {
 	resp, err := driver.PartitionCapacity()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Capacity)
 }
@@ -162,7 +162,7 @@ func partitionCreate(driver *metalgo.Driver) error {
 
 	resp, err := driver.PartitionCreate(icr)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Partition)
 }
@@ -177,7 +177,7 @@ func partitionUpdate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.PartitionUpdate(icrs[0])
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Partition)
 }
@@ -219,16 +219,16 @@ func partitionApply(driver *metalgo.Driver) error {
 			switch e := err.(type) {
 			case *partitionmodel.FindPartitionDefault:
 				if e.Code() != http.StatusNotFound {
-					return formatSwaggerError(err)
+					return err
 				}
 			default:
-				return formatSwaggerError(err)
+				return err
 			}
 		}
 		if resp.Partition == nil {
 			resp, err := driver.PartitionCreate(iar)
 			if err != nil {
-				return formatSwaggerError(err)
+				return err
 			}
 			response = append(response, resp.Partition)
 			continue
@@ -236,7 +236,7 @@ func partitionApply(driver *metalgo.Driver) error {
 
 		updateResponse, err := driver.PartitionUpdate(iar)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		response = append(response, updateResponse.Partition)
 	}
@@ -250,7 +250,7 @@ func partitionDelete(driver *metalgo.Driver, args []string) error {
 	partitionID := args[0]
 	resp, err := driver.PartitionDelete(partitionID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Partition)
 }
@@ -264,7 +264,7 @@ func partitionEdit(driver *metalgo.Driver, args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.PartitionGet(partitionID)
 		if err != nil {
-			return nil, formatSwaggerError(err)
+			return nil, err
 		}
 		content, err := yaml.Marshal(resp.Partition)
 		if err != nil {
@@ -282,7 +282,7 @@ func partitionEdit(driver *metalgo.Driver, args []string) error {
 		}
 		uresp, err := driver.PartitionUpdate(iars[0])
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		return detailer.Detail(uresp.Partition)
 	}
