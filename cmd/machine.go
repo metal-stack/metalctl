@@ -928,8 +928,8 @@ func machineIssues(driver *metalgo.Driver) error {
 
 		if len(issues) > 0 {
 			res[*m.ID] = MachineAndIssues{
-				machine: *m,
-				issues:  issues,
+				Machine: *m,
+				Issues:  issues,
 			}
 		}
 	}
@@ -945,10 +945,10 @@ func machineIssues(driver *metalgo.Driver) error {
 				mWithIssues, ok := res[*m.ID]
 				if !ok {
 					mWithIssues = MachineAndIssues{
-						machine: m,
+						Machine: m,
 					}
 				}
-				mWithIssues.issues = append(mWithIssues.issues, fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs))
+				mWithIssues.Issues = append(mWithIssues.Issues, fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs))
 				res[*m.ID] = mWithIssues
 			}
 		}

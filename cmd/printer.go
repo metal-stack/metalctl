@@ -39,8 +39,8 @@ type (
 	}
 	// MachineAndIssues summarizes a machine with issues
 	MachineAndIssues struct {
-		machine models.V1MachineResponse
-		issues  []string
+		Machine models.V1MachineResponse
+		Issues  []string
 	}
 	// MachineIssues is map of a machine response to a list of machine issues
 	MachineIssues map[string]MachineAndIssues
@@ -692,7 +692,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 // Print a MetalSize in a table
 func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 	for id, machineWithIssues := range data {
-		machine := machineWithIssues.machine
+		machine := machineWithIssues.Machine
 
 		name := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
@@ -708,7 +708,7 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 		}
 
 		var issues []string
-		for _, issue := range machineWithIssues.issues {
+		for _, issue := range machineWithIssues.Issues {
 			issues = append(issues, fmt.Sprintf("- %s", issue))
 		}
 
