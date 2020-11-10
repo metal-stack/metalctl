@@ -78,7 +78,7 @@ func init() {
 func switchList(driver *metalgo.Driver) error {
 	resp, err := driver.SwitchList()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Switch)
 }
@@ -86,7 +86,7 @@ func switchList(driver *metalgo.Driver) error {
 func switchDetail(driver *metalgo.Driver) error {
 	resp, err := driver.SwitchList()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	result := make([]*models.V1SwitchResponse, 0)
 	filter := viper.GetString("filter")
@@ -116,7 +116,7 @@ func switchUpdate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.SwitchUpdate(surs[0])
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Switch)
 }
@@ -130,7 +130,7 @@ func switchEdit(driver *metalgo.Driver, args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.SwitchGet(switchID)
 		if err != nil {
-			return nil, formatSwaggerError(err)
+			return nil, err
 		}
 		content, err := yaml.Marshal(resp.Switch)
 		if err != nil {
@@ -145,7 +145,7 @@ func switchEdit(driver *metalgo.Driver, args []string) error {
 		}
 		uresp, err := driver.SwitchUpdate(items[0])
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		return detailer.Detail(uresp.Switch)
 	}
@@ -161,7 +161,7 @@ func switchReplace(driver *metalgo.Driver, args []string) error {
 
 	resp, err := driver.SwitchGet(switchID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	s := resp.Switch
 	sur := metalgo.SwitchUpdateRequest{
@@ -173,7 +173,7 @@ func switchReplace(driver *metalgo.Driver, args []string) error {
 	}
 	uresp, err := driver.SwitchUpdate(sur)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(uresp.Switch)
 }

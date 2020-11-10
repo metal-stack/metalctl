@@ -128,13 +128,13 @@ func projectList(driver *metalgo.Driver) error {
 		}
 		resp, err := driver.ProjectFind(pfr)
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		return printer.Print(resp.Project)
 	}
 	resp, err := driver.ProjectList()
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return printer.Print(resp.Project)
 }
@@ -146,7 +146,7 @@ func projectDescribe(driver *metalgo.Driver, args []string) error {
 	projectID := args[0]
 	resp, err := driver.ProjectGet(projectID)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 	return detailer.Detail(resp.Project)
 }
@@ -200,7 +200,7 @@ func projectCreate() error {
 
 	response, err := driver.ProjectCreate(pcr)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 
 	return printer.Print(response.Project)
@@ -224,7 +224,7 @@ func projectApply() error {
 		if par.Meta.Id == "" {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return formatSwaggerError(err)
+				return err
 			}
 			response = append(response, resp.Project)
 			continue
@@ -235,16 +235,16 @@ func projectApply() error {
 			switch e := err.(type) {
 			case *projectmodel.FindProjectDefault:
 				if e.Code() != http.StatusNotFound {
-					return formatSwaggerError(err)
+					return err
 				}
 			default:
-				return formatSwaggerError(err)
+				return err
 			}
 		}
 		if resp.Project == nil {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
-				return formatSwaggerError(err)
+				return err
 			}
 			response = append(response, resp.Project)
 			continue
@@ -252,7 +252,7 @@ func projectApply() error {
 
 		resp, err = driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		response = append(response, resp.Project)
 	}
@@ -268,7 +268,7 @@ func projectEdit(args []string) error {
 	getFunc := func(id string) ([]byte, error) {
 		resp, err := driver.ProjectGet(id)
 		if err != nil {
-			return nil, formatSwaggerError(err)
+			return nil, err
 		}
 		content, err := yaml.Marshal(resp.Project)
 		if err != nil {
@@ -286,7 +286,7 @@ func projectEdit(args []string) error {
 		}
 		uresp, err := driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: purs[0]})
 		if err != nil {
-			return formatSwaggerError(err)
+			return err
 		}
 		return printer.Print(uresp.Project)
 	}
@@ -302,7 +302,7 @@ func projectDelete(args []string) error {
 
 	response, err := driver.ProjectDelete(id)
 	if err != nil {
-		return formatSwaggerError(err)
+		return err
 	}
 
 	return printer.Print(response.Project)

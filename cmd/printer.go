@@ -472,8 +472,8 @@ func (m MetalProjectTablePrinter) Order(data []*models.V1ProjectResponse) {
 // Order ipmi data from machines
 func (m MachineWithIPMIPrinter) Order(data []*models.V1MachineIPMIResponse) {
 	sort.SliceStable(data, func(i, j int) bool {
-		if data[i].IPMI.Address != nil && data[j].IPMI.Address != nil {
-			return *data[i].IPMI.Address < *data[j].IPMI.Address
+		if data[i].Ipmi.Address != nil && data[j].Ipmi.Address != nil {
+			return *data[i].Ipmi.Address < *data[j].Ipmi.Address
 		}
 		return false
 	})
@@ -1120,7 +1120,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		cs := ""
 		ps := ""
 		bmcVersion := ""
-		ipmi := i.IPMI
+		ipmi := i.Ipmi
 		if ipmi != nil {
 			ipAddress = strValue(ipmi.Address)
 			mac = strValue(ipmi.Mac)
