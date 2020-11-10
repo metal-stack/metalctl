@@ -10,8 +10,6 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metal-lib/httperrors"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
@@ -267,16 +265,4 @@ func readFromFile(filePath string) (string, error) {
 		return "", fmt.Errorf("unable to read from given file %s error:%v", filePath, err)
 	}
 	return strings.TrimSpace(string(content)), nil
-}
-
-func formatSwaggerError(e error) error {
-	obj, err := getField(e, "Payload")
-	if err != nil {
-		return e
-	}
-	httperr, ok := obj.(*models.HttperrorsHTTPErrorResponse)
-	if ok {
-		return httperrors.FromDefaultResponse(httperr.Statuscode, httperr.Message, e)
-	}
-	return e
 }
