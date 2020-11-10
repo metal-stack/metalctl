@@ -72,8 +72,31 @@ should be removed with --remove.`,
 
 func init() {
 	addMachineCreateFlags(firewallCreateCmd, "firewall")
-	firewallListCmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
-	firewallListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
+
+	firewallListCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Size, "size", "", "", "size to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Name, "name", "", "", "allocation name to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Project, "project", "", "", "allocation project to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Image, "image", "", "", "allocation image to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Hostname, "hostname", "", "", "allocation hostname to filter [optional]")
+	firewallListCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
+	firewallListCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	firewallListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion(driver)
+	})
+	firewallListCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return sizeListCompletion(driver)
+	})
+	firewallListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return projectListCompletion(driver)
+	})
+	firewallListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineListCompletion(driver)
+	})
+	firewallListCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return imageListCompletion(driver)
+	})
 
 	firewallCmd.AddCommand(firewallCreateCmd)
 	firewallCmd.AddCommand(firewallListCmd)
@@ -103,20 +126,36 @@ func firewallList(driver *metalgo.Driver) error {
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname") ||
 		atLeastOneViperStringSliceFlagGiven("tags") {
-		ffr := &metalgo.FirewallFindRequest{
-			MachineFindRequest: metalgo.MachineFindRequest{
-				ID:                 viperString("id"),
-				PartitionID:        viperString("partition"),
-				SizeID:             viperString("size"),
-				AllocationName:     viperString("name"),
-				AllocationProject:  viperString("project"),
-				AllocationImageID:  viperString("image"),
-				AllocationHostname: viperString("hostname"),
-				Tags:               viperStringSlice("tags"),
-			},
+		ffr := &metalgo.FirewallFindRequest{}
+		if filterOpts.ID != "" {
+			ffr.ID = &filterOpts.ID
 		}
-		if atLeastOneViperStringFlagGiven("mac") {
-			ffr.NicsMacAddresses = []string{*viperString("mac")}
+		if filterOpts.Partition != "" {
+			ffr.PartitionID = &filterOpts.Partition
+		}
+		if filterOpts.Size != "" {
+			ffr.SizeID = &filterOpts.Size
+		}
+		if filterOpts.Name != "" {
+			ffr.AllocationName = &filterOpts.Name
+		}
+		if filterOpts.Project != "" {
+			ffr.AllocationProject = &filterOpts.Project
+		}
+		if filterOpts.Image != "" {
+			ffr.AllocationImageID = &filterOpts.Image
+		}
+		if filterOpts.Hostname != "" {
+			ffr.AllocationHostname = &filterOpts.Hostname
+		}
+		if filterOpts.Hostname != "" {
+			ffr.AllocationHostname = &filterOpts.Hostname
+		}
+		if filterOpts.Mac != "" {
+			ffr.NicsMacAddresses = []string{filterOpts.Mac}
+		}
+		if len(filterOpts.Tags) > 0 {
+			ffr.Tags = filterOpts.Tags
 		}
 		resp, err = driver.FirewallFind(ffr)
 	} else {

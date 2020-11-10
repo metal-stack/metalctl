@@ -34,7 +34,7 @@ const (
 )
 
 var (
-	filterOpts *FilterOpts
+	filterOpts = &FilterOpts{}
 
 	machineCmd = &cobra.Command{
 		Use:   "machine",
@@ -265,8 +265,6 @@ In case the machine did not register properly a direct ipmi console access is av
 func init() {
 	addMachineCreateFlags(machineCreateCmd, "machine")
 	machineCmd.AddCommand(machineCreateCmd)
-
-	filterOpts = &FilterOpts{}
 
 	machineListCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
 	machineListCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
