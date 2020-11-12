@@ -967,8 +967,10 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 		*nn = append(*nn, &network{parent: n})
 	}
 	for _, n := range data {
-		if !nn.appendChild(n.Parentnetworkid, n) {
-			*nn = append(*nn, &network{parent: n})
+		if n.Parentnetworkid != "" {
+			if !nn.appendChild(n.Parentnetworkid, n) {
+				*nn = append(*nn, &network{parent: n})
+			}
 		}
 	}
 	for _, n := range *nn {
