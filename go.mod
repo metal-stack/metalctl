@@ -10,7 +10,7 @@ require (
 	github.com/go-openapi/swag v0.19.11
 	github.com/go-openapi/validate v0.19.12
 	github.com/metal-stack/masterdata-api v0.8.3
-	github.com/metal-stack/metal-go v0.11.1-0.20201112083418-6abd86b6d538
+	github.com/metal-stack/metal-go v0.11.1
 	github.com/metal-stack/metal-lib v0.6.4
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2
