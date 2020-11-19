@@ -20,7 +20,7 @@ jobs:
           service_account_email: ${{ secrets.GCP_SA_EMAIL }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
       - name: Make tag
-        run: echo "::set-env name=TAG_NAME::${GITHUB_REF##*/}"
+        run: echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
       - name: Get release
         id: get_release
         uses: bruceadams/get-release@v1.2.1
