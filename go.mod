@@ -26,3 +26,5 @@ require (
 )
 
 replace github.com/coreos/etcd => github.com/coreos/etcd v3.3.18+incompatible
+
+replace github.com/metal-stack/metal-go v0.11.1 => github.com/metal-stack/metal-go v0.11.2-0.20201120095601-7fa10edd6554
