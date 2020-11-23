@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -92,6 +93,34 @@ func init() {
 	partitionCreateCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 	partitionCreateCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
+	partitionApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl partition describe partition-a > a.yaml
+# vi a.yaml
+## either via stdin
+# cat a.yaml | metalctl partition apply -f -
+## or via file
+# metalctl partition apply -f a.yaml`)
+	err := partitionApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	partitionUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl partition describe partition-a > a.yaml
+# vi a.yaml
+## either via stdin
+# cat a.yaml | metalctl partition update -f -
+## or via file
+# metalctl partition update -f a.yaml`)
+	err = partitionUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	partitionCmd.AddCommand(partitionListCmd)
 	partitionCmd.AddCommand(partitionCapacityCmd)
 	partitionCmd.AddCommand(partitionDescribeCmd)
@@ -165,10 +194,6 @@ func partitionCreate(driver *metalgo.Driver) error {
 }
 
 func partitionUpdate(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	icrs, err := readPartitionCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -201,10 +226,6 @@ func readPartitionCreateRequests(filename string) ([]metalgo.PartitionCreateRequ
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func partitionApply(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	var iars []metalgo.PartitionCreateRequest
 	var iar metalgo.PartitionCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {

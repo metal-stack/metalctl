@@ -87,15 +87,20 @@ func init() {
 	}
 
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-	Example project update:
+Example project update:
 
-	# cloudctl project describe project1 -o yaml > project1.yaml
-	# vi project1.yaml
-	## either via stdin
-	# cat project1.yaml | cloudctl project apply -f -
-	## or via file
-	# cloudctl project apply -f project1.yaml
-	`)
+# cloudctl project describe project1 -o yaml > project1.yaml
+# vi project1.yaml
+## either via stdin
+# cat project1.yaml | cloudctl project apply -f -
+## or via file
+# cloudctl project apply -f project1.yaml
+`)
+	err = projectApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	projectListCmd.Flags().StringP("name", "", "", "Name of the project.")
 	projectListCmd.Flags().StringP("id", "", "", "ID of the project.")
 	projectListCmd.Flags().StringP("tenant", "", "", "tenant of this project.")

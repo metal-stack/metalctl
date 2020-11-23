@@ -70,8 +70,14 @@ func init() {
 	switchCmd.AddCommand(switchDetailCmd)
 	switchCmd.AddCommand(switchReplaceCmd)
 
+	switchUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
+	err := switchUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-	err := viper.BindPFlags(switchDetailCmd.Flags())
+	err = viper.BindPFlags(switchDetailCmd.Flags())
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -112,10 +118,6 @@ func switchDetail(driver *metalgo.Driver) error {
 }
 
 func switchUpdate(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	surs, err := readSwitchUpdateRequests(viper.GetString("file"))
 	if err != nil {
 		return err

@@ -106,16 +106,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 `)
 	rootCmd.PersistentFlags().Bool("no-headers", false, "do not print headers of table output format (default print headers)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
-	rootCmd.PersistentFlags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example image update:
-
-# metalctl image describe ubuntu-19.04 > ubuntu.yaml
-# vi ubuntu.yaml
-## either via stdin
-# cat ubuntu.yaml | metalctl image update -f -
-## or via file
-# metalctl image update -f ubuntu.yaml
-`)
 
 	err := rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputFormatListCompletion()

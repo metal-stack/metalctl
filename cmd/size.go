@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/dustin/go-humanize"
@@ -96,6 +97,34 @@ func init() {
 	sizeCreateCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
 	sizeCreateCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
 
+	sizeApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl size describe c1-xlarge-x86 > c1-xlarge-x86.yaml
+# vi c1-xlarge-x86.yaml
+## either via stdin
+# cat c1-xlarge-x86.yaml | metalctl size apply -f -
+## or via file
+# metalctl size apply -f c1-xlarge-x86.yaml`)
+	err := sizeApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	sizeUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl size describe c1-xlarge-x86 > c1-xlarge-x86.yaml
+# vi c1-xlarge-x86.yaml
+## either via stdin
+# cat c1-xlarge-x86.yaml | metalctl size update -f -
+## or via file
+# metalctl size update -f c1-xlarge-x86.yaml`)
+	err = sizeUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	sizeTryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
 	sizeTryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	sizeTryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
@@ -187,10 +216,6 @@ func sizeCreate(driver *metalgo.Driver) error {
 }
 
 func sizeUpdate(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	icrs, err := readSizeCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -223,10 +248,6 @@ func readSizeCreateRequests(filename string) ([]metalgo.SizeCreateRequest, error
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func sizeApply(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	var iars []metalgo.SizeCreateRequest
 	var iar metalgo.SizeCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {

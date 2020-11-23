@@ -202,6 +202,12 @@ func init() {
 	networkIPAllocateCmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 	networkIPAllocateCmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
 
+	networkIPApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
+	err = networkIPApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	networkIPListCmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
 	networkIPListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
 	networkIPListCmd.Flags().StringP("prefix", "", "", "prefx to filter [optional]")
@@ -221,6 +227,20 @@ func init() {
 	networkPrefixRemoveCmd.Flags().StringP("prefix", "", "", "prefix to remove.")
 	networkPrefixCmd.AddCommand(networkPrefixAddCmd)
 	networkPrefixCmd.AddCommand(networkPrefixRemoveCmd)
+
+	networkApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl network describe internet > internet.yaml
+# vi internet.yaml
+## either via stdin
+# cat internet.yaml | metalctl network apply -f -
+## or via file
+# metalctl network apply -f internet.yaml`)
+	err = networkApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		panic(err)
+	}
 
 	networkListCmd.Flags().StringP("id", "", "", "ID to filter [optional]")
 	networkListCmd.Flags().StringP("name", "", "", "name to filter [optional]")
@@ -390,10 +410,6 @@ func networkCreate(driver *metalgo.Driver) error {
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func networkApply(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	var iars []metalgo.NetworkCreateRequest
 	var iar metalgo.NetworkCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -505,10 +521,6 @@ func ipList(driver *metalgo.Driver) error {
 }
 
 func ipApply(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	var iars []metalgo.IPAllocateRequest
 	var iar metalgo.IPAllocateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {

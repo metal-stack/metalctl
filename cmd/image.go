@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -84,6 +85,34 @@ func init() {
 	imageCreateCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
 	imageCreateCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
 
+	imageUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl image describe ubuntu-19.04 > ubuntu.yaml
+# vi ubuntu.yaml
+## either via stdin
+# cat ubuntu.yaml | metalctl image update -f -
+## or via file
+# metalctl image update -f ubuntu.yaml`)
+	err := imageUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	imageApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl image describe ubuntu-19.04 > ubuntu.yaml
+# vi ubuntu.yaml
+## either via stdin
+# cat ubuntu.yaml | metalctl image apply -f -
+## or via file
+# metalctl image apply -f ubuntu.yaml`)
+	err = imageApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	imageCmd.AddCommand(imageListCmd)
 	imageCmd.AddCommand(imageDescribeCmd)
 	imageCmd.AddCommand(imageCreateCmd)
@@ -144,10 +173,6 @@ func imageCreate(driver *metalgo.Driver) error {
 	return detailer.Detail(resp.Image)
 }
 func imageUpdate(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	iar, err := readImageCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -173,10 +198,6 @@ func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func imageApply(driver *metalgo.Driver) error {
-	if viper.GetString("file") == "" {
-		return fmt.Errorf("file must be set")
-	}
-
 	var iars []metalgo.ImageCreateRequest
 	var iar metalgo.ImageCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
