@@ -22,7 +22,6 @@ import (
 
 const (
 	bark            = "\U0001F6A7"
-	blueDiamond     = "\U0001F539"
 	circle          = "\U000021BB"
 	dot             = "\U000025CF"
 	exclamationMark = "\U00002757"
