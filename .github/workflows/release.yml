@@ -21,13 +21,6 @@ jobs:
           service_account_email: ${{ secrets.GCP_SA_EMAIL }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Docker Login
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ secrets.DOCKER_REGISTRY }}
-          username: ${{ secrets.DOCKER_REGISTRY_USER }}
-          password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
-
       - name: Lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -45,6 +38,8 @@ jobs:
       - name: Build
         uses: fi-ts/action-docker-make@master
         with:
+          username: ${{ secrets.DOCKER_REGISTRY_USER }}
+          password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
           args: >
             --no-cache
             --build-only metalctl-slug
