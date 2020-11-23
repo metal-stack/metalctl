@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/dustin/go-humanize"
@@ -96,8 +97,14 @@ func init() {
 	sizeCreateCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
 	sizeCreateCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
 
-	sizeUpdateCmd.MarkFlagRequired("file")
-	sizeApplyCmd.MarkFlagRequired("file")
+	err := sizeUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = sizeApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	sizeTryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
 	sizeTryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")

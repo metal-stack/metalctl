@@ -70,9 +70,16 @@ func init() {
 	switchCmd.AddCommand(switchDetailCmd)
 	switchCmd.AddCommand(switchReplaceCmd)
 
-	switchUpdateCmd.MarkFlagRequired("file")
+	err := switchUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-	viper.BindPFlags(switchDetailCmd.Flags())
+	err = viper.BindPFlags(switchDetailCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func switchList(driver *metalgo.Driver) error {

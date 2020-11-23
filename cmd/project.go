@@ -107,7 +107,10 @@ func init() {
 	projectCmd.AddCommand(projectApplyCmd)
 	projectCmd.AddCommand(projectEditCmd)
 
-	viper.BindPFlags(projectListCmd.Flags())
+	err = viper.BindPFlags(projectListCmd.Flags())
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func projectList(driver *metalgo.Driver) error {

@@ -38,7 +38,10 @@ var (
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
 	bindPFlags = func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		err := viper.BindPFlags(cmd.Flags())
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 	}
 
 	rootCmd = &cobra.Command{
@@ -114,12 +117,18 @@ Example image update:
 # metalctl image update -f ubuntu.yaml
 `)
 
-	rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputFormatListCompletion()
 	})
-	rootCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = rootCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputOrderListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(zshCompletionCmd)
@@ -139,7 +148,7 @@ Example image update:
 
 	rootCmd.AddCommand(updateCmd)
 
-	err := viper.BindPFlags(rootCmd.PersistentFlags())
+	err = viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}

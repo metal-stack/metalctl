@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -181,9 +182,18 @@ func init() {
 	networkAllocateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
 	networkAllocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
-	networkAllocateCmd.MarkFlagRequired("name")
-	networkAllocateCmd.MarkFlagRequired("project")
-	networkAllocateCmd.MarkFlagRequired("partition")
+	err := networkAllocateCmd.MarkFlagRequired("name")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = networkAllocateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = networkAllocateCmd.MarkFlagRequired("partition")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	networkIPAllocateCmd.Flags().StringP("description", "d", "", "description of the IP to allocate. [optional]")
 	networkIPAllocateCmd.Flags().StringP("name", "n", "", "name of the IP to allocate. [optional]")
@@ -192,7 +202,10 @@ func init() {
 	networkIPAllocateCmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 	networkIPAllocateCmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
 
-	networkIPApplyCmd.MarkFlagRequired("file")
+	err = networkIPApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	networkIPListCmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
 	networkIPListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -214,7 +227,10 @@ func init() {
 	networkPrefixCmd.AddCommand(networkPrefixAddCmd)
 	networkPrefixCmd.AddCommand(networkPrefixRemoveCmd)
 
-	networkApplyCmd.MarkFlagRequired("file")
+	err = networkApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	networkListCmd.Flags().StringP("id", "", "", "ID to filter [optional]")
 	networkListCmd.Flags().StringP("name", "", "", "name to filter [optional]")

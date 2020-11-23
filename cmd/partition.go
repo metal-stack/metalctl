@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -92,8 +93,14 @@ func init() {
 	partitionCreateCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 	partitionCreateCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
-	partitionUpdateCmd.MarkFlagRequired("file")
-	partitionApplyCmd.MarkFlagRequired("file")
+	err := partitionUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = partitionApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	partitionCmd.AddCommand(partitionListCmd)
 	partitionCmd.AddCommand(partitionCapacityCmd)
