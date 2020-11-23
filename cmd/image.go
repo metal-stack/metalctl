@@ -84,16 +84,6 @@ func init() {
 	imageCreateCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
 	imageCreateCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
 
-	// TODO howto cope with these errors ?
-	// err := imageUpdateCmd.MarkFlagRequired("file")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// err = imageApplyCmd.MarkFlagRequired("file")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	imageCmd.AddCommand(imageListCmd)
 	imageCmd.AddCommand(imageDescribeCmd)
 	imageCmd.AddCommand(imageCreateCmd)
@@ -154,6 +144,10 @@ func imageCreate(driver *metalgo.Driver) error {
 	return detailer.Detail(resp.Image)
 }
 func imageUpdate(driver *metalgo.Driver) error {
+	if viper.GetString("file") == "" {
+		return fmt.Errorf("file must be set")
+	}
+
 	iar, err := readImageCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -179,6 +173,10 @@ func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func imageApply(driver *metalgo.Driver) error {
+	if viper.GetString("file") == "" {
+		return fmt.Errorf("file must be set")
+	}
+
 	var iars []metalgo.ImageCreateRequest
 	var iar metalgo.ImageCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
