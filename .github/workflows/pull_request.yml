@@ -19,12 +19,6 @@ jobs:
         id: fork
         run: '["${{ secrets.DOCKER_REGISTRY_TOKEN }}" == ""] && echo "::set-output name=is_fork_pr::true" || echo "::set-output name=is_fork_pr::false"'
 
-      - uses: google-github-actions/setup-gcloud@master
-        with:
-          version: '278.0.0'
-          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-
       - name: Lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -54,15 +48,4 @@ jobs:
             --build-only metalctl-slug
             -x rule2,rule3
             --summary
-        if: steps.fork.outputs.is_fork_pr == 'false'
-
-      - name: Prepare upload
-        run: |
-          mkdir -p metalctl/pull-requests/${TAG_NAME}
-          sudo chown -R $(id -u):$(id -g) result
-          mv result/* metalctl/pull-requests/${TAG_NAME}
-        if: steps.fork.outputs.is_fork_pr == 'false'
-
-      - name: Upload image tarballs to GCS
-        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
         if: steps.fork.outputs.is_fork_pr == 'false'

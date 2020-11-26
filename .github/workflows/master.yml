@@ -15,12 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - uses: google-github-actions/setup-gcloud@master
-        with:
-          version: '278.0.0'
-          service_account_email: ${{ secrets.GCP_SA_EMAIL }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-
       - name: Lint
         uses: golangci/golangci-lint-action@v2
         with:
@@ -36,15 +30,6 @@ jobs:
             --build-only metalctl-master
             -x rule2,rule3
             --summary
-
-      - name: Prepare upload
-        run: |
-          mkdir -p metalctl
-          sudo chown -R $(id -u):$(id -g) result
-          mv result/* metalctl
-
-      - name: Upload image tarballs to GCS
-        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
 
       - uses: release-drafter/release-drafter@v5
         env:
