@@ -1,8 +1,8 @@
 ---
 version: '1'
 name: metalctl
-username: metalstack
-registry-host: docker.io
+username: metal-stack
+registry-host: ghcr.io
 after:
   - mkdir -p tmp
   - mkdir -p result

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/base64"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -296,21 +297,36 @@ func init() {
 	machineListCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineListCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	machineListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := machineListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion(driver)
 	})
-	machineListCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineListCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return sizeListCompletion(driver)
 	})
-	machineListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion(driver)
 	})
-	machineListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return machineListCompletion(driver)
 	})
-	machineListCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineListCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return imageListCompletion(driver)
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
@@ -322,18 +338,30 @@ func init() {
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineIpmiCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	machineIpmiCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = machineIpmiCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion(driver)
 	})
-	machineIpmiCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineIpmiCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return sizeListCompletion(driver)
 	})
-	machineIpmiCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineIpmiCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion(driver)
 	})
-	machineIpmiCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineIpmiCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return machineListCompletion(driver)
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	machineCmd.AddCommand(machineListCmd)
 	machineCmd.AddCommand(machineDestroyCmd)
@@ -364,7 +392,10 @@ func init() {
 
 	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
 	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
-	machineReinstallCmd.MarkFlagRequired("image")
+	err = machineReinstallCmd.MarkFlagRequired("image")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	machineCmd.AddCommand(machineReinstallCmd)
 
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
@@ -406,7 +437,10 @@ NETWORK specifies the name or id of an existing network.
 MODE cane be omitted or one of:
 	auto	IP address is automatically acquired from the given network
 	noauto	IP address for the given network must be provided via --ips`)
-		cmd.MarkFlagRequired("networks")
+		err := cmd.MarkFlagRequired("networks")
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 	case "firewall":
 		cmd.Flags().StringSlice("ips", []string{},
 			`Sets the firewall's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
@@ -419,38 +453,70 @@ NETWORK specifies the id of an existing network.
 MODE can be omitted or one of:
 	auto	IP address is automatically acquired from the given network
 	noauto	No automatic IP address acquisition`)
-		cmd.MarkFlagRequired("networks")
+		err := cmd.MarkFlagRequired("networks")
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 	default:
-		panic(fmt.Errorf("illegal name: %s. Must be one of (machine, firewall)", name))
+		log.Fatal(fmt.Errorf("illegal name: %s. Must be one of (machine, firewall)", name))
 	}
 
-	cmd.MarkFlagRequired("hostname")
-	cmd.MarkFlagRequired("image")
-	cmd.MarkFlagRequired("project")
+	err := cmd.MarkFlagRequired("hostname")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.MarkFlagRequired("image")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	// Completion for arguments
-	cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return networkListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("ips", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("ips", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return ipListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return partitionListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return sizeListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return projectListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return machineListCompletion(driver)
 	})
-	cmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = cmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return imageListCompletion(driver)
 	})
-
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func machineCreate(driver *metalgo.Driver) error {

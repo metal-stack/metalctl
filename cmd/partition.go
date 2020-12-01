@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -92,8 +93,33 @@ func init() {
 	partitionCreateCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 	partitionCreateCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
-	partitionUpdateCmd.MarkFlagRequired("file")
-	partitionApplyCmd.MarkFlagRequired("file")
+	partitionApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl partition describe partition-a > a.yaml
+# vi a.yaml
+## either via stdin
+# cat a.yaml | metalctl partition apply -f -
+## or via file
+# metalctl partition apply -f a.yaml`)
+	err := partitionApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	partitionUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl partition describe partition-a > a.yaml
+# vi a.yaml
+## either via stdin
+# cat a.yaml | metalctl partition update -f -
+## or via file
+# metalctl partition update -f a.yaml`)
+	err = partitionUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	partitionCmd.AddCommand(partitionListCmd)
 	partitionCmd.AddCommand(partitionCapacityCmd)
