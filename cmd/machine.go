@@ -162,9 +162,29 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootBiosCmd = &cobra.Command{
 		Use:   "bios <machine ID>",
 		Short: "boot a machine into BIOS",
-		Long:  "the machine will boot into bios after a power cycle/reset.",
+		Long:  "the machine will boot into bios.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootBios(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	machineBootPxeCmd = &cobra.Command{
+		Use:   "pxe <machine ID>",
+		Short: "boot a machine from PXE",
+		Long:  "the machine will boot from PXE.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineBootPxe(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	machineBootDiskCmd = &cobra.Command{
+		Use:   "disk <machine ID>",
+		Short: "boot a machine from disk",
+		Long:  "the machine will boot from disk	.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineBootDisk(driver, args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -351,6 +371,8 @@ func init() {
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
 	machinePowerCmd.AddCommand(machinePowerResetCmd)
 	machinePowerCmd.AddCommand(machineBootBiosCmd)
+	machinePowerCmd.AddCommand(machineBootDiskCmd)
+	machinePowerCmd.AddCommand(machineBootPxeCmd)
 	machineCmd.AddCommand(machinePowerCmd)
 
 	machineIdentifyOnCmd.Flags().StringP("description", "d", "", "description of the reason for chassis identify LED turn-on.")
@@ -690,6 +712,32 @@ func machineBootBios(driver *metalgo.Driver, args []string) error {
 	}
 
 	resp, err := driver.MachineBootBios(machineID)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Machine)
+}
+
+func machineBootDisk(driver *metalgo.Driver, args []string) error {
+	machineID, err := getMachineID(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := driver.MachineBootDisk(machineID)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Machine)
+}
+
+func machineBootPxe(driver *metalgo.Driver, args []string) error {
+	machineID, err := getMachineID(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := driver.MachineBootPxe(machineID)
 	if err != nil {
 		return err
 	}
