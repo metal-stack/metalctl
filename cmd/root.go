@@ -121,7 +121,8 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	}
 
 	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(zshCompletionCmd)
+	completionCmd.AddCommand(bashCompletionCmd)
+	completionCmd.AddCommand(zshCompletionCmd)
 	rootCmd.AddCommand(machineCmd)
 	rootCmd.AddCommand(firewallCmd)
 	rootCmd.AddCommand(projectCmd)

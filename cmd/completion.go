@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// toplevel completion remains for compatibility
 var completionCmd = &cobra.Command{
 	Use:   "completion",
 	Short: "Generates bash completion scripts",
@@ -28,12 +29,32 @@ To configure your bash shell to load completions for each session add to your ba
 	},
 }
 
+var bashCompletionCmd = &cobra.Command{
+	Use:   "bash",
+	Short: "Generates bash completion scripts",
+	Long: `To load completion run
+
+. <(metalctl completion bash)
+
+To configure your bash shell to load completions for each session add to your bashrc
+
+# ~/.bashrc or ~/.profile
+. <(metalctl completion bash)
+`,
+	Run: func(cmd *cobra.Command, args []string) {
+		err := rootCmd.GenBashCompletion(os.Stdout)
+		if err != nil {
+			log.Fatalln(err)
+		}
+	},
+}
+
 var zshCompletionCmd = &cobra.Command{
-	Use:   "zsh-completion",
+	Use:   "zsh",
 	Short: "Generates Z shell completion scripts",
 	Long: `To load completion run
 
-. <(metalctl zsh-completion)
+. <(metalctl completion zsh)
 
 To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
 
