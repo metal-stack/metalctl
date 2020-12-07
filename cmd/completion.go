@@ -54,7 +54,7 @@ var zshCompletionCmd = &cobra.Command{
 	Short: "Generates Z shell completion scripts",
 	Long: `To load completion run
 
-. <(metalctl zsh-completion)
+. <(metalctl completion zsh)
 
 To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
 
