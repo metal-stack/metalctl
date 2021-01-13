@@ -182,7 +182,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootDiskCmd = &cobra.Command{
 		Use:   "disk <machine ID>",
 		Short: "boot a machine from disk",
-		Long: "the machine will boot from disk	.",
+		Long:  "the machine will boot from disk	.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootDisk(driver, args)
 		},
@@ -662,7 +662,7 @@ func machineDestroy(driver *metalgo.Driver, args []string) error {
 	}
 
 	if viper.GetBool("remove-from-database") {
-		if viper.GetBool("yes-i-really-mean-it") {
+		if !viper.GetBool("yes-i-really-mean-it") {
 			return fmt.Errorf("remove-from-database is set but you forgot to add --yes-i-really-mean-it")
 		}
 		resp, err := driver.MachineDeleteFromDatabase(machineID)
