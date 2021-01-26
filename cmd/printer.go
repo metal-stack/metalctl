@@ -1074,13 +1074,17 @@ func (m MetalIPTablePrinter) Print(data []*models.V1IPResponse) {
 		}
 		name := truncate(i.Name, "...", 30)
 		description := truncate(i.Description, "...", 30)
+		allocationUUID := ""
+		if i.Allocationuuid != nil {
+			allocationUUID = *i.Allocationuuid
+		}
 		row := []string{ipaddress, description, name, network, project, ipType, strings.Join(shortTags, "\n")}
-		wide := []string{ipaddress, i.Description, i.Name, network, project, ipType, strings.Join(i.Tags, "\n")}
+		wide := []string{ipaddress, allocationUUID, i.Description, i.Name, network, project, ipType, strings.Join(i.Tags, "\n")}
 		m.addShortData(row, i)
 		m.addWideData(wide, i)
 	}
 	m.shortHeader = []string{"IP", "Description", "Name", "Network", "Project", "Type", "Tags"}
-	m.wideHeader = []string{"IP", "Description", "Name", "Network", "Project", "Type", "Tags"}
+	m.wideHeader = []string{"IP", "Allocation UUID", "Description", "Name", "Network", "Project", "Type", "Tags"}
 	m.render()
 }
 
