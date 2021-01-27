@@ -1014,12 +1014,12 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 	}
 
 	shortPrefixUsage := ""
-	if len(n.Usage.AvailablePrefixes) > 0 {
-		prefixUse := float64(*n.Usage.UsedPrefixes) / float64(*n.Usage.AvailableSmallestPrefixes)
+	if *n.Usage.AvailablePrefixes > 0 {
+		prefixUse := float64(*n.Usage.UsedPrefixes) / float64(*n.Usage.AvailablePrefixes)
 		if prefixUse >= 0.9 {
 			shortPrefixUsage = exclamationMark
 		}
-		usage = fmt.Sprintf("%s\nPrefixes:%d/%d %s", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailableSmallestPrefixes, strings.Join(n.Usage.AvailablePrefixes, "\n"))
+		usage = fmt.Sprintf("%s\nPrefixes:%d/%d", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
 	}
 
 	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper)
