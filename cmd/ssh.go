@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // SSHClient opens a interactive ssh session to the host on port with user, authenticated by the key.
@@ -55,19 +55,19 @@ func SSHClient(user, keyfile, host string, port int) error {
 
 	fileDescriptor := int(os.Stdin.Fd())
 
-	if terminal.IsTerminal(fileDescriptor) {
-		originalState, err := terminal.MakeRaw(fileDescriptor)
+	if term.IsTerminal(fileDescriptor) {
+		originalState, err := term.MakeRaw(fileDescriptor)
 		if err != nil {
 			return err
 		}
 		defer func() {
-			err = terminal.Restore(fileDescriptor, originalState)
+			err = term.Restore(fileDescriptor, originalState)
 			if err != nil {
 				fmt.Printf("error restoring ssh terminal:%v\n", err)
 			}
 		}()
 
-		termWidth, termHeight, err := terminal.GetSize(fileDescriptor)
+		termWidth, termHeight, err := term.GetSize(fileDescriptor)
 		if err != nil {
 			return err
 		}
