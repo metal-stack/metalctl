@@ -105,7 +105,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 `)
 	rootCmd.PersistentFlags().Bool("no-headers", false, "do not print headers of table output format (default print headers)")
-	rootCmd.PersistentFlags().Bool("yes-i-really-mean-it", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
+	rootCmd.PersistentFlags().Bool(forceFlag, false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 
 	err := rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
