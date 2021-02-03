@@ -21,14 +21,14 @@ import (
 )
 
 const (
-	bark            = "\U0001F6A7"
-	circle          = "\U000021BB"
-	dot             = "\U000025CF"
-	exclamationMark = "\U00002757"
-	lock            = "\U0001F512"
-	nbr             = "\U00002007"
-	question        = "\U00002753"
-	skull           = "\U0001F480"
+	bark            = "🚧"
+	circle          = "↻"
+	dot             = "●"
+	exclamationMark = "❗"
+	lock            = "🔒"
+	nbr             = " "
+	question        = "❓"
+	skull           = "💀"
 )
 
 type (
@@ -977,11 +977,11 @@ func (m MetalNetworkTablePrinter) Print(data []*models.V1NetworkResponse) {
 	for _, n := range *nn {
 		m.addNetwork("", n.parent)
 		for i, c := range n.children {
-			prefix := "\u251C"
+			prefix := "├"
 			if i == len(n.children)-1 {
-				prefix = "\u2514"
+				prefix = "└"
 			}
-			prefix += "\u2500\u2574"
+			prefix += "─╴"
 			m.addNetwork(prefix, c)
 		}
 	}
@@ -1019,12 +1019,12 @@ func (m *MetalNetworkTablePrinter) addNetwork(prefix string, n *models.V1Network
 		if prefixUse >= 0.9 {
 			shortPrefixUsage = exclamationMark
 		}
-		usage = fmt.Sprintf("%s\nPrefixes:%v/%v", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
+		usage = fmt.Sprintf("%s\nPrefixes:%d/%d", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
 	}
 
 	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper)
-	for i := 0; i < max; i++ {
-		id += "\n\u2502"
+	for i := 0; i < max-1; i++ {
+		id += "\n│"
 	}
 
 	var as []string
