@@ -382,16 +382,16 @@ func (m MetalMachineTablePrinter) Order(data []*models.V1MachineResponse) {
 						return false
 					}
 				case "when":
-					if A.Events == nil || A.Events.LastEventTime == nil {
+					if A.Events == nil {
 						return true
 					}
-					if B.Events == nil || B.Events.LastEventTime == nil {
+					if B.Events == nil {
 						return false
 					}
-					if time.Time(*A.Events.LastEventTime).After(time.Time(*B.Events.LastEventTime)) {
+					if time.Time(A.Events.LastEventTime).After(time.Time(B.Events.LastEventTime)) {
 						return true
 					}
-					if *A.Events.LastEventTime != *B.Events.LastEventTime {
+					if A.Events.LastEventTime != B.Events.LastEventTime {
 						return false
 					}
 				case "partition":
@@ -544,16 +544,16 @@ func (m MachineWithIPMIPrinter) Order(data []*models.V1MachineIPMIResponse) {
 						return false
 					}
 				case "when":
-					if A.Events == nil || A.Events.LastEventTime == nil {
+					if A.Events == nil {
 						return true
 					}
-					if B.Events == nil || B.Events.LastEventTime == nil {
+					if B.Events == nil {
 						return false
 					}
-					if time.Time(*A.Events.LastEventTime).After(time.Time(*B.Events.LastEventTime)) {
+					if time.Time(A.Events.LastEventTime).After(time.Time(B.Events.LastEventTime)) {
 						return true
 					}
-					if *A.Events.LastEventTime != *B.Events.LastEventTime {
+					if A.Events.LastEventTime != B.Events.LastEventTime {
 						return false
 					}
 				case "partition":
@@ -662,7 +662,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		lastEventEmoji := ""
 		when := ""
 		if len(machine.Events.Log) > 0 {
-			since := time.Since(time.Time(*machine.Events.LastEventTime))
+			since := time.Since(time.Time(machine.Events.LastEventTime))
 			when = humanizeDuration(since)
 			lastEvent = *machine.Events.Log[0].Event
 			lastEventEmoji = lastEvent
