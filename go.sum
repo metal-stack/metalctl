@@ -500,8 +500,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5
 github.com/metal-stack/masterdata-api v0.8.3/go.mod h1:vNzStBft4l8ItkUNu7mrdHbSF6kcPLhulByXBifYLkA=
 github.com/metal-stack/masterdata-api v0.8.4 h1:CnrhxiS9XL5PQN+J0yFv5KNvuan3JMx5omofEwHVweQ=
 github.com/metal-stack/masterdata-api v0.8.4/go.mod h1:4EDS04thTWdxcTpLsaLdG1PEUdnvKJFIdf7GEMduDdI=
-github.com/metal-stack/metal-go v0.11.5 h1:PELyP38oHwNCdCCrX6aBEtOffG1bDJXDFcrM48bqvhc=
-github.com/metal-stack/metal-go v0.11.5/go.mod h1:A1ZZSxY8gLIH+cHboUytRxzt42hgnNSCHzfzXwCrRe8=
+github.com/metal-stack/metal-go v0.12.1 h1:k+nr2sBeM7JE7/1d0eljjkHbeyFICtBGBeNPI0tBI/4=
+github.com/metal-stack/metal-go v0.12.1/go.mod h1:A1ZZSxY8gLIH+cHboUytRxzt42hgnNSCHzfzXwCrRe8=
 github.com/metal-stack/metal-lib v0.6.0/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
 github.com/metal-stack/metal-lib v0.6.3/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
 github.com/metal-stack/metal-lib v0.6.4/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
