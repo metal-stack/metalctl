@@ -419,10 +419,11 @@ func init() {
 	machineCmd.AddCommand(machineDestroyCmd)
 	machineCmd.AddCommand(machineDescribeCmd)
 
-	machineUploadBiosCmd.Flags().StringP("board", "", "", "the board type")
+	machineUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor")
 	machineUploadBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUploadCmd.AddCommand(machineUploadBiosCmd)
 
+	machineUploadBmcCmd.Flags().StringP("vendor", "", "", "the vendor")
 	machineUploadBmcCmd.Flags().StringP("board", "", "", "the board type")
 	machineUploadBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUploadCmd.AddCommand(machineUploadBmcCmd)
