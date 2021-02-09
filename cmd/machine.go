@@ -420,6 +420,7 @@ func init() {
 	machineCmd.AddCommand(machineDescribeCmd)
 
 	machineUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor")
+	machineUploadBiosCmd.Flags().StringP("board", "", "", "the board type")
 	machineUploadBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUploadCmd.AddCommand(machineUploadBiosCmd)
 
@@ -808,7 +809,7 @@ func machineUploadBios(driver *metalgo.Driver, args []string) error {
 		return fmt.Errorf("flag %q not set", forceFlag)
 	}
 
-	_, err := driver.MachineUploadBiosUpdate(vendor, board, revision, args[1])
+	_, err := driver.MachineUploadBiosUpdate(vendor, board, revision, args[0])
 	return err
 }
 
@@ -829,7 +830,7 @@ func machineUploadBmc(driver *metalgo.Driver, args []string) error {
 		return fmt.Errorf("flag %q not set", forceFlag)
 	}
 
-	_, err := driver.MachineUploadBmcUpdate(vendor, board, revision, args[1])
+	_, err := driver.MachineUploadBmcUpdate(vendor, board, revision, args[0])
 	return err
 }
 
