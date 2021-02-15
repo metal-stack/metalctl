@@ -809,7 +809,7 @@ func machineUploadBios(driver *metalgo.Driver, args []string) error {
 		return fmt.Errorf("flag %q not set", forceFlag)
 	}
 
-	_, err := driver.MachineUploadBiosUpdate(vendor, board, revision, args[0])
+	_, err := driver.MachineUploadFirmware(metalgo.Bios, vendor, board, revision, args[0])
 	return err
 }
 
@@ -830,7 +830,7 @@ func machineUploadBmc(driver *metalgo.Driver, args []string) error {
 		return fmt.Errorf("flag %q not set", forceFlag)
 	}
 
-	_, err := driver.MachineUploadBmcUpdate(vendor, board, revision, args[0])
+	_, err := driver.MachineUploadFirmware(metalgo.Bmc, vendor, board, revision, args[0])
 	return err
 }
 
@@ -841,7 +841,7 @@ func machineUpdateBios(driver *metalgo.Driver, args []string) error {
 	}
 	machineID := *m.ID
 
-	u, err := driver.MachineAvailableBiosUpdates(machineID)
+	u, err := driver.MachineAvailableFirmwares(metalgo.Bios, machineID)
 	if err != nil {
 		return err
 	}
@@ -885,7 +885,7 @@ func machineUpdateBios(driver *metalgo.Driver, args []string) error {
 		description = "unknown"
 	}
 
-	resp, err := driver.MachineBiosUpdate(machineID, revision, description)
+	resp, err := driver.MachineUpdateFirmware(metalgo.Bios, machineID, revision, description)
 	if err != nil {
 		return err
 	}
@@ -899,7 +899,7 @@ func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
 	}
 	machineID := *m.ID
 
-	u, err := driver.MachineAvailableBmcUpdates(machineID)
+	u, err := driver.MachineAvailableFirmwares(metalgo.Bmc, machineID)
 	if err != nil {
 		return err
 	}
@@ -943,7 +943,7 @@ func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
 		description = "unknown"
 	}
 
-	resp, err := driver.MachineBmcUpdate(machineID, revision, description)
+	resp, err := driver.MachineUpdateFirmware(metalgo.Bmc, machineID, revision, description)
 	if err != nil {
 		return err
 	}
