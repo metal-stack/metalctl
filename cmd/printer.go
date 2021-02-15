@@ -68,7 +68,7 @@ type (
 	MetalMachineLogsPrinter struct {
 		TablePrinter
 	}
-	// MetalMachineIssuesPrinter is a table printer for a MetalMachine issues
+	// MetalMachineIssuesTablePrinter is a table printer for a MetalMachine issues
 	MetalMachineIssuesTablePrinter struct {
 		TablePrinter
 	}
@@ -694,7 +694,9 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 		machine := machineWithIssues.Machine
 
 		name := ""
+		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
+			widename = *machine.Allocation.Name
 			name = truncate(*machine.Allocation.Name, "...", 30)
 		}
 		partition := ""
@@ -712,10 +714,14 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 		}
 
 		row := []string{id, name, partition, project, strings.Join(issues, "\n")}
+		widerow := []string{id, widename, partition, project, strings.Join(issues, "\n")}
+
 		m.addShortData(row, m)
+		m.addWideData(widerow, m)
 	}
 	m.table.SetAutoWrapText(false)
 	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
+	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
 
