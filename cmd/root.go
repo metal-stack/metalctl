@@ -38,7 +38,10 @@ var (
 	// prevent overwrite of identical flag names from other commands
 	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
 	bindPFlags = func(cmd *cobra.Command, args []string) {
-		viper.BindPFlags(cmd.Flags())
+		err := viper.BindPFlags(cmd.Flags())
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 	}
 
 	rootCmd = &cobra.Command{
@@ -102,27 +105,25 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 `)
 	rootCmd.PersistentFlags().Bool("no-headers", false, "do not print headers of table output format (default print headers)")
+	rootCmd.PersistentFlags().Bool("yes-i-really-mean-it", false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
-	rootCmd.PersistentFlags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example image update:
 
-# metalctl image describe ubuntu-19.04 > ubuntu.yaml
-# vi ubuntu.yaml
-## either via stdin
-# cat ubuntu.yaml | metalctl image update -f -
-## or via file
-# metalctl image update -f ubuntu.yaml
-`)
-
-	rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputFormatListCompletion()
 	})
-	rootCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = rootCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputOrderListCompletion()
 	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	rootCmd.AddCommand(completionCmd)
-	rootCmd.AddCommand(zshCompletionCmd)
+	completionCmd.AddCommand(bashCompletionCmd)
+	completionCmd.AddCommand(zshCompletionCmd)
 	rootCmd.AddCommand(machineCmd)
 	rootCmd.AddCommand(firewallCmd)
 	rootCmd.AddCommand(projectCmd)
@@ -132,6 +133,8 @@ Example image update:
 	rootCmd.AddCommand(switchCmd)
 	rootCmd.AddCommand(networkCmd)
 	rootCmd.AddCommand(markdownCmd)
+	rootCmd.AddCommand(healthCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
@@ -139,7 +142,7 @@ Example image update:
 
 	rootCmd.AddCommand(updateCmd)
 
-	err := viper.BindPFlags(rootCmd.PersistentFlags())
+	err = viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
 		log.Fatalf("error setup root cmd:%v", err)
 	}

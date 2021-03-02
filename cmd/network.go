@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -181,9 +182,20 @@ func init() {
 	networkAllocateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
 	networkAllocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	networkAllocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
-	networkAllocateCmd.MarkFlagRequired("name")
-	networkAllocateCmd.MarkFlagRequired("project")
-	networkAllocateCmd.MarkFlagRequired("partition")
+	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
+
+	err := networkAllocateCmd.MarkFlagRequired("name")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = networkAllocateCmd.MarkFlagRequired("project")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = networkAllocateCmd.MarkFlagRequired("partition")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	networkIPAllocateCmd.Flags().StringP("description", "d", "", "description of the IP to allocate. [optional]")
 	networkIPAllocateCmd.Flags().StringP("name", "n", "", "name of the IP to allocate. [optional]")
@@ -192,7 +204,11 @@ func init() {
 	networkIPAllocateCmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 	networkIPAllocateCmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
 
-	networkIPApplyCmd.MarkFlagRequired("file")
+	networkIPApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
+	err = networkIPApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	networkIPListCmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
 	networkIPListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -214,7 +230,19 @@ func init() {
 	networkPrefixCmd.AddCommand(networkPrefixAddCmd)
 	networkPrefixCmd.AddCommand(networkPrefixRemoveCmd)
 
-	networkApplyCmd.MarkFlagRequired("file")
+	networkApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl network describe internet > internet.yaml
+# vi internet.yaml
+## either via stdin
+# cat internet.yaml | metalctl network apply -f -
+## or via file
+# metalctl network apply -f internet.yaml`)
+	err = networkApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		panic(err)
+	}
 
 	networkListCmd.Flags().StringP("id", "", "", "ID to filter [optional]")
 	networkListCmd.Flags().StringP("name", "", "", "name to filter [optional]")

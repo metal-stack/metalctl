@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -84,15 +85,33 @@ func init() {
 	imageCreateCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
 	imageCreateCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
 
-	// TODO howto cope with these errors ?
-	// err := imageUpdateCmd.MarkFlagRequired("file")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// err = imageApplyCmd.MarkFlagRequired("file")
-	// if err != nil {
-	// 	panic(err)
-	// }
+	imageUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl image describe ubuntu-19.04 > ubuntu.yaml
+# vi ubuntu.yaml
+## either via stdin
+# cat ubuntu.yaml | metalctl image update -f -
+## or via file
+# metalctl image update -f ubuntu.yaml`)
+	err := imageUpdateCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	imageApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl image describe ubuntu-19.04 > ubuntu.yaml
+# vi ubuntu.yaml
+## either via stdin
+# cat ubuntu.yaml | metalctl image apply -f -
+## or via file
+# metalctl image apply -f ubuntu.yaml`)
+	err = imageApplyCmd.MarkFlagRequired("file")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	imageCmd.AddCommand(imageListCmd)
 	imageCmd.AddCommand(imageDescribeCmd)
