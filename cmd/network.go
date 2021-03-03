@@ -315,7 +315,7 @@ func networkAllocate(driver *metalgo.Driver) error {
 	} else {
 		shared := viper.GetBool("shared")
 		nat := false
-		destinationPrefixes := []string{}
+		var destinationPrefixes []string
 		if viper.GetBool("dmz") {
 			shared = true
 			destinationPrefixes = []string{"0.0.0.0/0"}
