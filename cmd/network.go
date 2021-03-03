@@ -181,7 +181,9 @@ func init() {
 	networkAllocateCmd.Flags().StringP("project", "", "", "partition where this network should exist. [required]")
 	networkAllocateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
 	networkAllocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
+	networkAllocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
+
 	err := networkAllocateCmd.MarkFlagRequired("name")
 	if err != nil {
 		log.Fatal(err.Error())
@@ -311,13 +313,23 @@ func networkAllocate(driver *metalgo.Driver) error {
 		}
 		ncr = ncrs[0]
 	} else {
+		shared := viper.GetBool("shared")
+		nat := false
+		var destinationPrefixes []string
+		if viper.GetBool("dmz") {
+			shared = true
+			destinationPrefixes = []string{"0.0.0.0/0"}
+			nat = true
+		}
 		ncr = metalgo.NetworkAllocateRequest{
-			Description: viper.GetString("description"),
-			Name:        viper.GetString("name"),
-			PartitionID: viper.GetString("partition"),
-			ProjectID:   viper.GetString("project"),
-			Shared:      viper.GetBool("shared"),
-			Labels:      labelsFromTags(viper.GetStringSlice("labels")),
+			Description:         viper.GetString("description"),
+			Name:                viper.GetString("name"),
+			PartitionID:         viper.GetString("partition"),
+			ProjectID:           viper.GetString("project"),
+			Shared:              shared,
+			Labels:              labelsFromTags(viper.GetStringSlice("labels")),
+			Destinationprefixes: destinationPrefixes,
+			Nat:                 nat,
 		}
 	}
 	resp, err := driver.NetworkAllocate(&ncr)
