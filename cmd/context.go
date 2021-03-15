@@ -20,6 +20,7 @@ type Contexts struct {
 type Context struct {
 	ApiURL       string  `yaml:"url"`
 	IssuerURL    string  `yaml:"issuer_url"`
+	IssuerType   string  `yaml:"issuer_type"`
 	ClientID     string  `yaml:"client_id"`
 	ClientSecret string  `yaml:"client_secret"`
 	HMAC         *string `yaml:"hmac"`

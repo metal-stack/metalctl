@@ -30,10 +30,16 @@ var loginCmd = &cobra.Command{
 			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeConfig"), console, auth.WithContextName(formatContextName(cloudContext, cs.CurrentContext)))
 		}
 
+		scopes := auth.DexScopes
+		if ctx.IssuerType == "generic" {
+			scopes = auth.GenericScopes
+		}
+
 		config := auth.Config{
 			ClientID:     ctx.ClientID,
 			ClientSecret: ctx.ClientSecret,
 			IssuerURL:    ctx.IssuerURL,
+			Scopes:       scopes,
 			TokenHandler: handler,
 			Console:      console,
 			Debug:        viper.GetBool("debug"),
