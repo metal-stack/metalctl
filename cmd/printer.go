@@ -120,6 +120,10 @@ type (
 	MachineWithIPMIPrinter struct {
 		TablePrinter
 	}
+	// MetalFirmwaresPrinter prints firmwares
+	MetalFirmwaresPrinter struct {
+		TablePrinter
+	}
 
 	// ContextPrinter is a table printer with context
 	ContextPrinter struct {
@@ -311,6 +315,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineWithIPMIPrinter{t}.Print([]*models.V1MachineIPMIResponse{d})
 	case []*models.V1MachineProvisioningEvent:
 		MetalMachineLogsPrinter{t}.Print(d)
+	case []*models.V1Firmwares:
+		MetalFirmwaresPrinter{t}.Print(d)
 	case *Contexts:
 		ContextPrinter{t}.Print(d)
 	default:
@@ -1182,5 +1188,25 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 		m.addShortData(wide, pr)
 		m.addWideData(wide, pr)
 	}
+	m.render()
+}
+
+// Print ipmi data from machines
+func (m MetalFirmwaresPrinter) Print(data []*models.V1Firmwares) {
+	for _, kk := range data {
+		for _, vv := range kk.VendorFirmwares {
+			for _, bb := range vv.BoardFirmwares {
+				sort.Strings(bb.Revisions)
+				for _, rev := range bb.Revisions {
+					row := []string{*kk.Kind, *vv.Vendor, *bb.Board, rev}
+					wide := row
+					m.addShortData(row, m)
+					m.addWideData(wide, m)
+				}
+			}
+		}
+	}
+	m.shortHeader = []string{"Firmware", "Vendor", "Board", "Revision"}
+	m.wideHeader = m.shortHeader
 	m.render()
 }

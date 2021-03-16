@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"errors"
 	"fmt"
 
 	"net/url"
@@ -161,38 +160,13 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		PreRun: bindPFlags,
 	}
 
-	machineUploadCmd = &cobra.Command{
-		Use:   "upload",
-		Short: "upload a machine update",
-	}
-
-	machineUploadBiosCmd = &cobra.Command{
-		Use:   "bios",
-		Short: "upload a machine BIOS update",
-		Long:  "the given BIOS update file will be uploaded and tagged as given revision.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineUploadBios(driver, args)
-		},
-		PreRun: bindPFlags,
-	}
-
-	machineUploadBmcCmd = &cobra.Command{
-		Use:   "bmc",
-		Short: "upload a machine BMC update",
-		Long:  "the given BMC update file will be uploaded and tagged as given revision.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineUploadBmc(driver, args)
-		},
-		PreRun: bindPFlags,
-	}
-
-	machineUpdateCmd = &cobra.Command{
-		Use:   "update",
-		Short: "update a machine",
+	machineFirmwareUpdateCmd = &cobra.Command{
+		Use:   "firmware-update",
+		Short: "update a machine firmware",
 	}
 
 	machineUpdateBiosCmd = &cobra.Command{
-		Use:   "bios",
+		Use:   "bios <machine ID>",
 		Short: "update a machine BIOS",
 		Long:  "the machine BIOS will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -202,7 +176,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	}
 
 	machineUpdateBmcCmd = &cobra.Command{
-		Use:   "bmc",
+		Use:   "bmc <machine ID>",
 		Short: "update a machine BMC",
 		Long:  "the machine BMC will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -419,27 +393,15 @@ func init() {
 	machineCmd.AddCommand(machineDestroyCmd)
 	machineCmd.AddCommand(machineDescribeCmd)
 
-	machineUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor")
-	machineUploadBiosCmd.Flags().StringP("board", "", "", "the board type")
-	machineUploadBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
-	machineUploadCmd.AddCommand(machineUploadBiosCmd)
-
-	machineUploadBmcCmd.Flags().StringP("vendor", "", "", "the vendor")
-	machineUploadBmcCmd.Flags().StringP("board", "", "", "the board type")
-	machineUploadBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
-	machineUploadCmd.AddCommand(machineUploadBmcCmd)
-
-	machineCmd.AddCommand(machineUploadCmd)
-
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
+	machineFirmwareUpdateCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
+	machineFirmwareUpdateCmd.AddCommand(machineUpdateBmcCmd)
 
-	machineCmd.AddCommand(machineUpdateCmd)
+	machineCmd.AddCommand(machineFirmwareUpdateCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
@@ -792,145 +754,76 @@ func machinePowerReset(driver *metalgo.Driver, args []string) error {
 	return printer.Print(resp.Machine)
 }
 
-func machineUploadBios(driver *metalgo.Driver, args []string) error {
-	revision := viper.GetString("revision")
-	if revision == "" {
-		return errors.New("no revision specified")
-	}
-
-	vendor := viper.GetString("vendor")
-	board := viper.GetString("board")
-
-	if len(args) < 1 {
-		return fmt.Errorf("no BIOS update file given")
-	}
-
-	if !viper.GetBool(forceFlag) {
-		return fmt.Errorf("flag %q not set", forceFlag)
-	}
-
-	_, err := driver.MachineUploadFirmware(metalgo.Bios, vendor, board, revision, args[0])
-	return err
-}
-
-func machineUploadBmc(driver *metalgo.Driver, args []string) error {
-	revision := viper.GetString("revision")
-	if revision == "" {
-		return errors.New("no revision specified")
-	}
-
-	vendor := viper.GetString("vendor")
-	board := viper.GetString("board")
-
-	if len(args) < 1 {
-		return fmt.Errorf("no BMC update file given")
-	}
-
-	if !viper.GetBool(forceFlag) {
-		return fmt.Errorf("flag %q not set", forceFlag)
-	}
-
-	_, err := driver.MachineUploadFirmware(metalgo.Bmc, vendor, board, revision, args[0])
-	return err
-}
-
 func machineUpdateBios(driver *metalgo.Driver, args []string) error {
-	m, err := getMachine(args)
+	m, vendor, board, err := firmwareData(args)
 	if err != nil {
 		return err
 	}
-	machineID := *m.ID
-
-	u, err := driver.MachineAvailableFirmwares(metalgo.Bios, machineID)
-	if err != nil {
-		return err
-	}
-	vv := u.Updates.Revisions
-	if len(vv) == 0 {
-		return errors.New("no BIOS update available")
-	}
-
 	revision := viper.GetString("revision")
-	printPlan := revision == "" || !containsString(vv, revision)
-
-	if printPlan {
-		currentVersion := ""
-		if m.Bios != nil && m.Bios.Version != nil {
-			currentVersion = *m.Bios.Version
-		}
-		for _, v := range vv {
-			if v == currentVersion {
-				fmt.Printf("%s (current)", v)
-			} else {
-				fmt.Println(v)
-			}
-		}
-		if !containsString(vv, currentVersion) {
-			fmt.Printf("---\nCurrent BIOS version: %s\n", currentVersion)
-		}
+	currentVersion := ""
+	if m.Bios != nil && m.Bios.Version != nil {
+		currentVersion = *m.Bios.Version
 	}
 
-	if revision == "" {
-		return nil
-	} else if !containsString(vv, revision) {
-		return fmt.Errorf("specified revision %s not available", revision)
-	}
-
-	if !viper.GetBool(forceFlag) {
-		return fmt.Errorf("flag %q not set", forceFlag)
-	}
-
-	description := viper.GetString("description")
-	if description == "" {
-		description = "unknown"
-	}
-
-	resp, err := driver.MachineUpdateFirmware(metalgo.Bios, machineID, revision, description)
-	if err != nil {
-		return err
-	}
-	return printer.Print(resp.Machine)
+	return machineUpdateFirmware(driver, metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
 }
 
 func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
+	m, vendor, board, err := firmwareData(args)
+	if err != nil {
+		return err
+	}
+	revision := viper.GetString("revision")
+	currentVersion := ""
+	if m.Ipmi != nil && m.Ipmi.Bmcversion != nil {
+		currentVersion = *m.Ipmi.Bmcversion
+	}
+
+	return machineUpdateFirmware(driver, metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
+}
+
+func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
 	m, err := getMachine(args)
 	if err != nil {
-		return err
+		return nil, "", "", err
 	}
 	machineID := *m.ID
+	if m.Ipmi == nil {
+		return nil, "", "", fmt.Errorf("no ipmi data available of machine %s", machineID)
+	}
 
-	u, err := driver.MachineAvailableFirmwares(metalgo.Bmc, machineID)
+	fru := *m.Ipmi.Fru
+	vendor := fru.ProductManufacturer
+	board := fru.BoardPartNumber
+
+	return m, vendor, board, nil
+}
+
+func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
+	u, err := driver.MachineListFirmwares(kind, machineID)
 	if err != nil {
 		return err
 	}
-	vv := u.Updates.Revisions
-	if len(vv) == 0 {
-		return errors.New("no BMC update available")
-	}
 
-	revision := viper.GetString("revision")
-	printPlan := revision == "" || !containsString(vv, revision)
-
+	revisionAvailable := u.ContainsRevision(kind, vendor, board, revision)
+	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		currentVersion := ""
-		if m.Ipmi != nil && m.Ipmi.Bmcversion != nil {
-			currentVersion = *m.Ipmi.Bmcversion
-		}
-		for _, v := range vv {
-			if v == currentVersion {
-				fmt.Printf("%s (current)", v)
+		for _, rev := range u.FilterBoard(kind, vendor, board) {
+			if rev == currentVersion {
+				fmt.Printf("%s (current)", rev)
 			} else {
-				fmt.Println(v)
+				fmt.Println(rev)
 			}
 		}
-		if !containsString(vv, currentVersion) {
+		if !u.ContainsRevision(kind, vendor, board, currentVersion) {
 			fmt.Printf("---\nCurrent BMC version: %s\n", currentVersion)
 		}
 	}
 
 	if revision == "" {
 		return nil
-	} else if !containsString(vv, revision) {
+	}
+	if !revisionAvailable {
 		return fmt.Errorf("specified revision %s not available", revision)
 	}
 
@@ -943,7 +836,7 @@ func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
 		description = "unknown"
 	}
 
-	resp, err := driver.MachineUpdateFirmware(metalgo.Bmc, machineID, revision, description)
+	resp, err := driver.MachineUpdateFirmware(kind, machineID, revision, description)
 	if err != nil {
 		return err
 	}
