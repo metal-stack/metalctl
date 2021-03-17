@@ -1232,12 +1232,3 @@ func getMachine(args []string) (*models.V1MachineIPMIResponse, error) {
 	}
 	return m.Machine, nil
 }
-
-func containsString(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
