@@ -61,7 +61,7 @@ var (
 
 	firmwareRemoveCmd = &cobra.Command{
 		Use:     "remove",
-		Aliases: []string{"rm"},
+		Aliases: []string{"rm", "delete", "del"},
 		Short:   "remove a firmware",
 		Long:    "removes the specified firmware.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,7 +73,7 @@ var (
 
 func init() {
 	firmwareListCmd.Flags().StringP("kind", "", "", "the firmware kind [bmc|bios]")
-	firmwareListCmd.Flags().StringP("id", "", "", "the machine id (ignores other flags)")
+	firmwareListCmd.Flags().StringP("machineid", "", "", "the machine id (ignores other flags)")
 	firmwareListCmd.Flags().StringP("vendor", "", "", "the vendor")
 	firmwareListCmd.Flags().StringP("board", "", "", "the board type")
 	firmwareCmd.AddCommand(firmwareListCmd)
@@ -175,10 +175,6 @@ func manageFirmware(task firmwareTask, driver *metalgo.Driver, kind metalgo.Firm
 	revision := viper.GetString("revision")
 	vendor := viper.GetString("vendor")
 	board := viper.GetString("board")
-
-	if !viper.GetBool(forceFlag) {
-		return fmt.Errorf("flag %q not set", forceFlag)
-	}
 
 	var err error
 	switch task {
