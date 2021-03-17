@@ -138,32 +138,25 @@ func init() {
 }
 
 func firmwareList(driver *metalgo.Driver, args []string) error {
-	kind := metalgo.FirmwareKind(viper.GetString("kind"))
-	switch kind {
-	case "":
-		resp, err := driver.ListFirmwares("", "", "")
-		if err != nil {
-			return err
-		}
-		return printer.Print(resp.Firmwares)
-	default:
-		id := viper.GetString("id")
-		var err error
-		var resp *metalgo.FirmwaresResponse
-		switch id {
-		case "":
-			vendor := viper.GetString("vendor")
-			board := viper.GetString("board")
-			resp, err = driver.ListFirmwares(kind, vendor, board)
-		default:
-			resp, err = driver.MachineListFirmwares(kind, id)
-		}
-		if err != nil {
-			return err
-		}
+	var err error
+	var resp *metalgo.FirmwaresResponse
 
-		return printer.Print(resp.Firmwares)
+	kind := metalgo.FirmwareKind(viper.GetString("kind"))
+	id := viper.GetString("id")
+
+	switch id {
+	case "":
+		vendor := viper.GetString("vendor")
+		board := viper.GetString("board")
+		resp, err = driver.ListFirmwares(kind, vendor, board)
+	default:
+		resp, err = driver.MachineListFirmwares(kind, id)
 	}
+	if err != nil {
+		return err
+	}
+
+	return printer.Print(resp.Firmwares)
 }
 
 func firmwareUploadBios(driver *metalgo.Driver, args []string) error {
