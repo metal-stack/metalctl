@@ -6,7 +6,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
 	github.com/metal-stack/masterdata-api v0.8.4
-	github.com/metal-stack/metal-go v0.11.6-0.20210317133515-cd7e5103a3c2
+	github.com/metal-stack/metal-go v0.11.6-0.20210317133751-596507098fb4
 	github.com/metal-stack/metal-lib v0.6.9
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.2

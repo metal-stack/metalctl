@@ -800,22 +800,22 @@ func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string,
 }
 
 func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
-	u, err := driver.MachineListFirmwares(kind, machineID)
+	f, err := driver.MachineListFirmwares(kind, machineID)
 	if err != nil {
 		return err
 	}
 
-	revisionAvailable := u.ContainsRevision(kind, vendor, board, revision)
+	revisionAvailable := containsRevision(f, kind, vendor, board, revision)
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		for _, rev := range u.FilterBoard(kind, vendor, board) {
+		for _, rev := range filterBoard(f, kind, vendor, board) {
 			if rev == currentVersion {
 				fmt.Printf("%s (current)", rev)
 			} else {
 				fmt.Println(rev)
 			}
 		}
-		if !u.ContainsRevision(kind, vendor, board, currentVersion) {
+		if !containsRevision(f, kind, vendor, board, currentVersion) {
 			fmt.Printf("---\nCurrent BMC version: %s\n", currentVersion)
 		}
 	}
