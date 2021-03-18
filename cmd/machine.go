@@ -810,7 +810,7 @@ func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, ma
 	if printPlan {
 		for _, rev := range filterBoard(f, kind, vendor, board) {
 			if rev == currentVersion {
-				fmt.Printf("%s (current)", rev)
+				fmt.Printf("%s (current)\n", rev)
 			} else {
 				fmt.Println(rev)
 			}
