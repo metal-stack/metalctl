@@ -816,7 +816,7 @@ func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, ma
 			}
 		}
 		if !containsRevision(f, kind, vendor, board, currentVersion) {
-			fmt.Printf("---\nCurrent %s version: %s\n", kind, currentVersion)
+			fmt.Printf("---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}
 
