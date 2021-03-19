@@ -315,7 +315,7 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineWithIPMIPrinter{t}.Print([]*models.V1MachineIPMIResponse{d})
 	case []*models.V1MachineProvisioningEvent:
 		MetalMachineLogsPrinter{t}.Print(d)
-	case []*models.V1Firmwares:
+	case *models.V1FirmwaresResponse:
 		MetalFirmwaresPrinter{t}.Print(d)
 	case *Contexts:
 		ContextPrinter{t}.Print(d)
@@ -1192,13 +1192,13 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 }
 
 // Print ipmi data from machines
-func (m MetalFirmwaresPrinter) Print(data []*models.V1Firmwares) {
-	for _, kk := range data {
-		for _, vv := range kk.VendorFirmwares {
-			for _, bb := range vv.BoardFirmwares {
-				sort.Strings(bb.Revisions)
-				for _, rev := range bb.Revisions {
-					row := []string{*kk.Kind, *vv.Vendor, *bb.Board, rev}
+func (m MetalFirmwaresPrinter) Print(data *models.V1FirmwaresResponse) {
+	for k, vv := range data.Revisions {
+		for v, bb := range vv {
+			for b, rr := range bb {
+				sort.Strings(rr)
+				for _, rev := range rr {
+					row := []string{k, v, b, rev}
 					wide := row
 					m.addShortData(row, m)
 					m.addWideData(wide, m)

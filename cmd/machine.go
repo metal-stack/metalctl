@@ -793,29 +793,49 @@ func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string,
 	}
 
 	fru := *m.Ipmi.Fru
-	vendor := fru.ProductManufacturer
-	board := fru.BoardPartNumber
+	vendor := strings.ToLower(fru.ProductManufacturer)
+	board := strings.ToUpper(fru.BoardPartNumber)
 
 	return m, vendor, board, nil
 }
 
 func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
-	f, err := driver.MachineListFirmwares(kind, machineID)
+	f, err := driver.ListFirmwares(kind, "", "")
 	if err != nil {
 		return err
 	}
 
-	revisionAvailable := containsRevision(f, kind, vendor, board, revision)
+	var rr []string
+	revisionAvailable, containsCurrentVersion := false, false
+	vv, ok := f.Firmwares.Revisions[string(kind)]
+	if ok {
+		bb, ok := vv[vendor]
+		if ok {
+			rr, ok = bb[board]
+			if ok {
+				for _, rev := range rr {
+					if rev == revision {
+						revisionAvailable = true
+					}
+					if rev == currentVersion {
+						containsCurrentVersion = true
+					}
+				}
+			}
+		}
+	}
+
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		for _, rev := range filterBoard(f, kind, vendor, board) {
+		fmt.Println("Available:")
+		for _, rev := range rr {
 			if rev == currentVersion {
 				fmt.Printf("%s (current)\n", rev)
 			} else {
 				fmt.Println(rev)
 			}
 		}
-		if !containsRevision(f, kind, vendor, board, currentVersion) {
+		if !containsCurrentVersion {
 			fmt.Printf("---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}

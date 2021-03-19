@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/metal-stack/metal-go/api/models"
 	"log"
-	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/spf13/cobra"
@@ -144,7 +142,7 @@ func firmwareList(driver *metalgo.Driver, args []string) error {
 	var resp *metalgo.FirmwaresResponse
 
 	kind := metalgo.FirmwareKind(viper.GetString("kind"))
-	id := viper.GetString("id")
+	id := viper.GetString("machineid")
 
 	switch id {
 	case "":
@@ -189,43 +187,4 @@ func manageFirmware(task firmwareTask, driver *metalgo.Driver, kind metalgo.Firm
 		_, err = driver.RemoveFirmware(kind, vendor, board, revision)
 	}
 	return err
-}
-
-func filterKind(f *metalgo.FirmwaresResponse, kind metalgo.FirmwareKind) []*models.V1VendorFirmwares {
-	for _, ff := range f.Firmwares {
-		if strings.EqualFold(string(kind), *ff.Kind) {
-			return ff.VendorFirmwares
-		}
-	}
-	return nil
-}
-
-func filterVendor(f *metalgo.FirmwaresResponse, kind metalgo.FirmwareKind, vendor string) []*models.V1BoardFirmwares {
-	vv := filterKind(f, kind)
-	for _, v := range vv {
-		if strings.EqualFold(vendor, *v.Vendor) {
-			return v.BoardFirmwares
-		}
-	}
-	return nil
-}
-
-func filterBoard(f *metalgo.FirmwaresResponse, kind metalgo.FirmwareKind, vendor, board string) []string {
-	bb := filterVendor(f, kind, vendor)
-	for _, b := range bb {
-		if strings.EqualFold(board, *b.Board) {
-			return b.Revisions
-		}
-	}
-	return nil
-}
-
-func containsRevision(f *metalgo.FirmwaresResponse, kind metalgo.FirmwareKind, vendor, board, revision string) bool {
-	rr := filterBoard(f, kind, vendor, board)
-	for _, r := range rr {
-		if strings.EqualFold(r, revision) {
-			return true
-		}
-	}
-	return false
 }
