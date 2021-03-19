@@ -160,9 +160,10 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		PreRun: bindPFlags,
 	}
 
-	machineFirmwareUpdateCmd = &cobra.Command{
-		Use:   "firmware-update",
-		Short: "update a machine firmware",
+	machineUpdateCmd = &cobra.Command{
+		Use:     "update",
+		Aliases: []string{"firmware-update"},
+		Short:   "update a machine firmware",
 	}
 
 	machineUpdateBiosCmd = &cobra.Command{
@@ -395,13 +396,25 @@ func init() {
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	machineFirmwareUpdateCmd.AddCommand(machineUpdateBiosCmd)
+	err = machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firmwareRevisionCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	machineFirmwareUpdateCmd.AddCommand(machineUpdateBmcCmd)
+	err = machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firmwareRevisionCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
 
-	machineCmd.AddCommand(machineFirmwareUpdateCmd)
+	machineCmd.AddCommand(machineUpdateCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
