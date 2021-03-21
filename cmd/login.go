@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/spf13/cobra"
@@ -33,6 +34,12 @@ var loginCmd = &cobra.Command{
 		scopes := auth.DexScopes
 		if ctx.IssuerType == "generic" {
 			scopes = auth.GenericScopes
+		} else if ctx.CustomScopes != "" {
+			cs := strings.Split(ctx.CustomScopes, ",")
+			for i := range cs {
+				cs[i] = strings.TrimSpace(cs[i])
+			}
+			scopes = cs
 		}
 
 		config := auth.Config{

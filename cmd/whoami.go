@@ -33,6 +33,9 @@ var whoamiCmd = &cobra.Command{
 		if user.Tenant != "" {
 			fmt.Printf("Tenant: %s\n", user.Tenant)
 		}
+		if user.Issuer != "" {
+			fmt.Printf("Issuer: %s\n", user.Issuer)
+		}
 		fmt.Printf("Groups:\n")
 		for _, g := range user.Groups {
 			fmt.Printf(" %s\n", g)
