@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"strings"
-
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"log"
 )
 
 type firmwareTask int
@@ -124,12 +122,6 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	err = firmwareUploadBiosCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firmwareRevisionCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 	firmwareUploadCmd.AddCommand(firmwareUploadBiosCmd)
 
 	firmwareUploadBmcCmd.Flags().StringP("vendor", "", "", "the vendor (required)")
@@ -155,12 +147,6 @@ func init() {
 	}
 	err = firmwareUploadBmcCmd.RegisterFlagCompletionFunc("board", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return firmwareBoardCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = firmwareUploadBmcCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firmwareRevisionCompletion(driver)
 	})
 	if err != nil {
 		log.Fatal(err.Error())
@@ -278,27 +264,8 @@ func firmwareVendorCompletion(driver *metalgo.Driver) ([]string, cobra.ShellComp
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	kind := viper.GetString("kind")
-	board := strings.ToUpper(viper.GetString("board"))
 	var vendors []string
-	vv, ok := resp.Firmwares.Revisions[kind]
-	if ok {
-		for v, bb := range vv {
-			if board == "" {
-				vendors = append(vendors, v)
-				continue
-			}
-			for b := range bb {
-				if b == board {
-					vendors = append(vendors, v)
-					break
-				}
-			}
-		}
-		return vendors, cobra.ShellCompDirectiveDefault
-	}
-
-	for _, vv = range resp.Firmwares.Revisions {
+	for _, vv := range resp.Firmwares.Revisions {
 		for v := range vv {
 			vendors = append(vendors, v)
 		}
@@ -312,21 +279,8 @@ func firmwareBoardCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompD
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	kind := viper.GetString("kind")
-	vendor := strings.ToLower(viper.GetString("vendor"))
 	var boards []string
-	vv, ok := resp.Firmwares.Revisions[kind]
-	if ok {
-		bb, ok := vv[vendor]
-		if ok {
-			for b := range bb {
-				boards = append(boards, b)
-			}
-			return boards, cobra.ShellCompDirectiveDefault
-		}
-	}
-
-	for _, vv = range resp.Firmwares.Revisions {
+	for _, vv := range resp.Firmwares.Revisions {
 		for _, bb := range vv {
 			for b := range bb {
 				boards = append(boards, b)
@@ -342,22 +296,8 @@ func firmwareRevisionCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCo
 		return nil, cobra.ShellCompDirectiveError
 	}
 
-	kind := viper.GetString("kind")
-	vendor := strings.ToLower(viper.GetString("vendor"))
-	board := strings.ToUpper(viper.GetString("board"))
-	vv, ok := resp.Firmwares.Revisions[kind]
-	if ok {
-		bb, ok := vv[vendor]
-		if ok {
-			rr, ok := bb[board]
-			if ok {
-				return rr, cobra.ShellCompDirectiveDefault
-			}
-		}
-	}
-
 	var revisions []string
-	for _, vv = range resp.Firmwares.Revisions {
+	for _, vv := range resp.Firmwares.Revisions {
 		for _, bb := range vv {
 			for _, rr := range bb {
 				revisions = append(revisions, rr...)
