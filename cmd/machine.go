@@ -822,9 +822,9 @@ func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, ma
 	revisionAvailable, containsCurrentVersion := false, false
 	vv, ok := f.Firmwares.Revisions[string(kind)]
 	if ok {
-		bb, ok := vv[vendor]
+		bb, ok := vv.VendorRevisions[vendor]
 		if ok {
-			rr, ok = bb[board]
+			rr, ok = bb.BoardRevisions[board]
 			if ok {
 				for _, rev := range rr {
 					if rev == revision {

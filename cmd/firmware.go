@@ -266,7 +266,7 @@ func firmwareVendorCompletion(driver *metalgo.Driver) ([]string, cobra.ShellComp
 
 	var vendors []string
 	for _, vv := range resp.Firmwares.Revisions {
-		for v := range vv {
+		for v := range vv.VendorRevisions {
 			vendors = append(vendors, v)
 		}
 	}
@@ -281,8 +281,8 @@ func firmwareBoardCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompD
 
 	var boards []string
 	for _, vv := range resp.Firmwares.Revisions {
-		for _, bb := range vv {
-			for b := range bb {
+		for _, bb := range vv.VendorRevisions {
+			for b := range bb.BoardRevisions {
 				boards = append(boards, b)
 			}
 		}
@@ -298,8 +298,8 @@ func firmwareRevisionCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCo
 
 	var revisions []string
 	for _, vv := range resp.Firmwares.Revisions {
-		for _, bb := range vv {
-			for _, rr := range bb {
+		for _, bb := range vv.VendorRevisions {
+			for _, rr := range bb.BoardRevisions {
 				revisions = append(revisions, rr...)
 			}
 		}

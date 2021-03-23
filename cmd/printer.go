@@ -1194,8 +1194,8 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 // Print ipmi data from machines
 func (m MetalFirmwaresPrinter) Print(data *models.V1FirmwaresResponse) {
 	for k, vv := range data.Revisions {
-		for v, bb := range vv {
-			for b, rr := range bb {
+		for v, bb := range vv.VendorRevisions {
+			for b, rr := range bb.BoardRevisions {
 				sort.Strings(rr)
 				for _, rev := range rr {
 					row := []string{k, v, b, rev}
