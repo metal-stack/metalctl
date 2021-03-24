@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/spf13/cobra"
@@ -30,10 +31,22 @@ var loginCmd = &cobra.Command{
 			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeConfig"), console, auth.WithContextName(formatContextName(cloudContext, cs.CurrentContext)))
 		}
 
+		scopes := auth.DexScopes
+		if ctx.IssuerType == "generic" {
+			scopes = auth.GenericScopes
+		} else if ctx.CustomScopes != "" {
+			cs := strings.Split(ctx.CustomScopes, ",")
+			for i := range cs {
+				cs[i] = strings.TrimSpace(cs[i])
+			}
+			scopes = cs
+		}
+
 		config := auth.Config{
 			ClientID:     ctx.ClientID,
 			ClientSecret: ctx.ClientSecret,
 			IssuerURL:    ctx.IssuerURL,
+			Scopes:       scopes,
 			TokenHandler: handler,
 			Console:      console,
 			Debug:        viper.GetBool("debug"),

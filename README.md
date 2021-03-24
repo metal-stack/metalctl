@@ -78,6 +78,28 @@ contexts:
     hmac: YOUR_HMAC
 ```
 
+Optional you can specify `issuer_type: generic` if you use other issuers as Dex, e.g. Keycloak (this will request scopes `openid,profile,email`):
+```bash
+contexts:
+  prod:
+    url: https://api.metal-stack.io/metal
+    issuer_url: https://keycloak.somedomain.io
+    issuer_type: generic
+    client_id: my-client-id
+    client_secret: my-secret
+```
+
+If you must specify special scopes for your issuer, you can use `custom_scopes`:
+```bash
+contexts:
+  prod:
+    url: https://api.metal-stack.io/metal
+    issuer_url: https://keycloak.somedomain.io
+    custom_scopes: roles,openid,profile,email
+    client_id: my-client-id
+    client_secret: my-secret
+```
+
 ## Available commands
 
 Full documentation is generated out of the cobra command implementation with:
