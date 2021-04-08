@@ -134,6 +134,8 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(switchCmd)
 	rootCmd.AddCommand(networkCmd)
 	rootCmd.AddCommand(markdownCmd)
+	rootCmd.AddCommand(healthCmd)
+	rootCmd.AddCommand(versionCmd)
 
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(whoamiCmd)
