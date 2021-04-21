@@ -180,6 +180,8 @@ func init() {
 	networkAllocateCmd.Flags().StringP("partition", "", "", "partition where this network should exist. [required]")
 	networkAllocateCmd.Flags().StringP("project", "", "", "partition where this network should exist. [required]")
 	networkAllocateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
+	networkAllocateCmd.Flags().Uint8P("length", "", 0, "the bitlength of the prefix to allocate, defaults to the configured child prefix length in the super network [optional]")
+	networkAllocateCmd.Flags().BoolP("ipv6", "", false, "if set a ipv6 subnet is allocated, default is ipv4 [optional]")
 	networkAllocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
 	err := networkAllocateCmd.MarkFlagRequired("name")
@@ -320,6 +322,21 @@ func networkAllocate(driver *metalgo.Driver) error {
 			Labels:      labelsFromTags(viper.GetStringSlice("labels")),
 		}
 	}
+	length := viper.GetUint("length")
+	if length > 0 {
+		l := uint8(length)
+		ncr.Length = &l
+	}
+
+	ipv6 := viper.GetBool("ipv6")
+	if ipv6 {
+		ipv6Str := "IPv6"
+		ncr.AddressFamily = &ipv6Str
+	} else {
+		ipv4Str := "IPv4"
+		ncr.AddressFamily = &ipv4Str
+	}
+
 	resp, err := driver.NetworkAllocate(&ncr)
 	if err != nil {
 		return fmt.Errorf("network allocate error:%v", err)
