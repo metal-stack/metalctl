@@ -1,28 +1,28 @@
 module github.com/metal-stack/metalctl
 
-go 1.15
+go 1.16
 
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
 	github.com/metal-stack/masterdata-api v0.8.5
-	github.com/metal-stack/metal-go v0.14.0
+	github.com/metal-stack/metal-go v0.14.1-0.20210421121217-ce8d5fbfcd7c
 	github.com/metal-stack/metal-lib v0.7.2
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.3
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/olekukonko/tablewriter v0.0.4
-	github.com/pelletier/go-toml v1.8.0 // indirect
+	github.com/olekukonko/tablewriter v0.0.5
+	github.com/pelletier/go-toml v1.9.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/afero v1.3.3 // indirect
+	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.1.3
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
-	gopkg.in/ini.v1 v1.57.0 // indirect
+	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
+	golang.org/x/term v0.0.0-20210406210042-72f3dc4e9b72
+	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
 
