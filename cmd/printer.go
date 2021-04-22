@@ -120,7 +120,10 @@ type (
 	MachineWithIPMIPrinter struct {
 		TablePrinter
 	}
-
+	// FilesystemLayoutPrinter is a table printer for Filesystemlayouts
+	FilesystemLayoutPrinter struct {
+		TablePrinter
+	}
 	// ContextPrinter is a table printer with context
 	ContextPrinter struct {
 		TablePrinter
@@ -311,8 +314,12 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineWithIPMIPrinter{t}.Print([]*models.V1MachineIPMIResponse{d})
 	case []*models.V1MachineProvisioningEvent:
 		MetalMachineLogsPrinter{t}.Print(d)
+	case *models.V1FilesystemLayoutResponse:
+		FilesystemLayoutPrinter{t}.Print([]*models.V1FilesystemLayoutResponse{d})
+	case []*models.V1FilesystemLayoutResponse:
+		FilesystemLayoutPrinter{t}.Print(d)
 	case *Contexts:
-		ContextPrinter{t}.Print(d)
+		return ContextPrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
@@ -1204,5 +1211,14 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 		m.addShortData(wide, pr)
 		m.addWideData(wide, pr)
 	}
+	m.render()
+}
+func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse) {
+	for _, i := range data {
+		row := []string{strValue(i.ID), i.Description, strings.Join(i.Constraints.Sizes, ","), strings.Join(i.Constraints.Images, ",s")}
+		m.addShortData(row, m)
+	}
+	m.shortHeader = []string{"ID", "Description", "Sizes", "Images"}
+	m.table.SetAutoWrapText(false)
 	m.render()
 }

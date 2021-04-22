@@ -95,22 +95,6 @@ func filesystemDescribe(driver *metalgo.Driver, args []string) error {
 	return detailer.Detail(resp)
 }
 
-func readFilesystemCreateRequests(filename string) ([]models.V1FilesystemLayoutCreateRequest, error) {
-	var icrs []models.V1FilesystemLayoutCreateRequest
-	var uir models.V1FilesystemLayoutCreateRequest
-	err := readFrom(filename, &uir, func(data interface{}) {
-		doc := data.(*models.V1FilesystemLayoutCreateRequest)
-		icrs = append(icrs, *doc)
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(icrs) != 1 {
-		return nil, fmt.Errorf("filesystem update error more or less than one filesystem given:%d", len(icrs))
-	}
-	return icrs, nil
-}
-
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
 func filesystemApply(driver *metalgo.Driver) error {
 	var iars []models.V1FilesystemLayoutCreateRequest
