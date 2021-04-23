@@ -124,6 +124,7 @@ func filesystemApply(driver *metalgo.Driver) error {
 		}
 		if p == nil {
 			resp, err := driver.FilesystemLayoutCreate(iar)
+			fmt.Printf("error:%v\n", err)
 			if err != nil {
 				return err
 			}

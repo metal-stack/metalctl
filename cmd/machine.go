@@ -182,7 +182,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootDiskCmd = &cobra.Command{
 		Use:   "disk <machine ID>",
 		Short: "boot a machine from disk",
-		Long:  "the machine will boot from disk	.",
+		Long:  "the machine will boot from disk.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootDisk(driver, args)
 		},
@@ -415,6 +415,7 @@ func addMachineCreateFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().StringP("partition", "S", "", "partition/datacenter where the "+name+" is created. [required, except for reserved machines]")
 	cmd.Flags().StringP("hostname", "H", "", "Hostname of the "+name+". [required]")
 	cmd.Flags().StringP("image", "i", "", "OS Image to install. [required]")
+	cmd.Flags().StringP("filesystemlayout", "", "", "Filesystemlayout to use during machine installation. [optional]")
 	cmd.Flags().StringP("name", "n", "", "Name of the "+name+". [optional]")
 	cmd.Flags().StringP("id", "I", "", "ID of a specific "+name+" to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.")
 	cmd.Flags().StringP("project", "P", "", "Project where the "+name+" should belong to. [required]")
@@ -519,6 +520,12 @@ MODE can be omitted or one of:
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = cmd.RegisterFlagCompletionFunc("filesystemlayout", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return filesystemLayoutListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func machineCreate(driver *metalgo.Driver) error {
@@ -580,19 +587,20 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	mcr := &metalgo.MachineCreateRequest{
-		Description:   viper.GetString("description"),
-		Partition:     viper.GetString("partition"),
-		Hostname:      viper.GetString("hostname"),
-		Image:         viper.GetString("image"),
-		Name:          viper.GetString("name"),
-		UUID:          viper.GetString("id"),
-		Project:       viper.GetString("project"),
-		Size:          viper.GetString("size"),
-		SSHPublicKeys: keys,
-		Tags:          viper.GetStringSlice("tags"),
-		UserData:      userDataArgument,
-		Networks:      networks,
-		IPs:           viper.GetStringSlice("ips"),
+		Description:      viper.GetString("description"),
+		Partition:        viper.GetString("partition"),
+		Hostname:         viper.GetString("hostname"),
+		Image:            viper.GetString("image"),
+		Name:             viper.GetString("name"),
+		UUID:             viper.GetString("id"),
+		Project:          viper.GetString("project"),
+		Size:             viper.GetString("size"),
+		FilesystemLayout: viper.GetString("filesystemlayout"),
+		SSHPublicKeys:    keys,
+		Tags:             viper.GetStringSlice("tags"),
+		UserData:         userDataArgument,
+		Networks:         networks,
+		IPs:              viper.GetStringSlice("ips"),
 	}
 	return mcr, nil
 }

@@ -1215,7 +1215,7 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 }
 func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse) {
 	for _, i := range data {
-		row := []string{strValue(i.ID), i.Description, strings.Join(i.Constraints.Sizes, ","), strings.Join(i.Constraints.Images, ",s")}
+		row := []string{strValue(i.ID), i.Description, strings.Join(i.Constraints.Sizes, ","), strings.Join(i.Constraints.Images, ",")}
 		m.addShortData(row, m)
 	}
 	m.shortHeader = []string{"ID", "Description", "Sizes", "Images"}

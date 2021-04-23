@@ -6,7 +6,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.10.0
 	github.com/metal-stack/masterdata-api v0.8.5
-	github.com/metal-stack/metal-go v0.14.1-0.20210421121217-ce8d5fbfcd7c
+	github.com/metal-stack/metal-go v0.14.1-0.20210423110621-6f5399e2df2a
 	github.com/metal-stack/metal-lib v0.7.2
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.3
@@ -20,8 +20,8 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc
-	golang.org/x/term v0.0.0-20210406210042-72f3dc4e9b72
+	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
+	golang.org/x/term v0.0.0-20210422114643-f5beecf764ed
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
