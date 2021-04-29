@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	filesystemCmd = &cobra.Command{
-		Use:   "filesystem",
+	filesystemLayoutCmd = &cobra.Command{
+		Use:   "filesystemlayout",
 		Short: "manage filesystemlayouts",
-		Long:  "a filesystem is a specification how the disks in a machine are partitioned, formatted and mounted.",
+		Long:  "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 	}
 
 	filesystemListCmd = &cobra.Command{
@@ -69,10 +69,10 @@ Example:
 		log.Fatal(err.Error())
 	}
 
-	filesystemCmd.AddCommand(filesystemListCmd)
-	filesystemCmd.AddCommand(filesystemDescribeCmd)
-	filesystemCmd.AddCommand(filesystemDeleteCmd)
-	filesystemCmd.AddCommand(filesystemApplyCmd)
+	filesystemLayoutCmd.AddCommand(filesystemListCmd)
+	filesystemLayoutCmd.AddCommand(filesystemDescribeCmd)
+	filesystemLayoutCmd.AddCommand(filesystemDeleteCmd)
+	filesystemLayoutCmd.AddCommand(filesystemApplyCmd)
 }
 
 func filesystemList(driver *metalgo.Driver) error {

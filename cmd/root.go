@@ -128,7 +128,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(firewallCmd)
 	rootCmd.AddCommand(projectCmd)
 	rootCmd.AddCommand(sizeCmd)
-	rootCmd.AddCommand(filesystemCmd)
+	rootCmd.AddCommand(filesystemLayoutCmd)
 	rootCmd.AddCommand(imageCmd)
 	rootCmd.AddCommand(partitionCmd)
 	rootCmd.AddCommand(switchCmd)
