@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -1214,15 +1215,30 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 	m.render()
 }
 func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse) {
-	for _, i := range data {
+	for _, fsl := range data {
 		imageConstraints := []string{}
-		for os, v := range i.Constraints.Images {
+		for os, v := range fsl.Constraints.Images {
 			imageConstraints = append(imageConstraints, os+v)
 		}
-		row := []string{strValue(i.ID), i.Description, strings.Join(i.Constraints.Sizes, ","), strings.Join(imageConstraints, ",")}
+
+		fsls := fsl.Filesystems
+		sort.Slice(fsls, func(i, j int) bool { return depth(*fsls[i].Path) < depth(*fsls[j].Path) })
+		fss := []string{}
+		for _, fs := range fsls {
+			fss = append(fss, fmt.Sprintf("%s -> %s", *fs.Path, *fs.Device))
+		}
+
+		row := []string{strValue(fsl.ID), fsl.Description, strings.Join(fss, "\n"), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")}
 		m.addShortData(row, m)
 	}
-	m.shortHeader = []string{"ID", "Description", "Sizes", "Images"}
+	m.shortHeader = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
 	m.table.SetAutoWrapText(false)
 	m.render()
+}
+func depth(path string) uint {
+	var count uint = 0
+	for p := filepath.Clean(path); p != "/"; count++ {
+		p = filepath.Dir(p)
+	}
+	return count
 }
