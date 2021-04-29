@@ -138,7 +138,7 @@ func filesystemApply(driver *metalgo.Driver) error {
 		}
 		response = append(response, resp)
 	}
-	return detailer.Detail(response)
+	return printer.Print(response)
 }
 
 func filesystemDelete(driver *metalgo.Driver, args []string) error {

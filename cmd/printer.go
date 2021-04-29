@@ -1217,7 +1217,7 @@ func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse
 	for _, i := range data {
 		imageConstraints := []string{}
 		for os, v := range i.Constraints.Images {
-			imageConstraints = append(imageConstraints, os+" "+v)
+			imageConstraints = append(imageConstraints, os+v)
 		}
 		row := []string{strValue(i.ID), i.Description, strings.Join(i.Constraints.Sizes, ","), strings.Join(imageConstraints, ",")}
 		m.addShortData(row, m)
