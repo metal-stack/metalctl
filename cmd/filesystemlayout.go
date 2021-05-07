@@ -52,6 +52,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	filesystemTryCmd = &cobra.Command{
+		Use:   "try",
+		Short: "try to detect a filesystem by given size and image",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return filesystemTry(driver)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -69,10 +77,14 @@ Example:
 		log.Fatal(err.Error())
 	}
 
+	filesystemTryCmd.Flags().StringP("size", "", "", "size to try")
+	filesystemTryCmd.Flags().StringP("image", "", "", "image to try")
+
 	filesystemLayoutCmd.AddCommand(filesystemListCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDescribeCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDeleteCmd)
 	filesystemLayoutCmd.AddCommand(filesystemApplyCmd)
+	filesystemLayoutCmd.AddCommand(filesystemTryCmd)
 }
 
 func filesystemList(driver *metalgo.Driver) error {
@@ -147,6 +159,21 @@ func filesystemDelete(driver *metalgo.Driver, args []string) error {
 	}
 	filesystemID := args[0]
 	resp, err := driver.FilesystemLayoutDelete(filesystemID)
+	if err != nil {
+		return err
+	}
+	return detailer.Detail(resp)
+}
+
+func filesystemTry(driver *metalgo.Driver) error {
+	size := viper.GetString("size")
+	image := viper.GetString("image")
+	try := models.V1FilesystemLayoutTryRequest{
+		Size:  &size,
+		Image: &image,
+	}
+
+	resp, err := driver.FilesystemLayoutTry(try)
 	if err != nil {
 		return err
 	}
