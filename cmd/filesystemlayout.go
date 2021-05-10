@@ -60,6 +60,14 @@ var (
 		},
 		PreRun: bindPFlags,
 	}
+	filesystemMatchCmd = &cobra.Command{
+		Use:   "match",
+		Short: "check if a machine satisfies all disk requirements of a given filesystemlayout",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return filesystemMatch(driver)
+		},
+		PreRun: bindPFlags,
+	}
 )
 
 func init() {
@@ -80,11 +88,15 @@ Example:
 	filesystemTryCmd.Flags().StringP("size", "", "", "size to try")
 	filesystemTryCmd.Flags().StringP("image", "", "", "image to try")
 
+	filesystemMatchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
+	filesystemMatchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
+
 	filesystemLayoutCmd.AddCommand(filesystemListCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDescribeCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDeleteCmd)
 	filesystemLayoutCmd.AddCommand(filesystemApplyCmd)
 	filesystemLayoutCmd.AddCommand(filesystemTryCmd)
+	filesystemLayoutCmd.AddCommand(filesystemMatchCmd)
 }
 
 func filesystemList(driver *metalgo.Driver) error {
@@ -174,6 +186,20 @@ func filesystemTry(driver *metalgo.Driver) error {
 	}
 
 	resp, err := driver.FilesystemLayoutTry(try)
+	if err != nil {
+		return err
+	}
+	return detailer.Detail(resp)
+}
+func filesystemMatch(driver *metalgo.Driver) error {
+	machine := viper.GetString("machine")
+	fsl := viper.GetString("filesystemlayout")
+	match := models.V1FilesystemLayoutMatchRequest{
+		Machine:          &machine,
+		Filesystemlayout: &fsl,
+	}
+
+	resp, err := driver.FilesystemLayoutMatch(match)
 	if err != nil {
 		return err
 	}
