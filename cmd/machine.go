@@ -587,21 +587,24 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	}
 
 	mcr := &metalgo.MachineCreateRequest{
-		Description:      viper.GetString("description"),
-		Partition:        viper.GetString("partition"),
-		Hostname:         viper.GetString("hostname"),
-		Image:            viper.GetString("image"),
-		Name:             viper.GetString("name"),
-		UUID:             viper.GetString("id"),
-		Project:          viper.GetString("project"),
-		Size:             viper.GetString("size"),
-		FilesystemLayout: viper.GetString("filesystemlayout"),
-		SSHPublicKeys:    keys,
-		Tags:             viper.GetStringSlice("tags"),
-		UserData:         userDataArgument,
-		Networks:         networks,
-		IPs:              viper.GetStringSlice("ips"),
+		Description:   viper.GetString("description"),
+		Partition:     viper.GetString("partition"),
+		Hostname:      viper.GetString("hostname"),
+		Image:         viper.GetString("image"),
+		Name:          viper.GetString("name"),
+		UUID:          viper.GetString("id"),
+		Project:       viper.GetString("project"),
+		Size:          viper.GetString("size"),
+		SSHPublicKeys: keys,
+		Tags:          viper.GetStringSlice("tags"),
+		UserData:      userDataArgument,
+		Networks:      networks,
+		IPs:           viper.GetStringSlice("ips"),
 	}
+	if viper.GetString("filesystemlayout") != "" {
+		mcr.FilesystemLayout = viper.GetString("filesystemlayout")
+	}
+
 	return mcr, nil
 }
 
