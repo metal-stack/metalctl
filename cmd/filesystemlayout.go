@@ -88,8 +88,14 @@ Example:
 
 	filesystemTryCmd.Flags().StringP("size", "", "", "size to try")
 	filesystemTryCmd.Flags().StringP("image", "", "", "image to try")
-	filesystemTryCmd.MarkFlagRequired("size")
-	filesystemTryCmd.MarkFlagRequired("image")
+	err = filesystemTryCmd.MarkFlagRequired("size")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = filesystemTryCmd.MarkFlagRequired("image")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	err = filesystemTryCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return sizeListCompletion(driver)
 	})
@@ -105,8 +111,14 @@ Example:
 
 	filesystemMatchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	filesystemMatchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
-	filesystemMatchCmd.MarkFlagRequired("machine")
-	filesystemMatchCmd.MarkFlagRequired("filesystemlayout")
+	err = filesystemMatchCmd.MarkFlagRequired("machine")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = filesystemMatchCmd.MarkFlagRequired("filesystemlayout")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	err = filesystemMatchCmd.RegisterFlagCompletionFunc("machine", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return machineListCompletion(driver)
 	})
@@ -177,7 +189,6 @@ func filesystemApply(driver *metalgo.Driver) error {
 		}
 		if p == nil {
 			resp, err := driver.FilesystemLayoutCreate(iar)
-			fmt.Printf("error:%v\n", err)
 			if err != nil {
 				return err
 			}
@@ -218,7 +229,7 @@ func filesystemTry(driver *metalgo.Driver) error {
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp)
+	return printer.Print(resp)
 }
 func filesystemMatch(driver *metalgo.Driver) error {
 	machine := viper.GetString("machine")
@@ -232,5 +243,5 @@ func filesystemMatch(driver *metalgo.Driver) error {
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp)
+	return printer.Print(resp)
 }
