@@ -15,9 +15,10 @@ import (
 
 var (
 	filesystemLayoutCmd = &cobra.Command{
-		Use:   "filesystemlayout",
-		Short: "manage filesystemlayouts",
-		Long:  "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
+		Use:     "filesystemlayout",
+		Aliases: []string{"fsl"},
+		Short:   "manage filesystemlayouts",
+		Long:    "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 	}
 
 	filesystemListCmd = &cobra.Command{
@@ -87,9 +88,37 @@ Example:
 
 	filesystemTryCmd.Flags().StringP("size", "", "", "size to try")
 	filesystemTryCmd.Flags().StringP("image", "", "", "image to try")
+	filesystemTryCmd.MarkFlagRequired("size")
+	filesystemTryCmd.MarkFlagRequired("image")
+	err = filesystemTryCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return sizeListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = filesystemTryCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return imageListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	filesystemMatchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	filesystemMatchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
+	filesystemMatchCmd.MarkFlagRequired("machine")
+	filesystemMatchCmd.MarkFlagRequired("filesystemlayout")
+	err = filesystemMatchCmd.RegisterFlagCompletionFunc("machine", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return machineListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = filesystemMatchCmd.RegisterFlagCompletionFunc("filesystemlayout", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return filesystemLayoutListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	filesystemLayoutCmd.AddCommand(filesystemListCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDescribeCmd)
