@@ -124,7 +124,7 @@ func init() {
 func firewallCreate(driver *metalgo.Driver) error {
 	mcr, err := machineCreateRequest()
 	if err != nil {
-		return fmt.Errorf("firewall create error:%v", err)
+		return fmt.Errorf("firewall create error:%w", err)
 	}
 
 	fcr := &metalgo.FirewallCreateRequest{

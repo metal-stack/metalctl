@@ -93,6 +93,7 @@ func (m MetalSwitchTableDetailer) Detail(data []*models.V1SwitchResponse) {
 	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	d := [][]string{}
 	for _, sw := range data {
+		sw := sw
 		filterBySwp := map[string]models.V1BGPFilter{}
 		for _, n := range sw.Nics {
 			swp := *(n.Name)

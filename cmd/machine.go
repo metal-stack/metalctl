@@ -531,11 +531,11 @@ MODE can be omitted or one of:
 func machineCreate(driver *metalgo.Driver) error {
 	mcr, err := machineCreateRequest()
 	if err != nil {
-		return fmt.Errorf("machine create error:%v", err)
+		return fmt.Errorf("machine create error:%w", err)
 	}
 	resp, err := driver.MachineCreate(mcr)
 	if err != nil {
-		return fmt.Errorf("machine create error:%v", err)
+		return fmt.Errorf("machine create error:%w", err)
 	}
 	return printer.Print(resp.Machine)
 }
@@ -932,7 +932,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	if key == "" {
 		key, err = searchSSHKey()
 		if err != nil {
-			return fmt.Errorf("machine console error:%v", err)
+			return fmt.Errorf("machine console error:%w", err)
 		}
 	}
 	parsedurl, err := url.Parse(driverURL)
@@ -941,7 +941,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	}
 	err = SSHClient(machineID, key, parsedurl.Host, bmcConsolePort)
 	if err != nil {
-		return fmt.Errorf("machine console error:%v", err)
+		return fmt.Errorf("machine console error:%w", err)
 	}
 	return nil
 }

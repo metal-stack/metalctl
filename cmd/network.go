@@ -292,7 +292,7 @@ func networkList(driver *metalgo.Driver) error {
 		resp, err = driver.NetworkList()
 	}
 	if err != nil {
-		return fmt.Errorf("network list error:%v", err)
+		return fmt.Errorf("network list error:%w", err)
 	}
 	return printer.Print(resp.Networks)
 }
@@ -334,7 +334,7 @@ func networkAllocate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.NetworkAllocate(&ncr)
 	if err != nil {
-		return fmt.Errorf("network allocate error:%v", err)
+		return fmt.Errorf("network allocate error:%w", err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -346,7 +346,7 @@ func networkFree(driver *metalgo.Driver, args []string) error {
 	nw := args[0]
 	resp, err := driver.NetworkFree(nw)
 	if err != nil {
-		return fmt.Errorf("network allocate error:%v", err)
+		return fmt.Errorf("network allocate error:%w", err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -358,7 +358,7 @@ func networkDelete(driver *metalgo.Driver, args []string) error {
 	nw := args[0]
 	resp, err := driver.NetworkDelete(nw)
 	if err != nil {
-		return fmt.Errorf("network delete error:%v", err)
+		return fmt.Errorf("network delete error:%w", err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -370,7 +370,7 @@ func networkDescribe(driver *metalgo.Driver, args []string) error {
 	nw := args[0]
 	resp, err := driver.NetworkGet(nw)
 	if err != nil {
-		return fmt.Errorf("network describe error:%v", err)
+		return fmt.Errorf("network describe error:%w", err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -415,7 +415,7 @@ func networkCreate(driver *metalgo.Driver) error {
 	}
 	resp, err := driver.NetworkCreate(&ncr)
 	if err != nil {
-		return fmt.Errorf("network create error:%v", err)
+		return fmt.Errorf("network create error:%w", err)
 	}
 	return detailer.Detail(resp.Network)
 }
@@ -437,6 +437,7 @@ func networkApply(driver *metalgo.Driver) error {
 
 	var response []*models.V1NetworkResponse
 	for _, nar := range iars {
+		nar := nar
 		if nar.ID == nil {
 			resp, err := driver.NetworkCreate(&nar)
 			if err != nil {
@@ -527,7 +528,7 @@ func ipList(driver *metalgo.Driver) error {
 		resp, err = driver.IPList()
 	}
 	if err != nil {
-		return fmt.Errorf("IP list error:%v", err)
+		return fmt.Errorf("IP list error:%w", err)
 	}
 	return printer.Print(resp.IPs)
 }
@@ -548,6 +549,7 @@ func ipApply(driver *metalgo.Driver) error {
 
 	var response []*models.V1IPResponse
 	for _, iar := range iars {
+		iar := iar
 		if iar.IPAddress == "" {
 			// acquire
 			resp, err := driver.IPAllocate(&iar)
@@ -695,7 +697,7 @@ func getNetworkID(args []string) (string, error) {
 func ipIssues(driver *metalgo.Driver) error {
 	ml, err := driver.MachineList()
 	if err != nil {
-		return fmt.Errorf("machine list error:%v", err)
+		return fmt.Errorf("machine list error:%w", err)
 	}
 	machines := make(map[string]*models.V1MachineResponse)
 	for _, m := range ml.Machines {
