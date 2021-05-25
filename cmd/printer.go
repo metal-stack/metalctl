@@ -591,7 +591,7 @@ func (m MachineWithIPMIPrinter) Order(data []*models.V1MachineIPMIResponse) {
 func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 	m.Order(data)
 	m.shortHeader = []string{"ID", "", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition"}
-	m.wideHeader = []string{"ID", "", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Console Password", "Tags", "Lock/Reserve"}
+	m.wideHeader = []string{"ID", "", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Tags", "Lock/Reserve"}
 	for _, machine := range data {
 		machineID := *machine.ID
 		if machine.Ledstate != nil && *machine.Ledstate.Value == "LED-ON" {
@@ -680,7 +680,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		}
 
 		row := []string{machineID, lockEmoji, statusEmoji, lastEventEmoji, when, age, truncatedHostname, project, sizeID, image, partitionID}
-		wide := []string{machineID, status, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, alloc.ConsolePassword, tags, reserved}
+		wide := []string{machineID, status, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved}
 
 		m.addShortData(row, machine)
 		m.addWideData(wide, machine)

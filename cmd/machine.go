@@ -110,6 +110,15 @@ Once created the machine installation can not be modified anymore.
 		PreRun: bindPFlags,
 	}
 
+	machineConsolePasswordCmd = &cobra.Command{
+		Use:   "consolepassword <machine ID>",
+		Short: "fetch the consolepassword for a machine",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineConsolePassword(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
 	machineDestroyCmd = &cobra.Command{
 		Use:     "destroy <machine ID>",
 		Aliases: []string{"delete", "rm"},
@@ -182,7 +191,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootDiskCmd = &cobra.Command{
 		Use:   "disk <machine ID>",
 		Short: "boot a machine from disk",
-		Long:  "the machine will boot from disk	.",
+		Long:  "the machine will boot from disk.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootDisk(driver, args)
 		},
@@ -363,9 +372,16 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
+	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
+	err = machineConsolePasswordCmd.MarkFlagRequired("reason")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	machineCmd.AddCommand(machineListCmd)
 	machineCmd.AddCommand(machineDestroyCmd)
 	machineCmd.AddCommand(machineDescribeCmd)
+	machineCmd.AddCommand(machineConsolePasswordCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
@@ -653,6 +669,20 @@ func machineDescribe(driver *metalgo.Driver, args []string) error {
 		return err
 	}
 	return detailer.Detail(resp.Machine)
+}
+
+func machineConsolePassword(driver *metalgo.Driver, args []string) error {
+	machineID, err := getMachineID(args)
+	if err != nil {
+		return err
+	}
+	reason := viper.GetString("reason")
+	resp, err := driver.MachineConsolePassword(machineID, reason)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("password:%s\n", *resp.ConsolePassword)
+	return nil
 }
 
 func machineDestroy(driver *metalgo.Driver, args []string) error {
