@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"text/template"
 	"time"
 
@@ -1224,12 +1225,18 @@ func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse
 
 		fsls := fsl.Filesystems
 		sort.Slice(fsls, func(i, j int) bool { return depth(*fsls[i].Path) < depth(*fsls[j].Path) })
-		fss := []string{}
+		fss := bytes.NewBufferString("")
+
+		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
 		for _, fs := range fsls {
-			fss = append(fss, fmt.Sprintf("%s -> %s", *fs.Path, *fs.Device))
+			fmt.Fprintf(w, "%s\t  \t%s\n", *fs.Path, *fs.Device)
+		}
+		err := w.Flush()
+		if err != nil {
+			panic(err)
 		}
 
-		row := []string{strValue(fsl.ID), fsl.Description, strings.Join(fss, "\n"), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")}
+		row := []string{strValue(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")}
 		m.addShortData(row, m)
 	}
 	m.shortHeader = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
