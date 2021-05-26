@@ -1220,7 +1220,7 @@ func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse
 	for _, fsl := range data {
 		imageConstraints := []string{}
 		for os, v := range fsl.Constraints.Images {
-			imageConstraints = append(imageConstraints, os+v)
+			imageConstraints = append(imageConstraints, os+" "+v)
 		}
 
 		fsls := fsl.Filesystems

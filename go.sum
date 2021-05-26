@@ -153,8 +153,8 @@ github.com/envoyproxy/go-control-plane v0.9.9-0.20201210154907-fd9021fe5dad/go.m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fatih/color v1.9.0/go.mod h1:eQcE1qtQxscV5RaZvpXrrb8Drkc3/DdQ+uUYCNjL+zU=
-github.com/fatih/color v1.11.0 h1:l4iX0RqNnx/pU7rY2DB/I+znuYY0K3x6Ywac6EIr0PA=
-github.com/fatih/color v1.11.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
+github.com/fatih/color v1.12.0 h1:mRhaKNwANqRgUBGKmnI5ZxEk7QXmjQeCcuYFMX2bfcc=
+github.com/fatih/color v1.12.0/go.mod h1:ELkj/draVOlAH/xkhN6mQ50Qd0MPOk5AAr3maGEBuJM=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
@@ -511,8 +511,9 @@ github.com/metal-stack/masterdata-api v0.8.5/go.mod h1:IZcsFYhfT8pXRgJHhmhlw+EbY
 github.com/metal-stack/metal-go v0.14.1-0.20210520070841-880f74e56bfb h1:RHzmDJO6HNvXmGFXEh+WZDsqJ5DX0np8VZIw/iLlwdo=
 github.com/metal-stack/metal-go v0.14.1-0.20210520070841-880f74e56bfb/go.mod h1:EFr2E5trOpHjS6YHxLvBqq5eOW2mlCnPyG0dypt2QuI=
 github.com/metal-stack/metal-lib v0.6.9/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
-github.com/metal-stack/metal-lib v0.7.2 h1:vXuQnpoXJV4otCwLyB74MiiokaidAoAcNnivkG9/UTI=
 github.com/metal-stack/metal-lib v0.7.2/go.mod h1:eDBJ88yC8jUk+bAJXpF1Upw6j3lbbgv3UIF0D+llMec=
+github.com/metal-stack/metal-lib v0.8.0 h1:PVV+vWrkorlnSEuIByk/rwFnVO4mmJeLzNAnMZwJ+3Y=
+github.com/metal-stack/metal-lib v0.8.0/go.mod h1:eDBJ88yC8jUk+bAJXpF1Upw6j3lbbgv3UIF0D+llMec=
 github.com/metal-stack/security v0.4.0/go.mod h1:C7kSrHwRcG+47375RJjhakN1LenbEJF9uQd4I50nZlY=
 github.com/metal-stack/security v0.5.1/go.mod h1:t7P93F6/iSDR729OS/3x5t69ewBCsHUYqRVaHb5nxjc=
 github.com/metal-stack/security v0.5.3 h1:FSqTetVVc3lfKpwFT7kT0BnVGk2bGdDkrtNYqnU4v0Q=
@@ -599,8 +600,8 @@ github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtP
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.4.0/go.mod h1:PN7xzY2wHTK0K9p34ErDQMlFxa51Fk0OUruD3k1mMwo=
 github.com/pelletier/go-toml v1.7.0/go.mod h1:vwGMzjaWMwyfHwgIBhI2YUM4fB6nL6lVAvS1LBMMhTE=
-github.com/pelletier/go-toml v1.9.0 h1:NOd0BRdOKpPf0SxkL3HxSQOG7rNh+4kl6PHcBPFs7Q0=
-github.com/pelletier/go-toml v1.9.0/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
+github.com/pelletier/go-toml v1.9.1 h1:a6qW1EVNZWH9WGI6CsYdD8WAylkoXBS5yv0XHlh17Tc=
+github.com/pelletier/go-toml v1.9.1/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/performancecopilot/speed v3.0.0+incompatible/go.mod h1:/CLtqpZ5gBg1M9iaPbIdPPGyKcA8hKdoy6hAWba7Yac=
 github.com/pierrec/lz4 v1.0.2-0.20190131084431-473cd7ce01a1/go.mod h1:3/3N9NVKO0jef7pBehbT1qWhCMrIgbYNnFAZCqQ5LRc=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
