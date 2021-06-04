@@ -510,6 +510,8 @@ github.com/metal-stack/masterdata-api v0.8.5 h1:0f9ict0ZV49zBO/Z8MSGYO0/JteN2Ik2
 github.com/metal-stack/masterdata-api v0.8.5/go.mod h1:IZcsFYhfT8pXRgJHhmhlw+EbYd89hxlBICJi/0RCIf8=
 github.com/metal-stack/metal-go v0.14.1-0.20210520070841-880f74e56bfb h1:RHzmDJO6HNvXmGFXEh+WZDsqJ5DX0np8VZIw/iLlwdo=
 github.com/metal-stack/metal-go v0.14.1-0.20210520070841-880f74e56bfb/go.mod h1:EFr2E5trOpHjS6YHxLvBqq5eOW2mlCnPyG0dypt2QuI=
+github.com/metal-stack/metal-go v0.14.1-0.20210604055740-629b54808ae2 h1:eMuwLx376pAW/hsdJk4fhfvQ5OxM4/0Dm6zPzb+ywkc=
+github.com/metal-stack/metal-go v0.14.1-0.20210604055740-629b54808ae2/go.mod h1:EFr2E5trOpHjS6YHxLvBqq5eOW2mlCnPyG0dypt2QuI=
 github.com/metal-stack/metal-lib v0.6.9/go.mod h1:r8qhfX72eAzClR/pEaQvdwM//Otx9gegYoOphLPmmQ4=
 github.com/metal-stack/metal-lib v0.7.2/go.mod h1:eDBJ88yC8jUk+bAJXpF1Upw6j3lbbgv3UIF0D+llMec=
 github.com/metal-stack/metal-lib v0.8.0 h1:PVV+vWrkorlnSEuIByk/rwFnVO4mmJeLzNAnMZwJ+3Y=

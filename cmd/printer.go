@@ -1224,12 +1224,12 @@ func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse
 		}
 
 		fsls := fsl.Filesystems
-		sort.Slice(fsls, func(i, j int) bool { return depth(*fsls[i].Path) < depth(*fsls[j].Path) })
+		sort.Slice(fsls, func(i, j int) bool { return depth(fsls[i].Path) < depth(fsls[j].Path) })
 		fss := bytes.NewBufferString("")
 
 		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
 		for _, fs := range fsls {
-			fmt.Fprintf(w, "%s\t  \t%s\n", *fs.Path, *fs.Device)
+			fmt.Fprintf(w, "%s\t  \t%s\n", fs.Path, *fs.Device)
 		}
 		err := w.Flush()
 		if err != nil {
