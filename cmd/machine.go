@@ -677,7 +677,7 @@ func machineConsolePassword(driver *metalgo.Driver, args []string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("password:%s\n", *resp.ConsolePassword)
+	fmt.Printf("%s\n", *resp.ConsolePassword)
 	return nil
 }
 
