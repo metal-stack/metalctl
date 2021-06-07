@@ -373,10 +373,6 @@ func init() {
 	}
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
-	err = machineConsolePasswordCmd.MarkFlagRequired("reason")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 
 	machineCmd.AddCommand(machineListCmd)
 	machineCmd.AddCommand(machineDestroyCmd)
