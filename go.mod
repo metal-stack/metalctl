@@ -5,14 +5,14 @@ go 1.16
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.12.0
-	github.com/metal-stack/masterdata-api v0.8.5
-	github.com/metal-stack/metal-go v0.14.1-0.20210604055740-629b54808ae2
+	github.com/metal-stack/masterdata-api v0.8.7
+	github.com/metal-stack/metal-go v0.14.4-0.20210608052805-fb4e17584a60
 	github.com/metal-stack/metal-lib v0.8.0
 	github.com/metal-stack/updater v1.1.1
 	github.com/metal-stack/v v1.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/pelletier/go-toml v1.9.1 // indirect
+	github.com/pelletier/go-toml v1.9.2 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
