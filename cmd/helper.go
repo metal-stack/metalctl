@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -116,8 +117,9 @@ func sortIPs(v1ips []*models.V1IPResponse) []*models.V1IPResponse {
 	return result
 }
 
-// FIXME write a test
-func truncate(input, elipsis string, maxlength int) string {
+//nolint:unparam
+func truncate(input string, maxlength int) string {
+	elipsis := "..."
 	il := len(input)
 	el := len(elipsis)
 	if il <= maxlength {
@@ -280,17 +282,17 @@ func readFrom(from string, data interface{}, f func(target interface{})) error {
 	default:
 		reader, err = os.Open(from)
 		if err != nil {
-			return fmt.Errorf("unable to open %s %v", from, err)
+			return fmt.Errorf("unable to open %s %w", from, err)
 		}
 	}
 	dec := yaml.NewDecoder(reader)
 	for {
 		err := dec.Decode(data)
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("decode error: %v", err)
+			return fmt.Errorf("decode error: %w", err)
 		}
 		f(data)
 	}

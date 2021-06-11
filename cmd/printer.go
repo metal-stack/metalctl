@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"text/template"
 	"time"
 
@@ -120,7 +122,10 @@ type (
 	MachineWithIPMIPrinter struct {
 		TablePrinter
 	}
-
+	// FilesystemLayoutPrinter is a table printer for Filesystemlayouts
+	FilesystemLayoutPrinter struct {
+		TablePrinter
+	}
 	// ContextPrinter is a table printer with context
 	ContextPrinter struct {
 		TablePrinter
@@ -198,7 +203,7 @@ func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 	case "template":
 		tmpl, err := template.New("").Parse(tpl)
 		if err != nil {
-			return nil, fmt.Errorf("template invalid:%v", err)
+			return nil, fmt.Errorf("template invalid:%w", err)
 		}
 		printer = newTablePrinter(format, order, true, tmpl)
 	default:
@@ -242,7 +247,7 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 func (j JSONPrinter) Print(data interface{}) error {
 	json, err := json.MarshalIndent(data, "", "    ")
 	if err != nil {
-		return fmt.Errorf("unable to marshal to json:%v", err)
+		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
 	fmt.Printf("%s\n", string(json))
 	return nil
@@ -252,7 +257,7 @@ func (j JSONPrinter) Print(data interface{}) error {
 func (y YAMLPrinter) Print(data interface{}) error {
 	yml, err := yaml.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%v", err)
+		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
 	fmt.Printf("%s\n", string(yml))
 	return nil
@@ -311,8 +316,12 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineWithIPMIPrinter{t}.Print([]*models.V1MachineIPMIResponse{d})
 	case []*models.V1MachineProvisioningEvent:
 		MetalMachineLogsPrinter{t}.Print(d)
+	case *models.V1FilesystemLayoutResponse:
+		FilesystemLayoutPrinter{t}.Print([]*models.V1FilesystemLayoutResponse{d})
+	case []*models.V1FilesystemLayoutResponse:
+		FilesystemLayoutPrinter{t}.Print(d)
 	case *Contexts:
-		ContextPrinter{t}.Print(d)
+		return ContextPrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
 	}
@@ -626,7 +635,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		project := strValue(alloc.Project)
 		name := strValue(alloc.Name)
 		hostname := strValue(alloc.Hostname)
-		truncatedHostname := truncate(hostname, "...", 30)
+		truncatedHostname := truncate(hostname, 30)
 
 		var nwIPs []string
 		for _, nw := range alloc.Networks {
@@ -697,7 +706,7 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
 			widename = *machine.Allocation.Name
-			name = truncate(*machine.Allocation.Name, "...", 30)
+			name = truncate(*machine.Allocation.Name, 30)
 		}
 		partition := ""
 		if machine.Partition != nil && machine.Partition.ID != nil {
@@ -855,6 +864,7 @@ func (m MetalPartitionCapacityTablePrinter) Print(pcs []*models.V1PartitionCapac
 	faultyCount := int32(0)
 	otherCount := int32(0)
 	for _, pc := range pcs {
+		pc := pc
 		sort.SliceStable(pc.Servers, func(i, j int) bool { return *pc.Servers[i].Size < *pc.Servers[j].Size })
 		for _, c := range pc.Servers {
 			id := strValue(c.Size)
@@ -1078,8 +1088,8 @@ func (m MetalIPTablePrinter) Print(data []*models.V1IPResponse) {
 				shortTags = append(shortTags, t)
 			}
 		}
-		name := truncate(i.Name, "...", 30)
-		description := truncate(i.Description, "...", 30)
+		name := truncate(i.Name, 30)
+		description := truncate(i.Description, 30)
 		allocationUUID := ""
 		if i.Allocationuuid != nil {
 			allocationUUID = *i.Allocationuuid
@@ -1205,4 +1215,38 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 		m.addWideData(wide, pr)
 	}
 	m.render()
+}
+func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse) {
+	for _, fsl := range data {
+		imageConstraints := []string{}
+		for os, v := range fsl.Constraints.Images {
+			imageConstraints = append(imageConstraints, os+" "+v)
+		}
+
+		fsls := fsl.Filesystems
+		sort.Slice(fsls, func(i, j int) bool { return depth(fsls[i].Path) < depth(fsls[j].Path) })
+		fss := bytes.NewBufferString("")
+
+		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
+		for _, fs := range fsls {
+			fmt.Fprintf(w, "%s\t  \t%s\n", fs.Path, *fs.Device)
+		}
+		err := w.Flush()
+		if err != nil {
+			panic(err)
+		}
+
+		row := []string{strValue(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")}
+		m.addShortData(row, m)
+	}
+	m.shortHeader = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
+	m.table.SetAutoWrapText(false)
+	m.render()
+}
+func depth(path string) uint {
+	var count uint = 0
+	for p := filepath.Clean(path); p != "/"; count++ {
+		p = filepath.Dir(p)
+	}
+	return count
 }

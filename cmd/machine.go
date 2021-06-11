@@ -427,6 +427,7 @@ func addMachineCreateFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().StringP("partition", "S", "", "partition/datacenter where the "+name+" is created. [required, except for reserved machines]")
 	cmd.Flags().StringP("hostname", "H", "", "Hostname of the "+name+". [required]")
 	cmd.Flags().StringP("image", "i", "", "OS Image to install. [required]")
+	cmd.Flags().StringP("filesystemlayout", "", "", "Filesystemlayout to use during machine installation. [optional]")
 	cmd.Flags().StringP("name", "n", "", "Name of the "+name+". [optional]")
 	cmd.Flags().StringP("id", "I", "", "ID of a specific "+name+" to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.")
 	cmd.Flags().StringP("project", "P", "", "Project where the "+name+" should belong to. [required]")
@@ -531,16 +532,22 @@ MODE can be omitted or one of:
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	err = cmd.RegisterFlagCompletionFunc("filesystemlayout", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return filesystemLayoutListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 }
 
 func machineCreate(driver *metalgo.Driver) error {
 	mcr, err := machineCreateRequest()
 	if err != nil {
-		return fmt.Errorf("machine create error:%v", err)
+		return fmt.Errorf("machine create error:%w", err)
 	}
 	resp, err := driver.MachineCreate(mcr)
 	if err != nil {
-		return fmt.Errorf("machine create error:%v", err)
+		return fmt.Errorf("machine create error:%w", err)
 	}
 	return printer.Print(resp.Machine)
 }
@@ -606,6 +613,10 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 		Networks:      networks,
 		IPs:           viper.GetStringSlice("ips"),
 	}
+	if viper.GetString("filesystemlayout") != "" {
+		mcr.FilesystemLayout = viper.GetString("filesystemlayout")
+	}
+
 	return mcr, nil
 }
 
@@ -947,7 +958,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	if key == "" {
 		key, err = searchSSHKey()
 		if err != nil {
-			return fmt.Errorf("machine console error:%v", err)
+			return fmt.Errorf("machine console error:%w", err)
 		}
 	}
 	parsedurl, err := url.Parse(driverURL)
@@ -956,7 +967,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	}
 	err = SSHClient(machineID, key, parsedurl.Host, bmcConsolePort)
 	if err != nil {
-		return fmt.Errorf("machine console error:%v", err)
+		return fmt.Errorf("machine console error:%w", err)
 	}
 	return nil
 }

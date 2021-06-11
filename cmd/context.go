@@ -172,5 +172,5 @@ func writeContexts(ctxs *Contexts) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cfgFile, c, 0644)
+	return ioutil.WriteFile(cfgFile, c, 0600)
 }
