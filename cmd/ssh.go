@@ -21,6 +21,7 @@ func SSHClient(user, keyfile, host string, port int) error {
 		Auth: []ssh.AuthMethod{
 			publicKeyAuthMethod,
 		},
+		//nolint:gosec
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         2 * time.Second,
 	}

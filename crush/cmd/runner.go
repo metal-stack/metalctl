@@ -146,7 +146,7 @@ func (r *runner) RunMachine(partition, size, image, name, project string) (*mode
 	logMachine(machine, "Created")
 	err = r.waitAndLog(machine, getReadyState(size))
 	if err != nil {
-		return machine, fmt.Errorf("machine did not come up:%v", err)
+		return machine, fmt.Errorf("machine did not come up:%w", err)
 	}
 
 	if getReadyState(size) == booting {
@@ -157,12 +157,12 @@ func (r *runner) RunMachine(partition, size, image, name, project string) (*mode
 	logMachine(machine, "Deleting")
 	_, err = r.driver.MachineDelete(*machine.ID)
 	if err != nil {
-		return machine, fmt.Errorf("unable to delete machine:%v", err)
+		return machine, fmt.Errorf("unable to delete machine:%w", err)
 	}
 	logMachine(machine, "Deleted")
 	err = r.waitAndLog(machine, waiting)
 	if err != nil {
-		return machine, fmt.Errorf("machine cant be deleted:%v", err)
+		return machine, fmt.Errorf("machine cant be deleted:%w", err)
 	}
 	return machine, nil
 }

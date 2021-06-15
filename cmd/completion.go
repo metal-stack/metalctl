@@ -105,7 +105,17 @@ func sizeListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirect
 	}
 	return names, cobra.ShellCompDirectiveDefault
 }
-
+func filesystemLayoutListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.FilesystemLayoutList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, s := range resp {
+		names = append(names, *s.ID)
+	}
+	return names, cobra.ShellCompDirectiveDefault
+}
 func machineListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.MachineList()
 	if err != nil {

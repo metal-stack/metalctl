@@ -129,6 +129,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(firewallCmd)
 	rootCmd.AddCommand(projectCmd)
 	rootCmd.AddCommand(sizeCmd)
+	rootCmd.AddCommand(filesystemLayoutCmd)
 	rootCmd.AddCommand(imageCmd)
 	rootCmd.AddCommand(partitionCmd)
 	rootCmd.AddCommand(switchCmd)
@@ -228,7 +229,7 @@ func initPrinter() {
 func searchSSHKey() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
-		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%v", err)
+		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%w", err)
 	}
 	homeDir := currentUser.HomeDir
 	defaultDir := filepath.Join(homeDir, "/.ssh/")
@@ -254,7 +255,7 @@ func searchSSHKey() (string, error) {
 func readFromFile(filePath string) (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
-		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%v", err)
+		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%w", err)
 	}
 	homeDir := currentUser.HomeDir
 
@@ -266,7 +267,7 @@ func readFromFile(filePath string) (string, error) {
 
 	content, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		return "", fmt.Errorf("unable to read from given file %s error:%v", filePath, err)
+		return "", fmt.Errorf("unable to read from given file %s error:%w", filePath, err)
 	}
 	return strings.TrimSpace(string(content)), nil
 }

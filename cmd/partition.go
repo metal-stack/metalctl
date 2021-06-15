@@ -32,7 +32,7 @@ var (
 		Use:   "capacity",
 		Short: "show partition capacity",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionCapacity(driver, args)
+			return partitionCapacity(driver)
 		},
 	}
 	partitionDescribeCmd = &cobra.Command{
@@ -150,7 +150,7 @@ func partitionDescribe(driver *metalgo.Driver, args []string) error {
 	}
 	return detailer.Detail(resp.Partition)
 }
-func partitionCapacity(driver *metalgo.Driver, args []string) error {
+func partitionCapacity(driver *metalgo.Driver) error {
 	resp, err := driver.PartitionCapacity()
 	if err != nil {
 		return err
