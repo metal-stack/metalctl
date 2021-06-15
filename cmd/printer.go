@@ -1238,6 +1238,7 @@ func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse
 
 		row := []string{strValue(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")}
 		m.addShortData(row, m)
+		m.addWideData(row, m)
 	}
 	m.shortHeader = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
 	m.table.SetAutoWrapText(false)
