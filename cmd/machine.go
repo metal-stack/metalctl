@@ -32,6 +32,7 @@ type FilterOpts struct {
 const (
 	// Port open on our control-plane to connect via ssh to get machine console access.
 	bmcConsolePort = 5222
+	forceFlag      = "yes-i-really-mean-it"
 )
 
 var (
@@ -164,6 +165,32 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Long:  "reset the machine power. This will ensure a power cycle.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerReset(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	machineUpdateCmd = &cobra.Command{
+		Use:     "update",
+		Aliases: []string{"firmware-update"},
+		Short:   "update a machine firmware",
+	}
+
+	machineUpdateBiosCmd = &cobra.Command{
+		Use:   "bios <machine ID>",
+		Short: "update a machine BIOS",
+		Long:  "the machine BIOS will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineUpdateBios(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	machineUpdateBmcCmd = &cobra.Command{
+		Use:   "bmc <machine ID>",
+		Short: "update a machine BMC",
+		Long:  "the machine BMC will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machineUpdateBmc(driver, args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -378,6 +405,28 @@ func init() {
 	machineCmd.AddCommand(machineDestroyCmd)
 	machineCmd.AddCommand(machineDescribeCmd)
 	machineCmd.AddCommand(machineConsolePasswordCmd)
+
+	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
+	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
+	err = machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firmwareRevisionCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
+
+	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
+	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
+	err = machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return firmwareRevisionCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
+
+	machineCmd.AddCommand(machineUpdateCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
@@ -699,8 +748,8 @@ func machineDestroy(driver *metalgo.Driver, args []string) error {
 	}
 
 	if viper.GetBool("remove-from-database") {
-		if !viper.GetBool("yes-i-really-mean-it") {
-			return fmt.Errorf("remove-from-database is set but you forgot to add --yes-i-really-mean-it")
+		if !viper.GetBool(forceFlag) {
+			return fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
 		}
 		resp, err := driver.MachineDeleteFromDatabase(machineID)
 		if err != nil {
@@ -749,6 +798,115 @@ func machinePowerReset(driver *metalgo.Driver, args []string) error {
 	}
 
 	resp, err := driver.MachinePowerReset(machineID)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Machine)
+}
+
+func machineUpdateBios(driver *metalgo.Driver, args []string) error {
+	m, vendor, board, err := firmwareData(args)
+	if err != nil {
+		return err
+	}
+	revision := viper.GetString("revision")
+	currentVersion := ""
+	if m.Bios != nil && m.Bios.Version != nil {
+		currentVersion = *m.Bios.Version
+	}
+
+	return machineUpdateFirmware(driver, metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
+}
+
+func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
+	m, vendor, board, err := firmwareData(args)
+	if err != nil {
+		return err
+	}
+	revision := viper.GetString("revision")
+	currentVersion := ""
+	if m.Ipmi != nil && m.Ipmi.Bmcversion != nil {
+		currentVersion = *m.Ipmi.Bmcversion
+	}
+
+	return machineUpdateFirmware(driver, metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
+}
+
+func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
+	m, err := getMachine(args)
+	if err != nil {
+		return nil, "", "", err
+	}
+	machineID := *m.ID
+	if m.Ipmi == nil {
+		return nil, "", "", fmt.Errorf("no ipmi data available of machine %s", machineID)
+	}
+
+	fru := *m.Ipmi.Fru
+	vendor := strings.ToLower(fru.ProductManufacturer)
+	board := strings.ToUpper(fru.BoardPartNumber)
+
+	return m, vendor, board, nil
+}
+
+func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
+	f, err := driver.ListFirmwares(kind, "", "")
+	if err != nil {
+		return err
+	}
+
+	var rr []string
+	revisionAvailable, containsCurrentVersion := false, false
+	vv, ok := f.Firmwares.Revisions[string(kind)]
+	if ok {
+		bb, ok := vv.VendorRevisions[vendor]
+		if ok {
+			rr, ok = bb.BoardRevisions[board]
+			if ok {
+				for _, rev := range rr {
+					if rev == revision {
+						revisionAvailable = true
+					}
+					if rev == currentVersion {
+						containsCurrentVersion = true
+					}
+				}
+			}
+		}
+	}
+
+	printPlan := revision == "" || !revisionAvailable
+	if printPlan {
+		fmt.Println("Available:")
+		for _, rev := range rr {
+			if rev == currentVersion {
+				fmt.Printf("%s (current)\n", rev)
+			} else {
+				fmt.Println(rev)
+			}
+		}
+		if !containsCurrentVersion {
+			fmt.Printf("---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
+		}
+	}
+
+	if revision == "" {
+		return nil
+	}
+	if !revisionAvailable {
+		return fmt.Errorf("specified revision %s not available", revision)
+	}
+
+	if !viper.GetBool(forceFlag) {
+		return fmt.Errorf("flag %q not set", forceFlag)
+	}
+
+	description := viper.GetString("description")
+	if description == "" {
+		description = "unknown"
+	}
+
+	resp, err := driver.MachineUpdateFirmware(kind, machineID, revision, description)
 	if err != nil {
 		return err
 	}
@@ -1130,4 +1288,17 @@ func getMachineID(args []string) (string, error) {
 		return "", err
 	}
 	return machineID, nil
+}
+
+func getMachine(args []string) (*models.V1MachineIPMIResponse, error) {
+	if len(args) < 1 {
+		return nil, fmt.Errorf("no machine ID given")
+	}
+
+	machineID := args[0]
+	m, err := driver.MachineIPMIGet(machineID)
+	if err != nil {
+		return nil, err
+	}
+	return m.Machine, nil
 }

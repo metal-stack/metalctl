@@ -122,6 +122,11 @@ type (
 	MachineWithIPMIPrinter struct {
 		TablePrinter
 	}
+	// MetalFirmwaresPrinter prints firmwares
+	MetalFirmwaresPrinter struct {
+		TablePrinter
+	}
+
 	// FilesystemLayoutPrinter is a table printer for Filesystemlayouts
 	FilesystemLayoutPrinter struct {
 		TablePrinter
@@ -316,6 +321,8 @@ func (t TablePrinter) Print(data interface{}) error {
 		MachineWithIPMIPrinter{t}.Print([]*models.V1MachineIPMIResponse{d})
 	case []*models.V1MachineProvisioningEvent:
 		MetalMachineLogsPrinter{t}.Print(d)
+	case *models.V1FirmwaresResponse:
+		MetalFirmwaresPrinter{t}.Print(d)
 	case *models.V1FilesystemLayoutResponse:
 		FilesystemLayoutPrinter{t}.Print([]*models.V1FilesystemLayoutResponse{d})
 	case []*models.V1FilesystemLayoutResponse:
@@ -1214,6 +1221,26 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 		m.addShortData(wide, pr)
 		m.addWideData(wide, pr)
 	}
+	m.render()
+}
+
+// Print ipmi data from machines
+func (m MetalFirmwaresPrinter) Print(data *models.V1FirmwaresResponse) {
+	for k, vv := range data.Revisions {
+		for v, bb := range vv.VendorRevisions {
+			for b, rr := range bb.BoardRevisions {
+				sort.Strings(rr)
+				for _, rev := range rr {
+					row := []string{k, v, b, rev}
+					wide := row
+					m.addShortData(row, m)
+					m.addWideData(wide, m)
+				}
+			}
+		}
+	}
+	m.shortHeader = []string{"Firmware", "Vendor", "Board", "Revision"}
+	m.wideHeader = m.shortHeader
 	m.render()
 }
 func (m FilesystemLayoutPrinter) Print(data []*models.V1FilesystemLayoutResponse) {
