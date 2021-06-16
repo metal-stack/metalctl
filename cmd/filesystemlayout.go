@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -178,14 +179,13 @@ func filesystemApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		p, err := driver.FilesystemLayoutGet(*iar.ID)
 		if err != nil {
-			switch e := err.(type) {
-			case *fsmodel.GetFilesystemLayoutDefault:
-				if e.Code() != http.StatusNotFound {
+			var fse *fsmodel.GetFilesystemLayoutDefault
+			if errors.As(err, &fse) {
+				if fse.Code() != http.StatusNotFound {
 					return err
 				}
-			default:
-				return err
 			}
+			return err
 		}
 		if p == nil {
 			resp, err := driver.FilesystemLayoutCreate(iar)

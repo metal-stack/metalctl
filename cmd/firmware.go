@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"log"
+
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"log"
 )
 
 type firmwareTask int
@@ -28,7 +29,7 @@ var (
 		Short:   "list firmwares",
 		Long:    "lists all available firmwares matching the given criteria.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return firmwareList(driver, args)
+			return firmwareList(driver)
 		},
 		PreRun: bindPFlags,
 	}
@@ -202,7 +203,7 @@ func init() {
 	firmwareCmd.AddCommand(firmwareRemoveCmd)
 }
 
-func firmwareList(driver *metalgo.Driver, args []string) error {
+func firmwareList(driver *metalgo.Driver) error {
 	var err error
 	var resp *metalgo.FirmwaresResponse
 

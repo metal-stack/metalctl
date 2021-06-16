@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -214,8 +215,9 @@ func imageApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		image, err := driver.ImageGet(iar.ID)
 		if err != nil {
-			if e, ok := err.(*imagemodel.FindImageDefault); ok {
-				if e.Code() != http.StatusNotFound {
+			var ie *imagemodel.FindImageDefault
+			if errors.As(err, &ie) {
+				if ie.Code() != http.StatusNotFound {
 					return err
 				}
 			}

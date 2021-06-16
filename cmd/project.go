@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -240,14 +241,13 @@ func projectApply() error {
 
 		resp, err := driver.ProjectGet(par.Meta.Id)
 		if err != nil {
-			switch e := err.(type) {
-			case *projectmodel.FindProjectDefault:
-				if e.Code() != http.StatusNotFound {
+			var pe *projectmodel.FindProjectDefault
+			if errors.As(err, &pe) {
+				if pe.Code() != http.StatusNotFound {
 					return err
 				}
-			default:
-				return err
 			}
+			return err
 		}
 		if resp.Project == nil {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
