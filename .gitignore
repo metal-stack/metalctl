@@ -5,3 +5,4 @@ bin
 vendor
 .idea
 coverage.out
+metalctl

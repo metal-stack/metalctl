@@ -13,8 +13,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 
-	"github.com/metal-stack/v"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
@@ -49,7 +47,6 @@ var (
 		Aliases: []string{"m"},
 		Short:   "a cli to manage metal devices.",
 		Long:    "",
-		Version: v.V.String(),
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			initPrinter()
 		},

@@ -254,7 +254,7 @@ func (j JSONPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
-	fmt.Printf("%s\n", string(json))
+	fmt.Printf("%s", string(json))
 	return nil
 }
 
@@ -264,7 +264,7 @@ func (y YAMLPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to yaml:%w", err)
 	}
-	fmt.Printf("%s\n", string(yml))
+	fmt.Printf("%s", string(yml))
 	return nil
 }
 
