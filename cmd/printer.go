@@ -254,7 +254,7 @@ func (j JSONPrinter) Print(data interface{}) error {
 	if err != nil {
 		return fmt.Errorf("unable to marshal to json:%w", err)
 	}
-	fmt.Printf("%s", string(json))
+	fmt.Printf("%s\n", string(json))
 	return nil
 }
 
