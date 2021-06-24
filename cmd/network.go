@@ -216,6 +216,7 @@ func init() {
 	networkIPListCmd.Flags().StringP("machineid", "", "", "machineid to filter [optional]")
 	networkIPListCmd.Flags().StringP("type", "", "", "type to filter [optional]")
 	networkIPListCmd.Flags().StringP("network", "", "", "network to filter [optional]")
+	networkIPListCmd.Flags().StringP("name", "", "", "name to filter [optional]")
 	networkIPListCmd.Flags().StringSliceP("tags", "", nil, "tags to filter [optional]")
 
 	networkIPCmd.AddCommand(networkIPListCmd)
@@ -513,7 +514,7 @@ func networkPrefixRemove(driver *metalgo.Driver, args []string) error {
 func ipList(driver *metalgo.Driver) error {
 	var resp *metalgo.IPListResponse
 	var err error
-	if atLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network", "type", "tags") {
+	if atLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network", "type", "tags", "name") {
 		ifr := &metalgo.IPFindRequest{
 			IPAddress:        viperString("ipaddress"),
 			ProjectID:        viperString("project"),
@@ -522,6 +523,7 @@ func ipList(driver *metalgo.Driver) error {
 			MachineID:        viperString("machineid"),
 			Type:             viperString("type"),
 			Tags:             viperStringSlice("tags"),
+			Name:             viperString("name"),
 		}
 		resp, err = driver.IPFind(ifr)
 	} else {
