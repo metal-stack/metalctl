@@ -118,9 +118,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 		log.Fatal(err.Error())
 	}
 
-	rootCmd.AddCommand(completionCmd)
-	completionCmd.AddCommand(bashCompletionCmd)
-	completionCmd.AddCommand(zshCompletionCmd)
 	rootCmd.AddCommand(firmwareCmd)
 	rootCmd.AddCommand(machineCmd)
 	rootCmd.AddCommand(firewallCmd)
