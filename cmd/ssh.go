@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -90,7 +89,7 @@ func SSHClient(user, keyfile, host string, port int) error {
 }
 
 func publicKey(path string) (ssh.AuthMethod, error) {
-	key, err := ioutil.ReadFile(path)
+	key, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
