@@ -1,74 +1,9 @@
 package cmd
 
 import (
-	"log"
-	"os"
-
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/spf13/cobra"
 )
-
-// toplevel completion remains for compatibility
-var completionCmd = &cobra.Command{
-	Use:   "completion",
-	Short: "Generates bash completion scripts",
-	Long: `To load completion run
-
-. <(metalctl completion)
-
-To configure your bash shell to load completions for each session add to your bashrc
-
-# ~/.bashrc or ~/.profile
-. <(metalctl completion)
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenBashCompletion(os.Stdout)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	},
-}
-
-var bashCompletionCmd = &cobra.Command{
-	Use:   "bash",
-	Short: "Generates bash completion scripts",
-	Long: `To load completion run
-
-. <(metalctl completion bash)
-
-To configure your bash shell to load completions for each session add to your bashrc
-
-# ~/.bashrc or ~/.profile
-. <(metalctl completion bash)
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenBashCompletion(os.Stdout)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	},
-}
-
-var zshCompletionCmd = &cobra.Command{
-	Use:   "zsh",
-	Short: "Generates Z shell completion scripts",
-	Long: `To load completion run
-
-. <(metalctl completion zsh)
-
-To configure your Z shell (with oh-my-zshell framework) to load completions for each session run
-
-echo -e '#compdef _metalctl metalctl\n. <(metalctl zsh-completion)' > $ZSH/completions/_metalctl
-rm -f ~/.zcompdump*
-`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := rootCmd.GenZshCompletion(os.Stdout)
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-	},
-}
 
 func imageListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.ImageList()
