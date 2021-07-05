@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -12,7 +11,7 @@ func edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 		editor = "vi"
 	}
 
-	tmpfile, err := ioutil.TempFile("", "metalctl*.yaml")
+	tmpfile, err := os.CreateTemp("", "metalctl*.yaml")
 	if err != nil {
 		return err
 	}
@@ -21,7 +20,7 @@ func edit(id string, getFunc func(id string) ([]byte, error), updateFunc func(fi
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(tmpfile.Name(), content, os.ModePerm)
+	err = os.WriteFile(tmpfile.Name(), content, os.ModePerm)
 	if err != nil {
 		return err
 	}

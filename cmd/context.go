@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -157,7 +157,7 @@ func mustDefaultContext() Context {
 func getContexts() (*Contexts, error) {
 	var ctxs Contexts
 	cfgFile := viper.GetViper().ConfigFileUsed()
-	c, err := ioutil.ReadFile(cfgFile)
+	c, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read config, please create a config.yaml in either: /etc/metalctl/, $HOME/.metalctl/ or in the current directory, see metalctl ctx -h for examples")
 	}
@@ -172,5 +172,5 @@ func writeContexts(ctxs *Contexts) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(cfgFile, c, 0600)
+	return os.WriteFile(cfgFile, c, 0600)
 }
