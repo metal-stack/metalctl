@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/user"
@@ -118,9 +117,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 		log.Fatal(err.Error())
 	}
 
-	rootCmd.AddCommand(completionCmd)
-	completionCmd.AddCommand(bashCompletionCmd)
-	completionCmd.AddCommand(zshCompletionCmd)
 	rootCmd.AddCommand(firmwareCmd)
 	rootCmd.AddCommand(machineCmd)
 	rootCmd.AddCommand(firewallCmd)
@@ -233,7 +229,7 @@ func searchSSHKey() (string, error) {
 	var key string
 	for _, k := range defaultSSHKeys {
 		possibleKey := filepath.Join(defaultDir, k)
-		_, err := ioutil.ReadFile(possibleKey)
+		_, err := os.ReadFile(possibleKey)
 		if err == nil {
 			fmt.Printf("using SSH identity: %s. Another identity can be specified with --sshidentity/-p\n",
 				possibleKey)
@@ -262,7 +258,7 @@ func readFromFile(filePath string) (string, error) {
 		filePath = filepath.Join(homeDir, filePath[2:])
 	}
 
-	content, err := ioutil.ReadFile(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", fmt.Errorf("unable to read from given file %s error:%w", filePath, err)
 	}
