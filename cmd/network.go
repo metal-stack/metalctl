@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -450,14 +451,13 @@ func networkApply(driver *metalgo.Driver) error {
 
 		resp, err := driver.NetworkGet(*nar.ID)
 		if err != nil {
-			switch e := err.(type) {
-			case *networkmodel.FindNetworkDefault:
-				if e.Code() != http.StatusNotFound {
+			var ne *networkmodel.FindNetworkDefault
+			if errors.As(err, &ne) {
+				if ne.Code() != http.StatusNotFound {
 					return err
 				}
-			default:
-				return err
 			}
+			return err
 		}
 		if resp.Network == nil {
 			resp, err := driver.NetworkCreate(&nar)
@@ -563,14 +563,13 @@ func ipApply(driver *metalgo.Driver) error {
 		}
 		i, err := driver.IPGet(iar.IPAddress)
 		if err != nil {
-			switch e := err.(type) {
-			case *ipmodel.FindIPDefault:
-				if e.Code() != http.StatusNotFound {
+			var ie *ipmodel.FindIPDefault
+			if errors.As(err, &ie) {
+				if ie.Code() != http.StatusNotFound {
 					return err
 				}
-			default:
-				return err
 			}
+			return err
 		}
 
 		if i == nil {

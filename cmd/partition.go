@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -242,14 +243,13 @@ func partitionApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		resp, err := driver.PartitionGet(iar.ID)
 		if err != nil {
-			switch e := err.(type) {
-			case *partitionmodel.FindPartitionDefault:
-				if e.Code() != http.StatusNotFound {
+			var fe *partitionmodel.FindPartitionDefault
+			if errors.As(err, &fe) {
+				if fe.Code() != http.StatusNotFound {
 					return err
 				}
-			default:
-				return err
 			}
+			return err
 		}
 		if resp.Partition == nil {
 			resp, err := driver.PartitionCreate(iar)
