@@ -451,13 +451,13 @@ func networkApply(driver *metalgo.Driver) error {
 
 		resp, err := driver.NetworkGet(*nar.ID)
 		if err != nil {
-			var ne *networkmodel.FindNetworkDefault
-			if errors.As(err, &ne) {
-				if ne.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *networkmodel.FindNetworkDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 		if resp.Network == nil {
 			resp, err := driver.NetworkCreate(&nar)
@@ -563,13 +563,13 @@ func ipApply(driver *metalgo.Driver) error {
 		}
 		i, err := driver.IPGet(iar.IPAddress)
 		if err != nil {
-			var ie *ipmodel.FindIPDefault
-			if errors.As(err, &ie) {
-				if ie.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *ipmodel.FindIPDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 
 		if i == nil {

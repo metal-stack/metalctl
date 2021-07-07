@@ -265,13 +265,13 @@ func sizeApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		p, err := driver.SizeGet(iar.ID)
 		if err != nil {
-			var fe *sizemodel.FindSizeDefault
-			if errors.As(err, &fe) {
-				if fe.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *sizemodel.FindSizeDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 		if p.Size == nil {
 			resp, err := driver.SizeCreate(iar)
