@@ -179,13 +179,13 @@ func filesystemApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		p, err := driver.FilesystemLayoutGet(*iar.ID)
 		if err != nil {
-			var fse *fsmodel.GetFilesystemLayoutDefault
-			if errors.As(err, &fse) {
-				if fse.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *fsmodel.GetFilesystemLayoutDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 		if p == nil {
 			resp, err := driver.FilesystemLayoutCreate(iar)

@@ -215,11 +215,12 @@ func imageApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		image, err := driver.ImageGet(iar.ID)
 		if err != nil {
-			var ie *imagemodel.FindImageDefault
-			if errors.As(err, &ie) {
-				if ie.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *imagemodel.FindImageDefault
+			if !errors.As(err, &r) {
+				return err
+			}
+			if r.Code() != http.StatusNotFound {
+				return err
 			}
 		}
 		if image.Image == nil {

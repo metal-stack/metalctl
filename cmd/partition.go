@@ -243,13 +243,13 @@ func partitionApply(driver *metalgo.Driver) error {
 	for _, iar := range iars {
 		resp, err := driver.PartitionGet(iar.ID)
 		if err != nil {
-			var fe *partitionmodel.FindPartitionDefault
-			if errors.As(err, &fe) {
-				if fe.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *partitionmodel.FindPartitionDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 		if resp.Partition == nil {
 			resp, err := driver.PartitionCreate(iar)

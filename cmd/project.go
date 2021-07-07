@@ -241,13 +241,13 @@ func projectApply() error {
 
 		resp, err := driver.ProjectGet(par.Meta.Id)
 		if err != nil {
-			var pe *projectmodel.FindProjectDefault
-			if errors.As(err, &pe) {
-				if pe.Code() != http.StatusNotFound {
-					return err
-				}
+			var r *projectmodel.FindProjectDefault
+			if !errors.As(err, &r) {
+				return err
 			}
-			return err
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
 		}
 		if resp.Project == nil {
 			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
