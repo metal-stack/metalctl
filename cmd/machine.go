@@ -162,9 +162,19 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machinePowerResetCmd = &cobra.Command{
 		Use:   "reset <machine ID>",
 		Short: "power reset a machine",
-		Long:  "reset the machine power. This will ensure a power cycle.",
+		Long:  "(hard) reset the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerReset(driver, args)
+		},
+		PreRun: bindPFlags,
+	}
+
+	machinePowerCycleCmd = &cobra.Command{
+		Use:   "cycle <machine ID>",
+		Short: "power cycle a machine",
+		Long:  "(soft) cycle the machine power.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return machinePowerCycle(driver, args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -431,6 +441,7 @@ func init() {
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
 	machinePowerCmd.AddCommand(machinePowerResetCmd)
+	machinePowerCmd.AddCommand(machinePowerCycleCmd)
 	machinePowerCmd.AddCommand(machineBootBiosCmd)
 	machinePowerCmd.AddCommand(machineBootDiskCmd)
 	machinePowerCmd.AddCommand(machineBootPxeCmd)
@@ -798,6 +809,19 @@ func machinePowerReset(driver *metalgo.Driver, args []string) error {
 	}
 
 	resp, err := driver.MachinePowerReset(machineID)
+	if err != nil {
+		return err
+	}
+	return printer.Print(resp.Machine)
+}
+
+func machinePowerCycle(driver *metalgo.Driver, args []string) error {
+	machineID, err := getMachineID(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := driver.MachinePowerCycle(machineID)
 	if err != nil {
 		return err
 	}
