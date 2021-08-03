@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -338,4 +339,19 @@ func annotationsAsMap(annotations []string) (map[string]string, error) {
 		result[parts[0]] = parts[1]
 	}
 	return result, nil
+}
+
+// Prompt the user to given compare text
+func Prompt(msg, compare string) error {
+	fmt.Print(msg + " ")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	if err := scanner.Err(); err != nil {
+		panic(err)
+	}
+	text := scanner.Text()
+	if text != compare {
+		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
+	}
+	return nil
 }

@@ -921,8 +921,15 @@ func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, ma
 		return fmt.Errorf("specified revision %s not available", revision)
 	}
 
-	if !viper.GetBool(forceFlag) {
-		return fmt.Errorf("flag %q not set", forceFlag)
+	if kind == metalgo.Bios {
+		fmt.Println("It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update takes a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
+	}
+
+	if !viper.GetBool("yes-i-really-mean-it") {
+		err = Prompt("Do you want to continue? (y/n)", "y")
+		if err != nil {
+			return err
+		}
 	}
 
 	description := viper.GetString("description")
