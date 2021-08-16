@@ -139,21 +139,7 @@ type (
 
 // render the table shortHeader and shortData are always expected.
 func (t *TablePrinter) render() {
-	if t.template == nil {
-		if !t.noHeaders {
-			if t.wide {
-				t.table.SetHeader(t.wideHeader)
-			} else {
-				t.table.SetHeader(t.shortHeader)
-			}
-		}
-		if t.wide {
-			t.table.AppendBulk(t.wideData)
-		} else {
-			t.table.AppendBulk(t.shortData)
-		}
-		t.table.Render()
-	} else {
+	if t.template != nil {
 		rows := t.shortData
 		if t.wide {
 			rows = t.wideData
@@ -164,7 +150,22 @@ func (t *TablePrinter) render() {
 			}
 			fmt.Println(row[0])
 		}
+		return
 	}
+
+	if !t.noHeaders {
+		if t.wide {
+			t.table.SetHeader(t.wideHeader)
+		} else {
+			t.table.SetHeader(t.shortHeader)
+		}
+	}
+	if t.wide {
+		t.table.AppendBulk(t.wideData)
+	} else {
+		t.table.AppendBulk(t.shortData)
+	}
+	t.table.Render()
 }
 
 func (t *TablePrinter) addShortData(row []string, data interface{}) {
@@ -770,8 +771,10 @@ func (m MetalFirewallTablePrinter) Print(data []*models.V1FirewallResponse) {
 
 		row := []string{firewallID, age, hostname, project, networks, ips, partition}
 		m.addShortData(row, firewall)
+		m.addWideData(row, firewall)
 	}
 	m.shortHeader = []string{"ID", "AGE", "Hostname", "Project", "Networks", "IPs", "Partition"}
+	m.shortHeader = m.wideHeader
 	m.render()
 }
 
@@ -794,8 +797,10 @@ func (m MetalSizeTablePrinter) Print(data []*models.V1SizeResponse) {
 		}
 		row := []string{id, size.Name, size.Description, cpu, memory, storage}
 		m.addShortData(row, size)
+		m.addWideData(row, size)
 	}
 	m.shortHeader = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
+	m.shortHeader = m.wideHeader
 	m.render()
 }
 
@@ -817,8 +822,10 @@ func (m MetalSizeMatchingLogTablePrinter) Print(data []*models.V1SizeMatchingLog
 		sizeMatch := fmt.Sprintf("%v", *d.Match)
 		row := []string{*d.Name, sizeMatch, cpu, memory, storage}
 		m.addShortData(row, d)
+		m.addWideData(row, d)
 	}
 	m.shortHeader = []string{"Name", "Match", "CPU Constraint", "Memory Constraint", "Storage Constraint"}
+	m.wideHeader = m.shortHeader
 	m.table.SetAutoWrapText(false)
 	m.table.SetColMinWidth(3, 40)
 	m.render()
@@ -857,8 +864,10 @@ func (m MetalPartitionTablePrinter) Print(data []*models.V1PartitionResponse) {
 		id := strValue(p.ID)
 		row := []string{id, p.Name, p.Description}
 		m.addShortData(row, p)
+		m.addWideData(row, p)
 	}
 	m.shortHeader = []string{"ID", "Name", "Description"}
+	m.wideHeader = m.shortHeader
 	m.render()
 }
 
@@ -1179,8 +1188,10 @@ func (m MetalMachineLogsPrinter) Print(data []*models.V1MachineProvisioningEvent
 	for _, i := range data {
 		row := []string{i.Time.String(), strValue(i.Event), i.Message}
 		m.addShortData(row, m)
+		m.addWideData(row, m)
 	}
 	m.shortHeader = []string{"Time", "Event", "Message"}
+	m.wideHeader = m.shortHeader
 	m.table.SetAutoWrapText(false)
 	m.render()
 }
