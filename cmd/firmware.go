@@ -256,7 +256,7 @@ func manageFirmware(task firmwareTask, driver *metalgo.Driver, kind metalgo.Firm
 }
 
 func firmwareKindCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
-	return []string{string(metalgo.Bmc), string(metalgo.Bios)}, cobra.ShellCompDirectiveDefault
+	return []string{string(metalgo.Bmc), string(metalgo.Bios)}, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firmwareVendorCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -271,7 +271,7 @@ func firmwareVendorCompletion(driver *metalgo.Driver) ([]string, cobra.ShellComp
 			vendors = append(vendors, v)
 		}
 	}
-	return vendors, cobra.ShellCompDirectiveDefault
+	return vendors, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firmwareBoardCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -288,7 +288,7 @@ func firmwareBoardCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompD
 			}
 		}
 	}
-	return boards, cobra.ShellCompDirectiveDefault
+	return boards, cobra.ShellCompDirectiveNoFileComp
 }
 
 func firmwareRevisionCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -305,5 +305,5 @@ func firmwareRevisionCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCo
 			}
 		}
 	}
-	return revisions, cobra.ShellCompDirectiveDefault
+	return revisions, cobra.ShellCompDirectiveNoFileComp
 }
