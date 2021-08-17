@@ -14,7 +14,7 @@ func imageListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirec
 	for _, i := range resp.Image {
 		names = append(names, *i.ID)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func partitionListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -26,7 +26,7 @@ func partitionListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompD
 	for _, p := range resp.Partition {
 		names = append(names, *p.ID)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func sizeListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -38,7 +38,7 @@ func sizeListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirect
 	for _, s := range resp.Size {
 		names = append(names, *s.ID)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func filesystemLayoutListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.FilesystemLayoutList()
@@ -47,9 +47,9 @@ func filesystemLayoutListCompletion(driver *metalgo.Driver) ([]string, cobra.She
 	}
 	var names []string
 	for _, s := range resp {
-		names = append(names, *s.ID)
+		names = append(names, *s.ID+"\t"+s.Description)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func machineListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.MachineList()
@@ -58,9 +58,13 @@ func machineListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDir
 	}
 	var names []string
 	for _, m := range resp.Machines {
-		names = append(names, *m.ID)
+		name := *m.ID
+		if m.Allocation != nil && *m.Allocation.Hostname != "" {
+			name = name + "\t" + *m.Allocation.Hostname
+		}
+		names = append(names, name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func networkListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.NetworkList()
@@ -69,9 +73,9 @@ func networkListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDir
 	}
 	var names []string
 	for _, n := range resp.Networks {
-		names = append(names, *n.ID)
+		names = append(names, *n.ID+"\t"+n.Name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func ipListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
@@ -81,9 +85,9 @@ func ipListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirectiv
 	}
 	var names []string
 	for _, i := range resp.IPs {
-		names = append(names, *i.Ipaddress)
+		names = append(names, *i.Ipaddress+"\t"+i.Name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func projectListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.ProjectList()
@@ -92,9 +96,9 @@ func projectListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDir
 	}
 	var names []string
 	for _, p := range resp.Project {
-		names = append(names, p.Meta.ID)
+		names = append(names, p.Meta.ID+"\t"+p.TenantID+"/"+p.Name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 	ctxs, err := getContexts()
@@ -105,11 +109,11 @@ func contextListCompletion() ([]string, cobra.ShellCompDirective) {
 	for name := range ctxs.Contexts {
 		names = append(names, name)
 	}
-	return names, cobra.ShellCompDirectiveDefault
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 func outputFormatListCompletion() ([]string, cobra.ShellCompDirective) {
-	return []string{"table", "wide", "markdown", "json", "yaml", "template"}, cobra.ShellCompDirectiveDefault
+	return []string{"table", "wide", "markdown", "json", "yaml", "template"}, cobra.ShellCompDirectiveNoFileComp
 }
 func outputOrderListCompletion() ([]string, cobra.ShellCompDirective) {
-	return []string{"size", "id", "status", "event", "when", "partition", "project"}, cobra.ShellCompDirectiveDefault
+	return []string{"size", "id", "status", "event", "when", "partition", "project"}, cobra.ShellCompDirectiveNoFileComp
 }
