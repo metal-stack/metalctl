@@ -105,7 +105,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 	err = firewallListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
+		return firewallListCompletion(driver)
 	})
 	if err != nil {
 		log.Fatal(err.Error())
