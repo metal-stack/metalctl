@@ -66,6 +66,21 @@ func machineListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDir
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+func firewallListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
+	resp, err := driver.FirewallList()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, m := range resp.Firewalls {
+		name := *m.ID
+		if m.Allocation != nil && *m.Allocation.Hostname != "" {
+			name = name + "\t" + *m.Allocation.Hostname
+		}
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
 func networkListCompletion(driver *metalgo.Driver) ([]string, cobra.ShellCompDirective) {
 	resp, err := driver.NetworkList()
 	if err != nil {
@@ -116,4 +131,59 @@ func outputFormatListCompletion() ([]string, cobra.ShellCompDirective) {
 }
 func outputOrderListCompletion() ([]string, cobra.ShellCompDirective) {
 	return []string{"size", "id", "status", "event", "when", "partition", "project"}, cobra.ShellCompDirectiveNoFileComp
+}
+
+var machineListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return machineListCompletion(driver)
+}
+var firewallListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return firewallListCompletion(driver)
+}
+var filesystemLayoutListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return filesystemLayoutListCompletion(driver)
+}
+var imageListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return imageListCompletion(driver)
+}
+var networkListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return networkListCompletion(driver)
+}
+var ipListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return ipListCompletion(driver)
+}
+var partitionListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return partitionListCompletion(driver)
+}
+var projectListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return projectListCompletion(driver)
+}
+var sizeListCompletionFunc = func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return sizeListCompletion(driver)
 }

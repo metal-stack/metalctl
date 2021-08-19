@@ -42,12 +42,13 @@ var (
 		PreRun: bindPFlags,
 	}
 	networkDescribeCmd = &cobra.Command{
-		Use:   "describe",
+		Use:   "describe <networkid>",
 		Short: "describe a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return networkDescribe(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: networkListCompletionFunc,
 	}
 	networkAllocateCmd = &cobra.Command{
 		Use:   "allocate",
@@ -63,7 +64,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return networkFree(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: networkListCompletionFunc,
 	}
 	networkDeleteCmd = &cobra.Command{
 		Use:     "delete <networkID>",
@@ -72,7 +74,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return networkDelete(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: networkListCompletionFunc,
 	}
 	networkPrefixCmd = &cobra.Command{
 		Use:   "prefix",
@@ -85,7 +88,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return networkPrefixAdd(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: networkListCompletionFunc,
 	}
 	networkPrefixRemoveCmd = &cobra.Command{
 		Use:   "remove <networkid>",
@@ -93,7 +97,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return networkPrefixRemove(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: networkListCompletionFunc,
 	}
 
 	networkIPCmd = &cobra.Command{
@@ -125,7 +130,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ipFree(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: ipListCompletionFunc,
 	}
 	networkIPApplyCmd = &cobra.Command{
 		Use:   "apply",
@@ -141,7 +147,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return ipEdit(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: ipListCompletionFunc,
 	}
 
 	networkApplyCmd = &cobra.Command{
