@@ -42,6 +42,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionDescribe(driver, args)
 		},
+		ValidArgsFunction: partitionListCompletionFunc,
 	}
 	partitionCreateCmd = &cobra.Command{
 		Use:   "create",
@@ -73,7 +74,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionDelete(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: partitionListCompletionFunc,
 	}
 	partitionEditCmd = &cobra.Command{
 		Use:   "edit <partitionID>",
@@ -81,7 +83,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionEdit(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: partitionListCompletionFunc,
 	}
 )
 

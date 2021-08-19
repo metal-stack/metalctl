@@ -35,6 +35,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return imageDescribe(driver, args)
 		},
+		ValidArgsFunction: imageListCompletionFunc,
 	}
 	imageCreateCmd = &cobra.Command{
 		Use:   "create",
@@ -67,7 +68,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return imageDelete(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: imageListCompletionFunc,
 	}
 	imageEditCmd = &cobra.Command{
 		Use:   "edit <imageID>",
@@ -75,7 +77,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return imageEdit(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: imageListCompletionFunc,
 	}
 )
 

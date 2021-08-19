@@ -37,6 +37,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return filesystemDescribe(driver, args)
 		},
+		ValidArgsFunction: filesystemLayoutListCompletionFunc,
 	}
 	filesystemApplyCmd = &cobra.Command{
 		Use:   "apply",
@@ -52,7 +53,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return filesystemDelete(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: filesystemLayoutListCompletionFunc,
 	}
 	filesystemTryCmd = &cobra.Command{
 		Use:   "try",

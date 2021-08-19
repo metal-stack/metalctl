@@ -37,6 +37,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return sizeDescribe(driver, args)
 		},
+		ValidArgsFunction: sizeListCompletionFunc,
 	}
 	sizeTryCmd = &cobra.Command{
 		Use:   "try",
@@ -76,7 +77,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return sizeDelete(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: sizeListCompletionFunc,
 	}
 	sizeEditCmd = &cobra.Command{
 		Use:   "edit <sizeID>",
@@ -84,7 +86,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return sizeEdit(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: sizeListCompletionFunc,
 	}
 )
 

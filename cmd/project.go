@@ -37,6 +37,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectDescribe(driver, args)
 		},
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 	projectCreateCmd = &cobra.Command{
 		Use:   "create",
@@ -53,7 +54,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectDelete(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 	projectApplyCmd = &cobra.Command{
 		Use:   "apply",
@@ -69,7 +71,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return projectEdit(args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: projectListCompletionFunc,
 	}
 )
 

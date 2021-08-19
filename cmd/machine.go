@@ -108,7 +108,8 @@ Once created the machine installation can not be modified anymore.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineDescribe(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineConsolePasswordCmd = &cobra.Command{
@@ -117,7 +118,8 @@ Once created the machine installation can not be modified anymore.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineConsolePassword(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineDestroyCmd = &cobra.Command{
@@ -129,7 +131,8 @@ A destroyed machine can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineDestroy(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machinePowerCmd = &cobra.Command{
@@ -144,7 +147,8 @@ A destroyed machine can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerOn(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machinePowerOffCmd = &cobra.Command{
@@ -156,7 +160,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerOff(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machinePowerResetCmd = &cobra.Command{
@@ -166,7 +171,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerReset(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machinePowerCycleCmd = &cobra.Command{
@@ -176,7 +182,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machinePowerCycle(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineUpdateCmd = &cobra.Command{
@@ -192,7 +199,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineUpdateBios(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineUpdateBmcCmd = &cobra.Command{
@@ -202,7 +210,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineUpdateBmc(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineBootBiosCmd = &cobra.Command{
@@ -212,7 +221,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootBios(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineBootPxeCmd = &cobra.Command{
@@ -222,7 +232,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootPxe(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineBootDiskCmd = &cobra.Command{
@@ -232,7 +243,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineBootDisk(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineIdentifyCmd = &cobra.Command{
@@ -247,7 +259,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineIdentifyOn(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineIdentifyOffCmd = &cobra.Command{
@@ -257,7 +270,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineIdentifyOff(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineReserveCmd = &cobra.Command{
@@ -269,7 +283,8 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineReserve(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineLockCmd = &cobra.Command{
@@ -279,7 +294,8 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineLock(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineReinstallCmd = &cobra.Command{
@@ -290,7 +306,8 @@ is wiped and the new image will subsequently be installed on that device`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineReinstall(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 
 	machineConsoleCmd = &cobra.Command{
@@ -300,7 +317,8 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineConsole(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 	machineIpmiCmd = &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
@@ -325,7 +343,8 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineLogs(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: machineListCompletionFunc,
 	}
 )
 

@@ -43,7 +43,8 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return firewallDescribe(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: firewallListCompletionFunc,
 	}
 
 	firewallDestroyCmd = &cobra.Command{
@@ -55,7 +56,8 @@ A destroyed firewall can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return firewallDestroy(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: firewallListCompletionFunc,
 	}
 
 	firewallReserveCmd = &cobra.Command{
@@ -67,7 +69,8 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return machineReserve(driver, args)
 		},
-		PreRun: bindPFlags,
+		PreRun:            bindPFlags,
+		ValidArgsFunction: firewallListCompletionFunc,
 	}
 )
 
