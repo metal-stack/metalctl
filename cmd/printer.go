@@ -1124,10 +1124,6 @@ func (m MetalIPTablePrinter) Print(data []*models.V1IPResponse) {
 func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 	m.Order(data)
 	for _, i := range data {
-		power := ""
-		if i.Ipmi.Powerstate != nil {
-			power = *i.Ipmi.Powerstate
-		}
 		id := strValue(i.ID)
 		partition := ""
 		if i.Partition != nil {
@@ -1159,6 +1155,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		cs := ""
 		ps := ""
 		bmcVersion := ""
+		power := ""
 		ipmi := i.Ipmi
 		if ipmi != nil {
 			ipAddress = strValue(ipmi.Address)
@@ -1170,6 +1167,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 				cs = fru.ChassisPartSerial
 				ps = fru.ProductSerial
 			}
+			power = strValue(ipmi.Powerstate)
 		}
 		biosVersion := ""
 		bios := i.Bios
