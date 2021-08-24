@@ -489,7 +489,8 @@ func init() {
 	}
 	machineCmd.AddCommand(machineReinstallCmd)
 
-	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{"asn-not-unique"}, "issue types to omit [optional]")
+	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
+	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
 	machineIssuesCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
 	machineIssuesCmd.Flags().StringVarP(&filterOpts.Size, "size", "", "", "size to filter [optional]")
@@ -530,7 +531,26 @@ func init() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
+	err = machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var shortNames []string
+		for _, i := range AllIssues {
+			shortNames = append(shortNames, i.ShortName)
+		}
+		return shortNames, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var shortNames []string
+		for _, i := range AllIssues {
+			shortNames = append(shortNames, i.ShortName)
+		}
+		return shortNames, cobra.ShellCompDirectiveNoFileComp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
@@ -1279,6 +1299,37 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 	return printer.Print(resp.Machines)
 }
 
+var (
+	IssueNoPartition = Issue{
+		ShortName:   "no-partition",
+		Description: "machine with no partition",
+	}
+	IssueNotAlive = Issue{
+		ShortName:   "not-alive",
+		Description: "machine not alive",
+	}
+	IssueFailedMachineReclaim = Issue{
+		ShortName:   "failed-machine-reclaim",
+		Description: "machine phones home but not allocated",
+		RefURL:      "https://github.com/metal-stack/metal-api/issues/145",
+	}
+	IssueIncompleteCycles = Issue{
+		ShortName:   "incomplete-cycles",
+		Description: fmt.Sprintf("machine has an incomplete lifecycle (%s)", circle),
+	}
+	IssueASNUniqueness = Issue{
+		ShortName: "asn-not-unique",
+	}
+
+	AllIssues = Issues{
+		IssueNoPartition,
+		IssueNotAlive,
+		IssueFailedMachineReclaim,
+		IssueIncompleteCycles,
+		IssueASNUniqueness,
+	}
+)
+
 func machineIssues(driver *metalgo.Driver) error {
 	mfr := &metalgo.MachineFindRequest{}
 	if filterOpts.ID != "" {
@@ -1316,6 +1367,7 @@ func machineIssues(driver *metalgo.Driver) error {
 		return err
 	}
 
+	only := viper.GetStringSlice("only")
 	omit := viper.GetStringSlice("omit")
 
 	var (
@@ -1329,6 +1381,16 @@ func machineIssues(driver *metalgo.Driver) error {
 				return issues
 			}
 		}
+
+		if len(only) > 0 {
+			for _, o := range only {
+				if issue.ShortName == o {
+					return append(issues, issue)
+				}
+			}
+			return issues
+		}
+
 		return append(issues, issue)
 	}
 
@@ -1336,25 +1398,15 @@ func machineIssues(driver *metalgo.Driver) error {
 		var issues Issues
 
 		if m.Partition == nil {
-			issues = conditionalAppend(issues, Issue{
-				ShortName:   "no-partition",
-				Description: "machine with no partition",
-			})
+			issues = conditionalAppend(issues, IssueNoPartition)
 		}
 
 		if m.Liveliness != nil && *m.Liveliness != "Alive" {
-			issues = conditionalAppend(issues, Issue{
-				ShortName:   "not-alive",
-				Description: "machine not alive",
-			})
+			issues = conditionalAppend(issues, IssueNotAlive)
 		}
 
 		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
-			issues = conditionalAppend(issues, Issue{
-				ShortName:   "failed-machine-reclaim",
-				Description: "machine phones home but not allocated",
-				RefURL:      "https://github.com/metal-stack/metal-api/issues/145",
-			})
+			issues = conditionalAppend(issues, IssueFailedMachineReclaim)
 		}
 
 		if m.Events.IncompleteProvisioningCycles != nil &&
@@ -1363,14 +1415,11 @@ func machineIssues(driver *metalgo.Driver) error {
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 				// Machine which are waiting are not considered to have issues
 			} else {
-				issues = conditionalAppend(issues, Issue{
-					ShortName:   "incomplete-cycles",
-					Description: fmt.Sprintf("machine has an incomplete lifecycle (%s)", circle),
-				})
+				issues = conditionalAppend(issues, IssueIncompleteCycles)
 			}
 		}
 
-		if m.Allocation != nil {
+		if m.Allocation != nil && m.Allocation.Role != nil && *m.Allocation.Role == models.V1MachineAllocationRoleFirewall {
 			// collecting ASN overlaps
 			for _, n := range m.Allocation.Networks {
 				if n.Asn == nil {
@@ -1419,6 +1468,7 @@ func machineIssues(driver *metalgo.Driver) error {
 	}
 
 	for asn, ms := range asnMap {
+
 		if len(ms) < 2 {
 			continue
 		}
@@ -1434,10 +1484,9 @@ func machineIssues(driver *metalgo.Driver) error {
 					Machine: m,
 				}
 			}
-			mWithIssues.Issues = append(mWithIssues.Issues, Issue{
-				ShortName:   "asn-not-unique",
-				Description: fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs),
-			})
+			issue := IssueASNUniqueness
+			issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
+			mWithIssues.Issues = append(mWithIssues.Issues, issue)
 			res[*m.ID] = mWithIssues
 		}
 	}
