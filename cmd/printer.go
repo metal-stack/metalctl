@@ -38,13 +38,19 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
-	// MachineAndIssues summarizes a machine with issues
-	MachineAndIssues struct {
-		Machine models.V1MachineResponse
-		Issues  []string
+	// MachineWithIssues summarizes a machine with issues
+	MachineWithIssues struct {
+		Machine models.V1MachineIPMIResponse
+		Issues  Issues
+	}
+	Issues []Issue
+	Issue  struct {
+		ShortName   string
+		Description string
+		RefURL      string
 	}
 	// MachineIssues is map of a machine response to a list of machine issues
-	MachineIssues map[string]MachineAndIssues
+	MachineIssues map[string]MachineWithIssues
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
@@ -707,14 +713,15 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 
 // Print a MetalSize in a table
 func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
+	m.shortHeader = []string{"ID", "Power", "Lock", "Lock Reason", "Status", "Last Event", "When", "Issues"}
+	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Power", "Status", "State", "Lock Reason", "Last Event", "When", "Issues"}
+
 	for id, machineWithIssues := range data {
 		machine := machineWithIssues.Machine
 
-		name := ""
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
 			widename = *machine.Allocation.Name
-			name = truncate(*machine.Allocation.Name, 30)
 		}
 		partition := ""
 		if machine.Partition != nil && machine.Partition.ID != nil {
@@ -725,20 +732,66 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 			project = *machine.Allocation.Project
 		}
 
-		var issues []string
-		for _, issue := range machineWithIssues.Issues {
-			issues = append(issues, fmt.Sprintf("- %s", issue))
+		status := strValue(machine.Liveliness)
+		statusEmoji := ""
+		switch status {
+		case "Alive":
+			statusEmoji = nbr
+		case "Dead":
+			statusEmoji = skull
+		case "Unknown":
+			statusEmoji = question
+		default:
+			statusEmoji = question
 		}
 
-		row := []string{id, name, partition, project, strings.Join(issues, "\n")}
-		widerow := []string{id, widename, partition, project, strings.Join(issues, "\n")}
+		lockEmoji := ""
+		lockText := ""
+		lockDesc := ""
+		lockDescWide := ""
+		if machine.State != nil && machine.State.Value != nil && *machine.State.Value != "" {
+			if *machine.State.Value == "LOCKED" {
+				lockEmoji = lock
+			}
+			if *machine.State.Value == "RESERVED" {
+				lockEmoji = bark
+			}
+			lockText = *machine.State.Value
+		}
+		if machine.State != nil && machine.State.Value != nil && *machine.State.Description != "" {
+			lockDescWide = *machine.State.Description
+			lockDesc = truncateEnd(lockDescWide, 30)
+		}
+
+		power, powerText := extractPowerState(machine.Ipmi)
+
+		when := ""
+		lastEvent := ""
+		lastEventEmoji := ""
+		if len(machine.Events.Log) > 0 {
+			since := time.Since(time.Time(machine.Events.LastEventTime))
+			when = humanizeDuration(since)
+			lastEvent = *machine.Events.Log[0].Event
+			lastEventEmoji = lastEvent
+		}
+
+		var issues []string
+		for _, issue := range machineWithIssues.Issues {
+			text := fmt.Sprintf("- %s (%s)", issue.Description, issue.ShortName)
+			if m.wide && issue.RefURL != "" {
+				text += " (" + issue.RefURL + ")"
+			}
+			issues = append(issues, text)
+		}
+
+		row := []string{id, power, lockEmoji, lockDesc, statusEmoji, lastEventEmoji, when, strings.Join(issues, "\n")}
+		widerow := []string{id, widename, partition, project, powerText, status, lockText, lockDescWide, lastEvent, when, strings.Join(issues, "\n")}
 
 		m.addShortData(row, m)
 		m.addWideData(widerow, m)
 	}
+
 	m.table.SetAutoWrapText(false)
-	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
-	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
 
@@ -1168,17 +1221,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 				cs = fru.ChassisPartSerial
 				ps = fru.ProductSerial
 			}
-			if ipmi.Powerstate != nil {
-				switch *ipmi.Powerstate {
-				case "ON":
-					power = color.GreenString(dot)
-				case "OFF":
-					power = color.RedString(dot)
-				default:
-					power = color.WhiteString(dot)
-				}
-				powerText = *ipmi.Powerstate
-			}
+			power, powerText = extractPowerState(ipmi)
 		}
 		biosVersion := ""
 		bios := i.Bios
@@ -1194,6 +1237,25 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 	m.shortHeader = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
 	m.wideHeader = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
 	m.render()
+}
+
+func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
+	if ipmi == nil || ipmi.Powerstate == nil {
+		return color.WhiteString(dot), wide
+	}
+
+	state := *ipmi.Powerstate
+	switch state {
+	case "ON":
+		short = color.GreenString(dot)
+	case "OFF":
+		short = color.RedString(dot)
+	default:
+		short = color.WhiteString(dot)
+	}
+	wide = state
+
+	return short, wide
 }
 
 // Print machine logs
