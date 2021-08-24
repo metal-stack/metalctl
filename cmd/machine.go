@@ -534,7 +534,7 @@ func init() {
 	err = machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
 		for _, i := range AllIssues {
-			shortNames = append(shortNames, i.ShortName)
+			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	})
@@ -544,7 +544,7 @@ func init() {
 	err = machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
 		for _, i := range AllIssues {
-			shortNames = append(shortNames, i.ShortName)
+			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	})
@@ -1318,7 +1318,9 @@ var (
 		Description: fmt.Sprintf("machine has an incomplete lifecycle (%s)", circle),
 	}
 	IssueASNUniqueness = Issue{
-		ShortName: "asn-not-unique",
+		ShortName:   "asn-not-unique",
+		Description: "The ASN is not unique (only impact on firewalls)",
+		RefURL:      "https://github.com/metal-stack/metal-api/pull/105",
 	}
 	IssueBMCWithoutMAC = Issue{
 		ShortName:   "bmc-without-mac",
