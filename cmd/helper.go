@@ -137,6 +137,15 @@ func truncate(input string, maxlength int) string {
 	return output
 }
 
+func truncateEnd(input string, maxlength int) string {
+	elipsis := "..."
+	length := len(input) + len(elipsis)
+	if length <= maxlength {
+		return input
+	}
+	return input[:maxlength] + elipsis
+}
+
 func parseNetworks(values []string) ([]metalgo.MachineAllocationNetwork, error) {
 	nets := []metalgo.MachineAllocationNetwork{}
 	for _, netWithFlag := range values {
