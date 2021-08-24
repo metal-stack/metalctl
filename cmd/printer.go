@@ -1156,6 +1156,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		ps := ""
 		bmcVersion := ""
 		power := color.WhiteString(dot)
+		powerText := ""
 		ipmi := i.Ipmi
 		if ipmi != nil {
 			ipAddress = strValue(ipmi.Address)
@@ -1176,6 +1177,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 				default:
 					power = color.WhiteString(dot)
 				}
+				powerText = *ipmi.Powerstate
 			}
 		}
 		biosVersion := ""
@@ -1185,7 +1187,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		}
 
 		row := []string{id, statusEmoji, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition}
-		wide := []string{id, statusEmoji, power, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition}
+		wide := []string{id, statusEmoji, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition}
 		m.addShortData(row, m)
 		m.addWideData(wide, i)
 	}
