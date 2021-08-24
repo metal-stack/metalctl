@@ -1331,7 +1331,7 @@ var (
 		Description: "BMC has no ip address",
 	}
 	IssueNonDistinctBMCIP = Issue{
-		ShortName:   "non-distinct-bmc-ip",
+		ShortName:   "bmc-no-distinct-ip",
 		Description: "BMC IP address is not distinct",
 	}
 
