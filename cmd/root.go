@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/pkg/errors"
 
@@ -102,6 +103,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.PersistentFlags().Bool("no-headers", false, "do not print headers of table output format (default print headers)")
 	rootCmd.PersistentFlags().Bool(forceFlag, false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
+	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 
 	err := rootCmd.RegisterFlagCompletionFunc("output-format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return outputFormatListCompletion()
@@ -202,6 +204,15 @@ func initConfig() {
 }
 
 func initPrinter() {
+	if viper.IsSet("force-color") {
+		enabled := viper.GetBool("force-color")
+		if enabled {
+			color.NoColor = false
+		} else {
+			color.NoColor = true
+		}
+	}
+
 	var err error
 	printer, err = NewPrinter(
 		viper.GetString("output-format"),
