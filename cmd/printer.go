@@ -1241,7 +1241,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 
 func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	if ipmi == nil || ipmi.Powerstate == nil {
-		return short, wide
+		return color.WhiteString(dot), wide
 	}
 
 	state := *ipmi.Powerstate
