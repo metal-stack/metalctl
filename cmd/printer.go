@@ -1155,7 +1155,7 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		cs := ""
 		ps := ""
 		bmcVersion := ""
-		power := ""
+		power := color.WhiteString(dot)
 		ipmi := i.Ipmi
 		if ipmi != nil {
 			ipAddress = strValue(ipmi.Address)
@@ -1167,7 +1167,16 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 				cs = fru.ChassisPartSerial
 				ps = fru.ProductSerial
 			}
-			power = strValue(ipmi.Powerstate)
+			if ipmi.Powerstate != nil {
+				switch *ipmi.Powerstate {
+				case "ON":
+					power = color.GreenString(dot)
+				case "OFF":
+					power = color.RedString(dot)
+				default:
+					power = color.WhiteString(dot)
+				}
+			}
 		}
 		biosVersion := ""
 		bios := i.Bios
@@ -1175,13 +1184,13 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 			biosVersion = strValue(bios.Version)
 		}
 
-		row := []string{id, statusEmoji, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, power}
-		wide := []string{id, statusEmoji, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, power}
+		row := []string{id, statusEmoji, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition}
+		wide := []string{id, statusEmoji, power, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition}
 		m.addShortData(row, m)
 		m.addWideData(wide, i)
 	}
-	m.shortHeader = []string{"ID", "", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition", "Power"}
-	m.wideHeader = []string{"ID", "", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Power"}
+	m.shortHeader = []string{"ID", "", "", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
+	m.wideHeader = []string{"ID", "", "", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
 	m.render()
 }
 
