@@ -1320,6 +1320,18 @@ var (
 	IssueASNUniqueness = Issue{
 		ShortName: "asn-not-unique",
 	}
+	IssueBMCWithoutMAC = Issue{
+		ShortName:   "bmc-without-mac",
+		Description: "BMC has no mac address",
+	}
+	IssueBMCWithoutIP = Issue{
+		ShortName:   "bmc-without-ip",
+		Description: "BMC has no ip address",
+	}
+	IssueNonDistinctBMCIP = Issue{
+		ShortName:   "non-distinct-bmc-ip",
+		Description: "BMC IP address is not distinct",
+	}
 
 	AllIssues = Issues{
 		IssueNoPartition,
@@ -1327,6 +1339,9 @@ var (
 		IssueFailedMachineReclaim,
 		IssueIncompleteCycles,
 		IssueASNUniqueness,
+		IssueBMCWithoutMAC,
+		IssueBMCWithoutIP,
+		IssueNonDistinctBMCIP,
 	}
 )
 
@@ -1371,8 +1386,9 @@ func machineIssues(driver *metalgo.Driver) error {
 	omit := viper.GetStringSlice("omit")
 
 	var (
-		res    = MachineIssues{}
-		asnMap = map[int64][]models.V1MachineIPMIResponse{}
+		res      = MachineIssues{}
+		asnMap   = map[int64][]models.V1MachineIPMIResponse{}
+		bmcIPMap = map[string][]models.V1MachineIPMIResponse{}
 	)
 
 	conditionalAppend := func(issues Issues, issue Issue) Issues {
@@ -1419,6 +1435,20 @@ func machineIssues(driver *metalgo.Driver) error {
 			}
 		}
 
+		if m.Ipmi != nil {
+			if m.Ipmi.Mac == nil || *m.Ipmi.Mac == "" {
+				issues = conditionalAppend(issues, IssueBMCWithoutMAC)
+			}
+
+			if m.Ipmi.Address == nil || *m.Ipmi.Address == "" {
+				issues = conditionalAppend(issues, IssueBMCWithoutIP)
+			} else {
+				entries := bmcIPMap[*m.Ipmi.Address]
+				entries = append(entries, *m)
+				bmcIPMap[*m.Ipmi.Address] = entries
+			}
+		}
+
 		if m.Allocation != nil && m.Allocation.Role != nil && *m.Allocation.Role == models.V1MachineAllocationRoleFirewall {
 			// collecting ASN overlaps
 			for _, n := range m.Allocation.Networks {
@@ -1456,38 +1486,77 @@ func machineIssues(driver *metalgo.Driver) error {
 		}
 	}
 
-	skipASN := false
+	includeASN := true
 	for _, o := range omit {
-		if o == "asn-not-unique" {
-			skipASN = true
+		if o == IssueASNUniqueness.ShortName {
+			includeASN = false
 			break
 		}
 	}
-	if skipASN {
-		return printer.Print(res)
+
+	if includeASN {
+		for asn, ms := range asnMap {
+			if len(ms) < 2 {
+				continue
+			}
+
+			for _, m := range ms {
+				var sharedIDs []string
+				for _, mm := range ms {
+					if *m.ID == *mm.ID {
+						continue
+					}
+					sharedIDs = append(sharedIDs, *mm.ID)
+				}
+
+				mWithIssues, ok := res[*m.ID]
+				if !ok {
+					mWithIssues = MachineWithIssues{
+						Machine: m,
+					}
+				}
+				issue := IssueASNUniqueness
+				issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
+				mWithIssues.Issues = append(mWithIssues.Issues, issue)
+				res[*m.ID] = mWithIssues
+			}
+		}
 	}
 
-	for asn, ms := range asnMap {
-
-		if len(ms) < 2 {
-			continue
+	includeDistinctBMC := true
+	for _, o := range omit {
+		if o == IssueNonDistinctBMCIP.ShortName {
+			includeDistinctBMC = false
+			break
 		}
-		var sharedIDs []string
-		for _, m := range ms {
-			sharedIDs = append(sharedIDs, *m.ID)
-		}
+	}
 
-		for _, m := range ms {
-			mWithIssues, ok := res[*m.ID]
-			if !ok {
-				mWithIssues = MachineWithIssues{
-					Machine: m,
-				}
+	if includeDistinctBMC {
+		for ip, ms := range bmcIPMap {
+			if len(ms) < 2 {
+				continue
 			}
-			issue := IssueASNUniqueness
-			issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
-			mWithIssues.Issues = append(mWithIssues.Issues, issue)
-			res[*m.ID] = mWithIssues
+
+			for _, m := range ms {
+				var sharedIDs []string
+				for _, mm := range ms {
+					if *m.ID == *mm.ID {
+						continue
+					}
+					sharedIDs = append(sharedIDs, *mm.ID)
+				}
+
+				mWithIssues, ok := res[*m.ID]
+				if !ok {
+					mWithIssues = MachineWithIssues{
+						Machine: m,
+					}
+				}
+				issue := IssueNonDistinctBMCIP
+				issue.Description = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", ip, sharedIDs)
+				mWithIssues.Issues = append(mWithIssues.Issues, issue)
+				res[*m.ID] = mWithIssues
+			}
 		}
 	}
 
