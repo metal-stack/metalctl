@@ -1191,8 +1191,8 @@ func (m MachineWithIPMIPrinter) Print(data []*models.V1MachineIPMIResponse) {
 		m.addShortData(row, m)
 		m.addWideData(wide, i)
 	}
-	m.shortHeader = []string{"ID", "", "", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
-	m.wideHeader = []string{"ID", "", "", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
+	m.shortHeader = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
+	m.wideHeader = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
 	m.render()
 }
 
