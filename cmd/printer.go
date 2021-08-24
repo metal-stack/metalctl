@@ -38,13 +38,19 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
-	// MachineAndIssues summarizes a machine with issues
-	MachineAndIssues struct {
-		Machine models.V1MachineResponse
-		Issues  []string
+	// MachineWithIssues summarizes a machine with issues
+	MachineWithIssues struct {
+		Machine models.V1MachineIPMIResponse
+		Issues  Issues
+	}
+	Issues []Issue
+	Issue  struct {
+		ShortName   string
+		Description string
+		RefURL      string
 	}
 	// MachineIssues is map of a machine response to a list of machine issues
-	MachineIssues map[string]MachineAndIssues
+	MachineIssues map[string]MachineWithIssues
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
@@ -707,14 +713,15 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 
 // Print a MetalSize in a table
 func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
+	m.shortHeader = []string{"ID", "", "", "", "Last Event", "When", "Issues"}
+	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Power", "Status", "State", "Last Event", "When", "Issues"}
+
 	for id, machineWithIssues := range data {
 		machine := machineWithIssues.Machine
 
-		name := ""
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
 			widename = *machine.Allocation.Name
-			name = truncate(*machine.Allocation.Name, 30)
 		}
 		partition := ""
 		if machine.Partition != nil && machine.Partition.ID != nil {
@@ -725,20 +732,75 @@ func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
 			project = *machine.Allocation.Project
 		}
 
-		var issues []string
-		for _, issue := range machineWithIssues.Issues {
-			issues = append(issues, fmt.Sprintf("- %s", issue))
+		status := strValue(machine.Liveliness)
+		statusEmoji := ""
+		switch status {
+		case "Alive":
+			statusEmoji = nbr
+		case "Dead":
+			statusEmoji = skull
+		case "Unknown":
+			statusEmoji = question
+		default:
+			statusEmoji = question
 		}
 
-		row := []string{id, name, partition, project, strings.Join(issues, "\n")}
-		widerow := []string{id, widename, partition, project, strings.Join(issues, "\n")}
+		reserved := ""
+		lockEmoji := ""
+		if *machine.State.Value != "" {
+			reserved = *machine.State.Value
+			if *machine.State.Value == "LOCKED" {
+				lockEmoji = lock
+			}
+			if *machine.State.Value == "RESERVED" {
+				lockEmoji = bark
+			}
+		}
+
+		power := color.WhiteString(dot)
+		powerText := ""
+		ipmi := machine.Ipmi
+		if ipmi != nil {
+			if ipmi.Powerstate != nil {
+				switch *ipmi.Powerstate {
+				case "ON":
+					power = color.GreenString(dot)
+				case "OFF":
+					power = color.RedString(dot)
+				default:
+					power = color.WhiteString(dot)
+				}
+				powerText = *ipmi.Powerstate
+			}
+		}
+
+		when := ""
+		lastEvent := ""
+		lastEventEmoji := ""
+		if len(machine.Events.Log) > 0 {
+			since := time.Since(time.Time(machine.Events.LastEventTime))
+			when = humanizeDuration(since)
+			lastEvent = *machine.Events.Log[0].Event
+			lastEventEmoji = lastEvent
+		}
+
+		var issues []string
+		for _, issue := range machineWithIssues.Issues {
+			text := fmt.Sprintf("- %s (%s)", issue.Description, issue.ShortName)
+			if m.wide && issue.RefURL != "" {
+				text += " (" + issue.RefURL + ")"
+			}
+			issues = append(issues, text)
+		}
+
+		row := []string{id, power, statusEmoji, lockEmoji, lastEventEmoji, when, strings.Join(issues, "\n")}
+		widerow := []string{id, widename, partition, project, powerText, status, reserved, lastEvent, when, strings.Join(issues, "\n")}
 
 		m.addShortData(row, m)
 		m.addWideData(widerow, m)
 	}
+
 	m.table.SetAutoWrapText(false)
-	m.shortHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
-	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Issues"}
 	m.render()
 }
 
