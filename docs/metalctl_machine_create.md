@@ -54,29 +54,30 @@ Once created the machine installation can not be modified anymore.
 ### Options
 
 ```
-  -d, --description string    Description of the machine to create. [optional]
-  -h, --help                  help for create
-  -H, --hostname string       Hostname of the machine. [required]
-  -I, --id string             ID of a specific machine to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
-  -i, --image string          OS Image to install. [required]
-      --ips strings           Sets the machine's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
-                              IPV4-ADDRESS specifies the IPv4 address to add.
-                              It can only be used in conjunction with --networks.
-  -n, --name string           Name of the machine. [optional]
-      --networks strings      Adds a network. Usage: [--networks NETWORK[:MODE][,NETWORK[:MODE]]...]...
-                              NETWORK specifies the name or id of an existing network.
-                              MODE cane be omitted or one of:
-                              	auto	IP address is automatically acquired from the given network
-                              	noauto	IP address for the given network must be provided via --ips
-  -S, --partition string      partition/datacenter where the machine is created. [required, except for reserved machines]
-  -P, --project string        Project where the machine should belong to. [required]
-  -s, --size string           Size of the machine. [required, except for reserved machines]
-  -p, --sshpublickey string   SSH public key for access via ssh and console. [optional]
-                              Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
-                              If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.
-      --tags strings          tags to add to the machine, use it like: --tags "tag1,tag2" or --tags "tag3".
-      --userdata string       cloud-init.io compatible userdata. [optional]
-                              Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".
+  -d, --description string        Description of the machine to create. [optional]
+      --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
+  -h, --help                      help for create
+  -H, --hostname string           Hostname of the machine. [required]
+  -I, --id string                 ID of a specific machine to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
+  -i, --image string              OS Image to install. [required]
+      --ips strings               Sets the machine's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
+                                  IPV4-ADDRESS specifies the IPv4 address to add.
+                                  It can only be used in conjunction with --networks.
+  -n, --name string               Name of the machine. [optional]
+      --networks strings          Adds a network. Usage: [--networks NETWORK[:MODE][,NETWORK[:MODE]]...]...
+                                  NETWORK specifies the name or id of an existing network.
+                                  MODE cane be omitted or one of:
+                                  	auto	IP address is automatically acquired from the given network
+                                  	noauto	IP address for the given network must be provided via --ips
+  -S, --partition string          partition/datacenter where the machine is created. [required, except for reserved machines]
+  -P, --project string            Project where the machine should belong to. [required]
+  -s, --size string               Size of the machine. [required, except for reserved machines]
+  -p, --sshpublickey string       SSH public key for access via ssh and console. [optional]
+                                  Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
+                                  If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.
+      --tags strings              tags to add to the machine, use it like: --tags "tag1,tag2" or --tags "tag3".
+      --userdata string           cloud-init.io compatible userdata. [optional]
+                                  Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".
 ```
 
 ### Options inherited from parent commands
@@ -92,16 +93,7 @@ Once created the machine installation can not be modified anymore.
                                
                                
       --debug                  debug output
-  -f, --file string            filename of the create or update request in yaml format, or - for stdin.
-                               Example image update:
-                               
-                               # metalctl image describe ubuntu-19.04 > ubuntu.yaml
-                               # vi ubuntu.yaml
-                               ## either via stdin
-                               # cat ubuntu.yaml | metalctl image update -f -
-                               ## or via file
-                               # metalctl image update -f ubuntu.yaml
-                               
+      --force-color            force colored output even without tty
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login.
       --no-headers             do not print headers of table output format (default print headers)
       --order string           order by (comma separated) column(s), possible values: size|id|status|event|when|partition|project
@@ -114,10 +106,11 @@ Once created the machine installation can not be modified anymore.
                                
                                
   -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
+      --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
 * [metalctl machine](metalctl_machine.md)	 - manage machines
 
-###### Auto generated by spf13/cobra on 14-Aug-2020
+###### Auto generated by spf13/cobra on 25-Aug-2021
