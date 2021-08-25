@@ -28,6 +28,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionList(driver)
 		},
+		PreRun: bindPFlags,
 	}
 	partitionCapacityCmd = &cobra.Command{
 		Use:   "capacity",
@@ -35,6 +36,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionCapacity(driver)
 		},
+		PreRun: bindPFlags,
 	}
 	partitionDescribeCmd = &cobra.Command{
 		Use:   "describe <partitionID>",
