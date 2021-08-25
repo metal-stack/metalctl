@@ -13,30 +13,31 @@ metalctl firewall create [flags]
 ### Options
 
 ```
-  -d, --description string    Description of the firewall to create. [optional]
-  -h, --help                  help for create
-  -H, --hostname string       Hostname of the firewall. [required]
-  -I, --id string             ID of a specific firewall to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
-  -i, --image string          OS Image to install. [required]
-      --ips strings           Sets the firewall's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
-                              IPV4-ADDRESS specifies the IPv4 address to add.
-                              It can only be used in conjunction with --networks.
-  -n, --name string           Name of the firewall. [optional]
-      --networks strings      Adds network(s). Usage: --networks NETWORK[:MODE][,NETWORK[:MODE]]... [--networks NETWORK[:MODE][,
-                              NETWORK[:MODE]]...]...
-                              NETWORK specifies the id of an existing network.
-                              MODE can be omitted or one of:
-                              	auto	IP address is automatically acquired from the given network
-                              	noauto	No automatic IP address acquisition
-  -S, --partition string      partition/datacenter where the firewall is created. [required, except for reserved machines]
-  -P, --project string        Project where the firewall should belong to. [required]
-  -s, --size string           Size of the firewall. [required, except for reserved machines]
-  -p, --sshpublickey string   SSH public key for access via ssh and console. [optional]
-                              Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
-                              If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.
-      --tags strings          tags to add to the firewall, use it like: --tags "tag1,tag2" or --tags "tag3".
-      --userdata string       cloud-init.io compatible userdata. [optional]
-                              Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".
+  -d, --description string        Description of the firewall to create. [optional]
+      --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
+  -h, --help                      help for create
+  -H, --hostname string           Hostname of the firewall. [required]
+  -I, --id string                 ID of a specific firewall to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
+  -i, --image string              OS Image to install. [required]
+      --ips strings               Sets the firewall's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
+                                  IPV4-ADDRESS specifies the IPv4 address to add.
+                                  It can only be used in conjunction with --networks.
+  -n, --name string               Name of the firewall. [optional]
+      --networks strings          Adds network(s). Usage: --networks NETWORK[:MODE][,NETWORK[:MODE]]... [--networks NETWORK[:MODE][,
+                                  NETWORK[:MODE]]...]...
+                                  NETWORK specifies the id of an existing network.
+                                  MODE can be omitted or one of:
+                                  	auto	IP address is automatically acquired from the given network
+                                  	noauto	No automatic IP address acquisition
+  -S, --partition string          partition/datacenter where the firewall is created. [required, except for reserved machines]
+  -P, --project string            Project where the firewall should belong to. [required]
+  -s, --size string               Size of the firewall. [required, except for reserved machines]
+  -p, --sshpublickey string       SSH public key for access via ssh and console. [optional]
+                                  Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
+                                  If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.
+      --tags strings              tags to add to the firewall, use it like: --tags "tag1,tag2" or --tags "tag3".
+      --userdata string           cloud-init.io compatible userdata. [optional]
+                                  Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".
 ```
 
 ### Options inherited from parent commands
@@ -52,16 +53,7 @@ metalctl firewall create [flags]
                                
                                
       --debug                  debug output
-  -f, --file string            filename of the create or update request in yaml format, or - for stdin.
-                               Example image update:
-                               
-                               # metalctl image describe ubuntu-19.04 > ubuntu.yaml
-                               # vi ubuntu.yaml
-                               ## either via stdin
-                               # cat ubuntu.yaml | metalctl image update -f -
-                               ## or via file
-                               # metalctl image update -f ubuntu.yaml
-                               
+      --force-color            force colored output even without tty
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login.
       --no-headers             do not print headers of table output format (default print headers)
       --order string           order by (comma separated) column(s), possible values: size|id|status|event|when|partition|project
@@ -74,10 +66,11 @@ metalctl firewall create [flags]
                                
                                
   -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
+      --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
 * [metalctl firewall](metalctl_firewall.md)	 - manage firewalls
 
-###### Auto generated by spf13/cobra on 14-Aug-2020
+###### Auto generated by spf13/cobra on 25-Aug-2021
