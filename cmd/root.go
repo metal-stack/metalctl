@@ -10,7 +10,6 @@ import (
 
 	"github.com/fatih/color"
 	metalgo "github.com/metal-stack/metal-go"
-	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -70,9 +69,9 @@ func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
 		if viper.GetBool("debug") {
-			st := errors.WithStack(err)
-			fmt.Printf("%+v", st)
+			panic(err)
 		}
+		fmt.Printf("%+v\n", err)
 		os.Exit(1)
 	}
 }
