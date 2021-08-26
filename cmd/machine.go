@@ -1299,54 +1299,6 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 	return printer.Print(resp.Machines)
 }
 
-var (
-	IssueNoPartition = Issue{
-		ShortName:   "no-partition",
-		Description: "machine with no partition",
-	}
-	IssueNotAlive = Issue{
-		ShortName:   "not-alive",
-		Description: "machine not alive",
-	}
-	IssueFailedMachineReclaim = Issue{
-		ShortName:   "failed-machine-reclaim",
-		Description: "machine phones home but not allocated",
-		RefURL:      "https://github.com/metal-stack/metal-api/issues/145",
-	}
-	IssueIncompleteCycles = Issue{
-		ShortName:   "incomplete-cycles",
-		Description: fmt.Sprintf("machine has an incomplete lifecycle (%s)", circle),
-	}
-	IssueASNUniqueness = Issue{
-		ShortName:   "asn-not-unique",
-		Description: "The ASN is not unique (only impact on firewalls)",
-		RefURL:      "https://github.com/metal-stack/metal-api/pull/105",
-	}
-	IssueBMCWithoutMAC = Issue{
-		ShortName:   "bmc-without-mac",
-		Description: "BMC has no mac address",
-	}
-	IssueBMCWithoutIP = Issue{
-		ShortName:   "bmc-without-ip",
-		Description: "BMC has no ip address",
-	}
-	IssueNonDistinctBMCIP = Issue{
-		ShortName:   "bmc-no-distinct-ip",
-		Description: "BMC IP address is not distinct",
-	}
-
-	AllIssues = Issues{
-		IssueNoPartition,
-		IssueNotAlive,
-		IssueFailedMachineReclaim,
-		IssueIncompleteCycles,
-		IssueASNUniqueness,
-		IssueBMCWithoutMAC,
-		IssueBMCWithoutIP,
-		IssueNonDistinctBMCIP,
-	}
-)
-
 func machineIssues(driver *metalgo.Driver) error {
 	mfr := &metalgo.MachineFindRequest{}
 	if filterOpts.ID != "" {
@@ -1391,26 +1343,26 @@ func machineIssues(driver *metalgo.Driver) error {
 		res      = MachineIssues{}
 		asnMap   = map[int64][]models.V1MachineIPMIResponse{}
 		bmcIPMap = map[string][]models.V1MachineIPMIResponse{}
-	)
 
-	conditionalAppend := func(issues Issues, issue Issue) Issues {
-		for _, o := range omit {
-			if issue.ShortName == o {
-				return issues
-			}
-		}
-
-		if len(only) > 0 {
-			for _, o := range only {
+		conditionalAppend = func(issues Issues, issue Issue) Issues {
+			for _, o := range omit {
 				if issue.ShortName == o {
-					return append(issues, issue)
+					return issues
 				}
 			}
-			return issues
-		}
 
-		return append(issues, issue)
-	}
+			if len(only) > 0 {
+				for _, o := range only {
+					if issue.ShortName == o {
+						return append(issues, issue)
+					}
+				}
+				return issues
+			}
+
+			return append(issues, issue)
+		}
+	)
 
 	for _, m := range resp.Machines {
 		var issues Issues
@@ -1419,8 +1371,18 @@ func machineIssues(driver *metalgo.Driver) error {
 			issues = conditionalAppend(issues, IssueNoPartition)
 		}
 
-		if m.Liveliness != nil && *m.Liveliness != "Alive" {
-			issues = conditionalAppend(issues, IssueNotAlive)
+		if m.Liveliness != nil {
+			switch *m.Liveliness {
+			case "Alive":
+			case "Dead":
+				issues = conditionalAppend(issues, IssueLivelinessDead)
+			case "Unknown":
+				issues = conditionalAppend(issues, IssueLivelinessUnknown)
+			default:
+				issues = conditionalAppend(issues, IssueLivelinessNotAvailable)
+			}
+		} else {
+			issues = conditionalAppend(issues, IssueLivelinessNotAvailable)
 		}
 
 		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {

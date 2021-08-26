@@ -38,19 +38,6 @@ type (
 	Printer interface {
 		Print(data interface{}) error
 	}
-	// MachineWithIssues summarizes a machine with issues
-	MachineWithIssues struct {
-		Machine models.V1MachineIPMIResponse
-		Issues  Issues
-	}
-	Issues []Issue
-	Issue  struct {
-		ShortName   string
-		Description string
-		RefURL      string
-	}
-	// MachineIssues is map of a machine response to a list of machine issues
-	MachineIssues map[string]MachineWithIssues
 	// JSONPrinter returns the model in json format
 	JSONPrinter struct{}
 	// YAMLPrinter returns the model in yaml format
