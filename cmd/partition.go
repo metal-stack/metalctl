@@ -28,6 +28,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionList(driver)
 		},
+		PreRun: bindPFlags,
 	}
 	partitionCapacityCmd = &cobra.Command{
 		Use:   "capacity",
@@ -35,6 +36,7 @@ var (
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return partitionCapacity(driver)
 		},
+		PreRun: bindPFlags,
 	}
 	partitionDescribeCmd = &cobra.Command{
 		Use:   "describe <partitionID>",
@@ -125,6 +127,23 @@ Example:
 		log.Fatal(err.Error())
 	}
 
+	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
+	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
+	err = partitionCapacityCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return partitionListCompletion(driver)
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	err = partitionCapacityCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		sizes, comp := sizeListCompletion(driver)
+		sizes = append(sizes, "unknown")
+		return sizes, comp
+	})
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	partitionCmd.AddCommand(partitionListCmd)
 	partitionCmd.AddCommand(partitionCapacityCmd)
 	partitionCmd.AddCommand(partitionDescribeCmd)
@@ -154,13 +173,28 @@ func partitionDescribe(driver *metalgo.Driver, args []string) error {
 	}
 	return detailer.Detail(resp.Partition)
 }
+
 func partitionCapacity(driver *metalgo.Driver) error {
-	resp, err := driver.PartitionCapacity()
+	var (
+		pcr  = metalgo.PartitionCapacityRequest{}
+		id   = viper.GetString("id")
+		size = viper.GetString("size")
+	)
+
+	if id != "" {
+		pcr.ID = &id
+	}
+	if size != "" {
+		pcr.Size = &size
+	}
+
+	resp, err := driver.PartitionCapacity(pcr)
 	if err != nil {
 		return err
 	}
 	return printer.Print(resp.Capacity)
 }
+
 func partitionCreate(driver *metalgo.Driver) error {
 	var icrs []metalgo.PartitionCreateRequest
 	var icr metalgo.PartitionCreateRequest
