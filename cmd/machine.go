@@ -1238,6 +1238,14 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	if err != nil {
 		return err
 	}
+	authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+	if err != nil {
+		return err
+	}
+	err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
+	if err != nil {
+		return err
+	}
 	err = SSHClient(machineID, key, parsedurl.Host, bmcConsolePort)
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
