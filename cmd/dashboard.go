@@ -416,7 +416,6 @@ func (d *dashboardMachinePane) Render() error {
 		issues   int
 		noIssues int
 
-		freeMachines       int
 		freeInternetIPs    int
 		freeTenantPrefixes int
 
@@ -443,6 +442,17 @@ func (d *dashboardMachinePane) Render() error {
 			capFaulty += int(*s.Faulty)
 		}
 	}
+
+	totalMachines := capFree + capAllocated + capOther + capFaulty
+	d.freeMachines.Percent = int((float64(capFree) / float64(totalMachines)) * 100)
+	if d.freeMachines.Percent < 10 {
+		d.freeMachines.BarColor = ui.ColorRed
+	} else if d.freeMachines.Percent < 30 {
+		d.freeMachines.BarColor = ui.ColorYellow
+	} else {
+		d.freeMachines.BarColor = ui.ColorGreen
+	}
+	ui.Render(d.freeMachines)
 
 	// for some reason the UI hangs when all values are zero...
 	if capFree > 0 || capAllocated > 0 || capOther > 0 || capFaulty > 0 {
@@ -535,9 +545,6 @@ func (d *dashboardMachinePane) Render() error {
 					stateRegistering++
 				case "Waiting":
 					stateWaiting++
-					if m.Allocation == nil {
-						freeMachines++
-					}
 				case "Installing":
 					stateInstalling++
 				case "Phoned Home":
@@ -563,16 +570,6 @@ func (d *dashboardMachinePane) Render() error {
 	noIssues = len(machines) - issues
 	d.machineIssues.Data = []float64{float64(noIssues), float64(issues)}
 	ui.Render(d.machineIssues)
-
-	d.freeMachines.Percent = int((float64(freeMachines) / float64(len(machines))) * 100)
-	if d.freeMachines.Percent < 10 {
-		d.freeMachines.BarColor = ui.ColorRed
-	} else if d.freeMachines.Percent < 30 {
-		d.freeMachines.BarColor = ui.ColorYellow
-	} else {
-		d.freeMachines.BarColor = ui.ColorGreen
-	}
-	ui.Render(d.freeMachines)
 
 	return nil
 }
