@@ -1344,6 +1344,12 @@ func machineIssues(driver *metalgo.Driver) error {
 		return err
 	}
 
+	res := getMachineIssues(resp.Machines)
+
+	return printer.Print(res)
+}
+
+func getMachineIssues(machines []*models.V1MachineIPMIResponse) MachineIssues {
 	only := viper.GetStringSlice("only")
 	omit := viper.GetStringSlice("omit")
 
@@ -1372,7 +1378,7 @@ func machineIssues(driver *metalgo.Driver) error {
 		}
 	)
 
-	for _, m := range resp.Machines {
+	for _, m := range machines {
 		var issues Issues
 
 		if m.Partition == nil {
@@ -1532,7 +1538,7 @@ func machineIssues(driver *metalgo.Driver) error {
 		}
 	}
 
-	return printer.Print(res)
+	return res
 }
 
 func getMachineID(args []string) (string, error) {

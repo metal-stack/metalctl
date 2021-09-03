@@ -247,6 +247,10 @@ func strValue(strPtr *string) string {
 	return ""
 }
 
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 // genericObject transforms the input to a struct which has fields with the same name as in the json struct.
 // this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
 func genericObject(input interface{}) map[string]interface{} {
