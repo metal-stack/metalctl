@@ -187,7 +187,7 @@ func initConfig() {
 
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
-		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 		// if there is an error, no kubeconfig exists for us ... this is not really an error
 		// since metalctl can be used in scripting with an hmac-key
 		if err == nil {

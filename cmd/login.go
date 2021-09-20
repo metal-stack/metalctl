@@ -28,7 +28,7 @@ var loginCmd = &cobra.Command{
 				return err
 			}
 			console = os.Stdout
-			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeConfig"), console, auth.WithContextName(formatContextName(cloudContext, cs.CurrentContext)))
+			handler = auth.NewUpdateKubeConfigHandler(viper.GetString("kubeconfig"), console, auth.WithContextName(formatContextName(cloudContext, cs.CurrentContext)))
 		}
 
 		scopes := auth.DexScopes

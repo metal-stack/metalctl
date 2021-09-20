@@ -1238,7 +1238,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	if err != nil {
 		return err
 	}
-	authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+	authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 	if err != nil {
 		return err
 	}

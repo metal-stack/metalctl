@@ -15,7 +15,7 @@ var whoamiCmd = &cobra.Command{
 	Long:  "shows the current user, that will be used to authenticate commands.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		authContext, err := getAuthContext(viper.GetString("kubeConfig"))
+		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
 		if err != nil {
 			return err
 		}
