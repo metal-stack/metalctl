@@ -24,7 +24,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all switches",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchList(args)
+			return c.switchList()
 		},
 	}
 
@@ -32,7 +32,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Use:   "detail",
 		Short: "switch details",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchDetail(args)
+			return c.switchDetail()
 		},
 	}
 
@@ -40,7 +40,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a switch",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchUpdate(args)
+			return c.switchUpdate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -78,7 +78,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 	return switchCmd
 }
 
-func (c *config) switchList(args []string) error {
+func (c *config) switchList() error {
 	resp, err := c.driver.SwitchList()
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (c *config) switchList(args []string) error {
 	return output.New().Print(resp.Switch)
 }
 
-func (c *config) switchDetail(args []string) error {
+func (c *config) switchDetail() error {
 	resp, err := c.driver.SwitchList()
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func (c *config) switchDetail(args []string) error {
 	return output.NewDetailer().Detail(result)
 }
 
-func (c *config) switchUpdate(args []string) error {
+func (c *config) switchUpdate() error {
 	surs, err := readSwitchUpdateRequests(viper.GetString("file"))
 	if err != nil {
 		return err

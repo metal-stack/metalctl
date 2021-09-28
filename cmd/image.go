@@ -26,7 +26,7 @@ func newImageCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all images",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageList(args)
+			return c.imageList()
 		},
 	}
 	imageDescribeCmd := &cobra.Command{
@@ -41,7 +41,7 @@ func newImageCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageCreate(args)
+			return c.imageCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -49,7 +49,7 @@ func newImageCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageUpdate(args)
+			return c.imageUpdate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -57,7 +57,7 @@ func newImageCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageApply(args)
+			return c.imageApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -120,7 +120,7 @@ Example:
 	return imageCmd
 }
 
-func (c *config) imageList(args []string) error {
+func (c *config) imageList() error {
 	resp, err := c.driver.ImageList()
 	if err != nil {
 		return err
@@ -140,7 +140,7 @@ func (c *config) imageDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp.Image)
 }
 
-func (c *config) imageCreate(args []string) error {
+func (c *config) imageCreate() error {
 	var icr metalgo.ImageCreateRequest
 	if viper.GetString("file") != "" {
 		var iars []metalgo.ImageCreateRequest
@@ -170,7 +170,7 @@ func (c *config) imageCreate(args []string) error {
 	}
 	return output.NewDetailer().Detail(resp.Image)
 }
-func (c *config) imageUpdate(args []string) error {
+func (c *config) imageUpdate() error {
 	iar, err := readImageCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) imageApply(args []string) error {
+func (c *config) imageApply() error {
 	var iars []metalgo.ImageCreateRequest
 	var iar metalgo.ImageCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {

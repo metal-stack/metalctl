@@ -27,7 +27,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectList(args)
+			return c.projectList()
 		},
 	}
 	projectDescribeCmd := &cobra.Command{
@@ -42,7 +42,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectCreate(args)
+			return c.projectCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -60,7 +60,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectApply(args)
+			return c.projectApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -112,7 +112,7 @@ Example project update:
 	return projectCmd
 }
 
-func (c *config) projectList(args []string) error {
+func (c *config) projectList() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
 		pfr := v1.ProjectFindRequest{}
 		id := viper.GetString("id")
@@ -153,7 +153,7 @@ func (c *config) projectDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp.Project)
 }
 
-func (c *config) projectCreate(args []string) error {
+func (c *config) projectCreate() error {
 	tenant := viper.GetString("tenant")
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -208,7 +208,7 @@ func (c *config) projectCreate(args []string) error {
 	return output.New().Print(response.Project)
 }
 
-func (c *config) projectApply(args []string) error {
+func (c *config) projectApply() error {
 	var pars []v1.Project
 	var par v1.Project
 	err := readFrom(viper.GetString("file"), &par, func(data interface{}) {

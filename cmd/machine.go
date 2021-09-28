@@ -88,7 +88,7 @@ Once created the machine installation can not be modified anymore.
 
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineCreate(args)
+			return c.machineCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -99,7 +99,7 @@ Once created the machine installation can not be modified anymore.
 		Short:   "list all machines",
 		Long:    "list all machines with almost all properties in tabular form.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineList(args)
+			return c.machineList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -335,7 +335,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIssues(args)
+			return c.machineIssues()
 		},
 		PreRun: bindPFlags,
 	}
@@ -547,7 +547,7 @@ MODE can be omitted or one of:
 	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func (c *config) machineCreate(args []string) error {
+func (c *config) machineCreate() error {
 	mcr, err := c.machineCreateRequest()
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
@@ -627,7 +627,7 @@ func (c *config) machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	return mcr, nil
 }
 
-func (c *config) machineList(args []string) error {
+func (c *config) machineList() error {
 	var resp *metalgo.MachineListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname", "mac") ||
@@ -1173,7 +1173,7 @@ func (c *config) machineIpmi(args []string) error {
 	return output.New().Print(resp.Machines)
 }
 
-func (c *config) machineIssues(args []string) error {
+func (c *config) machineIssues() error {
 	mfr := &metalgo.MachineFindRequest{}
 	if filterOpts.ID != "" {
 		mfr.ID = &filterOpts.ID

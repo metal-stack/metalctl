@@ -29,7 +29,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all networks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkList(args)
+			return c.networkList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -37,7 +37,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkCreate(args)
+			return c.networkCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -54,7 +54,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "allocate",
 		Short: "allocate a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkAllocate(args)
+			return c.networkAllocate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -111,7 +111,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "manage IPs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.ipList(args)
+			return c.ipList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -137,7 +137,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update an IP",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.ipApply(args)
+			return c.ipApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -155,7 +155,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkApply(args)
+			return c.networkApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -164,7 +164,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "issues",
 		Short: `display ips which are in a potential bad state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.ipIssues(args)
+			return c.ipIssues()
 		},
 		PreRun: bindPFlags,
 	}
@@ -263,7 +263,7 @@ Example:
 	return networkCmd
 }
 
-func (c *config) networkList(args []string) error {
+func (c *config) networkList() error {
 	var resp *metalgo.NetworkListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "name", "partition", "project", "parent") ||
@@ -293,7 +293,7 @@ func (c *config) networkList(args []string) error {
 	return output.New().Print(resp.Networks)
 }
 
-func (c *config) networkAllocate(args []string) error {
+func (c *config) networkAllocate() error {
 	var ncrs []metalgo.NetworkAllocateRequest
 	var ncr metalgo.NetworkAllocateRequest
 	if viper.GetString("file") != "" {
@@ -371,7 +371,7 @@ func (c *config) networkDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp.Network)
 }
 
-func (c *config) networkCreate(args []string) error {
+func (c *config) networkCreate() error {
 	var ncrs []metalgo.NetworkCreateRequest
 	var ncr metalgo.NetworkCreateRequest
 	if viper.GetString("file") != "" {
@@ -417,7 +417,7 @@ func (c *config) networkCreate(args []string) error {
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) networkApply(args []string) error {
+func (c *config) networkApply() error {
 	var iars []metalgo.NetworkCreateRequest
 	var iar metalgo.NetworkCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -505,7 +505,7 @@ func (c *config) networkPrefixRemove(args []string) error {
 	return output.NewDetailer().Detail(resp.Network)
 }
 
-func (c *config) ipList(args []string) error {
+func (c *config) ipList() error {
 	var resp *metalgo.IPListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network", "type", "tags", "name") {
@@ -529,7 +529,7 @@ func (c *config) ipList(args []string) error {
 	return output.New().Print(resp.IPs)
 }
 
-func (c *config) ipApply(args []string) error {
+func (c *config) ipApply() error {
 	var iars []metalgo.IPAllocateRequest
 	var iar metalgo.IPAllocateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -689,7 +689,7 @@ func (c *config) getNetworkID(args []string) (string, error) {
 	return networkID, nil
 }
 
-func (c *config) ipIssues(args []string) error {
+func (c *config) ipIssues() error {
 	ml, err := c.driver.MachineList()
 	if err != nil {
 		return fmt.Errorf("machine list error:%w", err)

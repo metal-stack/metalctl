@@ -26,7 +26,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all partitions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionList(args)
+			return c.partitionList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -34,7 +34,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "capacity",
 		Short: "show partition capacity",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionCapacity(args)
+			return c.partitionCapacity()
 		},
 		PreRun: bindPFlags,
 	}
@@ -50,7 +50,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionCreate(args)
+			return c.partitionCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -58,7 +58,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionUpdate(args)
+			return c.partitionUpdate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -66,7 +66,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionApply(args)
+			return c.partitionApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -136,7 +136,7 @@ Example:
 	return partitionCmd
 }
 
-func (c *config) partitionList(args []string) error {
+func (c *config) partitionList() error {
 	resp, err := c.driver.PartitionList()
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (c *config) partitionDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp.Partition)
 }
 
-func (c *config) partitionCapacity(args []string) error {
+func (c *config) partitionCapacity() error {
 	var (
 		pcr  = metalgo.PartitionCapacityRequest{}
 		id   = viper.GetString("id")
@@ -177,7 +177,7 @@ func (c *config) partitionCapacity(args []string) error {
 	return output.New().Print(resp.Capacity)
 }
 
-func (c *config) partitionCreate(args []string) error {
+func (c *config) partitionCreate() error {
 	var icrs []metalgo.PartitionCreateRequest
 	var icr metalgo.PartitionCreateRequest
 	if viper.GetString("file") != "" {
@@ -213,7 +213,7 @@ func (c *config) partitionCreate(args []string) error {
 	return output.NewDetailer().Detail(resp.Partition)
 }
 
-func (c *config) partitionUpdate(args []string) error {
+func (c *config) partitionUpdate() error {
 	icrs, err := readPartitionCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -245,7 +245,7 @@ func readPartitionCreateRequests(filename string) ([]metalgo.PartitionCreateRequ
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) partitionApply(args []string) error {
+func (c *config) partitionApply() error {
 	var iars []metalgo.PartitionCreateRequest
 	var iar metalgo.PartitionCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {

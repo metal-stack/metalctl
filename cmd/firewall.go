@@ -20,7 +20,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Short: "create a firewall",
 		Long:  `create a new firewall connected to the given networks.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firewallCreate(args)
+			return c.firewallCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -31,7 +31,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Short:   "list all firewalls",
 		Long:    "list all firewalls with almost all properties in tabular form.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firewallList(args)
+			return c.firewallList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -99,7 +99,7 @@ should be removed with --remove.`,
 	return firewallCmd
 }
 
-func (c *config) firewallCreate(args []string) error {
+func (c *config) firewallCreate() error {
 	mcr, err := c.machineCreateRequest()
 	if err != nil {
 		return fmt.Errorf("firewall create error:%w", err)
@@ -115,7 +115,7 @@ func (c *config) firewallCreate(args []string) error {
 	return output.New().Print(resp.Firewall)
 }
 
-func (c *config) firewallList(args []string) error {
+func (c *config) firewallList() error {
 	var resp *metalgo.FirewallListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname") ||

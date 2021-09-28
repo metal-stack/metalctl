@@ -29,7 +29,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short:   "list firmwares",
 		Long:    "lists all available firmwares matching the given criteria.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareList(args)
+			return c.firmwareList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -118,7 +118,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	return firmwareCmd
 }
 
-func (c *config) firmwareList(args []string) error {
+func (c *config) firmwareList() error {
 	var err error
 	var resp *metalgo.FirmwaresResponse
 

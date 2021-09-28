@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newLoginCmd(c *config) *cobra.Command {
+func newLoginCmd() *cobra.Command {
 
 	loginCmd := &cobra.Command{
 		Use:   "login",

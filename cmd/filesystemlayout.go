@@ -26,7 +26,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all filesystems",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.filesystemList(args)
+			return c.filesystemList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -42,7 +42,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a filesystem",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.filesystemApply(args)
+			return c.filesystemApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -59,7 +59,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Use:   "try",
 		Short: "try to detect a filesystem by given size and image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.filesystemTry(args)
+			return c.filesystemTry()
 		},
 		PreRun: bindPFlags,
 	}
@@ -67,7 +67,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Use:   "match",
 		Short: "check if a machine satisfies all disk requirements of a given filesystemlayout",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.filesystemMatch(args)
+			return c.filesystemMatch()
 		},
 		PreRun: bindPFlags,
 	}
@@ -106,7 +106,7 @@ Example:
 	return filesystemLayoutCmd
 }
 
-func (c *config) filesystemList(args []string) error {
+func (c *config) filesystemList() error {
 	resp, err := c.driver.FilesystemLayoutList()
 	if err != nil {
 		return err
@@ -127,7 +127,7 @@ func (c *config) filesystemDescribe(args []string) error {
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) filesystemApply(args []string) error {
+func (c *config) filesystemApply() error {
 	var iars []models.V1FilesystemLayoutCreateRequest
 	var iar models.V1FilesystemLayoutCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -182,7 +182,7 @@ func (c *config) filesystemDelete(args []string) error {
 	return output.NewDetailer().Detail(resp)
 }
 
-func (c *config) filesystemTry(args []string) error {
+func (c *config) filesystemTry() error {
 	size := viper.GetString("size")
 	image := viper.GetString("image")
 	try := models.V1FilesystemLayoutTryRequest{
@@ -196,7 +196,7 @@ func (c *config) filesystemTry(args []string) error {
 	}
 	return output.New().Print(resp)
 }
-func (c *config) filesystemMatch(args []string) error {
+func (c *config) filesystemMatch() error {
 	machine := viper.GetString("machine")
 	fsl := viper.GetString("filesystemlayout")
 	match := models.V1FilesystemLayoutMatchRequest{

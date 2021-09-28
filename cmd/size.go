@@ -27,7 +27,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all sizes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeList(args)
+			return c.sizeList()
 		},
 		PreRun: bindPFlags,
 	}
@@ -43,7 +43,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "try",
 		Short: "try a specific hardware spec and give the chosen size back",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeTry(args)
+			return c.sizeTry()
 		},
 		PreRun: bindPFlags,
 	}
@@ -51,7 +51,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeCreate(args)
+			return c.sizeCreate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -59,7 +59,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeUpdate(args)
+			return c.sizeUpdate()
 		},
 		PreRun: bindPFlags,
 	}
@@ -67,7 +67,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeApply(args)
+			return c.sizeApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -136,7 +136,7 @@ Example:
 	return sizeCmd
 }
 
-func (c *config) sizeList(args []string) error {
+func (c *config) sizeList() error {
 	resp, err := c.driver.SizeList()
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func (c *config) sizeDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp.Size)
 }
 
-func (c *config) sizeTry(args []string) error {
+func (c *config) sizeTry() error {
 
 	cores := viper.GetInt32("cores")
 	memory, err := humanize.ParseBytes(viper.GetString("memory"))
@@ -172,7 +172,7 @@ func (c *config) sizeTry(args []string) error {
 	return output.New().Print(resp.Logs)
 }
 
-func (c *config) sizeCreate(args []string) error {
+func (c *config) sizeCreate() error {
 	var icrs []metalgo.SizeCreateRequest
 	var icr metalgo.SizeCreateRequest
 	if viper.GetString("file") != "" {
@@ -212,7 +212,7 @@ func (c *config) sizeCreate(args []string) error {
 	return output.NewDetailer().Detail(resp.Size)
 }
 
-func (c *config) sizeUpdate(args []string) error {
+func (c *config) sizeUpdate() error {
 	icrs, err := readSizeCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -244,7 +244,7 @@ func readSizeCreateRequests(filename string) ([]metalgo.SizeCreateRequest, error
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) sizeApply(args []string) error {
+func (c *config) sizeApply() error {
 	var iars []metalgo.SizeCreateRequest
 	var iar metalgo.SizeCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
