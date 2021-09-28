@@ -393,12 +393,12 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareRevisionCompletion))
+	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
 	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareRevisionCompletion))
+	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
 	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
 
 	machineCmd.AddCommand(machineUpdateCmd)

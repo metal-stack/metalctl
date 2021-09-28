@@ -178,9 +178,34 @@ func (c *Completion) FirmwareBoardCompletion(cmd *cobra.Command, args []string, 
 	}
 	return boards, cobra.ShellCompDirectiveNoFileComp
 }
-
 func (c *Completion) FirmwareRevisionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	resp, err := c.driver.ListFirmwares("", "", "")
+	return c.firmwareRevisions("", "")
+}
+func (c *Completion) FirmwareBiosRevisionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 1 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return c.firmwareRevisions(args[0], metalgo.Bios)
+}
+func (c *Completion) FirmwareBmcRevisionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 1 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return c.firmwareRevisions(args[0], metalgo.Bmc)
+}
+
+func (c *Completion) firmwareRevisions(machineID string, kind metalgo.FirmwareKind) ([]string, cobra.ShellCompDirective) {
+	vendor := ""
+	board := ""
+	if machineID != "" {
+		m, err := c.driver.MachineIPMIGet(machineID)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		board = m.Machine.Ipmi.Fru.BoardPartNumber
+		vendor = m.Machine.Ipmi.Fru.BoardMfg
+	}
+	resp, err := c.driver.ListFirmwares(kind, vendor, board)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
