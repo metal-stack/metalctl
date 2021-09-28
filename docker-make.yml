@@ -11,9 +11,11 @@ after:
   - mv tmp/bin/metalctl-linux-amd64 result
   - mv tmp/bin/metalctl-windows-amd64 result
   - mv tmp/bin/metalctl-darwin-amd64 result
+  - mv tmp/bin/metalctl-darwin-arm64 result
   - md5sum result/metalctl-linux-amd64 > result/metalctl-linux-amd64.md5
   - md5sum result/metalctl-windows-amd64 > result/metalctl-windows-amd64.md5
   - md5sum result/metalctl-darwin-amd64 > result/metalctl-darwin-amd64.md5
+  - md5sum result/metalctl-darwin-arm64 > result/metalctl-darwin-arm64.md5
 builds:
   - name: metalctl-slug
     tags:
