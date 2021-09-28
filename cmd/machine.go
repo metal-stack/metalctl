@@ -13,6 +13,8 @@ import (
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -35,16 +37,17 @@ const (
 	forceFlag      = "yes-i-really-mean-it"
 )
 
-var (
-	filterOpts = &FilterOpts{}
+var filterOpts = &FilterOpts{}
 
-	machineCmd = &cobra.Command{
+func newMachineCmd(c *config) *cobra.Command {
+
+	machineCmd := &cobra.Command{
 		Use:   "machine",
 		Short: "manage machines",
 		Long:  "metal machines are bare metal servers.",
 	}
 
-	machineCreateCmd = &cobra.Command{
+	machineCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a machine",
 		Long:  `create a new machine with the given operating system, the size and a project.`,
@@ -85,271 +88,269 @@ Once created the machine installation can not be modified anymore.
 
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineCreate(driver)
+			return c.machineCreate(args)
 		},
 		PreRun: bindPFlags,
 	}
 
-	machineListCmd = &cobra.Command{
+	machineListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all machines",
 		Long:    "list all machines with almost all properties in tabular form.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineList(driver)
+			return c.machineList(args)
 		},
 		PreRun: bindPFlags,
 	}
 
-	machineDescribeCmd = &cobra.Command{
+	machineDescribeCmd := &cobra.Command{
 		Use:   "describe <machine ID>",
 		Short: "describe a machine",
 		Long:  "describe a machine in a very detailed form with all properties.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineDescribe(driver, args)
+			return c.machineDescribe(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineConsolePasswordCmd = &cobra.Command{
+	machineConsolePasswordCmd := &cobra.Command{
 		Use:   "consolepassword <machine ID>",
 		Short: "fetch the consolepassword for a machine",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineConsolePassword(driver, args)
+			return c.machineConsolePassword(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineDestroyCmd = &cobra.Command{
+	machineDestroyCmd := &cobra.Command{
 		Use:     "destroy <machine ID>",
 		Aliases: []string{"delete", "rm"},
 		Short:   "destroy a machine",
 		Long: `destroy a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
 A destroyed machine can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineDestroy(driver, args)
+			return c.machineDestroy(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machinePowerCmd = &cobra.Command{
+	machinePowerCmd := &cobra.Command{
 		Use:   "power",
 		Short: "manage machine power",
 	}
 
-	machinePowerOnCmd = &cobra.Command{
+	machinePowerOnCmd := &cobra.Command{
 		Use:   "on <machine ID>",
 		Short: "power on a machine",
 		Long:  "set the machine to power on state, if the machine already was on nothing happens.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machinePowerOn(driver, args)
+			return c.machinePowerOn(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machinePowerOffCmd = &cobra.Command{
+	machinePowerOffCmd := &cobra.Command{
 		Use:   "off <machine ID>",
 		Short: "power off a machine",
 		Long: `set the machine to power off state, if the machine already was off nothing happens.
 It will usually take some time to power off the machine, depending on the machine type.
 Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machinePowerOff(driver, args)
+			return c.machinePowerOff(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machinePowerResetCmd = &cobra.Command{
+	machinePowerResetCmd := &cobra.Command{
 		Use:   "reset <machine ID>",
 		Short: "power reset a machine",
 		Long:  "(hard) reset the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machinePowerReset(driver, args)
+			return c.machinePowerReset(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machinePowerCycleCmd = &cobra.Command{
+	machinePowerCycleCmd := &cobra.Command{
 		Use:   "cycle <machine ID>",
 		Short: "power cycle a machine",
 		Long:  "(soft) cycle the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machinePowerCycle(driver, args)
+			return c.machinePowerCycle(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineUpdateCmd = &cobra.Command{
+	machineUpdateCmd := &cobra.Command{
 		Use:     "update",
 		Aliases: []string{"firmware-update"},
 		Short:   "update a machine firmware",
 	}
 
-	machineUpdateBiosCmd = &cobra.Command{
+	machineUpdateBiosCmd := &cobra.Command{
 		Use:   "bios <machine ID>",
 		Short: "update a machine BIOS",
 		Long:  "the machine BIOS will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineUpdateBios(driver, args)
+			return c.machineUpdateBios(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineUpdateBmcCmd = &cobra.Command{
+	machineUpdateBmcCmd := &cobra.Command{
 		Use:   "bmc <machine ID>",
 		Short: "update a machine BMC",
 		Long:  "the machine BMC will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineUpdateBmc(driver, args)
+			return c.machineUpdateBmc(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineBootBiosCmd = &cobra.Command{
+	machineBootBiosCmd := &cobra.Command{
 		Use:   "bios <machine ID>",
 		Short: "boot a machine into BIOS",
 		Long:  "the machine will boot into bios.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineBootBios(driver, args)
+			return c.machineBootBios(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineBootPxeCmd = &cobra.Command{
+	machineBootPxeCmd := &cobra.Command{
 		Use:   "pxe <machine ID>",
 		Short: "boot a machine from PXE",
 		Long:  "the machine will boot from PXE.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineBootPxe(driver, args)
+			return c.machineBootPxe(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineBootDiskCmd = &cobra.Command{
+	machineBootDiskCmd := &cobra.Command{
 		Use:   "disk <machine ID>",
 		Short: "boot a machine from disk",
 		Long:  "the machine will boot from disk.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineBootDisk(driver, args)
+			return c.machineBootDisk(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineIdentifyCmd = &cobra.Command{
+	machineIdentifyCmd := &cobra.Command{
 		Use:   "identify",
 		Short: "manage machine chassis identify LED power",
 	}
 
-	machineIdentifyOnCmd = &cobra.Command{
+	machineIdentifyOnCmd := &cobra.Command{
 		Use:   "on <machine ID>",
 		Short: "power on the machine chassis identify LED",
 		Long:  `set the machine chassis identify LED to on state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineIdentifyOn(driver, args)
+			return c.machineIdentifyOn(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineIdentifyOffCmd = &cobra.Command{
+	machineIdentifyOffCmd := &cobra.Command{
 		Use:   "off <machine ID>",
 		Short: "power off the machine chassis identify LED",
 		Long:  `set the machine chassis identify LED to off state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineIdentifyOff(driver, args)
+			return c.machineIdentifyOff(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineReserveCmd = &cobra.Command{
+	machineReserveCmd := &cobra.Command{
 		Use:   "reserve <machine ID>",
 		Short: "reserve a machine",
 		Long: `reserve a machine for exclusive usage, this machine will no longer be picked by other allocations.
 This is useful for maintenance of the machine or testing. After the reservation is not needed anymore, the reservation
 should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineReserve(driver, args)
+			return c.machineReserve(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineLockCmd = &cobra.Command{
+	machineLockCmd := &cobra.Command{
 		Use:   "lock <machine ID>",
 		Short: "lock a machine",
 		Long:  `when a machine is locked, it can not be destroyed, to destroy a machine you must first remove the lock from that machine with --remove`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineLock(driver, args)
+			return c.machineLock(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineReinstallCmd = &cobra.Command{
+	machineReinstallCmd := &cobra.Command{
 		Use:   "reinstall <machine ID>",
 		Short: "reinstalls an already allocated machine",
 		Long: `reinstalls an already allocated machine. If it is not yet allocated, nothing happens, otherwise only the machine's primary disk
 is wiped and the new image will subsequently be installed on that device`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineReinstall(driver, args)
+			return c.machineReinstall(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineConsoleCmd = &cobra.Command{
+	machineConsoleCmd := &cobra.Command{
 		Use: "console <machine ID>",
 		Short: `console access to a machine, machine must be created with a ssh public key, authentication is done with your private key.
 In case the machine did not register properly a direct ipmi console access is available via the --ipmi flag. This is only for administrative access.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineConsole(driver, args)
+			return c.machineConsole(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
-	machineIpmiCmd = &cobra.Command{
+	machineIpmiCmd := &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
 		Short: `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineIpmi(driver, args)
+			return c.machineIpmi(args)
 		},
 		PreRun: bindPFlags,
 	}
-	machineIssuesCmd = &cobra.Command{
+	machineIssuesCmd := &cobra.Command{
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineIssues(driver)
+			return c.machineIssues(args)
 		},
 		PreRun: bindPFlags,
 	}
-	machineLogsCmd = &cobra.Command{
+	machineLogsCmd := &cobra.Command{
 		Use:     "logs <machine ID>",
 		Aliases: []string{"log"},
 		Short:   `display machine provisioning logs`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return machineLogs(driver, args)
+			return c.machineLogs(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: machineListCompletionFunc,
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
-)
 
-func init() {
-	addMachineCreateFlags(machineCreateCmd, "machine")
+	c.addMachineCreateFlags(machineCreateCmd, "machine")
 	machineCmd.AddCommand(machineCreateCmd)
 
 	machineListCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
@@ -362,36 +363,11 @@ func init() {
 	machineListCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineListCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	err := machineListCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineListCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineListCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineListCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineListCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return imageListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(machineListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(machineListCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(machineListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(machineListCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
+	must(machineListCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
@@ -403,30 +379,10 @@ func init() {
 	machineIpmiCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineIpmiCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	err = machineIpmiCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIpmiCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIpmiCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIpmiCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(machineIpmiCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(machineIpmiCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(machineIpmiCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(machineIpmiCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
@@ -437,22 +393,12 @@ func init() {
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	err = machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firmwareRevisionCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareRevisionCompletion))
 	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	err = machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return firmwareRevisionCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareRevisionCompletion))
 	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
 
 	machineCmd.AddCommand(machineUpdateCmd)
@@ -483,10 +429,7 @@ func init() {
 
 	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
 	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
-	err = machineReinstallCmd.MarkFlagRequired("image")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(machineReinstallCmd.MarkFlagRequired("image"))
 	machineCmd.AddCommand(machineReinstallCmd)
 
 	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
@@ -501,56 +444,26 @@ func init() {
 	machineIssuesCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
 	machineIssuesCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return imageListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
-		for _, i := range AllIssues {
+		for _, i := range api.AllIssues {
 			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
-		for _, i := range AllIssues {
+		for _, i := range api.AllIssues {
 			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
@@ -561,9 +474,11 @@ func init() {
 	machineCmd.AddCommand(machineLogsCmd)
 
 	machineDestroyCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
+
+	return machineCmd
 }
 
-func addMachineCreateFlags(cmd *cobra.Command, name string) {
+func (c *config) addMachineCreateFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().StringP("description", "d", "", "Description of the "+name+" to create. [optional]")
 	cmd.Flags().StringP("partition", "S", "", "partition/datacenter where the "+name+" is created. [required, except for reserved machines]")
 	cmd.Flags().StringP("hostname", "H", "", "Hostname of the "+name+". [required]")
@@ -617,83 +532,34 @@ MODE can be omitted or one of:
 		log.Fatal(fmt.Errorf("illegal name: %s. Must be one of (machine, firewall)", name))
 	}
 
-	err := cmd.MarkFlagRequired("hostname")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.MarkFlagRequired("image")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(cmd.MarkFlagRequired("hostname"))
+	must(cmd.MarkFlagRequired("image"))
+	must(cmd.MarkFlagRequired("project"))
 
 	// Completion for arguments
-	err = cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return networkListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("ips", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return ipListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("project", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return projectListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return imageListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = cmd.RegisterFlagCompletionFunc("filesystemlayout", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return filesystemLayoutListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func machineCreate(driver *metalgo.Driver) error {
-	mcr, err := machineCreateRequest()
+func (c *config) machineCreate(args []string) error {
+	mcr, err := c.machineCreateRequest()
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
-	resp, err := driver.MachineCreate(mcr)
+	resp, err := c.driver.MachineCreate(mcr)
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
+func (c *config) machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
@@ -761,7 +627,7 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	return mcr, nil
 }
 
-func machineList(driver *metalgo.Driver) error {
+func (c *config) machineList(args []string) error {
 	var resp *metalgo.MachineListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname", "mac") ||
@@ -797,35 +663,35 @@ func machineList(driver *metalgo.Driver) error {
 		if len(filterOpts.Tags) > 0 {
 			mfr.Tags = filterOpts.Tags
 		}
-		resp, err = driver.MachineFind(mfr)
+		resp, err = c.driver.MachineFind(mfr)
 	} else {
-		resp, err = driver.MachineList()
+		resp, err = c.driver.MachineList()
 	}
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machines)
+	return output.New().Print(resp.Machines)
 }
 
-func machineDescribe(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineDescribe(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
-	resp, err := driver.MachineGet(machineID)
+	resp, err := c.driver.MachineGet(machineID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Machine)
+	return output.NewDetailer().Detail(resp.Machine)
 }
 
-func machineConsolePassword(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineConsolePassword(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 	reason := viper.GetString("reason")
-	resp, err := driver.MachineConsolePassword(machineID, reason)
+	resp, err := c.driver.MachineConsolePassword(machineID, reason)
 	if err != nil {
 		return err
 	}
@@ -833,8 +699,8 @@ func machineConsolePassword(driver *metalgo.Driver, args []string) error {
 	return nil
 }
 
-func machineDestroy(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineDestroy(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
@@ -843,74 +709,74 @@ func machineDestroy(driver *metalgo.Driver, args []string) error {
 		if !viper.GetBool(forceFlag) {
 			return fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
 		}
-		resp, err := driver.MachineDeleteFromDatabase(machineID)
+		resp, err := c.driver.MachineDeleteFromDatabase(machineID)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Machine)
+		return output.New().Print(resp.Machine)
 	}
 
-	resp, err := driver.MachineDelete(machineID)
+	resp, err := c.driver.MachineDelete(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machinePowerOn(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machinePowerOn(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachinePowerOn(machineID)
+	resp, err := c.driver.MachinePowerOn(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machinePowerOff(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machinePowerOff(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachinePowerOff(machineID)
+	resp, err := c.driver.MachinePowerOff(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machinePowerReset(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machinePowerReset(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachinePowerReset(machineID)
+	resp, err := c.driver.MachinePowerReset(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machinePowerCycle(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machinePowerCycle(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachinePowerCycle(machineID)
+	resp, err := c.driver.MachinePowerCycle(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineUpdateBios(driver *metalgo.Driver, args []string) error {
-	m, vendor, board, err := firmwareData(args)
+func (c *config) machineUpdateBios(args []string) error {
+	m, vendor, board, err := c.firmwareData(args)
 	if err != nil {
 		return err
 	}
@@ -920,11 +786,11 @@ func machineUpdateBios(driver *metalgo.Driver, args []string) error {
 		currentVersion = *m.Bios.Version
 	}
 
-	return machineUpdateFirmware(driver, metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
+	return c.machineUpdateFirmware(metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
 }
 
-func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
-	m, vendor, board, err := firmwareData(args)
+func (c *config) machineUpdateBmc(args []string) error {
+	m, vendor, board, err := c.firmwareData(args)
 	if err != nil {
 		return err
 	}
@@ -934,11 +800,11 @@ func machineUpdateBmc(driver *metalgo.Driver, args []string) error {
 		currentVersion = *m.Ipmi.Bmcversion
 	}
 
-	return machineUpdateFirmware(driver, metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
+	return c.machineUpdateFirmware(metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
 }
 
-func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
-	m, err := getMachine(args)
+func (c *config) firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
+	m, err := c.getMachine(args)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -954,8 +820,8 @@ func firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string,
 	return m, vendor, board, nil
 }
 
-func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
-	f, err := driver.ListFirmwares(kind, "", "")
+func (c *config) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
+	f, err := c.driver.ListFirmwares(kind, "", "")
 	if err != nil {
 		return err
 	}
@@ -1021,105 +887,82 @@ func machineUpdateFirmware(driver *metalgo.Driver, kind metalgo.FirmwareKind, ma
 		description = "unknown"
 	}
 
-	resp, err := driver.MachineUpdateFirmware(kind, machineID, revision, description)
+	resp, err := c.driver.MachineUpdateFirmware(kind, machineID, revision, description)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineBootBios(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineBootBios(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachineBootBios(machineID)
+	resp, err := c.driver.MachineBootBios(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineBootDisk(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineBootDisk(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachineBootDisk(machineID)
+	resp, err := c.driver.MachineBootDisk(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineBootPxe(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineBootPxe(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachineBootPxe(machineID)
+	resp, err := c.driver.MachineBootPxe(machineID)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineIdentifyOn(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineIdentifyOn(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
 	description := viper.GetString("description")
-	resp, err := driver.ChassisIdentifyLEDPowerOn(machineID, description)
+	resp, err := c.driver.ChassisIdentifyLEDPowerOn(machineID, description)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineIdentifyOff(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineIdentifyOff(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
 	description := viper.GetString("description")
-	resp, err := driver.ChassisIdentifyLEDPowerOff(machineID, description)
+	resp, err := c.driver.ChassisIdentifyLEDPowerOff(machineID, description)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineReserve(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
-	if err != nil {
-		return err
-	}
-	description := viper.GetString("description")
-	remove := viper.GetBool("remove")
-
-	var resp *metalgo.MachineStateResponse
-	if remove {
-		resp, err = driver.MachineUnReserve(machineID)
-		if err != nil {
-			return err
-		}
-	} else {
-		resp, err = driver.MachineReserve(machineID, description)
-		if err != nil {
-			return err
-		}
-	}
-	return printer.Print(resp.Machine)
-}
-
-func machineLock(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineReserve(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
@@ -1128,21 +971,44 @@ func machineLock(driver *metalgo.Driver, args []string) error {
 
 	var resp *metalgo.MachineStateResponse
 	if remove {
-		resp, err = driver.MachineUnLock(machineID)
+		resp, err = c.driver.MachineUnReserve(machineID)
 		if err != nil {
 			return err
 		}
 	} else {
-		resp, err = driver.MachineLock(machineID, description)
+		resp, err = c.driver.MachineReserve(machineID, description)
 		if err != nil {
 			return err
 		}
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineReinstall(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineLock(args []string) error {
+	machineID, err := c.getMachineID(args)
+	if err != nil {
+		return err
+	}
+	description := viper.GetString("description")
+	remove := viper.GetBool("remove")
+
+	var resp *metalgo.MachineStateResponse
+	if remove {
+		resp, err = c.driver.MachineUnLock(machineID)
+		if err != nil {
+			return err
+		}
+	} else {
+		resp, err = c.driver.MachineLock(machineID, description)
+		if err != nil {
+			return err
+		}
+	}
+	return output.New().Print(resp.Machine)
+}
+
+func (c *config) machineReinstall(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
@@ -1150,30 +1016,30 @@ func machineReinstall(driver *metalgo.Driver, args []string) error {
 	description := viper.GetString("description")
 
 	var resp *metalgo.MachineGetResponse
-	resp, err = driver.MachineReinstall(machineID, imageID, description)
+	resp, err = c.driver.MachineReinstall(machineID, imageID, description)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machine)
+	return output.New().Print(resp.Machine)
 }
 
-func machineLogs(driver *metalgo.Driver, args []string) error {
+func (c *config) machineLogs(args []string) error {
 	// FIXME add ipmi sel as well
-	machineID, err := getMachineID(args)
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := driver.MachineGet(machineID)
+	resp, err := c.driver.MachineGet(machineID)
 	if err != nil {
 		return err
 	}
 	machine := resp.Machine
-	return printer.Print(machine.Events.Log)
+	return output.New().Print(machine.Events.Log)
 }
 
-func machineConsole(driver *metalgo.Driver, args []string) error {
-	machineID, err := getMachineID(args)
+func (c *config) machineConsole(args []string) error {
+	machineID, err := c.getMachineID(args)
 	if err != nil {
 		return err
 	}
@@ -1184,7 +1050,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 			return fmt.Errorf("unable to locate ipmitool in path")
 		}
 
-		resp, err := driver.MachineIPMIGet(machineID)
+		resp, err := c.driver.MachineIPMIGet(machineID)
 		if err != nil {
 			return err
 		}
@@ -1234,7 +1100,7 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 			return fmt.Errorf("machine console error:%w", err)
 		}
 	}
-	parsedurl, err := url.Parse(driverURL)
+	parsedurl, err := url.Parse(c.driverURL)
 	if err != nil {
 		return err
 	}
@@ -1253,20 +1119,20 @@ func machineConsole(driver *metalgo.Driver, args []string) error {
 	return nil
 }
 
-func machineIpmi(driver *metalgo.Driver, args []string) error {
+func (c *config) machineIpmi(args []string) error {
 	if len(args) == 1 {
-		machineID, err := getMachineID(args)
+		machineID, err := c.getMachineID(args)
 		if err != nil {
 			return err
 		}
-		resp, err := driver.MachineIPMIGet(machineID)
+		resp, err := c.driver.MachineIPMIGet(machineID)
 		if err != nil {
 			return err
 		}
 
 		hidden := "<hidden>"
 		resp.Machine.Ipmi.Password = &hidden
-		return detailer.Detail(resp.Machine)
+		return output.NewDetailer().Detail(resp.Machine)
 	}
 
 	mfr := &metalgo.MachineFindRequest{}
@@ -1300,14 +1166,14 @@ func machineIpmi(driver *metalgo.Driver, args []string) error {
 	if len(filterOpts.Tags) > 0 {
 		mfr.Tags = filterOpts.Tags
 	}
-	resp, err := driver.MachineIPMIList(mfr)
+	resp, err := c.driver.MachineIPMIList(mfr)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Machines)
+	return output.New().Print(resp.Machines)
 }
 
-func machineIssues(driver *metalgo.Driver) error {
+func (c *config) machineIssues(args []string) error {
 	mfr := &metalgo.MachineFindRequest{}
 	if filterOpts.ID != "" {
 		mfr.ID = &filterOpts.ID
@@ -1339,7 +1205,7 @@ func machineIssues(driver *metalgo.Driver) error {
 	if len(filterOpts.Tags) > 0 {
 		mfr.Tags = filterOpts.Tags
 	}
-	resp, err := driver.MachineIPMIList(mfr)
+	resp, err := c.driver.MachineIPMIList(mfr)
 	if err != nil {
 		return err
 	}
@@ -1348,11 +1214,11 @@ func machineIssues(driver *metalgo.Driver) error {
 	omit := viper.GetStringSlice("omit")
 
 	var (
-		res      = MachineIssues{}
+		res      = api.MachineIssues{}
 		asnMap   = map[int64][]models.V1MachineIPMIResponse{}
 		bmcIPMap = map[string][]models.V1MachineIPMIResponse{}
 
-		conditionalAppend = func(issues Issues, issue Issue) Issues {
+		conditionalAppend = func(issues api.Issues, issue api.Issue) api.Issues {
 			for _, o := range omit {
 				if issue.ShortName == o {
 					return issues
@@ -1373,28 +1239,28 @@ func machineIssues(driver *metalgo.Driver) error {
 	)
 
 	for _, m := range resp.Machines {
-		var issues Issues
+		var issues api.Issues
 
 		if m.Partition == nil {
-			issues = conditionalAppend(issues, IssueNoPartition)
+			issues = conditionalAppend(issues, api.IssueNoPartition)
 		}
 
 		if m.Liveliness != nil {
 			switch *m.Liveliness {
 			case "Alive":
 			case "Dead":
-				issues = conditionalAppend(issues, IssueLivelinessDead)
+				issues = conditionalAppend(issues, api.IssueLivelinessDead)
 			case "Unknown":
-				issues = conditionalAppend(issues, IssueLivelinessUnknown)
+				issues = conditionalAppend(issues, api.IssueLivelinessUnknown)
 			default:
-				issues = conditionalAppend(issues, IssueLivelinessNotAvailable)
+				issues = conditionalAppend(issues, api.IssueLivelinessNotAvailable)
 			}
 		} else {
-			issues = conditionalAppend(issues, IssueLivelinessNotAvailable)
+			issues = conditionalAppend(issues, api.IssueLivelinessNotAvailable)
 		}
 
 		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
-			issues = conditionalAppend(issues, IssueFailedMachineReclaim)
+			issues = conditionalAppend(issues, api.IssueFailedMachineReclaim)
 		}
 
 		if m.Events.IncompleteProvisioningCycles != nil &&
@@ -1403,17 +1269,17 @@ func machineIssues(driver *metalgo.Driver) error {
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 				// Machine which are waiting are not considered to have issues
 			} else {
-				issues = conditionalAppend(issues, IssueIncompleteCycles)
+				issues = conditionalAppend(issues, api.IssueIncompleteCycles)
 			}
 		}
 
 		if m.Ipmi != nil {
 			if m.Ipmi.Mac == nil || *m.Ipmi.Mac == "" {
-				issues = conditionalAppend(issues, IssueBMCWithoutMAC)
+				issues = conditionalAppend(issues, api.IssueBMCWithoutMAC)
 			}
 
 			if m.Ipmi.Address == nil || *m.Ipmi.Address == "" {
-				issues = conditionalAppend(issues, IssueBMCWithoutIP)
+				issues = conditionalAppend(issues, api.IssueBMCWithoutIP)
 			} else {
 				entries := bmcIPMap[*m.Ipmi.Address]
 				entries = append(entries, *m)
@@ -1451,7 +1317,7 @@ func machineIssues(driver *metalgo.Driver) error {
 		}
 
 		if len(issues) > 0 {
-			res[*m.ID] = MachineWithIssues{
+			res[*m.ID] = api.MachineWithIssues{
 				Machine: *m,
 				Issues:  issues,
 			}
@@ -1460,7 +1326,7 @@ func machineIssues(driver *metalgo.Driver) error {
 
 	includeASN := true
 	for _, o := range omit {
-		if o == IssueASNUniqueness.ShortName {
+		if o == api.IssueASNUniqueness.ShortName {
 			includeASN = false
 			break
 		}
@@ -1483,11 +1349,11 @@ func machineIssues(driver *metalgo.Driver) error {
 
 				mWithIssues, ok := res[*m.ID]
 				if !ok {
-					mWithIssues = MachineWithIssues{
+					mWithIssues = api.MachineWithIssues{
 						Machine: m,
 					}
 				}
-				issue := IssueASNUniqueness
+				issue := api.IssueASNUniqueness
 				issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
 				mWithIssues.Issues = append(mWithIssues.Issues, issue)
 				res[*m.ID] = mWithIssues
@@ -1497,7 +1363,7 @@ func machineIssues(driver *metalgo.Driver) error {
 
 	includeDistinctBMC := true
 	for _, o := range omit {
-		if o == IssueNonDistinctBMCIP.ShortName {
+		if o == api.IssueNonDistinctBMCIP.ShortName {
 			includeDistinctBMC = false
 			break
 		}
@@ -1520,11 +1386,11 @@ func machineIssues(driver *metalgo.Driver) error {
 
 				mWithIssues, ok := res[*m.ID]
 				if !ok {
-					mWithIssues = MachineWithIssues{
+					mWithIssues = api.MachineWithIssues{
 						Machine: m,
 					}
 				}
-				issue := IssueNonDistinctBMCIP
+				issue := api.IssueNonDistinctBMCIP
 				issue.Description = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", ip, sharedIDs)
 				mWithIssues.Issues = append(mWithIssues.Issues, issue)
 				res[*m.ID] = mWithIssues
@@ -1532,29 +1398,29 @@ func machineIssues(driver *metalgo.Driver) error {
 		}
 	}
 
-	return printer.Print(res)
+	return output.New().Print(res)
 }
 
-func getMachineID(args []string) (string, error) {
+func (c *config) getMachineID(args []string) (string, error) {
 	if len(args) < 1 {
 		return "", fmt.Errorf("no machine ID given")
 	}
 
 	machineID := args[0]
-	_, err := driver.MachineGet(machineID)
+	_, err := c.driver.MachineGet(machineID)
 	if err != nil {
 		return "", err
 	}
 	return machineID, nil
 }
 
-func getMachine(args []string) (*models.V1MachineIPMIResponse, error) {
+func (c *config) getMachine(args []string) (*models.V1MachineIPMIResponse, error) {
 	if len(args) < 1 {
 		return nil, fmt.Errorf("no machine ID given")
 	}
 
 	machineID := args[0]
-	m, err := driver.MachineIPMIGet(machineID)
+	m, err := c.driver.MachineIPMIGet(machineID)
 	if err != nil {
 		return nil, err
 	}

@@ -3,95 +3,92 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/dustin/go-humanize"
 	metalgo "github.com/metal-stack/metal-go"
 	sizemodel "github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	sizeCmd = &cobra.Command{
+func newSizeCmd(c *config) *cobra.Command {
+	sizeCmd := &cobra.Command{
 		Use:   "size",
 		Short: "manage sizes",
 		Long:  "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
 	}
 
-	sizeListCmd = &cobra.Command{
+	sizeListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all sizes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeList(driver)
+			return c.sizeList(args)
 		},
 		PreRun: bindPFlags,
 	}
-	sizeDescribeCmd = &cobra.Command{
+	sizeDescribeCmd := &cobra.Command{
 		Use:   "describe <sizeID>",
 		Short: "describe a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeDescribe(driver, args)
+			return c.sizeDescribe(args)
 		},
-		ValidArgsFunction: sizeListCompletionFunc,
+		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
-	sizeTryCmd = &cobra.Command{
+	sizeTryCmd := &cobra.Command{
 		Use:   "try",
 		Short: "try a specific hardware spec and give the chosen size back",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeTry(driver)
+			return c.sizeTry(args)
 		},
 		PreRun: bindPFlags,
 	}
-	sizeCreateCmd = &cobra.Command{
+	sizeCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeCreate(driver)
+			return c.sizeCreate(args)
 		},
 		PreRun: bindPFlags,
 	}
-	sizeUpdateCmd = &cobra.Command{
+	sizeUpdateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeUpdate(driver)
+			return c.sizeUpdate(args)
 		},
 		PreRun: bindPFlags,
 	}
-	sizeApplyCmd = &cobra.Command{
+	sizeApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeApply(driver)
+			return c.sizeApply(args)
 		},
 		PreRun: bindPFlags,
 	}
-	sizeDeleteCmd = &cobra.Command{
+	sizeDeleteCmd := &cobra.Command{
 		Use:   "delete <sizeID>",
 		Short: "delete a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeDelete(driver, args)
+			return c.sizeDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: sizeListCompletionFunc,
+		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
-	sizeEditCmd = &cobra.Command{
+	sizeEditCmd := &cobra.Command{
 		Use:   "edit <sizeID>",
 		Short: "edit a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return sizeEdit(driver, args)
+			return c.sizeEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: sizeListCompletionFunc,
+		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
-)
-
-func init() {
 
 	sizeCreateCmd.Flags().StringP("id", "", "", "ID of the size. [required]")
 	sizeCreateCmd.Flags().StringP("name", "n", "", "Name of the size. [optional]")
@@ -110,10 +107,7 @@ Example:
 # cat c1-xlarge-x86.yaml | metalctl size apply -f -
 ## or via file
 # metalctl size apply -f c1-xlarge-x86.yaml`)
-	err := sizeApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(sizeApplyCmd.MarkFlagRequired("file"))
 
 	sizeUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
@@ -124,10 +118,7 @@ Example:
 # cat c1-xlarge-x86.yaml | metalctl size update -f -
 ## or via file
 # metalctl size update -f c1-xlarge-x86.yaml`)
-	err = sizeUpdateCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(sizeUpdateCmd.MarkFlagRequired("file"))
 
 	sizeTryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
 	sizeTryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
@@ -141,29 +132,31 @@ Example:
 	sizeCmd.AddCommand(sizeDeleteCmd)
 	sizeCmd.AddCommand(sizeApplyCmd)
 	sizeCmd.AddCommand(sizeEditCmd)
+
+	return sizeCmd
 }
 
-func sizeList(driver *metalgo.Driver) error {
-	resp, err := driver.SizeList()
+func (c *config) sizeList(args []string) error {
+	resp, err := c.driver.SizeList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Size)
+	return output.New().Print(resp.Size)
 }
 
-func sizeDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) sizeDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no size ID given")
 	}
 	sizeID := args[0]
-	resp, err := driver.SizeGet(sizeID)
+	resp, err := c.driver.SizeGet(sizeID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Size)
+	return output.NewDetailer().Detail(resp.Size)
 }
 
-func sizeTry(driver *metalgo.Driver) error {
+func (c *config) sizeTry(args []string) error {
 
 	cores := viper.GetInt32("cores")
 	memory, err := humanize.ParseBytes(viper.GetString("memory"))
@@ -175,11 +168,11 @@ func sizeTry(driver *metalgo.Driver) error {
 		return err
 	}
 
-	resp, _ := driver.SizeTry(cores, memory, storagesize)
-	return printer.Print(resp.Logs)
+	resp, _ := c.driver.SizeTry(cores, memory, storagesize)
+	return output.New().Print(resp.Logs)
 }
 
-func sizeCreate(driver *metalgo.Driver) error {
+func (c *config) sizeCreate(args []string) error {
 	var icrs []metalgo.SizeCreateRequest
 	var icr metalgo.SizeCreateRequest
 	if viper.GetString("file") != "" {
@@ -212,14 +205,14 @@ func sizeCreate(driver *metalgo.Driver) error {
 		}
 	}
 
-	resp, err := driver.SizeCreate(icr)
+	resp, err := c.driver.SizeCreate(icr)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Size)
+	return output.NewDetailer().Detail(resp.Size)
 }
 
-func sizeUpdate(driver *metalgo.Driver) error {
+func (c *config) sizeUpdate(args []string) error {
 	icrs, err := readSizeCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -227,11 +220,11 @@ func sizeUpdate(driver *metalgo.Driver) error {
 	if len(icrs) != 1 {
 		return fmt.Errorf("size update error more or less than one size given:%d", len(icrs))
 	}
-	resp, err := driver.SizeUpdate(icrs[0])
+	resp, err := c.driver.SizeUpdate(icrs[0])
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Size)
+	return output.NewDetailer().Detail(resp.Size)
 }
 
 func readSizeCreateRequests(filename string) ([]metalgo.SizeCreateRequest, error) {
@@ -251,7 +244,7 @@ func readSizeCreateRequests(filename string) ([]metalgo.SizeCreateRequest, error
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func sizeApply(driver *metalgo.Driver) error {
+func (c *config) sizeApply(args []string) error {
 	var iars []metalgo.SizeCreateRequest
 	var iar metalgo.SizeCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -266,7 +259,7 @@ func sizeApply(driver *metalgo.Driver) error {
 	}
 	var response []*models.V1SizeResponse
 	for _, iar := range iars {
-		p, err := driver.SizeGet(iar.ID)
+		p, err := c.driver.SizeGet(iar.ID)
 		if err != nil {
 			var r *sizemodel.FindSizeDefault
 			if !errors.As(err, &r) {
@@ -277,7 +270,7 @@ func sizeApply(driver *metalgo.Driver) error {
 			}
 		}
 		if p.Size == nil {
-			resp, err := driver.SizeCreate(iar)
+			resp, err := c.driver.SizeCreate(iar)
 			if err != nil {
 				return err
 			}
@@ -285,35 +278,35 @@ func sizeApply(driver *metalgo.Driver) error {
 			continue
 		}
 
-		resp, err := driver.SizeUpdate(iar)
+		resp, err := c.driver.SizeUpdate(iar)
 		if err != nil {
 			return err
 		}
 		response = append(response, resp.Size)
 	}
-	return detailer.Detail(response)
+	return output.NewDetailer().Detail(response)
 }
 
-func sizeDelete(driver *metalgo.Driver, args []string) error {
+func (c *config) sizeDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no size ID given")
 	}
 	sizeID := args[0]
-	resp, err := driver.SizeDelete(sizeID)
+	resp, err := c.driver.SizeDelete(sizeID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Size)
+	return output.NewDetailer().Detail(resp.Size)
 }
 
-func sizeEdit(driver *metalgo.Driver, args []string) error {
+func (c *config) sizeEdit(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no size ID given")
 	}
 	sizeID := args[0]
 
 	getFunc := func(id string) ([]byte, error) {
-		resp, err := driver.SizeGet(sizeID)
+		resp, err := c.driver.SizeGet(sizeID)
 		if err != nil {
 			return nil, err
 		}
@@ -331,11 +324,11 @@ func sizeEdit(driver *metalgo.Driver, args []string) error {
 		if len(iars) != 1 {
 			return fmt.Errorf("size update error more or less than one size given:%d", len(iars))
 		}
-		uresp, err := driver.SizeUpdate(iars[0])
+		uresp, err := c.driver.SizeUpdate(iars[0])
 		if err != nil {
 			return err
 		}
-		return detailer.Detail(uresp.Size)
+		return output.NewDetailer().Detail(uresp.Size)
 	}
 
 	return edit(sizeID, getFunc, updateFunc)

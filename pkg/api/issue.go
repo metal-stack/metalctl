@@ -1,4 +1,4 @@
-package cmd
+package api
 
 import (
 	"fmt"
@@ -26,6 +26,8 @@ type (
 )
 
 var (
+	circle = "↻"
+
 	IssueNoPartition = Issue{
 		ShortName:   "no-partition",
 		Description: "machine with no partition",

@@ -3,78 +3,74 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
-	metalgo "github.com/metal-stack/metal-go"
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var (
-	filesystemLayoutCmd = &cobra.Command{
+func newFilesystemLayoutCmd(c *config) *cobra.Command {
+	filesystemLayoutCmd := &cobra.Command{
 		Use:     "filesystemlayout",
 		Aliases: []string{"fsl"},
 		Short:   "manage filesystemlayouts",
 		Long:    "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 	}
 
-	filesystemListCmd = &cobra.Command{
+	filesystemListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all filesystems",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemList(driver)
+			return c.filesystemList(args)
 		},
 		PreRun: bindPFlags,
 	}
-	filesystemDescribeCmd = &cobra.Command{
+	filesystemDescribeCmd := &cobra.Command{
 		Use:   "describe <filesystemID>",
 		Short: "describe a filesystem",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemDescribe(driver, args)
+			return c.filesystemDescribe(args)
 		},
-		ValidArgsFunction: filesystemLayoutListCompletionFunc,
+		ValidArgsFunction: c.comp.FilesystemLayoutListCompletion,
 	}
-	filesystemApplyCmd = &cobra.Command{
+	filesystemApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a filesystem",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemApply(driver)
+			return c.filesystemApply(args)
 		},
 		PreRun: bindPFlags,
 	}
-	filesystemDeleteCmd = &cobra.Command{
+	filesystemDeleteCmd := &cobra.Command{
 		Use:   "delete <filesystemID>",
 		Short: "delete a filesystem",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemDelete(driver, args)
+			return c.filesystemDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: filesystemLayoutListCompletionFunc,
+		ValidArgsFunction: c.comp.FilesystemLayoutListCompletion,
 	}
-	filesystemTryCmd = &cobra.Command{
+	filesystemTryCmd := &cobra.Command{
 		Use:   "try",
 		Short: "try to detect a filesystem by given size and image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemTry(driver)
+			return c.filesystemTry(args)
 		},
 		PreRun: bindPFlags,
 	}
-	filesystemMatchCmd = &cobra.Command{
+	filesystemMatchCmd := &cobra.Command{
 		Use:   "match",
 		Short: "check if a machine satisfies all disk requirements of a given filesystemlayout",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return filesystemMatch(driver)
+			return c.filesystemMatch(args)
 		},
 		PreRun: bindPFlags,
 	}
-)
-
-func init() {
 	filesystemApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
 
@@ -84,56 +80,21 @@ Example:
 # cat default.yaml | metalctl filesystem apply -f -
 ## or via file
 # metalctl filesystem apply -f default.yaml`)
-	err := filesystemApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(filesystemApplyCmd.MarkFlagRequired("file"))
 
 	filesystemTryCmd.Flags().StringP("size", "", "", "size to try")
 	filesystemTryCmd.Flags().StringP("image", "", "", "image to try")
-	err = filesystemTryCmd.MarkFlagRequired("size")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemTryCmd.MarkFlagRequired("image")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemTryCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemTryCmd.RegisterFlagCompletionFunc("image", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return imageListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(filesystemTryCmd.MarkFlagRequired("size"))
+	must(filesystemTryCmd.MarkFlagRequired("image"))
+	must(filesystemTryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(filesystemTryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
 	filesystemMatchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	filesystemMatchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
-	err = filesystemMatchCmd.MarkFlagRequired("machine")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemMatchCmd.MarkFlagRequired("filesystemlayout")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemMatchCmd.RegisterFlagCompletionFunc("machine", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return machineListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = filesystemMatchCmd.RegisterFlagCompletionFunc("filesystemlayout", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return filesystemLayoutListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(filesystemMatchCmd.MarkFlagRequired("machine"))
+	must(filesystemMatchCmd.MarkFlagRequired("filesystemlayout"))
+	must(filesystemMatchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
+	must(filesystemMatchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
 	filesystemLayoutCmd.AddCommand(filesystemListCmd)
 	filesystemLayoutCmd.AddCommand(filesystemDescribeCmd)
@@ -141,30 +102,32 @@ Example:
 	filesystemLayoutCmd.AddCommand(filesystemApplyCmd)
 	filesystemLayoutCmd.AddCommand(filesystemTryCmd)
 	filesystemLayoutCmd.AddCommand(filesystemMatchCmd)
+
+	return filesystemLayoutCmd
 }
 
-func filesystemList(driver *metalgo.Driver) error {
-	resp, err := driver.FilesystemLayoutList()
+func (c *config) filesystemList(args []string) error {
+	resp, err := c.driver.FilesystemLayoutList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp)
+	return output.New().Print(resp)
 }
 
-func filesystemDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) filesystemDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no filesystem ID given")
 	}
 	filesystemID := args[0]
-	resp, err := driver.FilesystemLayoutGet(filesystemID)
+	resp, err := c.driver.FilesystemLayoutGet(filesystemID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp)
+	return output.NewDetailer().Detail(resp)
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func filesystemApply(driver *metalgo.Driver) error {
+func (c *config) filesystemApply(args []string) error {
 	var iars []models.V1FilesystemLayoutCreateRequest
 	var iar models.V1FilesystemLayoutCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -179,7 +142,7 @@ func filesystemApply(driver *metalgo.Driver) error {
 	}
 	var response []*models.V1FilesystemLayoutResponse
 	for _, iar := range iars {
-		p, err := driver.FilesystemLayoutGet(*iar.ID)
+		p, err := c.driver.FilesystemLayoutGet(*iar.ID)
 		if err != nil {
 			var r *fsmodel.GetFilesystemLayoutDefault
 			if !errors.As(err, &r) {
@@ -190,7 +153,7 @@ func filesystemApply(driver *metalgo.Driver) error {
 			}
 		}
 		if p == nil {
-			resp, err := driver.FilesystemLayoutCreate(iar)
+			resp, err := c.driver.FilesystemLayoutCreate(iar)
 			if err != nil {
 				return err
 			}
@@ -198,28 +161,28 @@ func filesystemApply(driver *metalgo.Driver) error {
 			continue
 		}
 
-		resp, err := driver.FilesystemLayoutUpdate(models.V1FilesystemLayoutUpdateRequest(iar))
+		resp, err := c.driver.FilesystemLayoutUpdate(models.V1FilesystemLayoutUpdateRequest(iar))
 		if err != nil {
 			return err
 		}
 		response = append(response, resp)
 	}
-	return printer.Print(response)
+	return output.New().Print(response)
 }
 
-func filesystemDelete(driver *metalgo.Driver, args []string) error {
+func (c *config) filesystemDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no filesystem ID given")
 	}
 	filesystemID := args[0]
-	resp, err := driver.FilesystemLayoutDelete(filesystemID)
+	resp, err := c.driver.FilesystemLayoutDelete(filesystemID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp)
+	return output.NewDetailer().Detail(resp)
 }
 
-func filesystemTry(driver *metalgo.Driver) error {
+func (c *config) filesystemTry(args []string) error {
 	size := viper.GetString("size")
 	image := viper.GetString("image")
 	try := models.V1FilesystemLayoutTryRequest{
@@ -227,13 +190,13 @@ func filesystemTry(driver *metalgo.Driver) error {
 		Image: &image,
 	}
 
-	resp, err := driver.FilesystemLayoutTry(try)
+	resp, err := c.driver.FilesystemLayoutTry(try)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp)
+	return output.New().Print(resp)
 }
-func filesystemMatch(driver *metalgo.Driver) error {
+func (c *config) filesystemMatch(args []string) error {
 	machine := viper.GetString("machine")
 	fsl := viper.GetString("filesystemlayout")
 	match := models.V1FilesystemLayoutMatchRequest{
@@ -241,9 +204,9 @@ func filesystemMatch(driver *metalgo.Driver) error {
 		Filesystemlayout: &fsl,
 	}
 
-	resp, err := driver.FilesystemLayoutMatch(match)
+	resp, err := c.driver.FilesystemLayoutMatch(match)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp)
+	return output.New().Print(resp)
 }

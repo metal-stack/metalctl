@@ -7,63 +7,62 @@ import (
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	switchCmd = &cobra.Command{
+func newSwitchCmd(c *config) *cobra.Command {
+	switchCmd := &cobra.Command{
 		Use:   "switch",
 		Short: "manage switches",
 	}
 
-	switchListCmd = &cobra.Command{
+	switchListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all switches",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return switchList(driver)
+			return c.switchList(args)
 		},
 	}
 
-	switchDetailCmd = &cobra.Command{
+	switchDetailCmd := &cobra.Command{
 		Use:   "detail",
 		Short: "switch details",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return switchDetail(driver)
+			return c.switchDetail(args)
 		},
 	}
 
-	switchUpdateCmd = &cobra.Command{
+	switchUpdateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update a switch",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return switchUpdate(driver)
+			return c.switchUpdate(args)
 		},
 		PreRun: bindPFlags,
 	}
 
-	switchEditCmd = &cobra.Command{
+	switchEditCmd := &cobra.Command{
 		Use:   "edit <switchID>",
 		Short: "edit a switch",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return switchEdit(driver, args)
+			return c.switchEdit(args)
 		},
 		PreRun: bindPFlags,
 	}
 
-	switchReplaceCmd = &cobra.Command{
+	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "puts a switch in replace mode in preparation for physical replacement",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return switchReplace(driver, args)
+			return c.switchReplace(args)
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
 	switchCmd.AddCommand(switchListCmd)
 	switchCmd.AddCommand(switchUpdateCmd)
 	switchCmd.AddCommand(switchEditCmd)
@@ -71,28 +70,24 @@ func init() {
 	switchCmd.AddCommand(switchReplaceCmd)
 
 	switchUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
-	err := switchUpdateCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(switchUpdateCmd.MarkFlagRequired("file"))
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-	err = viper.BindPFlags(switchDetailCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(switchDetailCmd.Flags()))
+
+	return switchCmd
 }
 
-func switchList(driver *metalgo.Driver) error {
-	resp, err := driver.SwitchList()
+func (c *config) switchList(args []string) error {
+	resp, err := c.driver.SwitchList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Switch)
+	return output.New().Print(resp.Switch)
 }
 
-func switchDetail(driver *metalgo.Driver) error {
-	resp, err := driver.SwitchList()
+func (c *config) switchDetail(args []string) error {
+	resp, err := c.driver.SwitchList()
 	if err != nil {
 		return err
 	}
@@ -114,29 +109,29 @@ func switchDetail(driver *metalgo.Driver) error {
 		log.Printf("no switch detail for filter: %s", filter)
 		return nil
 	}
-	return detailer.Detail(result)
+	return output.NewDetailer().Detail(result)
 }
 
-func switchUpdate(driver *metalgo.Driver) error {
+func (c *config) switchUpdate(args []string) error {
 	surs, err := readSwitchUpdateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
-	resp, err := driver.SwitchUpdate(surs[0])
+	resp, err := c.driver.SwitchUpdate(surs[0])
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Switch)
+	return output.NewDetailer().Detail(resp.Switch)
 }
 
-func switchEdit(driver *metalgo.Driver, args []string) error {
+func (c *config) switchEdit(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no switch ID given")
 	}
 	switchID := args[0]
 
 	getFunc := func(id string) ([]byte, error) {
-		resp, err := driver.SwitchGet(switchID)
+		resp, err := c.driver.SwitchGet(switchID)
 		if err != nil {
 			return nil, err
 		}
@@ -151,23 +146,23 @@ func switchEdit(driver *metalgo.Driver, args []string) error {
 		if err != nil {
 			return err
 		}
-		uresp, err := driver.SwitchUpdate(items[0])
+		uresp, err := c.driver.SwitchUpdate(items[0])
 		if err != nil {
 			return err
 		}
-		return detailer.Detail(uresp.Switch)
+		return output.NewDetailer().Detail(uresp.Switch)
 	}
 
 	return edit(switchID, getFunc, updateFunc)
 }
 
-func switchReplace(driver *metalgo.Driver, args []string) error {
+func (c *config) switchReplace(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no switch ID given")
 	}
 	switchID := args[0]
 
-	resp, err := driver.SwitchGet(switchID)
+	resp, err := c.driver.SwitchGet(switchID)
 	if err != nil {
 		return err
 	}
@@ -179,11 +174,11 @@ func switchReplace(driver *metalgo.Driver, args []string) error {
 		RackID:      *s.RackID,
 		Mode:        "replace",
 	}
-	uresp, err := driver.SwitchUpdate(sur)
+	uresp, err := c.driver.SwitchUpdate(sur)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(uresp.Switch)
+	return output.NewDetailer().Detail(uresp.Switch)
 }
 
 func readSwitchUpdateRequests(filename string) ([]metalgo.SwitchUpdateRequest, error) {
