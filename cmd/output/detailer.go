@@ -1,12 +1,13 @@
-package cmd
+package output
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"sort"
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/viper"
 )
 
 type (
@@ -29,7 +30,8 @@ type (
 )
 
 // NewDetailer create a new Detailer which will print more details about metal objects.
-func NewDetailer(format string) (Detailer, error) {
+func NewDetailer() Detailer {
+	format := viper.GetString("output-format")
 	var detailer Detailer
 	switch format {
 	case "yaml":
@@ -39,9 +41,9 @@ func NewDetailer(format string) (Detailer, error) {
 	case "table", "wide", "markdown", "template":
 		detailer = newTableDetailer("custom")
 	default:
-		return nil, fmt.Errorf("unknown format:%s", format)
+		log.Fatalf("unknown format:%s", format)
 	}
-	return detailer, nil
+	return detailer
 }
 
 func newTableDetailer(format string) TableDetailer {

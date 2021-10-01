@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -12,165 +11,166 @@ import (
 	networkmodel "github.com/metal-stack/metal-go/api/client/network"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/tag"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	networkCmd = &cobra.Command{
+func newNetworkCmd(c *config) *cobra.Command {
+	networkCmd := &cobra.Command{
 		Use:   "network",
 		Short: "manage networks",
 		Long:  "networks for metal.",
 	}
 
-	networkListCmd = &cobra.Command{
+	networkListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all networks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkList(driver)
+			return c.networkList()
 		},
 		PreRun: bindPFlags,
 	}
-	networkCreateCmd = &cobra.Command{
+	networkCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkCreate(driver)
+			return c.networkCreate()
 		},
 		PreRun: bindPFlags,
 	}
-	networkDescribeCmd = &cobra.Command{
+	networkDescribeCmd := &cobra.Command{
 		Use:   "describe <networkid>",
 		Short: "describe a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkDescribe(driver, args)
+			return c.networkDescribe(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: networkListCompletionFunc,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
-	networkAllocateCmd = &cobra.Command{
+	networkAllocateCmd := &cobra.Command{
 		Use:   "allocate",
 		Short: "allocate a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkAllocate(driver)
+			return c.networkAllocate()
 		},
 		PreRun: bindPFlags,
 	}
-	networkFreeCmd = &cobra.Command{
+	networkFreeCmd := &cobra.Command{
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkFree(driver, args)
+			return c.networkFree(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: networkListCompletionFunc,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
-	networkDeleteCmd = &cobra.Command{
+	networkDeleteCmd := &cobra.Command{
 		Use:     "delete <networkID>",
 		Short:   "delete a network",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkDelete(driver, args)
+			return c.networkDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: networkListCompletionFunc,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
-	networkPrefixCmd = &cobra.Command{
+	networkPrefixCmd := &cobra.Command{
 		Use:   "prefix",
 		Short: "prefix management of a network",
 	}
 
-	networkPrefixAddCmd = &cobra.Command{
+	networkPrefixAddCmd := &cobra.Command{
 		Use:   "add <networkid>",
 		Short: "add a prefix to a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkPrefixAdd(driver, args)
+			return c.networkPrefixAdd(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: networkListCompletionFunc,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
-	networkPrefixRemoveCmd = &cobra.Command{
+	networkPrefixRemoveCmd := &cobra.Command{
 		Use:   "remove <networkid>",
 		Short: "remove a prefix from a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkPrefixRemove(driver, args)
+			return c.networkPrefixRemove(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: networkListCompletionFunc,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
-	networkIPCmd = &cobra.Command{
+	networkIPCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "manage IPs",
 	}
 
-	networkIPListCmd = &cobra.Command{
+	networkIPListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "manage IPs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipList(driver)
+			return c.ipList()
 		},
 		PreRun: bindPFlags,
 	}
 
-	networkIPAllocateCmd = &cobra.Command{
+	networkIPAllocateCmd := &cobra.Command{
 		Use:   "allocate",
 		Short: "allocate an IP, if non given the next free is allocated, otherwise the given IP is checked for availability.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipAllocate(driver, args)
+			return c.ipAllocate(args)
 		},
 		PreRun: bindPFlags,
 	}
-	networkIPFreeCmd = &cobra.Command{
+	networkIPFreeCmd := &cobra.Command{
 		Use:   "free <IP>",
 		Short: "free an IP",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipFree(driver, args)
+			return c.ipFree(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: ipListCompletionFunc,
+		ValidArgsFunction: c.comp.IpListCompletion,
 	}
-	networkIPApplyCmd = &cobra.Command{
+	networkIPApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update an IP",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipApply(driver)
+			return c.ipApply()
 		},
 		PreRun: bindPFlags,
 	}
-	networkIPEditCmd = &cobra.Command{
+	networkIPEditCmd := &cobra.Command{
 		Use:   "edit <IP>",
 		Short: "edit a ip",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipEdit(driver, args)
+			return c.ipEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: ipListCompletionFunc,
+		ValidArgsFunction: c.comp.IpListCompletion,
 	}
 
-	networkApplyCmd = &cobra.Command{
+	networkApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return networkApply(driver)
+			return c.networkApply()
 		},
 		PreRun: bindPFlags,
 	}
 
-	networkIPIssuesCmd = &cobra.Command{
+	networkIPIssuesCmd := &cobra.Command{
 		Use:   "issues",
 		Short: `display ips which are in a potential bad state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return ipIssues(driver)
+			return c.ipIssues()
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
+	// TODO add completions for project, partition,
+
 	networkCreateCmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 	networkCreateCmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
 	networkCreateCmd.Flags().StringP("name", "n", "", "name of the network to create. [optional]")
@@ -192,18 +192,9 @@ func init() {
 	networkAllocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	networkAllocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
 
-	err := networkAllocateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = networkAllocateCmd.MarkFlagRequired("project")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = networkAllocateCmd.MarkFlagRequired("partition")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(networkAllocateCmd.MarkFlagRequired("name"))
+	must(networkAllocateCmd.MarkFlagRequired("project"))
+	must(networkAllocateCmd.MarkFlagRequired("partition"))
 
 	networkIPAllocateCmd.Flags().StringP("description", "d", "", "description of the IP to allocate. [optional]")
 	networkIPAllocateCmd.Flags().StringP("name", "n", "", "name of the IP to allocate. [optional]")
@@ -213,10 +204,7 @@ func init() {
 	networkIPAllocateCmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
 
 	networkIPApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
-	err = networkIPApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(networkIPApplyCmd.MarkFlagRequired("file"))
 
 	networkIPListCmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
 	networkIPListCmd.Flags().StringP("project", "", "", "project to filter [optional]")
@@ -248,10 +236,7 @@ Example:
 # cat internet.yaml | metalctl network apply -f -
 ## or via file
 # metalctl network apply -f internet.yaml`)
-	err = networkApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		panic(err)
-	}
+	must(networkApplyCmd.MarkFlagRequired("file"))
 
 	networkListCmd.Flags().StringP("id", "", "", "ID to filter [optional]")
 	networkListCmd.Flags().StringP("name", "", "", "name to filter [optional]")
@@ -274,9 +259,11 @@ Example:
 	networkCmd.AddCommand(networkPrefixCmd)
 	networkCmd.AddCommand(networkApplyCmd)
 	networkCmd.AddCommand(networkDeleteCmd)
+
+	return networkCmd
 }
 
-func networkList(driver *metalgo.Driver) error {
+func (c *config) networkList() error {
 	var resp *metalgo.NetworkListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("id", "name", "partition", "project", "parent") ||
@@ -296,17 +283,17 @@ func networkList(driver *metalgo.Driver) error {
 			DestinationPrefixes: viperStringSlice("destination-prefixes"),
 			ParentNetworkID:     viperString("parent"),
 		}
-		resp, err = driver.NetworkFind(nfr)
+		resp, err = c.driver.NetworkFind(nfr)
 	} else {
-		resp, err = driver.NetworkList()
+		resp, err = c.driver.NetworkList()
 	}
 	if err != nil {
 		return fmt.Errorf("network list error:%w", err)
 	}
-	return printer.Print(resp.Networks)
+	return output.New().Print(resp.Networks)
 }
 
-func networkAllocate(driver *metalgo.Driver) error {
+func (c *config) networkAllocate() error {
 	var ncrs []metalgo.NetworkAllocateRequest
 	var ncr metalgo.NetworkAllocateRequest
 	if viper.GetString("file") != "" {
@@ -341,50 +328,50 @@ func networkAllocate(driver *metalgo.Driver) error {
 			Nat:                 nat,
 		}
 	}
-	resp, err := driver.NetworkAllocate(&ncr)
+	resp, err := c.driver.NetworkAllocate(&ncr)
 	if err != nil {
 		return fmt.Errorf("network allocate error:%w", err)
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func networkFree(driver *metalgo.Driver, args []string) error {
+func (c *config) networkFree(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no network given")
 	}
 	nw := args[0]
-	resp, err := driver.NetworkFree(nw)
+	resp, err := c.driver.NetworkFree(nw)
 	if err != nil {
 		return fmt.Errorf("network allocate error:%w", err)
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func networkDelete(driver *metalgo.Driver, args []string) error {
+func (c *config) networkDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no network given")
 	}
 	nw := args[0]
-	resp, err := driver.NetworkDelete(nw)
+	resp, err := c.driver.NetworkDelete(nw)
 	if err != nil {
 		return fmt.Errorf("network delete error:%w", err)
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func networkDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) networkDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no network given")
 	}
 	nw := args[0]
-	resp, err := driver.NetworkGet(nw)
+	resp, err := c.driver.NetworkGet(nw)
 	if err != nil {
 		return fmt.Errorf("network describe error:%w", err)
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func networkCreate(driver *metalgo.Driver) error {
+func (c *config) networkCreate() error {
 	var ncrs []metalgo.NetworkCreateRequest
 	var ncr metalgo.NetworkCreateRequest
 	if viper.GetString("file") != "" {
@@ -422,15 +409,15 @@ func networkCreate(driver *metalgo.Driver) error {
 			ncr.ID = &id
 		}
 	}
-	resp, err := driver.NetworkCreate(&ncr)
+	resp, err := c.driver.NetworkCreate(&ncr)
 	if err != nil {
 		return fmt.Errorf("network create error:%w", err)
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func networkApply(driver *metalgo.Driver) error {
+func (c *config) networkApply() error {
 	var iars []metalgo.NetworkCreateRequest
 	var iar metalgo.NetworkCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -448,7 +435,7 @@ func networkApply(driver *metalgo.Driver) error {
 	for _, nar := range iars {
 		nar := nar
 		if nar.ID == nil {
-			resp, err := driver.NetworkCreate(&nar)
+			resp, err := c.driver.NetworkCreate(&nar)
 			if err != nil {
 				return err
 			}
@@ -456,7 +443,7 @@ func networkApply(driver *metalgo.Driver) error {
 			continue
 		}
 
-		resp, err := driver.NetworkGet(*nar.ID)
+		resp, err := c.driver.NetworkGet(*nar.ID)
 		if err != nil {
 			var r *networkmodel.FindNetworkDefault
 			if !errors.As(err, &r) {
@@ -467,7 +454,7 @@ func networkApply(driver *metalgo.Driver) error {
 			}
 		}
 		if resp.Network == nil {
-			resp, err := driver.NetworkCreate(&nar)
+			resp, err := c.driver.NetworkCreate(&nar)
 			if err != nil {
 				return err
 			}
@@ -475,17 +462,17 @@ func networkApply(driver *metalgo.Driver) error {
 			continue
 		}
 
-		detailResp, err := driver.NetworkUpdate(&nar)
+		detailResp, err := c.driver.NetworkUpdate(&nar)
 		if err != nil {
 			return err
 		}
 		response = append(response, detailResp.Network)
 	}
-	return detailer.Detail(response)
+	return output.NewDetailer().Detail(response)
 }
 
-func networkPrefixAdd(driver *metalgo.Driver, args []string) error {
-	networkID, err := getNetworkID(args)
+func (c *config) networkPrefixAdd(args []string) error {
+	networkID, err := c.getNetworkID(args)
 	if err != nil {
 		return err
 	}
@@ -494,15 +481,15 @@ func networkPrefixAdd(driver *metalgo.Driver, args []string) error {
 		Networkid: networkID,
 		Prefix:    viper.GetString("prefix"),
 	}
-	resp, err := driver.NetworkAddPrefix(nur)
+	resp, err := c.driver.NetworkAddPrefix(nur)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func networkPrefixRemove(driver *metalgo.Driver, args []string) error {
-	networkID, err := getNetworkID(args)
+func (c *config) networkPrefixRemove(args []string) error {
+	networkID, err := c.getNetworkID(args)
 	if err != nil {
 		return err
 	}
@@ -511,14 +498,14 @@ func networkPrefixRemove(driver *metalgo.Driver, args []string) error {
 		Networkid: networkID,
 		Prefix:    viper.GetString("prefix"),
 	}
-	resp, err := driver.NetworkRemovePrefix(nur)
+	resp, err := c.driver.NetworkRemovePrefix(nur)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Network)
+	return output.NewDetailer().Detail(resp.Network)
 }
 
-func ipList(driver *metalgo.Driver) error {
+func (c *config) ipList() error {
 	var resp *metalgo.IPListResponse
 	var err error
 	if atLeastOneViperStringFlagGiven("ipaddress", "project", "prefix", "machineid", "network", "type", "tags", "name") {
@@ -532,17 +519,17 @@ func ipList(driver *metalgo.Driver) error {
 			Tags:             viperStringSlice("tags"),
 			Name:             viperString("name"),
 		}
-		resp, err = driver.IPFind(ifr)
+		resp, err = c.driver.IPFind(ifr)
 	} else {
-		resp, err = driver.IPList()
+		resp, err = c.driver.IPList()
 	}
 	if err != nil {
 		return fmt.Errorf("IP list error:%w", err)
 	}
-	return printer.Print(resp.IPs)
+	return output.New().Print(resp.IPs)
 }
 
-func ipApply(driver *metalgo.Driver) error {
+func (c *config) ipApply() error {
 	var iars []metalgo.IPAllocateRequest
 	var iar metalgo.IPAllocateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -561,14 +548,14 @@ func ipApply(driver *metalgo.Driver) error {
 		iar := iar
 		if iar.IPAddress == "" {
 			// acquire
-			resp, err := driver.IPAllocate(&iar)
+			resp, err := c.driver.IPAllocate(&iar)
 			if err != nil {
 				return err
 			}
 			response = append(response, resp.IP)
 			continue
 		}
-		i, err := driver.IPGet(iar.IPAddress)
+		i, err := c.driver.IPGet(iar.IPAddress)
 		if err != nil {
 			var r *ipmodel.FindIPDefault
 			if !errors.As(err, &r) {
@@ -580,7 +567,7 @@ func ipApply(driver *metalgo.Driver) error {
 		}
 
 		if i == nil {
-			resp, err := driver.IPAllocate(&iar)
+			resp, err := c.driver.IPAllocate(&iar)
 			if err != nil {
 				return err
 			}
@@ -595,24 +582,24 @@ func ipApply(driver *metalgo.Driver) error {
 			Type:        iar.Type,
 			Tags:        iar.Tags,
 		}
-		resp, err := driver.IPUpdate(&iur)
+		resp, err := c.driver.IPUpdate(&iur)
 		if err != nil {
 			return err
 		}
 		response = append(response, resp.IP)
 	}
 
-	return detailer.Detail(response)
+	return output.NewDetailer().Detail(response)
 }
 
-func ipEdit(driver *metalgo.Driver, args []string) error {
+func (c *config) ipEdit(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no IP given")
 	}
 	ip := args[0]
 
 	getFunc := func(ip string) ([]byte, error) {
-		resp, err := driver.IPGet(ip)
+		resp, err := c.driver.IPGet(ip)
 		if err != nil {
 			return nil, err
 		}
@@ -630,11 +617,11 @@ func ipEdit(driver *metalgo.Driver, args []string) error {
 		if len(iurs) != 1 {
 			return fmt.Errorf("ip update error more or less than one ip given:%d", len(iurs))
 		}
-		uresp, err := driver.IPUpdate(&iurs[0])
+		uresp, err := c.driver.IPUpdate(&iurs[0])
 		if err != nil {
 			return err
 		}
-		return detailer.Detail(uresp.IP)
+		return output.NewDetailer().Detail(uresp.IP)
 	}
 
 	return edit(ip, getFunc, updateFunc)
@@ -656,7 +643,7 @@ func readIPUpdateRequests(filename string) ([]metalgo.IPUpdateRequest, error) {
 	return iurs, nil
 }
 
-func ipAllocate(driver *metalgo.Driver, args []string) error {
+func (c *config) ipAllocate(args []string) error {
 	specificIP := ""
 	if len(args) > 0 {
 		specificIP = args[0]
@@ -670,40 +657,40 @@ func ipAllocate(driver *metalgo.Driver, args []string) error {
 		Type:        viper.GetString("type"),
 		Tags:        viper.GetStringSlice("tags"),
 	}
-	resp, err := driver.IPAllocate(iar)
+	resp, err := c.driver.IPAllocate(iar)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.IP)
+	return output.NewDetailer().Detail(resp.IP)
 }
 
-func ipFree(driver *metalgo.Driver, args []string) error {
+func (c *config) ipFree(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no IP given")
 	}
 	ip := args[0]
-	resp, err := driver.IPFree(ip)
+	resp, err := c.driver.IPFree(ip)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.IP)
+	return output.NewDetailer().Detail(resp.IP)
 }
 
-func getNetworkID(args []string) (string, error) {
+func (c *config) getNetworkID(args []string) (string, error) {
 	if len(args) < 1 {
 		return "", fmt.Errorf("no network ID given")
 	}
 
 	networkID := args[0]
-	_, err := driver.NetworkGet(networkID)
+	_, err := c.driver.NetworkGet(networkID)
 	if err != nil {
 		return "", err
 	}
 	return networkID, nil
 }
 
-func ipIssues(driver *metalgo.Driver) error {
-	ml, err := driver.MachineList()
+func (c *config) ipIssues() error {
+	ml, err := c.driver.MachineList()
 	if err != nil {
 		return fmt.Errorf("machine list error:%w", err)
 	}
@@ -714,7 +701,7 @@ func ipIssues(driver *metalgo.Driver) error {
 
 	var resp []*models.V1IPResponse
 
-	iplist, err := driver.IPList()
+	iplist, err := c.driver.IPList()
 	if err != nil {
 		return err
 	}
@@ -745,5 +732,5 @@ func ipIssues(driver *metalgo.Driver) error {
 			}
 		}
 	}
-	return printer.Print(resp)
+	return output.New().Print(resp)
 }
