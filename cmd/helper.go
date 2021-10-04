@@ -2,16 +2,13 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/metalctl/pkg/api"
@@ -128,88 +125,8 @@ func splitNetwork(value string) (string, bool, error) {
 	return id, true, nil
 }
 
-// func shortID(machineID string) string {
-// 	result := strings.ReplaceAll(machineID, "00000000-", "")
-// 	result = strings.ReplaceAll(result, "0000-", "")
-// 	return result
-// }
-
-// func longID(shortID string) string {
-// 	machineIDPattern := []byte("00000000-0000-0000-0000-000000000000")
-// 	longIDLength := len(machineIDPattern)
-// 	result := machineIDPattern
-// 	shortIDSlice := []byte(strings.TrimSpace(shortID))
-// 	for i := len(shortID) - 1; i >= 0; i-- {
-// 		pos := longIDLength - i - 1
-// 		shortPos := len(shortIDSlice) - i - 1
-// 		result[pos] = shortIDSlice[shortPos]
-// 	}
-// 	return string(result)
-// }
-
-func humanizeDuration(duration time.Duration) string {
-	days := int64(duration.Hours() / 24)
-	hours := int64(math.Mod(duration.Hours(), 24))
-	minutes := int64(math.Mod(duration.Minutes(), 60))
-	seconds := int64(math.Mod(duration.Seconds(), 60))
-
-	chunks := []struct {
-		singularName string
-		amount       int64
-	}{
-		{"d", days},
-		{"h", hours},
-		{"m", minutes},
-		{"s", seconds},
-	}
-
-	parts := []string{}
-
-	for _, chunk := range chunks {
-		switch chunk.amount {
-		case 0:
-			continue
-		default:
-			parts = append(parts, fmt.Sprintf("%d%s", chunk.amount, chunk.singularName))
-		}
-	}
-
-	if len(parts) == 0 {
-		return "0s"
-	}
-	if len(parts) > 2 {
-		parts = parts[:2]
-	}
-	return strings.Join(parts, " ")
-}
-
-// strValue returns the value of a string pointer of not nil, otherwise empty string
-func strValue(strPtr *string) string {
-	if strPtr != nil {
-		return *strPtr
-	}
-	return ""
-}
-
 func boolPtr(b bool) *bool {
 	return &b
-}
-
-// genericObject transforms the input to a struct which has fields with the same name as in the json struct.
-// this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
-func genericObject(input interface{}) map[string]interface{} {
-	b, err := json.Marshal(input)
-	if err != nil {
-		fmt.Printf("unable to marshall input:%v", err)
-		os.Exit(1)
-	}
-	var result interface{}
-	err = json.Unmarshal(b, &result)
-	if err != nil {
-		fmt.Printf("unable to unmarshal input:%v", err)
-		os.Exit(1)
-	}
-	return result.(map[string]interface{})
 }
 
 func labelsFromTags(tags []string) map[string]string {
