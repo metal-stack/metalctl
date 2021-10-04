@@ -1,8 +1,11 @@
-package cmd
+package output
 
 import (
 	"encoding/json"
 	"fmt"
+	"log"
+	"math"
+	"net"
 	"os"
 	"path/filepath"
 	"sort"
@@ -18,7 +21,9 @@ import (
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/tag"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/olekukonko/tablewriter"
+	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
@@ -130,6 +135,29 @@ type (
 	}
 )
 
+// New returns a suitable stdout printer for the given format
+func New() Printer {
+	printer, err := newPrinter(
+		viper.GetString("output-format"),
+		viper.GetString("order"),
+		viper.GetString("template"),
+		viper.GetBool("no-headers"),
+	)
+	if err != nil {
+		log.Fatalf("unable to initialize printer:%v", err)
+	}
+
+	if viper.IsSet("force-color") {
+		enabled := viper.GetBool("force-color")
+		if enabled {
+			color.NoColor = false
+		} else {
+			color.NoColor = true
+		}
+	}
+	return printer
+}
+
 // render the table shortHeader and shortData are always expected.
 func (t *TablePrinter) render() {
 	if t.template != nil {
@@ -190,7 +218,7 @@ func (t *TablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 }
 
 // NewPrinter returns a suitable stdout printer for the given format
-func NewPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
+func newPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
 	var printer Printer
 	switch format {
 	case "yaml":
@@ -263,7 +291,7 @@ func (y YAMLPrinter) Print(data interface{}) error {
 }
 
 // Print a model in yaml format
-func (m ContextPrinter) Print(data *Contexts) error {
+func (m ContextPrinter) Print(data *api.Contexts) error {
 	for name, c := range data.Contexts {
 		if name == data.CurrentContext {
 			name = name + " [*]"
@@ -283,7 +311,7 @@ func (t TablePrinter) Print(data interface{}) error {
 		MetalMachineTablePrinter{t}.Print(d)
 	case *models.V1MachineResponse:
 		MetalMachineTablePrinter{t}.Print([]*models.V1MachineResponse{d})
-	case MachineIssues:
+	case api.MachineIssues:
 		MetalMachineIssuesTablePrinter{t}.Print(d)
 	case []*models.V1FirewallResponse:
 		MetalFirewallTablePrinter{t}.Print(d)
@@ -321,7 +349,7 @@ func (t TablePrinter) Print(data interface{}) error {
 		FilesystemLayoutPrinter{t}.Print([]*models.V1FilesystemLayoutResponse{d})
 	case []*models.V1FilesystemLayoutResponse:
 		FilesystemLayoutPrinter{t}.Print(d)
-	case *Contexts:
+	case *api.Contexts:
 		return ContextPrinter{t}.Print(d)
 	default:
 		return fmt.Errorf("unknown table printer for type: %T", d)
@@ -699,7 +727,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 }
 
 // Print a MetalSize in a table
-func (m MetalMachineIssuesTablePrinter) Print(data MachineIssues) {
+func (m MetalMachineIssuesTablePrinter) Print(data api.MachineIssues) {
 	m.shortHeader = []string{"ID", "Power", "Lock", "Lock Reason", "Status", "Last Event", "When", "Issues"}
 	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Power", "Status", "State", "Lock Reason", "Last Event", "When", "Issues"}
 
@@ -1350,4 +1378,118 @@ func depth(path string) uint {
 		p = filepath.Dir(p)
 	}
 	return count
+}
+
+// genericObject transforms the input to a struct which has fields with the same name as in the json struct.
+// this is handy for template rendering as the output of -o json|yaml can be used as the input for the template
+func genericObject(input interface{}) map[string]interface{} {
+	b, err := json.Marshal(input)
+	if err != nil {
+		fmt.Printf("unable to marshall input:%v", err)
+		os.Exit(1)
+	}
+	var result interface{}
+	err = json.Unmarshal(b, &result)
+	if err != nil {
+		fmt.Printf("unable to unmarshal input:%v", err)
+		os.Exit(1)
+	}
+	return result.(map[string]interface{})
+}
+
+// strValue returns the value of a string pointer of not nil, otherwise empty string
+func strValue(strPtr *string) string {
+	if strPtr != nil {
+		return *strPtr
+	}
+	return ""
+}
+
+//nolint:unparam
+func truncate(input string, maxlength int) string {
+	elipsis := "..."
+	il := len(input)
+	el := len(elipsis)
+	if il <= maxlength {
+		return input
+	}
+	if maxlength <= el {
+		return input[:maxlength]
+	}
+	startlength := ((maxlength - el) / 2) - el/2
+
+	output := input[:startlength] + elipsis
+	missing := maxlength - len(output)
+	output = output + input[il-missing:]
+	return output
+}
+
+func truncateEnd(input string, maxlength int) string {
+	elipsis := "..."
+	length := len(input) + len(elipsis)
+	if length <= maxlength {
+		return input
+	}
+	return input[:maxlength] + elipsis
+}
+
+func humanizeDuration(duration time.Duration) string {
+	days := int64(duration.Hours() / 24)
+	hours := int64(math.Mod(duration.Hours(), 24))
+	minutes := int64(math.Mod(duration.Minutes(), 60))
+	seconds := int64(math.Mod(duration.Seconds(), 60))
+
+	chunks := []struct {
+		singularName string
+		amount       int64
+	}{
+		{"d", days},
+		{"h", hours},
+		{"m", minutes},
+		{"s", seconds},
+	}
+
+	parts := []string{}
+
+	for _, chunk := range chunks {
+		switch chunk.amount {
+		case 0:
+			continue
+		default:
+			parts = append(parts, fmt.Sprintf("%d%s", chunk.amount, chunk.singularName))
+		}
+	}
+
+	if len(parts) == 0 {
+		return "0s"
+	}
+	if len(parts) > 2 {
+		parts = parts[:2]
+	}
+	return strings.Join(parts, " ")
+}
+func sortIPs(v1ips []*models.V1IPResponse) []*models.V1IPResponse {
+
+	v1ipmap := make(map[string]*models.V1IPResponse)
+	var ips []string
+	for _, v1ip := range v1ips {
+		v1ipmap[*v1ip.Ipaddress] = v1ip
+		ips = append(ips, *v1ip.Ipaddress)
+	}
+
+	realIPs := make([]net.IP, 0, len(ips))
+
+	for _, ip := range ips {
+		realIPs = append(realIPs, net.ParseIP(ip))
+	}
+
+	sort.Slice(realIPs, func(i, j int) bool {
+		return bytes.Compare(realIPs[i], realIPs[j]) < 0
+	})
+
+	var result []*models.V1IPResponse
+	for _, ip := range realIPs {
+		result = append(result, v1ipmap[ip.String()])
+	}
+	return result
 }

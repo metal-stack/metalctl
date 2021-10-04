@@ -2,24 +2,22 @@ package cmd
 
 import (
 	"bufio"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
-	"net"
 	"os"
-	"sort"
+	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metalctl/pkg/api"
 
 	metalgo "github.com/metal-stack/metal-go"
 	"gopkg.in/yaml.v3"
-
-	"github.com/metal-stack/metal-go/api/models"
 
 	"github.com/spf13/viper"
 )
@@ -90,60 +88,6 @@ func viperInt64(flag string) *int64 {
 	}
 	value := viper.GetInt64(flag)
 	return &value
-}
-
-func sortIPs(v1ips []*models.V1IPResponse) []*models.V1IPResponse {
-
-	v1ipmap := make(map[string]*models.V1IPResponse)
-	var ips []string
-	for _, v1ip := range v1ips {
-		v1ipmap[*v1ip.Ipaddress] = v1ip
-		ips = append(ips, *v1ip.Ipaddress)
-	}
-
-	realIPs := make([]net.IP, 0, len(ips))
-
-	for _, ip := range ips {
-		realIPs = append(realIPs, net.ParseIP(ip))
-	}
-
-	sort.Slice(realIPs, func(i, j int) bool {
-		return bytes.Compare(realIPs[i], realIPs[j]) < 0
-	})
-
-	var result []*models.V1IPResponse
-	for _, ip := range realIPs {
-		result = append(result, v1ipmap[ip.String()])
-	}
-	return result
-}
-
-//nolint:unparam
-func truncate(input string, maxlength int) string {
-	elipsis := "..."
-	il := len(input)
-	el := len(elipsis)
-	if il <= maxlength {
-		return input
-	}
-	if maxlength <= el {
-		return input[:maxlength]
-	}
-	startlength := ((maxlength - el) / 2) - el/2
-
-	output := input[:startlength] + elipsis
-	missing := maxlength - len(output)
-	output = output + input[il-missing:]
-	return output
-}
-
-func truncateEnd(input string, maxlength int) string {
-	elipsis := "..."
-	length := len(input) + len(elipsis)
-	if length <= maxlength {
-		return input
-	}
-	return input[:maxlength] + elipsis
 }
 
 func parseNetworks(values []string) ([]metalgo.MachineAllocationNetwork, error) {
@@ -317,7 +261,7 @@ const cloudContext = "cloudctl"
 
 // getAuthContext reads AuthContext from given kubeconfig
 func getAuthContext(kubeconfig string) (*auth.AuthContext, error) {
-	cs, err := getContexts()
+	cs, err := api.GetContexts()
 	if err != nil {
 		return nil, err
 	}
@@ -367,4 +311,49 @@ func Prompt(msg, compare string) error {
 		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
 	}
 	return nil
+}
+func searchSSHKey() (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%w", err)
+	}
+	homeDir := currentUser.HomeDir
+	defaultDir := filepath.Join(homeDir, "/.ssh/")
+	var key string
+	for _, k := range defaultSSHKeys {
+		possibleKey := filepath.Join(defaultDir, k)
+		_, err := os.ReadFile(possibleKey)
+		if err == nil {
+			fmt.Printf("using SSH identity: %s. Another identity can be specified with --sshidentity/-p\n",
+				possibleKey)
+			key = possibleKey
+			break
+		}
+	}
+
+	if key == "" {
+		return "", fmt.Errorf("failure to locate a SSH identity in default location (%s). "+
+			"Another identity can be specified with --sshidentity/-p\n", defaultDir)
+	}
+	return key, nil
+}
+
+func readFromFile(filePath string) (string, error) {
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%w", err)
+	}
+	homeDir := currentUser.HomeDir
+
+	if filePath == "~" {
+		filePath = homeDir
+	} else if strings.HasPrefix(filePath, "~/") {
+		filePath = filepath.Join(homeDir, filePath[2:])
+	}
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("unable to read from given file %s error:%w", filePath, err)
+	}
+	return strings.TrimSpace(string(content)), nil
 }

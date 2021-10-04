@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"strconv"
 	"strings"
@@ -13,25 +12,24 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metal-lib/rest"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/sync/semaphore"
 )
 
-var (
-	dashboardCmd = &cobra.Command{
+func newDashboardCmd(c *config) *cobra.Command {
+	dashboardCmd := &cobra.Command{
 		Use:   "dashboard",
 		Short: "shows a live dashboard optimized for operation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDashboard()
+			return runDashboard(c.driver)
 		},
 		PreRun: bindPFlags,
 	}
-)
 
-func init() {
-	tabs := dashboardTabs()
+	tabs := dashboardTabs(c.driver)
 
 	dashboardCmd.Flags().String("partition", "", "show resources in partition [optional]")
 	dashboardCmd.Flags().String("size", "", "show machines with given size [optional]")
@@ -39,37 +37,23 @@ func init() {
 	dashboardCmd.Flags().String("initial-tab", strings.ToLower(tabs[0].Name()), "the tab to show when starting the dashboard [optional]")
 	dashboardCmd.Flags().Duration("refresh-interval", 3*time.Second, "refresh interval [optional]")
 
-	err := dashboardCmd.RegisterFlagCompletionFunc("partition", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return sizeListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	must(dashboardCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(dashboardCmd.RegisterFlagCompletionFunc("color-theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return []string{
 			"default\twith bright fonts, optimized for dark terminal backgrounds",
 			"dark\twith dark fonts, optimized for bright terminal backgrounds",
 		}, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	}))
+	must(dashboardCmd.RegisterFlagCompletionFunc("initial-tab", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var names []string
 		for _, t := range tabs {
 			names = append(names, fmt.Sprintf("%s\t%s", strings.ToLower(t.Name()), t.Description()))
 		}
 		return names, cobra.ShellCompDirectiveNoFileComp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	}))
+
+	return dashboardCmd
 }
 
 func dashboardApplyTheme(theme string) error {
@@ -105,7 +89,7 @@ func dashboardApplyTheme(theme string) error {
 	return nil
 }
 
-func runDashboard() error {
+func runDashboard(driver *metalgo.Driver) error {
 	if err := ui.Init(); err != nil {
 		return err
 	}
@@ -116,7 +100,7 @@ func runDashboard() error {
 		width, height = ui.TerminalDimensions()
 	)
 
-	d, err := NewDashboard()
+	d, err := NewDashboard(driver)
 	if err != nil {
 		return err
 	}
@@ -162,9 +146,9 @@ func runDashboard() error {
 	}
 }
 
-func dashboardTabs() dashboardTabPanes {
+func dashboardTabs(driver *metalgo.Driver) dashboardTabPanes {
 	return dashboardTabPanes{
-		NewDashboardMachinePane(),
+		NewDashboardMachinePane(driver),
 	}
 }
 
@@ -179,6 +163,8 @@ type dashboard struct {
 	tabs    dashboardTabPanes
 
 	sem *semaphore.Weighted
+
+	metal *metalgo.Driver
 }
 
 type dashboardTabPane interface {
@@ -199,7 +185,7 @@ func (d dashboardTabPanes) FindIndexByName(name string) (int, error) {
 	return 0, fmt.Errorf("tab with name %q not found", name)
 }
 
-func NewDashboard() (*dashboard, error) {
+func NewDashboard(driver *metalgo.Driver) (*dashboard, error) {
 	err := dashboardApplyTheme(viper.GetString("color-theme"))
 	if err != nil {
 		return nil, err
@@ -209,6 +195,8 @@ func NewDashboard() (*dashboard, error) {
 		sem:             semaphore.NewWeighted(1),
 		filterPartition: viper.GetString("partition"),
 		filterSize:      viper.GetString("size"),
+
+		metal: driver,
 	}
 
 	d.statusHeader = widgets.NewParagraph()
@@ -219,7 +207,7 @@ func NewDashboard() (*dashboard, error) {
 	d.filterHeader.Title = "Filters"
 	d.filterHeader.WrapText = false
 
-	d.tabs = dashboardTabs()
+	d.tabs = dashboardTabs(driver)
 	var tabNames []string
 	for i, p := range d.tabs {
 		tabNames = append(tabNames, fmt.Sprintf("(%d) %s", i+1, p.Name()))
@@ -300,14 +288,14 @@ func (d *dashboard) Render() {
 	defer renderHeader()
 
 	var infoResp *metalgo.VersionGetResponse
-	infoResp, lastErr = driver.VersionGet()
+	infoResp, lastErr = d.metal.VersionGet()
 	if lastErr != nil {
 		return
 	}
 	apiVersion = *infoResp.Version.Version
 
 	var healthResp *metalgo.HealthGetResponse
-	healthResp, lastErr = driver.HealthGet()
+	healthResp, lastErr = d.metal.HealthGet()
 	if lastErr != nil {
 		return
 	}
@@ -330,10 +318,14 @@ type dashboardMachinePane struct {
 	freeMachines       *widgets.Gauge
 	freeInternetIPs    *widgets.Gauge
 	freeTenantPrefixes *widgets.Gauge
+
+	metal *metalgo.Driver
 }
 
-func NewDashboardMachinePane() *dashboardMachinePane {
-	d := &dashboardMachinePane{}
+func NewDashboardMachinePane(driver *metalgo.Driver) *dashboardMachinePane {
+	d := &dashboardMachinePane{
+		metal: driver,
+	}
 
 	d.sem = semaphore.NewWeighted(1)
 
@@ -425,7 +417,7 @@ func (d *dashboardMachinePane) Render() error {
 		capFaulty    int
 	)
 
-	partitionResp, err := driver.PartitionCapacity(metalgo.PartitionCapacityRequest{
+	partitionResp, err := d.metal.PartitionCapacity(metalgo.PartitionCapacityRequest{
 		ID:   viperString("partition"),
 		Size: viperString("size"),
 	})
@@ -460,7 +452,7 @@ func (d *dashboardMachinePane) Render() error {
 		ui.Render(d.partitionCapacity)
 	}
 
-	networkResp, err := driver.NetworkFind(&metalgo.NetworkFindRequest{
+	networkResp, err := d.metal.NetworkFind(&metalgo.NetworkFindRequest{
 		Labels: map[string]string{
 			tag.NetworkDefault: "",
 		},
@@ -491,7 +483,7 @@ func (d *dashboardMachinePane) Render() error {
 		return fmt.Errorf("no: %d", len(networks))
 	}
 
-	networkResp, err = driver.NetworkFind(&metalgo.NetworkFindRequest{
+	networkResp, err = d.metal.NetworkFind(&metalgo.NetworkFindRequest{
 		PartitionID:  viperString("partition"),
 		PrivateSuper: boolPtr(true),
 	})
@@ -519,7 +511,7 @@ func (d *dashboardMachinePane) Render() error {
 		ui.Render(d.freeTenantPrefixes)
 	}
 
-	machineResp, err := driver.MachineIPMIList(&metalgo.MachineFindRequest{
+	machineResp, err := d.metal.MachineIPMIList(&metalgo.MachineFindRequest{
 		PartitionID: viperString("partition"),
 		SizeID:      viperString("size"),
 	})
@@ -566,7 +558,7 @@ func (d *dashboardMachinePane) Render() error {
 		ui.Render(d.machineState)
 	}
 
-	issues = len(getMachineIssues(machines))
+	issues = len(api.GetMachineIssues(machines))
 	noIssues = len(machines) - issues
 	d.machineIssues.Data = []float64{float64(noIssues), float64(issues)}
 	ui.Render(d.machineIssues)

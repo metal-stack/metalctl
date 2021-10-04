@@ -3,80 +3,77 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
-	metalgo "github.com/metal-stack/metal-go"
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	projectCmd = &cobra.Command{
+func newProjectCmd(c *config) *cobra.Command {
+	projectCmd := &cobra.Command{
 		Use:   "project",
 		Short: "manage projects",
 		Long:  "a project groups multiple networks for a tenant",
 	}
 
-	projectListCmd = &cobra.Command{
+	projectListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectList(driver)
+			return c.projectList()
 		},
 	}
-	projectDescribeCmd = &cobra.Command{
+	projectDescribeCmd := &cobra.Command{
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectDescribe(driver, args)
+			return c.projectDescribe(args)
 		},
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
-	projectCreateCmd = &cobra.Command{
+	projectCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectCreate()
+			return c.projectCreate()
 		},
 		PreRun: bindPFlags,
 	}
-	projectDeleteCmd = &cobra.Command{
+	projectDeleteCmd := &cobra.Command{
 		Use:     "remove <projectID>",
 		Aliases: []string{"rm", "delete"},
 		Short:   "delete a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectDelete(args)
+			return c.projectDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
-	projectApplyCmd = &cobra.Command{
+	projectApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectApply()
+			return c.projectApply()
 		},
 		PreRun: bindPFlags,
 	}
-	projectEditCmd = &cobra.Command{
+	projectEditCmd := &cobra.Command{
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return projectEdit(args)
+			return c.projectEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: projectListCompletionFunc,
+		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
-)
 
-func init() {
 	projectCreateCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
 	projectCreateCmd.Flags().String("description", "", "description of the project. [required]")
 	projectCreateCmd.Flags().String("tenant", "", "create project for given tenant")
@@ -85,10 +82,7 @@ func init() {
 	projectCreateCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 	projectCreateCmd.Flags().Int32("machine-quota", 0, "machine quota")
 	projectCreateCmd.Flags().Int32("ip-quota", 0, "ip quota")
-	err := projectCreateCmd.MarkFlagRequired("name")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(projectCreateCmd.MarkFlagRequired("name"))
 
 	projectApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example project update:
@@ -100,10 +94,7 @@ Example project update:
 ## or via file
 # cloudctl project apply -f project1.yaml
 `)
-	err = projectApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(projectApplyCmd.MarkFlagRequired("file"))
 
 	projectListCmd.Flags().StringP("name", "", "", "Name of the project.")
 	projectListCmd.Flags().StringP("id", "", "", "ID of the project.")
@@ -116,13 +107,12 @@ Example project update:
 	projectCmd.AddCommand(projectApplyCmd)
 	projectCmd.AddCommand(projectEditCmd)
 
-	err = viper.BindPFlags(projectListCmd.Flags())
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(viper.BindPFlags(projectListCmd.Flags()))
+
+	return projectCmd
 }
 
-func projectList(driver *metalgo.Driver) error {
+func (c *config) projectList() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
 		pfr := v1.ProjectFindRequest{}
 		id := viper.GetString("id")
@@ -138,32 +128,32 @@ func projectList(driver *metalgo.Driver) error {
 		if tenantID != "" {
 			pfr.TenantId = &tenantID
 		}
-		resp, err := driver.ProjectFind(pfr)
+		resp, err := c.driver.ProjectFind(pfr)
 		if err != nil {
 			return err
 		}
-		return printer.Print(resp.Project)
+		return output.New().Print(resp.Project)
 	}
-	resp, err := driver.ProjectList()
+	resp, err := c.driver.ProjectList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Project)
+	return output.New().Print(resp.Project)
 }
 
-func projectDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) projectDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no project ID given")
 	}
 	projectID := args[0]
-	resp, err := driver.ProjectGet(projectID)
+	resp, err := c.driver.ProjectGet(projectID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Project)
+	return output.NewDetailer().Detail(resp.Project)
 }
 
-func projectCreate() error {
+func (c *config) projectCreate() error {
 	tenant := viper.GetString("tenant")
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -210,15 +200,15 @@ func projectCreate() error {
 		Project: p,
 	}
 
-	response, err := driver.ProjectCreate(pcr)
+	response, err := c.driver.ProjectCreate(pcr)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Project)
+	return output.New().Print(response.Project)
 }
 
-func projectApply() error {
+func (c *config) projectApply() error {
 	var pars []v1.Project
 	var par v1.Project
 	err := readFrom(viper.GetString("file"), &par, func(data interface{}) {
@@ -234,7 +224,7 @@ func projectApply() error {
 	var response []*models.V1ProjectResponse
 	for _, par := range pars {
 		if par.Meta.Id == "" {
-			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
+			resp, err := c.driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
 				return err
 			}
@@ -242,7 +232,7 @@ func projectApply() error {
 			continue
 		}
 
-		resp, err := driver.ProjectGet(par.Meta.Id)
+		resp, err := c.driver.ProjectGet(par.Meta.Id)
 		if err != nil {
 			var r *projectmodel.FindProjectDefault
 			if !errors.As(err, &r) {
@@ -253,7 +243,7 @@ func projectApply() error {
 			}
 		}
 		if resp.Project == nil {
-			resp, err := driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
+			resp, err := c.driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
 			if err != nil {
 				return err
 			}
@@ -261,23 +251,23 @@ func projectApply() error {
 			continue
 		}
 
-		resp, err = driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
+		resp, err = c.driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
 		if err != nil {
 			return err
 		}
 		response = append(response, resp.Project)
 	}
-	return printer.Print(response)
+	return output.New().Print(response)
 }
 
-func projectEdit(args []string) error {
+func (c *config) projectEdit(args []string) error {
 	id, err := projectID("edit", args)
 	if err != nil {
 		return err
 	}
 
 	getFunc := func(id string) ([]byte, error) {
-		resp, err := driver.ProjectGet(id)
+		resp, err := c.driver.ProjectGet(id)
 		if err != nil {
 			return nil, err
 		}
@@ -295,28 +285,28 @@ func projectEdit(args []string) error {
 		if len(purs) != 1 {
 			return fmt.Errorf("project update error more or less than one project given:%d", len(purs))
 		}
-		uresp, err := driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: purs[0]})
+		uresp, err := c.driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: purs[0]})
 		if err != nil {
 			return err
 		}
-		return printer.Print(uresp.Project)
+		return output.New().Print(uresp.Project)
 	}
 
 	return edit(id, getFunc, updateFunc)
 }
 
-func projectDelete(args []string) error {
+func (c *config) projectDelete(args []string) error {
 	id, err := projectID("delete", args)
 	if err != nil {
 		return err
 	}
 
-	response, err := driver.ProjectDelete(id)
+	response, err := c.driver.ProjectDelete(id)
 	if err != nil {
 		return err
 	}
 
-	return printer.Print(response.Project)
+	return output.New().Print(response.Project)
 }
 
 func projectID(verb string, args []string) (string, error) {

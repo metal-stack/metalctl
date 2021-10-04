@@ -3,86 +3,84 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
 	imagemodel "github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	imageCmd = &cobra.Command{
+func newImageCmd(c *config) *cobra.Command {
+	imageCmd := &cobra.Command{
 		Use:   "image",
 		Short: "manage images",
 		Long:  "os images available to be installed on machines.",
 	}
 
-	imageListCmd = &cobra.Command{
+	imageListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all images",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageList(driver)
+			return c.imageList()
 		},
 	}
-	imageDescribeCmd = &cobra.Command{
+	imageDescribeCmd := &cobra.Command{
 		Use:   "describe <imageID>",
 		Short: "describe a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageDescribe(driver, args)
+			return c.imageDescribe(args)
 		},
-		ValidArgsFunction: imageListCompletionFunc,
+		ValidArgsFunction: c.comp.ImageListCompletion,
 	}
-	imageCreateCmd = &cobra.Command{
+	imageCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageCreate(driver)
+			return c.imageCreate()
 		},
 		PreRun: bindPFlags,
 	}
-	imageUpdateCmd = &cobra.Command{
+	imageUpdateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageUpdate(driver)
+			return c.imageUpdate()
 		},
 		PreRun: bindPFlags,
 	}
-	imageApplyCmd = &cobra.Command{
+	imageApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageApply(driver)
+			return c.imageApply()
 		},
 		PreRun: bindPFlags,
 	}
-	imageDeleteCmd = &cobra.Command{
+	imageDeleteCmd := &cobra.Command{
 		Use:     "delete <imageID>",
 		Aliases: []string{"rm"},
 		Short:   "delete a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageDelete(driver, args)
+			return c.imageDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: imageListCompletionFunc,
+		ValidArgsFunction: c.comp.ImageListCompletion,
 	}
-	imageEditCmd = &cobra.Command{
+	imageEditCmd := &cobra.Command{
 		Use:   "edit <imageID>",
 		Short: "edit a image",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return imageEdit(driver, args)
+			return c.imageEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: imageListCompletionFunc,
+		ValidArgsFunction: c.comp.ImageListCompletion,
 	}
-)
 
-func init() {
 	imageCreateCmd.Flags().StringP("id", "", "", "ID of the image. [required]")
 	imageCreateCmd.Flags().StringP("url", "", "", "url of the image. [required]")
 	imageCreateCmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
@@ -98,10 +96,7 @@ Example:
 # cat ubuntu.yaml | metalctl image update -f -
 ## or via file
 # metalctl image update -f ubuntu.yaml`)
-	err := imageUpdateCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(imageUpdateCmd.MarkFlagRequired("file"))
 
 	imageApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
@@ -112,10 +107,7 @@ Example:
 # cat ubuntu.yaml | metalctl image apply -f -
 ## or via file
 # metalctl image apply -f ubuntu.yaml`)
-	err = imageApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(imageApplyCmd.MarkFlagRequired("file"))
 
 	imageCmd.AddCommand(imageListCmd)
 	imageCmd.AddCommand(imageDescribeCmd)
@@ -124,29 +116,31 @@ Example:
 	imageCmd.AddCommand(imageDeleteCmd)
 	imageCmd.AddCommand(imageApplyCmd)
 	imageCmd.AddCommand(imageEditCmd)
+
+	return imageCmd
 }
 
-func imageList(driver *metalgo.Driver) error {
-	resp, err := driver.ImageList()
+func (c *config) imageList() error {
+	resp, err := c.driver.ImageList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Image)
+	return output.New().Print(resp.Image)
 }
 
-func imageDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) imageDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no image ID given")
 	}
 	imageID := args[0]
-	resp, err := driver.ImageGet(imageID)
+	resp, err := c.driver.ImageGet(imageID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Image)
+	return output.NewDetailer().Detail(resp.Image)
 }
 
-func imageCreate(driver *metalgo.Driver) error {
+func (c *config) imageCreate() error {
 	var icr metalgo.ImageCreateRequest
 	if viper.GetString("file") != "" {
 		var iars []metalgo.ImageCreateRequest
@@ -170,22 +164,22 @@ func imageCreate(driver *metalgo.Driver) error {
 			Features:    viper.GetStringSlice("features"),
 		}
 	}
-	resp, err := driver.ImageCreate(icr)
+	resp, err := c.driver.ImageCreate(icr)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Image)
+	return output.NewDetailer().Detail(resp.Image)
 }
-func imageUpdate(driver *metalgo.Driver) error {
+func (c *config) imageUpdate() error {
 	iar, err := readImageCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
-	resp, err := driver.ImageUpdate(iar)
+	resp, err := c.driver.ImageUpdate(iar)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Image)
+	return output.NewDetailer().Detail(resp.Image)
 }
 
 func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error) {
@@ -201,7 +195,7 @@ func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func imageApply(driver *metalgo.Driver) error {
+func (c *config) imageApply() error {
 	var iars []metalgo.ImageCreateRequest
 	var iar metalgo.ImageCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -216,7 +210,7 @@ func imageApply(driver *metalgo.Driver) error {
 	}
 	var response []*models.V1ImageResponse
 	for _, iar := range iars {
-		image, err := driver.ImageGet(iar.ID)
+		image, err := c.driver.ImageGet(iar.ID)
 		if err != nil {
 			var r *imagemodel.FindImageDefault
 			if !errors.As(err, &r) {
@@ -227,7 +221,7 @@ func imageApply(driver *metalgo.Driver) error {
 			}
 		}
 		if image.Image == nil {
-			resp, err := driver.ImageCreate(iar)
+			resp, err := c.driver.ImageCreate(iar)
 			if err != nil {
 				return err
 			}
@@ -235,7 +229,7 @@ func imageApply(driver *metalgo.Driver) error {
 			continue
 		}
 		if image.Image.ID != nil {
-			resp, err := driver.ImageUpdate(iar)
+			resp, err := c.driver.ImageUpdate(iar)
 			if err != nil {
 				return err
 			}
@@ -243,29 +237,29 @@ func imageApply(driver *metalgo.Driver) error {
 			continue
 		}
 	}
-	return detailer.Detail(response)
+	return output.NewDetailer().Detail(response)
 }
 
-func imageDelete(driver *metalgo.Driver, args []string) error {
+func (c *config) imageDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no image ID given")
 	}
 	imageID := args[0]
-	resp, err := driver.ImageDelete(imageID)
+	resp, err := c.driver.ImageDelete(imageID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Image)
+	return output.NewDetailer().Detail(resp.Image)
 }
 
-func imageEdit(driver *metalgo.Driver, args []string) error {
+func (c *config) imageEdit(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no image ID given")
 	}
 	imageID := args[0]
 
 	getFunc := func(id string) ([]byte, error) {
-		resp, err := driver.ImageGet(imageID)
+		resp, err := c.driver.ImageGet(imageID)
 		if err != nil {
 			return nil, err
 		}
@@ -281,11 +275,11 @@ func imageEdit(driver *metalgo.Driver, args []string) error {
 			return err
 		}
 		fmt.Printf("new image classification:%s\n", *iar.Classification)
-		uresp, err := driver.ImageUpdate(iar)
+		uresp, err := c.driver.ImageUpdate(iar)
 		if err != nil {
 			return err
 		}
-		return detailer.Detail(uresp.Image)
+		return output.NewDetailer().Detail(uresp.Image)
 	}
 
 	return edit(imageID, getFunc, updateFunc)

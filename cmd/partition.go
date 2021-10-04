@@ -3,94 +3,92 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
 	partitionmodel "github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
-var (
-	partitionCmd = &cobra.Command{
+func newPartitionCmd(c *config) *cobra.Command {
+	partitionCmd := &cobra.Command{
 		Use:   "partition",
 		Short: "manage partitions",
 		Long:  "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
 	}
 
-	partitionListCmd = &cobra.Command{
+	partitionListCmd := &cobra.Command{
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "list all partitions",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionList(driver)
+			return c.partitionList()
 		},
 		PreRun: bindPFlags,
 	}
-	partitionCapacityCmd = &cobra.Command{
+	partitionCapacityCmd := &cobra.Command{
 		Use:   "capacity",
 		Short: "show partition capacity",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionCapacity(driver)
+			return c.partitionCapacity()
 		},
 		PreRun: bindPFlags,
 	}
-	partitionDescribeCmd = &cobra.Command{
+	partitionDescribeCmd := &cobra.Command{
 		Use:   "describe <partitionID>",
 		Short: "describe a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionDescribe(driver, args)
+			return c.partitionDescribe(args)
 		},
-		ValidArgsFunction: partitionListCompletionFunc,
+		ValidArgsFunction: c.comp.PartitionListCompletion,
 	}
-	partitionCreateCmd = &cobra.Command{
+	partitionCreateCmd := &cobra.Command{
 		Use:   "create",
 		Short: "create a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionCreate(driver)
+			return c.partitionCreate()
 		},
 		PreRun: bindPFlags,
 	}
-	partitionUpdateCmd = &cobra.Command{
+	partitionUpdateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionUpdate(driver)
+			return c.partitionUpdate()
 		},
 		PreRun: bindPFlags,
 	}
-	partitionApplyCmd = &cobra.Command{
+	partitionApplyCmd := &cobra.Command{
 		Use:   "apply",
 		Short: "create/update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionApply(driver)
+			return c.partitionApply()
 		},
 		PreRun: bindPFlags,
 	}
-	partitionDeleteCmd = &cobra.Command{
+	partitionDeleteCmd := &cobra.Command{
 		Use:   "delete <partitionID>",
 		Short: "delete a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionDelete(driver, args)
+			return c.partitionDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: partitionListCompletionFunc,
+		ValidArgsFunction: c.comp.PartitionListCompletion,
 	}
-	partitionEditCmd = &cobra.Command{
+	partitionEditCmd := &cobra.Command{
 		Use:   "edit <partitionID>",
 		Short: "edit a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return partitionEdit(driver, args)
+			return c.partitionEdit(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: partitionListCompletionFunc,
+		ValidArgsFunction: c.comp.PartitionListCompletion,
 	}
-)
 
-func init() {
 	partitionCreateCmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
 	partitionCreateCmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
 	partitionCreateCmd.Flags().StringP("description", "d", "", "Description of the partition. [required]")
@@ -108,10 +106,7 @@ Example:
 # cat a.yaml | metalctl partition apply -f -
 ## or via file
 # metalctl partition apply -f a.yaml`)
-	err := partitionApplyCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(partitionApplyCmd.MarkFlagRequired("file"))
 
 	partitionUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
@@ -122,27 +117,12 @@ Example:
 # cat a.yaml | metalctl partition update -f -
 ## or via file
 # metalctl partition update -f a.yaml`)
-	err = partitionUpdateCmd.MarkFlagRequired("file")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(partitionUpdateCmd.MarkFlagRequired("file"))
 
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
-	err = partitionCapacityCmd.RegisterFlagCompletionFunc("id", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		return partitionListCompletion(driver)
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	err = partitionCapacityCmd.RegisterFlagCompletionFunc("size", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		sizes, comp := sizeListCompletion(driver)
-		sizes = append(sizes, "unknown")
-		return sizes, comp
-	})
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
+	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 
 	partitionCmd.AddCommand(partitionListCmd)
 	partitionCmd.AddCommand(partitionCapacityCmd)
@@ -152,29 +132,31 @@ Example:
 	partitionCmd.AddCommand(partitionApplyCmd)
 	partitionCmd.AddCommand(partitionDeleteCmd)
 	partitionCmd.AddCommand(partitionEditCmd)
+
+	return partitionCmd
 }
 
-func partitionList(driver *metalgo.Driver) error {
-	resp, err := driver.PartitionList()
+func (c *config) partitionList() error {
+	resp, err := c.driver.PartitionList()
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Partition)
+	return output.New().Print(resp.Partition)
 }
 
-func partitionDescribe(driver *metalgo.Driver, args []string) error {
+func (c *config) partitionDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no partition ID given")
 	}
 	partitionID := args[0]
-	resp, err := driver.PartitionGet(partitionID)
+	resp, err := c.driver.PartitionGet(partitionID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Partition)
+	return output.NewDetailer().Detail(resp.Partition)
 }
 
-func partitionCapacity(driver *metalgo.Driver) error {
+func (c *config) partitionCapacity() error {
 	var (
 		pcr  = metalgo.PartitionCapacityRequest{}
 		id   = viper.GetString("id")
@@ -188,14 +170,14 @@ func partitionCapacity(driver *metalgo.Driver) error {
 		pcr.Size = &size
 	}
 
-	resp, err := driver.PartitionCapacity(pcr)
+	resp, err := c.driver.PartitionCapacity(pcr)
 	if err != nil {
 		return err
 	}
-	return printer.Print(resp.Capacity)
+	return output.New().Print(resp.Capacity)
 }
 
-func partitionCreate(driver *metalgo.Driver) error {
+func (c *config) partitionCreate() error {
 	var icrs []metalgo.PartitionCreateRequest
 	var icr metalgo.PartitionCreateRequest
 	if viper.GetString("file") != "" {
@@ -224,14 +206,14 @@ func partitionCreate(driver *metalgo.Driver) error {
 		}
 	}
 
-	resp, err := driver.PartitionCreate(icr)
+	resp, err := c.driver.PartitionCreate(icr)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Partition)
+	return output.NewDetailer().Detail(resp.Partition)
 }
 
-func partitionUpdate(driver *metalgo.Driver) error {
+func (c *config) partitionUpdate() error {
 	icrs, err := readPartitionCreateRequests(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -239,11 +221,11 @@ func partitionUpdate(driver *metalgo.Driver) error {
 	if len(icrs) != 1 {
 		return fmt.Errorf("partition update error more or less than one partition given:%d", len(icrs))
 	}
-	resp, err := driver.PartitionUpdate(icrs[0])
+	resp, err := c.driver.PartitionUpdate(icrs[0])
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Partition)
+	return output.NewDetailer().Detail(resp.Partition)
 }
 
 func readPartitionCreateRequests(filename string) ([]metalgo.PartitionCreateRequest, error) {
@@ -263,7 +245,7 @@ func readPartitionCreateRequests(filename string) ([]metalgo.PartitionCreateRequ
 }
 
 // TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func partitionApply(driver *metalgo.Driver) error {
+func (c *config) partitionApply() error {
 	var iars []metalgo.PartitionCreateRequest
 	var iar metalgo.PartitionCreateRequest
 	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
@@ -278,7 +260,7 @@ func partitionApply(driver *metalgo.Driver) error {
 	}
 	var response []*models.V1PartitionResponse
 	for _, iar := range iars {
-		resp, err := driver.PartitionGet(iar.ID)
+		resp, err := c.driver.PartitionGet(iar.ID)
 		if err != nil {
 			var r *partitionmodel.FindPartitionDefault
 			if !errors.As(err, &r) {
@@ -289,7 +271,7 @@ func partitionApply(driver *metalgo.Driver) error {
 			}
 		}
 		if resp.Partition == nil {
-			resp, err := driver.PartitionCreate(iar)
+			resp, err := c.driver.PartitionCreate(iar)
 			if err != nil {
 				return err
 			}
@@ -297,35 +279,35 @@ func partitionApply(driver *metalgo.Driver) error {
 			continue
 		}
 
-		updateResponse, err := driver.PartitionUpdate(iar)
+		updateResponse, err := c.driver.PartitionUpdate(iar)
 		if err != nil {
 			return err
 		}
 		response = append(response, updateResponse.Partition)
 	}
-	return detailer.Detail(response)
+	return output.NewDetailer().Detail(response)
 }
 
-func partitionDelete(driver *metalgo.Driver, args []string) error {
+func (c *config) partitionDelete(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no partition ID given")
 	}
 	partitionID := args[0]
-	resp, err := driver.PartitionDelete(partitionID)
+	resp, err := c.driver.PartitionDelete(partitionID)
 	if err != nil {
 		return err
 	}
-	return detailer.Detail(resp.Partition)
+	return output.NewDetailer().Detail(resp.Partition)
 }
 
-func partitionEdit(driver *metalgo.Driver, args []string) error {
+func (c *config) partitionEdit(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no partition ID given")
 	}
 	partitionID := args[0]
 
 	getFunc := func(id string) ([]byte, error) {
-		resp, err := driver.PartitionGet(partitionID)
+		resp, err := c.driver.PartitionGet(partitionID)
 		if err != nil {
 			return nil, err
 		}
@@ -343,11 +325,11 @@ func partitionEdit(driver *metalgo.Driver, args []string) error {
 		if len(iars) != 1 {
 			return fmt.Errorf("partition update error more or less than one partition given:%d", len(iars))
 		}
-		uresp, err := driver.PartitionUpdate(iars[0])
+		uresp, err := c.driver.PartitionUpdate(iars[0])
 		if err != nil {
 			return err
 		}
-		return detailer.Detail(uresp.Partition)
+		return output.NewDetailer().Detail(uresp.Partition)
 	}
 
 	return edit(partitionID, getFunc, updateFunc)
