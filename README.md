@@ -6,15 +6,15 @@
 
 Download locations:
 
-- [metalctl-linux-amd64](https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-linux-amd64)
-- [metalctl-darwin-amd64](https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-darwin-amd64)
-- [metalctl-darwin-arm64](https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-darwin-arm64)
-- [metalctl-windows-amd64](https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-windows-amd64)
+- [metalctl-linux-amd64](https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-linux-amd64)
+- [metalctl-darwin-amd64](https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-darwin-amd64)
+- [metalctl-darwin-arm64](https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-darwin-arm64)
+- [metalctl-windows-amd64](https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-windows-amd64)
 
 ### Installation on Linux
 
 ```bash
-curl -LO https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-linux-amd64
+curl -LO https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-linux-amd64
 chmod +x metalctl-linux-amd64
 sudo mv metalctl-linux-amd64 /usr/local/bin/metalctl
 ```
@@ -24,7 +24,7 @@ sudo mv metalctl-linux-amd64 /usr/local/bin/metalctl
 For x86 based Macs:
 
 ```bash
-curl -LO https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-darwin-amd64
+curl -LO https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-darwin-amd64
 chmod +x metalctl-darwin-amd64
 sudo mv metalctl-darwin-amd64 /usr/local/bin/metalctl
 ```
@@ -32,7 +32,7 @@ sudo mv metalctl-darwin-amd64 /usr/local/bin/metalctl
 For Apple Silicon (M1) based Macs:
 
 ```bash
-curl -LO https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-darwin-arm64
+curl -LO https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-darwin-arm64
 chmod +x metalctl-darwin-arm64
 sudo mv metalctl-darwin-arm64 /usr/local/bin/metalctl
 ```
@@ -40,7 +40,7 @@ sudo mv metalctl-darwin-arm64 /usr/local/bin/metalctl
 ### Installation on Windows
 
 ```bash
-curl -LO https://github.com/metal-stack/metalctl/releases/download/v0.8.3/metalctl-windows-amd64
+curl -LO https://github.com/metal-stack/metalctl/releases/latest/download/metalctl-windows-amd64
 copy metalctl-windows-amd64 metalctl.exe
 ```
 
