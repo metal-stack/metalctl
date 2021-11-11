@@ -1157,9 +1157,6 @@ func (c *config) machineIpmi(args []string) error {
 	if filterOpts.Hostname != "" {
 		mfr.AllocationHostname = &filterOpts.Hostname
 	}
-	if filterOpts.Hostname != "" {
-		mfr.AllocationHostname = &filterOpts.Hostname
-	}
 	if filterOpts.Mac != "" {
 		mfr.NicsMacAddresses = []string{filterOpts.Mac}
 	}
