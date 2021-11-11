@@ -814,7 +814,7 @@ func (c *config) firmwareData(args []string) (*models.V1MachineIPMIResponse, str
 	}
 
 	fru := *m.Ipmi.Fru
-	vendor := strings.ToLower(fru.ProductManufacturer)
+	vendor := strings.ToLower(fru.BoardMfg)
 	board := strings.ToUpper(fru.BoardPartNumber)
 
 	return m, vendor, board, nil
@@ -1153,9 +1153,6 @@ func (c *config) machineIpmi(args []string) error {
 	}
 	if filterOpts.Image != "" {
 		mfr.AllocationImageID = &filterOpts.Image
-	}
-	if filterOpts.Hostname != "" {
-		mfr.AllocationHostname = &filterOpts.Hostname
 	}
 	if filterOpts.Hostname != "" {
 		mfr.AllocationHostname = &filterOpts.Hostname
