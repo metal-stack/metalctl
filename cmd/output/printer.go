@@ -1286,28 +1286,32 @@ func (m MetalMachineLogsPrinter) Print(data []*models.V1MachineProvisioningEvent
 
 // Print all MetalIPs in a table
 func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
-	m.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Machines", "IPs", "Labels", "Annotations"}
+	m.wideHeader = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
 	m.shortHeader = m.wideHeader
 	m.Order(data)
 	for _, pr := range data {
-		machineQuota := ""
-		ipQuota := ""
+		quotas := "∞/∞/∞"
 		if pr.Quotas != nil {
+			clusterQuota := "∞"
+			machineQuota := "∞"
+			ipQuota := "∞"
 			qs := pr.Quotas
-			if qs.Machine != nil {
-				mq := "∞"
-				if qs.Machine.Quota != 0 {
-					mq = strconv.FormatInt(int64(qs.Machine.Quota), 10)
+			if qs.Cluster != nil {
+				if qs.Cluster.Quota != 0 {
+					clusterQuota = strconv.FormatInt(int64(qs.Cluster.Quota), 10)
 				}
-				machineQuota = fmt.Sprintf("%d/%s", qs.Machine.Used, mq)
+			}
+			if qs.Machine != nil {
+				if qs.Machine.Quota != 0 {
+					machineQuota = strconv.FormatInt(int64(qs.Machine.Quota), 10)
+				}
 			}
 			if qs.IP != nil {
-				iq := "∞"
 				if qs.IP.Quota != 0 {
-					iq = strconv.FormatInt(int64(qs.IP.Quota), 10)
+					ipQuota = strconv.FormatInt(int64(qs.IP.Quota), 10)
 				}
-				ipQuota = fmt.Sprintf("%d/%s", qs.IP.Used, iq)
 			}
+			quotas = fmt.Sprintf("%s/%s/%s", clusterQuota, machineQuota, ipQuota)
 		}
 		labels := strings.Join(pr.Meta.Labels, "\n")
 		as := []string{}
@@ -1316,7 +1320,7 @@ func (m MetalProjectTablePrinter) Print(data []*models.V1ProjectResponse) {
 		}
 		annotations := strings.Join(as, "\n")
 
-		wide := []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, machineQuota, ipQuota, labels, annotations}
+		wide := []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, quotas, labels, annotations}
 		m.addShortData(wide, pr)
 		m.addWideData(wide, pr)
 	}
