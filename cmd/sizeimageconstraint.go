@@ -1,0 +1,162 @@
+package cmd
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	sizemodel "github.com/metal-stack/metal-go/api/client/size"
+	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+func newSizeImageConstraintCmd(c *config) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "imageconstraint",
+		Aliases: []string{"ic"},
+		Short:   "manage size to image constraints",
+		Long:    "If a size has specific requirements regarding the images which must fullfill certain constraints, this can be configured here.",
+	}
+
+	listCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "list all size image constraints",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.sizeImageConstraintList()
+		},
+		PreRun: bindPFlags,
+	}
+	describeCmd := &cobra.Command{
+		Use:   "describe <sizeID>",
+		Short: "describe a size image constraints",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.sizeImageConstraintDescribe(args)
+		},
+		ValidArgsFunction: c.comp.SizeListCompletion,
+	}
+	applyCmd := &cobra.Command{
+		Use:   "apply",
+		Short: "create/update a size image constraints",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.sizeImageConstraintApply()
+		},
+		PreRun: bindPFlags,
+	}
+	deleteCmd := &cobra.Command{
+		Use:   "delete <sizeID>",
+		Short: "delete a size image constraints",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.sizeImageConstraintDelete(args)
+		},
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.SizeListCompletion,
+	}
+
+	applyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
+Example:
+
+# metalctl sizeimageconstraint describe c1-xlarge-x86 > c1-xlarge-x86.yaml
+# vi c1-xlarge-x86.yaml
+## either via stdin
+# cat c1-xlarge-x86.yaml | metalctl size apply -f -
+## or via file
+# metalctl sizeimageconstraint apply -f c1-xlarge-x86.yaml`)
+	must(applyCmd.MarkFlagRequired("file"))
+
+	cmd.AddCommand(listCmd)
+	cmd.AddCommand(describeCmd)
+	cmd.AddCommand(deleteCmd)
+	cmd.AddCommand(applyCmd)
+
+	return cmd
+}
+
+func (c *config) sizeImageConstraintList() error {
+	resp, err := c.driver.Size.ListSizeImageConstraints(&sizemodel.ListSizeImageConstraintsParams{}, nil)
+	if err != nil {
+		return err
+	}
+	return output.New().Print(resp.Payload)
+}
+
+func (c *config) sizeImageConstraintDescribe(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("no size ID given")
+	}
+	id := args[0]
+	resp, err := c.driver.Size.FindSizeImageConstraint(&sizemodel.FindSizeImageConstraintParams{ID: id}, nil)
+	if err != nil {
+		return err
+	}
+	return output.NewDetailer().Detail(resp.Payload)
+}
+
+// TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
+func (c *config) sizeImageConstraintApply() error {
+	var sics []models.V1SizeImageConstraintCreateRequest
+	var sic models.V1SizeImageConstraintCreateRequest
+	err := readFrom(viper.GetString("file"), &sic, func(data interface{}) {
+		doc := data.(*models.V1SizeImageConstraintCreateRequest)
+		sics = append(sics, *doc)
+		// the request needs to be renewed as otherwise the pointers in the request struct will
+		// always point to same last value in the multi-document loop
+		sic = models.V1SizeImageConstraintCreateRequest{}
+	})
+	if err != nil {
+		return err
+	}
+	var response []*models.V1SizeImageConstraintResponse
+	for _, sic := range sics {
+		sic := sic
+		p, err := c.driver.Size.FindSizeImageConstraint(&sizemodel.FindSizeImageConstraintParams{ID: *sic.ID}, nil)
+		if err != nil {
+			var r *sizemodel.FindSizeImageConstraintDefault
+			if !errors.As(err, &r) {
+				return err
+			}
+			if r.Code() != http.StatusNotFound {
+				return err
+			}
+		}
+		if p.Payload == nil {
+			param := sizemodel.NewCreateSizeImageConstraintParams()
+			param.SetBody(&sic)
+			resp, err := c.driver.Size.CreateSizeImageConstraint(param, nil)
+			if err != nil {
+				return err
+			}
+			response = append(response, resp.Payload)
+			continue
+		}
+
+		sicur := &models.V1SizeImageConstraintUpdateRequest{
+			ID:          sic.ID,
+			Description: sic.Description,
+			Name:        sic.Name,
+			Constraints: sic.Constraints,
+		}
+		param := sizemodel.NewUpdateSizeImageConstraintParams()
+		param.SetBody(sicur)
+		resp, err := c.driver.Size.UpdateSizeImageConstraint(param, nil)
+		if err != nil {
+			return err
+		}
+		response = append(response, resp.Payload)
+	}
+	return output.NewDetailer().Detail(response)
+}
+
+func (c *config) sizeImageConstraintDelete(args []string) error {
+	if len(args) < 1 {
+		return fmt.Errorf("no size ID given")
+	}
+	id := args[0]
+	resp, err := c.driver.Size.DeleteSizeImageConstraint(&sizemodel.DeleteSizeImageConstraintParams{ID: id}, nil)
+	if err != nil {
+		return err
+	}
+	return output.NewDetailer().Detail(resp.Payload)
+}
