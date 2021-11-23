@@ -133,6 +133,11 @@ type (
 	ContextPrinter struct {
 		TablePrinter
 	}
+
+	// FilesystemLayoutPrinter is a table printer for Filesystemlayouts
+	MetalSizeImageConstraintTablePrinter struct {
+		TablePrinter
+	}
 )
 
 // New returns a suitable stdout printer for the given format
@@ -319,6 +324,10 @@ func (t TablePrinter) Print(data interface{}) error {
 		MetalFirewallTablePrinter{t}.Print([]*models.V1FirewallResponse{d})
 	case []*models.V1SizeResponse:
 		MetalSizeTablePrinter{t}.Print(d)
+	case []*models.V1SizeImageConstraintResponse:
+		MetalSizeImageConstraintTablePrinter{t}.Print(d)
+	case *models.V1SizeImageConstraintResponse:
+		MetalSizeImageConstraintTablePrinter{t}.Print([]*models.V1SizeImageConstraintResponse{d})
 	case []*models.V1SizeMatchingLog:
 		MetalSizeMatchingLogTablePrinter{t}.Print(d)
 	case []*models.V1ImageResponse:
@@ -896,6 +905,22 @@ func (m MetalSizeMatchingLogTablePrinter) Print(data []*models.V1SizeMatchingLog
 	m.wideHeader = m.shortHeader
 	m.table.SetAutoWrapText(false)
 	m.table.SetColMinWidth(3, 40)
+	m.render()
+}
+
+// Print a MetalSize in a table
+func (m MetalSizeImageConstraintTablePrinter) Print(data []*models.V1SizeImageConstraintResponse) {
+	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
+	for _, size := range data {
+		id := strValue(size.ID)
+		for i, c := range size.Constraints.Images {
+			row := []string{id, size.Name, size.Description, i, c}
+			m.addShortData(row, size)
+			m.addWideData(row, size)
+		}
+	}
+	m.shortHeader = []string{"ID", "Name", "Description", "Image", "Constraint"}
+	m.shortHeader = m.wideHeader
 	m.render()
 }
 

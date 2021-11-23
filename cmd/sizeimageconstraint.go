@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	sizemodel "github.com/metal-stack/metal-go/api/client/size"
+	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
@@ -75,7 +75,8 @@ Example:
 }
 
 func (c *config) sizeImageConstraintList() error {
-	resp, err := c.driver.Size.ListSizeImageConstraints(&sizemodel.ListSizeImageConstraintsParams{}, nil)
+	param := sizemodel.NewListSizeImageConstraintsParams()
+	resp, err := c.driver.SizeImageConstraint.ListSizeImageConstraints(param, nil)
 	if err != nil {
 		return err
 	}
@@ -87,7 +88,9 @@ func (c *config) sizeImageConstraintDescribe(args []string) error {
 		return fmt.Errorf("no size ID given")
 	}
 	id := args[0]
-	resp, err := c.driver.Size.FindSizeImageConstraint(&sizemodel.FindSizeImageConstraintParams{ID: id}, nil)
+	param := sizemodel.NewFindSizeImageConstraintParams()
+	param.SetID(id)
+	resp, err := c.driver.SizeImageConstraint.FindSizeImageConstraint(param, nil)
 	if err != nil {
 		return err
 	}
@@ -111,20 +114,23 @@ func (c *config) sizeImageConstraintApply() error {
 	var response []*models.V1SizeImageConstraintResponse
 	for _, sic := range sics {
 		sic := sic
-		p, err := c.driver.Size.FindSizeImageConstraint(&sizemodel.FindSizeImageConstraintParams{ID: *sic.ID}, nil)
+		param := sizemodel.NewFindSizeImageConstraintParams()
+		param.SetID(*sic.ID)
+		p, err := c.driver.SizeImageConstraint.FindSizeImageConstraint(param, nil)
 		if err != nil {
+			fmt.Printf("Error:%#v", err)
 			var r *sizemodel.FindSizeImageConstraintDefault
 			if !errors.As(err, &r) {
 				return err
 			}
-			if r.Code() != http.StatusNotFound {
+			if r.Payload.StatusCode != http.StatusNotFound {
 				return err
 			}
 		}
-		if p.Payload == nil {
+		if p == nil {
 			param := sizemodel.NewCreateSizeImageConstraintParams()
 			param.SetBody(&sic)
-			resp, err := c.driver.Size.CreateSizeImageConstraint(param, nil)
+			resp, err := c.driver.SizeImageConstraint.CreateSizeImageConstraint(param, nil)
 			if err != nil {
 				return err
 			}
@@ -138,9 +144,9 @@ func (c *config) sizeImageConstraintApply() error {
 			Name:        sic.Name,
 			Constraints: sic.Constraints,
 		}
-		param := sizemodel.NewUpdateSizeImageConstraintParams()
-		param.SetBody(sicur)
-		resp, err := c.driver.Size.UpdateSizeImageConstraint(param, nil)
+		uparam := sizemodel.NewUpdateSizeImageConstraintParams()
+		uparam.SetBody(sicur)
+		resp, err := c.driver.SizeImageConstraint.UpdateSizeImageConstraint(uparam, nil)
 		if err != nil {
 			return err
 		}
@@ -154,7 +160,9 @@ func (c *config) sizeImageConstraintDelete(args []string) error {
 		return fmt.Errorf("no size ID given")
 	}
 	id := args[0]
-	resp, err := c.driver.Size.DeleteSizeImageConstraint(&sizemodel.DeleteSizeImageConstraintParams{ID: id}, nil)
+	param := sizemodel.NewDeleteSizeImageConstraintParams()
+	param.ID = id
+	resp, err := c.driver.SizeImageConstraint.DeleteSizeImageConstraint(param, nil)
 	if err != nil {
 		return err
 	}
