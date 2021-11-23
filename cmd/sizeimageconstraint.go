@@ -35,7 +35,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.sizeImageConstraintDescribe(args)
 		},
-		ValidArgsFunction: c.comp.SizeListCompletion,
+		ValidArgsFunction: c.comp.SizeImageConstraintListCompletion,
 	}
 	applyCmd := &cobra.Command{
 		Use:   "apply",
@@ -52,7 +52,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 			return c.sizeImageConstraintDelete(args)
 		},
 		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.SizeListCompletion,
+		ValidArgsFunction: c.comp.SizeImageConstraintListCompletion,
 	}
 
 	applyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
