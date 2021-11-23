@@ -877,7 +877,7 @@ func (m MetalSizeTablePrinter) Print(data []*models.V1SizeResponse) {
 		m.addWideData(row, size)
 	}
 	m.shortHeader = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
-	m.shortHeader = m.wideHeader
+	m.wideHeader = m.shortHeader
 	m.render()
 }
 
@@ -920,7 +920,7 @@ func (m MetalSizeImageConstraintTablePrinter) Print(data []*models.V1SizeImageCo
 		}
 	}
 	m.shortHeader = []string{"ID", "Name", "Description", "Image", "Constraint"}
-	m.shortHeader = m.wideHeader
+	m.wideHeader = m.shortHeader
 	m.render()
 }
 
