@@ -6,8 +6,8 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.12.0
 	github.com/metal-stack/masterdata-api v0.8.8
-	github.com/metal-stack/metal-go v0.15.6
-	github.com/metal-stack/metal-lib v0.8.0
+	github.com/metal-stack/metal-go v0.15.8-0.20211124174606-03e1ebe21c9b
+	github.com/metal-stack/metal-lib v0.8.1
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5

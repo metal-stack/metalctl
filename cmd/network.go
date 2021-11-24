@@ -101,6 +101,30 @@ func newNetworkCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
+	networkDestinationprefixCmd := &cobra.Command{
+		Use:   "destinationprefix",
+		Short: "destination prefix management of a network",
+	}
+
+	networkDestinationprefixAddCmd := &cobra.Command{
+		Use:   "add <networkid>",
+		Short: "add a destination prefix to a network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.networkDestinationprefixAdd(args)
+		},
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
+	}
+	networkDestinationprefixRemoveCmd := &cobra.Command{
+		Use:   "remove <networkid>",
+		Short: "remove a destination prefix from a network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.networkDestinationprefixRemove(args)
+		},
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.NetworkListCompletion,
+	}
+
 	networkIPCmd := &cobra.Command{
 		Use:   "ip",
 		Short: "manage IPs",
@@ -227,6 +251,11 @@ func newNetworkCmd(c *config) *cobra.Command {
 	networkPrefixCmd.AddCommand(networkPrefixAddCmd)
 	networkPrefixCmd.AddCommand(networkPrefixRemoveCmd)
 
+	networkDestinationprefixAddCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to add.")
+	networkDestinationprefixRemoveCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to remove.")
+	networkPrefixCmd.AddCommand(networkDestinationprefixAddCmd)
+	networkPrefixCmd.AddCommand(networkDestinationprefixRemoveCmd)
+
 	networkApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
 
@@ -257,6 +286,7 @@ Example:
 	networkCmd.AddCommand(networkAllocateCmd)
 	networkCmd.AddCommand(networkFreeCmd)
 	networkCmd.AddCommand(networkPrefixCmd)
+	networkCmd.AddCommand(networkDestinationprefixCmd)
 	networkCmd.AddCommand(networkApplyCmd)
 	networkCmd.AddCommand(networkDeleteCmd)
 
@@ -499,6 +529,40 @@ func (c *config) networkPrefixRemove(args []string) error {
 		Prefix:    viper.GetString("prefix"),
 	}
 	resp, err := c.driver.NetworkRemovePrefix(nur)
+	if err != nil {
+		return err
+	}
+	return output.NewDetailer().Detail(resp.Network)
+}
+
+func (c *config) networkDestinationprefixAdd(args []string) error {
+	networkID, err := c.getNetworkID(args)
+	if err != nil {
+		return err
+	}
+
+	nur := &metalgo.NetworkUpdateRequest{
+		Networkid: networkID,
+		Prefix:    viper.GetString("destinationprefix"),
+	}
+	resp, err := c.driver.NetworkAddDestinationprefix(nur)
+	if err != nil {
+		return err
+	}
+	return output.NewDetailer().Detail(resp.Network)
+}
+
+func (c *config) networkDestinationprefixRemove(args []string) error {
+	networkID, err := c.getNetworkID(args)
+	if err != nil {
+		return err
+	}
+
+	nur := &metalgo.NetworkUpdateRequest{
+		Networkid: networkID,
+		Prefix:    viper.GetString("destinationprefix"),
+	}
+	resp, err := c.driver.NetworkRemoveDestinationprefix(nur)
 	if err != nil {
 		return err
 	}
