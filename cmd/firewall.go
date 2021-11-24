@@ -6,6 +6,7 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func newFirewallCmd(c *config) *cobra.Command {
@@ -108,6 +109,11 @@ func (c *config) firewallCreate() error {
 	fcr := &metalgo.FirewallCreateRequest{
 		MachineCreateRequest: *mcr,
 	}
+
+	if viper.GetBool("try") {
+		return c.driver.FirewallTryAllocate(fcr)
+	}
+
 	resp, err := c.driver.FirewallCreate(fcr)
 	if err != nil {
 		return err

@@ -488,6 +488,7 @@ func (c *config) addMachineCreateFlags(cmd *cobra.Command, name string) {
 	cmd.Flags().StringP("id", "I", "", "ID of a specific "+name+" to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.")
 	cmd.Flags().StringP("project", "P", "", "Project where the "+name+" should belong to. [required]")
 	cmd.Flags().StringP("size", "s", "", "Size of the "+name+". [required, except for reserved machines]")
+	cmd.Flags().BoolP("try", "", false, "try "+name+" allocation without actually doing so")
 	cmd.Flags().StringP("sshpublickey", "p", "",
 		`SSH public key for access via ssh and console. [optional]
 Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
@@ -551,6 +552,9 @@ func (c *config) machineCreate() error {
 	mcr, err := c.machineCreateRequest()
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
+	}
+	if viper.GetBool("try") {
+		return c.driver.MachineTryAllocate(mcr)
 	}
 	resp, err := c.driver.MachineCreate(mcr)
 	if err != nil {
