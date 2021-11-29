@@ -111,10 +111,14 @@ func (c *config) firewallCreate() error {
 	}
 
 	if viper.GetBool("try") {
-		return c.driver.FirewallTryAllocate(fcr)
+		_, err := c.driver.FirewallCreate(fcr, true)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 
-	resp, err := c.driver.FirewallCreate(fcr)
+	resp, err := c.driver.FirewallCreate(fcr, false)
 	if err != nil {
 		return err
 	}

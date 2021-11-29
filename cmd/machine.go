@@ -554,9 +554,13 @@ func (c *config) machineCreate() error {
 		return fmt.Errorf("machine create error:%w", err)
 	}
 	if viper.GetBool("try") {
-		return c.driver.MachineTryAllocate(mcr)
+		_, err := c.driver.MachineCreate(mcr, true)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
-	resp, err := c.driver.MachineCreate(mcr)
+	resp, err := c.driver.MachineCreate(mcr, false)
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
