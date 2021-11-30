@@ -13,7 +13,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.11 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/metal-stack/masterdata-api v0.8.10
-	github.com/metal-stack/metal-go v0.15.8-0.20211129105823-8ced3e6a936e
+	github.com/metal-stack/metal-go v0.15.8-0.20211130130119-f1d5a372fb94
 	github.com/metal-stack/metal-lib v0.9.0
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3

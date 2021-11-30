@@ -136,7 +136,7 @@ func (r *runner) RunMachine(partition, size, image, name, project string) (*mode
 		Image:       image,
 	}
 
-	m, err := r.driver.MachineCreate(mcr, false)
+	m, err := r.driver.MachineCreate(mcr)
 	if err != nil {
 		return nil, err
 	}

@@ -554,13 +554,13 @@ func (c *config) machineCreate() error {
 		return fmt.Errorf("machine create error:%w", err)
 	}
 	if viper.GetBool("try") {
-		_, err := c.driver.MachineCreate(mcr, true)
+		_, err := c.driver.TryMachineCreate(mcr)
 		if err != nil {
 			return err
 		}
 		return nil
 	}
-	resp, err := c.driver.MachineCreate(mcr, false)
+	resp, err := c.driver.MachineCreate(mcr)
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
