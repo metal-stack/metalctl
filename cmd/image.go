@@ -28,6 +28,7 @@ func newImageCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.imageList()
 		},
+		PreRun: bindPFlags,
 	}
 	imageDescribeCmd := &cobra.Command{
 		Use:   "describe <imageID>",
@@ -109,6 +110,8 @@ Example:
 # metalctl image apply -f ubuntu.yaml`)
 	must(imageApplyCmd.MarkFlagRequired("file"))
 
+	imageListCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
+
 	imageCmd.AddCommand(imageListCmd)
 	imageCmd.AddCommand(imageDescribeCmd)
 	imageCmd.AddCommand(imageCreateCmd)
@@ -121,7 +124,15 @@ Example:
 }
 
 func (c *config) imageList() error {
-	resp, err := c.driver.ImageList()
+	var (
+		resp *metalgo.ImageListResponse
+		err  error
+	)
+	if viper.GetBool("show-usage") {
+		resp, err = c.driver.ImageListWithUsage()
+	} else {
+		resp, err = c.driver.ImageList()
+	}
 	if err != nil {
 		return err
 	}
