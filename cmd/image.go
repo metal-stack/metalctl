@@ -28,6 +28,7 @@ func newImageCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.imageList()
 		},
+		PreRun: bindPFlags,
 	}
 	imageDescribeCmd := &cobra.Command{
 		Use:   "describe <imageID>",
@@ -127,8 +128,7 @@ func (c *config) imageList() error {
 		resp *metalgo.ImageListResponse
 		err  error
 	)
-	showUsage := viper.GetBool("show-usage")
-	if showUsage {
+	if viper.GetBool("show-usage") {
 		resp, err = c.driver.ImageListWithUsage()
 	} else {
 		resp, err = c.driver.ImageList()
