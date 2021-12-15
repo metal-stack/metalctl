@@ -29,6 +29,14 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		},
 		PreRun: bindPFlags,
 	}
+	tryCmd := &cobra.Command{
+		Use:   "try",
+		Short: "try if size and image can be allocated",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.sizeImageConstraintTry()
+		},
+		PreRun: bindPFlags,
+	}
 	describeCmd := &cobra.Command{
 		Use:   "describe <sizeID>",
 		Short: "describe a size image constraints",
@@ -66,10 +74,16 @@ Example:
 # metalctl sizeimageconstraint apply -f c1-xlarge-x86.yaml`)
 	must(applyCmd.MarkFlagRequired("file"))
 
+	tryCmd.Flags().StringP("size", "", "", "size to check if allocaltion is possible")
+	tryCmd.Flags().StringP("image", "", "", "image to check if allocaltion is possible")
+	must(tryCmd.MarkFlagRequired("size"))
+	must(tryCmd.MarkFlagRequired("image"))
+
 	cmd.AddCommand(listCmd)
 	cmd.AddCommand(describeCmd)
 	cmd.AddCommand(deleteCmd)
 	cmd.AddCommand(applyCmd)
+	cmd.AddCommand(tryCmd)
 
 	return cmd
 }
@@ -83,6 +97,17 @@ func (c *config) sizeImageConstraintList() error {
 	return output.New().Print(resp.Payload)
 }
 
+func (c *config) sizeImageConstraintTry() error {
+	size := viper.GetString("size")
+	image := viper.GetString("image")
+
+	err := c.driver.TrySizeImageConstraint(size, image)
+	if err != nil {
+		return err
+	}
+	fmt.Println("allocation is possible")
+	return nil
+}
 func (c *config) sizeImageConstraintDescribe(args []string) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no size ID given")
