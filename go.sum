@@ -785,8 +785,8 @@ github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182aff
 github.com/metal-stack/masterdata-api v0.8.8/go.mod h1:rpwFGYKHAtoZ/Phi6WQCt4VgswA7lcLambbleqFgMMg=
 github.com/metal-stack/masterdata-api v0.8.10 h1:EpAurLqPuKxZSeMJeVpUJuIgAcUuT8eV7ygdzx+D3MQ=
 github.com/metal-stack/masterdata-api v0.8.10/go.mod h1:ZDmPuJvvoVeSi0u8wMl0uNz36yr1Vs5BZa8Wq1eIUPg=
-github.com/metal-stack/metal-go v0.16.2-0.20211215144733-abb81542a921 h1:U9t7plU+GK4zdommJIjeUH/PCA70tUeRbAA1PtyyUjw=
-github.com/metal-stack/metal-go v0.16.2-0.20211215144733-abb81542a921/go.mod h1:6xHeBEaFY9to70XOYBu4vn7lrwAHKqcSToMNnp6TmKY=
+github.com/metal-stack/metal-go v0.16.3 h1:Jp620HQjGJZFLks3mTa+RSsdS6UL1dqLG+tR6eQRqC4=
+github.com/metal-stack/metal-go v0.16.3/go.mod h1:6xHeBEaFY9to70XOYBu4vn7lrwAHKqcSToMNnp6TmKY=
 github.com/metal-stack/metal-lib v0.8.0/go.mod h1:eDBJ88yC8jUk+bAJXpF1Upw6j3lbbgv3UIF0D+llMec=
 github.com/metal-stack/metal-lib v0.8.1/go.mod h1:0sl2RZhnh8oS5NPsloQFtpDcYhSRjSGMwbeXWmJubcc=
 github.com/metal-stack/metal-lib v0.9.0 h1:QDTrrxEAZan1KwFFli5JxVyl3XWsjn4uxkcSMbsnUS0=
@@ -1131,8 +1131,10 @@ golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e/go.mod h1:GvvjBRRGRdwPK5y
 golang.org/x/crypto v0.0.0-20210813211128-0a44fdfbc16e/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210817164053-32db794688a5/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
 golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=
-golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3 h1:0es+/5331RGQPcXlMfP+WrnIIS6dNnNRe0WB02W0F4M=
-golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce h1:Roh6XWxHFKrPgC/EQhVubSAGQ6Ozk6IdxHSzt1mR0EI=
+golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8 h1:kACShD3qhmr/3rLmg1yXyt+N4HcwutKyPRB93s54TIU=
+golang.org/x/crypto v0.0.0-20220126234351-aa10faf2a1f8/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190510132918-efd6b22b2522/go.mod h1:ZjyILWgesfNpC6sMxTJOJm9Kp84zZh5NQWvqDGG3Qr8=
