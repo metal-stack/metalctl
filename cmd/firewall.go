@@ -108,6 +108,7 @@ func (c *config) firewallCreate() error {
 	fcr := &metalgo.FirewallCreateRequest{
 		MachineCreateRequest: *mcr,
 	}
+
 	resp, err := c.driver.FirewallCreate(fcr)
 	if err != nil {
 		return err

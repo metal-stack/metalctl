@@ -552,6 +552,7 @@ func (c *config) machineCreate() error {
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
+
 	resp, err := c.driver.MachineCreate(mcr)
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)

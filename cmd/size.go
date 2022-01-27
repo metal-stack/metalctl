@@ -132,6 +132,7 @@ Example:
 	sizeCmd.AddCommand(sizeDeleteCmd)
 	sizeCmd.AddCommand(sizeApplyCmd)
 	sizeCmd.AddCommand(sizeEditCmd)
+	sizeCmd.AddCommand(newSizeImageConstraintCmd(c))
 
 	return sizeCmd
 }
