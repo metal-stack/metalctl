@@ -1482,9 +1482,7 @@ func (c *config) machineEvents(id []string) error {
 		password = ipmipassword
 	}
 
-	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sel", "list", viper.GetString("last")}
-	fmt.Printf("connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
-	args[9] = password
+	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", viper.GetString("last")}
 	cmd := exec.Command(path, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
