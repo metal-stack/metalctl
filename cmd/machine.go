@@ -484,6 +484,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineCmd.AddCommand(machineLogsCmd)
 	machineEventsCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
 	machineEventsCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
+	machineEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
 	machineCmd.AddCommand(machineEventsCmd)
 
 	machineDestroyCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
@@ -1481,7 +1482,7 @@ func (c *config) machineEvents(id []string) error {
 		password = ipmipassword
 	}
 
-	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sel", "list"}
+	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sel", "list", viper.GetString("last")}
 	fmt.Printf("connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
 	args[9] = password
 	cmd := exec.Command(path, args...)
