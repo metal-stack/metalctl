@@ -1482,7 +1482,7 @@ func (c *config) machineEvents(id []string) error {
 		password = ipmipassword
 	}
 
-	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", viper.GetString("last")}
+	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", "last", viper.GetString("last")}
 	cmd := exec.Command(path, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
