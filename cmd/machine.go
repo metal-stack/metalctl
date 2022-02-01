@@ -349,6 +349,16 @@ In case the machine did not register properly a direct ipmi console access is av
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
+	machineEventsCmd := &cobra.Command{
+		Use:     "events <machine ID>",
+		Aliases: []string{"event"},
+		Short:   `display machine hardware events`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.machineEvents(args)
+		},
+		PreRun:            bindPFlags,
+		ValidArgsFunction: c.comp.MachineListCompletion,
+	}
 
 	c.addMachineCreateFlags(machineCreateCmd, "machine")
 	machineCmd.AddCommand(machineCreateCmd)
@@ -472,6 +482,9 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineCmd.AddCommand(machineIpmiCmd)
 	machineCmd.AddCommand(machineIssuesCmd)
 	machineCmd.AddCommand(machineLogsCmd)
+	machineEventsCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
+	machineEventsCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
+	machineCmd.AddCommand(machineEventsCmd)
 
 	machineDestroyCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
 
@@ -1423,4 +1436,56 @@ func (c *config) getMachine(args []string) (*models.V1MachineIPMIResponse, error
 		return nil, err
 	}
 	return m.Machine, nil
+}
+
+func (c *config) machineEvents(id []string) error {
+	machineID, err := c.getMachineID(id)
+	if err != nil {
+		return err
+	}
+	path, err := exec.LookPath("ipmitool")
+	if err != nil {
+		return fmt.Errorf("unable to locate ipmitool in path")
+	}
+
+	resp, err := c.driver.MachineIPMIGet(machineID)
+	if err != nil {
+		return err
+	}
+
+	ipmi := resp.Machine.Ipmi
+	intf := "lanplus"
+	if *ipmi.Interface != "" {
+		intf = *ipmi.Interface
+	}
+	// -I lanplus  -H 192.168.2.19 -U ADMIN -P ADMIN sol activate
+	hostAndPort := strings.Split(*ipmi.Address, ":")
+	if len(hostAndPort) < 2 {
+		hostAndPort = append(hostAndPort, "623")
+	}
+	usr := *ipmi.User
+	if *ipmi.User == "" {
+		fmt.Printf("no ipmi user stored, please specify with --ipmiuser\n")
+	}
+	ipmiuser := viper.GetString("ipmiuser")
+	if ipmiuser != "" {
+		usr = ipmiuser
+	}
+
+	password := *ipmi.Password
+	if *ipmi.Password == "" {
+		fmt.Printf("no ipmi password stored, please specify with --ipmipassword\n")
+	}
+	ipmipassword := viper.GetString("ipmipassword")
+	if ipmipassword != "" {
+		password = ipmipassword
+	}
+
+	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sel", "list"}
+	fmt.Printf("connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+	args[9] = password
+	cmd := exec.Command(path, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
 }
