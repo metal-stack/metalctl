@@ -60,10 +60,10 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	}
 
 	firmwareRemoveCmd := &cobra.Command{
-		Use:     "remove",
-		Aliases: []string{"rm", "delete", "del"},
-		Short:   "remove a firmware",
-		Long:    "removes the specified firmware.",
+		Use:     "delete",
+		Aliases: []string{"destroy", "rm", "remove"},
+		Short:   "delete a firmware",
+		Long:    "deletes the specified firmware.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firmwareRemove(args)
 		},

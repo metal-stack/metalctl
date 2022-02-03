@@ -126,10 +126,10 @@ Once created the machine installation can not be modified anymore.
 	}
 
 	machineDestroyCmd := &cobra.Command{
-		Use:     "destroy <machine ID>",
-		Aliases: []string{"delete", "rm"},
-		Short:   "destroy a machine",
-		Long: `destroy a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
+		Use:     "delete <machine ID>",
+		Short:   "delete a machine",
+		Aliases: []string{"destroy", "rm", "remove"},
+		Long: `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
 A destroyed machine can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.machineDestroy(args)

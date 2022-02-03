@@ -54,8 +54,9 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	deleteCmd := &cobra.Command{
-		Use:   "delete <sizeID>",
-		Short: "delete a size image constraints",
+		Use:     "delete <sizeID>",
+		Short:   "delete a size image constraints",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.sizeImageConstraintDelete(args)
 		},

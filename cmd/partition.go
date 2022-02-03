@@ -71,8 +71,9 @@ func newPartitionCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	partitionDeleteCmd := &cobra.Command{
-		Use:   "delete <partitionID>",
-		Short: "delete a partition",
+		Use:     "delete <partitionID>",
+		Short:   "delete a partition",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.partitionDelete(args)
 		},

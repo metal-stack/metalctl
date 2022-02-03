@@ -48,10 +48,10 @@ func newFirewallCmd(c *config) *cobra.Command {
 	}
 
 	firewallDestroyCmd := &cobra.Command{
-		Use:     "destroy <firewall ID>",
-		Aliases: []string{"delete", "rm"},
-		Short:   "destroy a firewall",
-		Long: `destroy a firewall and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
+		Use:     "delete <firewall ID>",
+		Short:   "delete a firewall",
+		Aliases: []string{"destroy", "rm", "remove"},
+		Long: `deletes a firewall and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
 A destroyed firewall can not restored anymore`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firewallDestroy(args)
