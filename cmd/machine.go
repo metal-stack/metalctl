@@ -349,12 +349,12 @@ In case the machine did not register properly a direct ipmi console access is av
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
-	machineEventsCmd := &cobra.Command{
+	machineIpmiEventsCmd := &cobra.Command{
 		Use:     "events <machine ID>",
 		Aliases: []string{"event"},
 		Short:   `display machine hardware events`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineEvents(args)
+			return c.machineIpmiEvents(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -482,10 +482,10 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineCmd.AddCommand(machineIpmiCmd)
 	machineCmd.AddCommand(machineIssuesCmd)
 	machineCmd.AddCommand(machineLogsCmd)
-	machineEventsCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
-	machineEventsCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
-	machineEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
-	machineCmd.AddCommand(machineEventsCmd)
+	machineIpmiEventsCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
+	machineIpmiEventsCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
+	machineIpmiEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
+	machineIpmiCmd.AddCommand(machineIpmiEventsCmd)
 
 	machineDestroyCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
 
@@ -1439,7 +1439,7 @@ func (c *config) getMachine(args []string) (*models.V1MachineIPMIResponse, error
 	return m.Machine, nil
 }
 
-func (c *config) machineEvents(id []string) error {
+func (c *config) machineIpmiEvents(id []string) error {
 	machineID, err := c.getMachineID(id)
 	if err != nil {
 		return err
