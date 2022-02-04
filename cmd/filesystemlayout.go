@@ -47,8 +47,9 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	filesystemDeleteCmd := &cobra.Command{
-		Use:   "delete <filesystemID>",
-		Short: "delete a filesystem",
+		Use:     "delete <filesystemID>",
+		Short:   "delete a filesystem",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.filesystemDelete(args)
 		},

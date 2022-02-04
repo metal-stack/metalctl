@@ -47,9 +47,9 @@ func newProjectCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	projectDeleteCmd := &cobra.Command{
-		Use:     "remove <projectID>",
-		Aliases: []string{"rm", "delete"},
+		Use:     "delete <projectID>",
 		Short:   "delete a project",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.projectDelete(args)
 		},

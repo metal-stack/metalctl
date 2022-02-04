@@ -72,8 +72,9 @@ func newSizeCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 	sizeDeleteCmd := &cobra.Command{
-		Use:   "delete <sizeID>",
-		Short: "delete a size",
+		Use:     "delete <sizeID>",
+		Short:   "delete a size",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.sizeDelete(args)
 		},

@@ -64,8 +64,8 @@ func newImageCmd(c *config) *cobra.Command {
 	}
 	imageDeleteCmd := &cobra.Command{
 		Use:     "delete <imageID>",
-		Aliases: []string{"rm"},
 		Short:   "delete a image",
+		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.imageDelete(args)
 		},
