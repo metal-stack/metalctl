@@ -1222,57 +1222,80 @@ func (c *config) machineIssues() error {
 		return err
 	}
 
-	only := viper.GetStringSlice("only")
-	omit := viper.GetStringSlice("omit")
-
 	var (
-		res      = api.MachineIssues{}
-		asnMap   = map[int64][]models.V1MachineIPMIResponse{}
-		bmcIPMap = map[string][]models.V1MachineIPMIResponse{}
+		only = viper.GetStringSlice("only")
+		omit = viper.GetStringSlice("omit")
 
-		conditionalAppend = func(issues api.Issues, issue api.Issue) api.Issues {
+		res      = api.MachineIssues{}
+		asnMap   = map[int64][]*models.V1MachineIPMIResponse{}
+		bmcIPMap = map[string][]*models.V1MachineIPMIResponse{}
+
+		includeThisIssue = func(issue api.Issue) bool {
 			for _, o := range omit {
 				if issue.ShortName == o {
-					return issues
+					return false
 				}
 			}
 
 			if len(only) > 0 {
 				for _, o := range only {
 					if issue.ShortName == o {
-						return append(issues, issue)
+						return true
 					}
 				}
-				return issues
+				return false
 			}
 
-			return append(issues, issue)
+			return true
+		}
+
+		addIssue = func(m *models.V1MachineIPMIResponse, issue api.Issue) {
+			if m == nil {
+				return
+			}
+
+			if !includeThisIssue(issue) {
+				return
+			}
+
+			mWithIssues, ok := res[*m.ID]
+			if !ok {
+				mWithIssues = api.MachineWithIssues{
+					Machine: *m,
+				}
+			}
+
+			mWithIssues.Issues = append(mWithIssues.Issues, issue)
+			res[*m.ID] = mWithIssues
 		}
 	)
 
 	for _, m := range resp.Machines {
-		var issues api.Issues
+		if m == nil {
+			continue
+		}
 
 		if m.Partition == nil {
-			issues = conditionalAppend(issues, api.IssueNoPartition)
+			addIssue(m, api.IssueNoPartition)
 		}
 
 		if m.Liveliness != nil {
 			switch *m.Liveliness {
 			case "Alive":
 			case "Dead":
-				issues = conditionalAppend(issues, api.IssueLivelinessDead)
+				addIssue(m, api.IssueLivelinessDead)
 			case "Unknown":
-				issues = conditionalAppend(issues, api.IssueLivelinessUnknown)
+				addIssue(m, api.IssueLivelinessUnknown)
+
 			default:
-				issues = conditionalAppend(issues, api.IssueLivelinessNotAvailable)
+				addIssue(m, api.IssueLivelinessNotAvailable)
 			}
 		} else {
-			issues = conditionalAppend(issues, api.IssueLivelinessNotAvailable)
+			addIssue(m, api.IssueLivelinessNotAvailable)
 		}
 
 		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
-			issues = conditionalAppend(issues, api.IssueFailedMachineReclaim)
+			addIssue(m, api.IssueFailedMachineReclaim)
 		}
 
 		if m.Events.IncompleteProvisioningCycles != nil &&
@@ -1281,20 +1304,20 @@ func (c *config) machineIssues() error {
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 				// Machine which are waiting are not considered to have issues
 			} else {
-				issues = conditionalAppend(issues, api.IssueIncompleteCycles)
+				addIssue(m, api.IssueIncompleteCycles)
 			}
 		}
 
 		if m.Ipmi != nil {
 			if m.Ipmi.Mac == nil || *m.Ipmi.Mac == "" {
-				issues = conditionalAppend(issues, api.IssueBMCWithoutMAC)
+				addIssue(m, api.IssueBMCWithoutMAC)
 			}
 
 			if m.Ipmi.Address == nil || *m.Ipmi.Address == "" {
-				issues = conditionalAppend(issues, api.IssueBMCWithoutIP)
+				addIssue(m, api.IssueBMCWithoutIP)
 			} else {
 				entries := bmcIPMap[*m.Ipmi.Address]
-				entries = append(entries, *m)
+				entries = append(entries, m)
 				bmcIPMap[*m.Ipmi.Address] = entries
 			}
 		}
@@ -1308,7 +1331,7 @@ func (c *config) machineIssues() error {
 
 				machines, ok := asnMap[*n.Asn]
 				if !ok {
-					machines = []models.V1MachineIPMIResponse{}
+					machines = []*models.V1MachineIPMIResponse{}
 				}
 
 				alreadyContained := false
@@ -1323,90 +1346,51 @@ func (c *config) machineIssues() error {
 					continue
 				}
 
-				machines = append(machines, *m)
+				machines = append(machines, m)
 				asnMap[*n.Asn] = machines
 			}
 		}
+	}
 
-		if len(issues) > 0 {
-			res[*m.ID] = api.MachineWithIssues{
-				Machine: *m,
-				Issues:  issues,
+	for asn, ms := range asnMap {
+		if len(ms) < 2 {
+			continue
+		}
+
+		for _, m := range ms {
+			var sharedIDs []string
+			for _, mm := range ms {
+				if *m.ID == *mm.ID {
+					continue
+				}
+				sharedIDs = append(sharedIDs, *mm.ID)
 			}
+
+			issue := api.IssueASNUniqueness
+			issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
+
+			addIssue(m, issue)
 		}
 	}
 
-	includeASN := true
-	for _, o := range omit {
-		if o == api.IssueASNUniqueness.ShortName {
-			includeASN = false
-			break
+	for ip, ms := range bmcIPMap {
+		if len(ms) < 2 {
+			continue
 		}
-	}
 
-	if includeASN {
-		for asn, ms := range asnMap {
-			if len(ms) < 2 {
-				continue
+		for _, m := range ms {
+			var sharedIDs []string
+			for _, mm := range ms {
+				if *m.ID == *mm.ID {
+					continue
+				}
+				sharedIDs = append(sharedIDs, *mm.ID)
 			}
 
-			for _, m := range ms {
-				var sharedIDs []string
-				for _, mm := range ms {
-					if *m.ID == *mm.ID {
-						continue
-					}
-					sharedIDs = append(sharedIDs, *mm.ID)
-				}
+			issue := api.IssueNonDistinctBMCIP
+			issue.Description = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", ip, sharedIDs)
 
-				mWithIssues, ok := res[*m.ID]
-				if !ok {
-					mWithIssues = api.MachineWithIssues{
-						Machine: m,
-					}
-				}
-				issue := api.IssueASNUniqueness
-				issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
-				mWithIssues.Issues = append(mWithIssues.Issues, issue)
-				res[*m.ID] = mWithIssues
-			}
-		}
-	}
-
-	includeDistinctBMC := true
-	for _, o := range omit {
-		if o == api.IssueNonDistinctBMCIP.ShortName {
-			includeDistinctBMC = false
-			break
-		}
-	}
-
-	if includeDistinctBMC {
-		for ip, ms := range bmcIPMap {
-			if len(ms) < 2 {
-				continue
-			}
-
-			for _, m := range ms {
-				var sharedIDs []string
-				for _, mm := range ms {
-					if *m.ID == *mm.ID {
-						continue
-					}
-					sharedIDs = append(sharedIDs, *mm.ID)
-				}
-
-				mWithIssues, ok := res[*m.ID]
-				if !ok {
-					mWithIssues = api.MachineWithIssues{
-						Machine: m,
-					}
-				}
-				issue := api.IssueNonDistinctBMCIP
-				issue.Description = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", ip, sharedIDs)
-				mWithIssues.Issues = append(mWithIssues.Issues, issue)
-				res[*m.ID] = mWithIssues
-			}
+			addIssue(m, issue)
 		}
 	}
 
