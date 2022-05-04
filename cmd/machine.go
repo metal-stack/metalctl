@@ -732,19 +732,14 @@ func (c *config) machineUpdate(args []string) error {
 		return err
 	}
 
-	tags := resp.Machine.Tags
-	for _, t := range addTags {
-		tags = append(tags, t)
-	}
-
 	for _, removeTag := range removeTags {
-		if !slices.Contains(tags, removeTag) {
+		if !slices.Contains(resp.Machine.Tags, removeTag) {
 			return fmt.Errorf("cannot remove tag because it is currently not present: %s", removeTag)
 		}
 	}
 
-	var newTags []string
-	for _, t := range tags {
+	newTags := addTags
+	for _, t := range resp.Machine.Tags {
 		if slices.Contains(removeTags, t) {
 			continue
 		}
