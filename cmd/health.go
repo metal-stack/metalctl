@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"errors"
+
+	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/client/health"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 )
@@ -13,7 +17,14 @@ func newHealthCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resp, err := c.driver.HealthGet()
 			if err != nil {
-				return err
+				var r *health.HealthInternalServerError
+				if errors.As(err, &r) {
+					resp = &metalgo.HealthGetResponse{
+						Health: r.Payload,
+					}
+				} else {
+					return err
+				}
 			}
 
 			return output.NewDetailer().Detail(resp.Health)
