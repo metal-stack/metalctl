@@ -11,6 +11,8 @@ import (
 
 	"net/url"
 
+	"golang.org/x/exp/slices"
+
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metalctl/cmd/output"
@@ -115,6 +117,16 @@ Once created the machine installation can not be modified anymore.
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
+	machineUpdateCmd := &cobra.Command{
+		Use:   "update <machine ID>",
+		Short: "update a machine",
+		Long:  "updates a machine, which is only possible for allocated machines.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return c.machineUpdate(args)
+		},
+		PreRun: bindPFlags,
+	}
+
 	machineConsolePasswordCmd := &cobra.Command{
 		Use:   "consolepassword <machine ID>",
 		Short: "fetch the consolepassword for a machine",
@@ -189,8 +201,8 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	machineUpdateCmd := &cobra.Command{
-		Use:     "update",
+	machineUpdateFirmwareCmd := &cobra.Command{
+		Use:     "update-firmware",
 		Aliases: []string{"firmware-update"},
 		Short:   "update a machine firmware",
 	}
@@ -400,18 +412,23 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineCmd.AddCommand(machineDestroyCmd)
 	machineCmd.AddCommand(machineDescribeCmd)
 	machineCmd.AddCommand(machineConsolePasswordCmd)
+	machineCmd.AddCommand(machineUpdateCmd)
+
+	machineUpdateCmd.Flags().String("description", "", "the description of the machine [optional]")
+	machineUpdateCmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
+	machineUpdateCmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
 	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
-	machineUpdateCmd.AddCommand(machineUpdateBiosCmd)
+	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
 	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
-	machineUpdateCmd.AddCommand(machineUpdateBmcCmd)
+	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
 
-	machineCmd.AddCommand(machineUpdateCmd)
+	machineCmd.AddCommand(machineUpdateFirmwareCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
 	machinePowerCmd.AddCommand(machinePowerOffCmd)
@@ -698,6 +715,57 @@ func (c *config) machineDescribe(args []string) error {
 		return err
 	}
 	return output.NewDetailer().Detail(resp.Machine)
+}
+
+func (c *config) machineUpdate(args []string) error {
+	description := viper.GetString("description")
+	addTags := viper.GetStringSlice("add-tags")
+	removeTags := viper.GetStringSlice("remove-tags")
+
+	machineID, err := c.getMachineID(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.driver.MachineGet(machineID)
+	if err != nil {
+		return err
+	}
+
+	tags := resp.Machine.Tags
+	for _, t := range addTags {
+		tags = append(tags, t)
+	}
+
+	for _, removeTag := range removeTags {
+		if !slices.Contains(tags, removeTag) {
+			return fmt.Errorf("cannot remove tag because it is currently not present: %s", removeTag)
+		}
+	}
+
+	var newTags []string
+	for _, t := range tags {
+		if slices.Contains(removeTags, t) {
+			continue
+		}
+		newTags = append(newTags, t)
+	}
+
+	mur := &metalgo.MachineUpdateRequest{
+		ID:   machineID,
+		Tags: newTags,
+	}
+
+	if viper.IsSet("description") {
+		mur.Description = &description
+	}
+
+	updateResp, err := c.driver.MachineUpdate(mur)
+	if err != nil {
+		return err
+	}
+
+	return output.NewDetailer().Detail(updateResp.Machine)
 }
 
 func (c *config) machineConsolePassword(args []string) error {
