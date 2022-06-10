@@ -232,7 +232,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootBiosCmd := &cobra.Command{
 		Use:   "bios <machine ID>",
 		Short: "boot a machine into BIOS",
-		Long:  "the machine will boot into bios.",
+		Long:  "the machine will boot into bios. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.machineBootBios(args)
 		},
@@ -243,7 +243,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootPxeCmd := &cobra.Command{
 		Use:   "pxe <machine ID>",
 		Short: "boot a machine from PXE",
-		Long:  "the machine will boot from PXE.",
+		Long:  "the machine will boot from PXE. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.machineBootPxe(args)
 		},
@@ -254,7 +254,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 	machineBootDiskCmd := &cobra.Command{
 		Use:   "disk <machine ID>",
 		Short: "boot a machine from disk",
-		Long:  "the machine will boot from disk.",
+		Long:  "the machine will boot from disk. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.machineBootDisk(args)
 		},
