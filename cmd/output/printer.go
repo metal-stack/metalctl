@@ -696,6 +696,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 		}
 		reserved := ""
 		lockEmoji := ""
+		hammerVersion := ""
 		if *machine.State.Value != "" {
 			reserved = fmt.Sprintf("%s:%s", *machine.State.Value, *machine.State.Description)
 			if *machine.State.Value == "LOCKED" {
@@ -703,6 +704,9 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 			}
 			if *machine.State.Value == "RESERVED" {
 				lockEmoji = bark
+			}
+			if machine.State.MetalHammerVersion != nil {
+				hammerVersion = *machine.State.MetalHammerVersion
 			}
 		}
 		lastEvent := ""
@@ -721,6 +725,11 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 				lastEventEmoji += nbr + circle
 			}
 		}
+
+		if lastEvent == "Waiting" && hammerVersion != "" {
+			lastEvent = lastEvent + " " + hammerVersion
+		}
+
 		desc := alloc.Description
 		if desc == "" {
 			desc = machine.Description
