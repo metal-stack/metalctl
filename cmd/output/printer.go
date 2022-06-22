@@ -737,7 +737,7 @@ func (m MetalMachineTablePrinter) Print(data []*models.V1MachineResponse) {
 
 // Print a MetalSize in a table
 func (m MetalMachineIssuesTablePrinter) Print(data api.MachineIssues) {
-	m.shortHeader = []string{"ID", "Power", "Lock", "Lock Reason", "Status", "Last Event", "When", "Issues"}
+	m.shortHeader = []string{"ID", "Power", "Allocated", "Lock", "Lock Reason", "Status", "Last Event", "When", "Issues"}
 	m.wideHeader = []string{"ID", "Name", "Partition", "Project", "Power", "Status", "State", "Lock Reason", "Last Event", "When", "Issues"}
 
 	for id, machineWithIssues := range data {
@@ -754,6 +754,11 @@ func (m MetalMachineIssuesTablePrinter) Print(data api.MachineIssues) {
 		project := ""
 		if machine.Allocation != nil && machine.Allocation.Project != nil {
 			project = *machine.Allocation.Project
+		}
+
+		allocated := "no"
+		if machine.Allocation != nil {
+			allocated = "yes"
 		}
 
 		status := strValue(machine.Liveliness)
@@ -808,7 +813,7 @@ func (m MetalMachineIssuesTablePrinter) Print(data api.MachineIssues) {
 			issues = append(issues, text)
 		}
 
-		row := []string{id, power, lockEmoji, lockDesc, statusEmoji, lastEventEmoji, when, strings.Join(issues, "\n")}
+		row := []string{id, power, allocated, lockEmoji, lockDesc, statusEmoji, lastEventEmoji, when, strings.Join(issues, "\n")}
 		widerow := []string{id, widename, partition, project, powerText, status, lockText, lockDescWide, lastEvent, when, strings.Join(issues, "\n")}
 
 		m.addShortData(row, m)
