@@ -9,6 +9,8 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -103,6 +105,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newHealthCmd(c))
 	rootCmd.AddCommand(newVersionCmd(c))
 	rootCmd.AddCommand(newLoginCmd())
+	rootCmd.AddCommand(newLogoutCmd(c))
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newContextCmd(c))
 
@@ -118,6 +121,7 @@ type config struct {
 	driverURL string
 	comp      *completion.Completion
 	driver    *metalgo.Driver
+	log       *zap.SugaredLogger
 }
 
 func getConfig(name string) *config {
@@ -152,6 +156,12 @@ func getConfig(name string) *config {
 	}
 
 	ctx := api.MustDefaultContext()
+
+	logger, err := newLogger()
+	if err != nil {
+		log.Fatalf("error creating logger: %v", err)
+	}
+
 	driverURL := viper.GetString("url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
@@ -172,8 +182,7 @@ func getConfig(name string) *config {
 		}
 	}
 
-	var err error
-	driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	_, driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -183,5 +192,24 @@ func getConfig(name string) *config {
 		comp:      completion.NewCompletion(driver),
 		driver:    driver,
 		driverURL: driverURL,
+		log:       logger,
 	}
+}
+
+func newLogger() (*zap.SugaredLogger, error) {
+	cfg := zap.NewProductionConfig()
+	if viper.GetBool("debug") {
+		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	} else {
+		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
+	}
+	cfg.EncoderConfig.TimeKey = "timestamp"
+	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
+
+	l, err := cfg.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	return l.Sugar(), nil
 }

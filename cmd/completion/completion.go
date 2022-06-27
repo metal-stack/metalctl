@@ -54,7 +54,7 @@ func (c *Completion) SizeListCompletion(cmd *cobra.Command, args []string, toCom
 }
 func (c *Completion) SizeImageConstraintListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	param := sizemodel.NewListSizeImageConstraintsParams()
-	resp, err := c.driver.SizeImageConstraint.ListSizeImageConstraints(param, nil)
+	resp, err := c.driver.Sizeimageconstraint().ListSizeImageConstraints(param, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}

@@ -41,7 +41,7 @@ type runner struct {
 }
 
 func NewRunner(url, bearer, hmac string) *runner {
-	driver, err := metalgo.NewDriver(url, bearer, hmac)
+	_, driver, err := metalgo.NewDriver(url, bearer, hmac)
 	if err != nil {
 		fmt.Print(err)
 		os.Exit(1)

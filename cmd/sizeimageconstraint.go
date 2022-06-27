@@ -91,7 +91,7 @@ Example:
 
 func (c *config) sizeImageConstraintList() error {
 	param := sizemodel.NewListSizeImageConstraintsParams()
-	resp, err := c.driver.SizeImageConstraint.ListSizeImageConstraints(param, nil)
+	resp, err := c.driver.Sizeimageconstraint().ListSizeImageConstraints(param, nil)
 	if err != nil {
 		return err
 	}
@@ -116,7 +116,7 @@ func (c *config) sizeImageConstraintDescribe(args []string) error {
 	id := args[0]
 	param := sizemodel.NewFindSizeImageConstraintParams()
 	param.SetID(id)
-	resp, err := c.driver.SizeImageConstraint.FindSizeImageConstraint(param, nil)
+	resp, err := c.driver.Sizeimageconstraint().FindSizeImageConstraint(param, nil)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (c *config) sizeImageConstraintApply() error {
 		sic := sic
 		param := sizemodel.NewFindSizeImageConstraintParams()
 		param.SetID(*sic.ID)
-		p, err := c.driver.SizeImageConstraint.FindSizeImageConstraint(param, nil)
+		p, err := c.driver.Sizeimageconstraint().FindSizeImageConstraint(param, nil)
 		if err != nil {
 			fmt.Printf("Error:%#v", err)
 			var r *sizemodel.FindSizeImageConstraintDefault
@@ -156,7 +156,7 @@ func (c *config) sizeImageConstraintApply() error {
 		if p == nil {
 			param := sizemodel.NewCreateSizeImageConstraintParams()
 			param.SetBody(&sic)
-			resp, err := c.driver.SizeImageConstraint.CreateSizeImageConstraint(param, nil)
+			resp, err := c.driver.Sizeimageconstraint().CreateSizeImageConstraint(param, nil)
 			if err != nil {
 				return err
 			}
@@ -172,7 +172,7 @@ func (c *config) sizeImageConstraintApply() error {
 		}
 		uparam := sizemodel.NewUpdateSizeImageConstraintParams()
 		uparam.SetBody(sicur)
-		resp, err := c.driver.SizeImageConstraint.UpdateSizeImageConstraint(uparam, nil)
+		resp, err := c.driver.Sizeimageconstraint().UpdateSizeImageConstraint(uparam, nil)
 		if err != nil {
 			return err
 		}
@@ -188,7 +188,7 @@ func (c *config) sizeImageConstraintDelete(args []string) error {
 	id := args[0]
 	param := sizemodel.NewDeleteSizeImageConstraintParams()
 	param.ID = id
-	resp, err := c.driver.SizeImageConstraint.DeleteSizeImageConstraint(param, nil)
+	resp, err := c.driver.Sizeimageconstraint().DeleteSizeImageConstraint(param, nil)
 	if err != nil {
 		return err
 	}
