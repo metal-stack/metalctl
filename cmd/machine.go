@@ -14,6 +14,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/pkg/api"
@@ -965,11 +966,17 @@ func (c *config) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, ven
 		description = "unknown"
 	}
 
-	resp, err := c.driver.MachineUpdateFirmware(kind, machineID, revision, description)
+	kindString := string(kind)
+
+	resp, err := c.driver.Machine().UpdateFirmware(machine.NewUpdateFirmwareParams().WithID(machineID).WithBody(&models.V1MachineUpdateFirmwareRequest{
+		Description: &description,
+		Kind:        &kindString,
+		Revision:    &revision,
+	}), nil)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+	return output.New().Print(resp)
 }
 
 func (c *config) machineBootBios(args []string) error {
