@@ -8,12 +8,11 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metalctl/cmd/applier"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/output"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
 func newProjectCmd(c *config) *cobra.Command {
@@ -113,6 +112,49 @@ Example project update:
 	return projectCmd
 }
 
+type projectGeneric struct {
+	c metalgo.Client
+}
+
+func (a projectGeneric) Get(id string) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (a projectGeneric) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		var r *projectmodel.CreateProjectConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
+	rq.Meta.Version = resp.Payload.Meta.Version + 1
+
+	updateResp, err := a.c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResp.Payload, nil
+}
+
 func (c *config) projectList() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
 		pfr := v1.ProjectFindRequest{}
@@ -209,50 +251,13 @@ func (c *config) projectCreate() error {
 	return output.New().Print(response.Project)
 }
 
-type projectApplier struct {
-	c metalgo.Client
-}
-
-func (a projectApplier) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
-	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
-	if err != nil {
-		var r *projectmodel.CreateProjectConflict
-		if errors.As(err, &r) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &resp.Payload, nil
-}
-
-func (a projectApplier) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	rq.Meta.Version = resp.Payload.Meta.Version + 1
-
-	updateResp, err := a.c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return updateResp.Payload, nil
-}
-
 func (c *config) projectApply() error {
-	a, err := applier.NewApplier[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](viper.GetString("file"))
+	a, err := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
 	if err != nil {
 		return err
 	}
 
-	p := projectApplier{
-		c: c.client,
-	}
-
-	response, err := a.Apply(p)
+	response, err := a.ApplyFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -266,33 +271,17 @@ func (c *config) projectEdit(args []string) error {
 		return err
 	}
 
-	getFunc := func(id string) ([]byte, error) {
-		resp, err := c.driver.ProjectGet(id)
-		if err != nil {
-			return nil, err
-		}
-		content, err := yaml.Marshal(resp.Project)
-		if err != nil {
-			return nil, err
-		}
-		return content, nil
-	}
-	updateFunc := func(filename string) error {
-		purs, err := readProjectUpdateRequests(filename)
-		if err != nil {
-			return err
-		}
-		if len(purs) != 1 {
-			return fmt.Errorf("project update error more or less than one project given:%d", len(purs))
-		}
-		uresp, err := c.driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: purs[0]})
-		if err != nil {
-			return err
-		}
-		return output.New().Print(uresp.Project)
+	a, err := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
+	if err != nil {
+		return err
 	}
 
-	return edit(id, getFunc, updateFunc)
+	response, err := a.Edit(id)
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response)
 }
 
 func (c *config) projectDelete(args []string) error {
@@ -317,20 +306,4 @@ func projectID(verb string, args []string) (string, error) {
 		return args[0], nil
 	}
 	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
-}
-
-func readProjectUpdateRequests(filename string) ([]v1.Project, error) {
-	var pcrs []v1.Project
-	var pcr v1.Project
-	err := readFrom(filename, &pcr, func(data interface{}) {
-		doc := data.(*v1.Project)
-		pcrs = append(pcrs, *doc)
-	})
-	if err != nil {
-		return pcrs, err
-	}
-	if len(pcrs) != 1 {
-		return pcrs, fmt.Errorf("project update error more or less than one project given:%d", len(pcrs))
-	}
-	return pcrs, nil
 }

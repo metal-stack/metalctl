@@ -3,16 +3,15 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/dustin/go-humanize"
 	metalgo "github.com/metal-stack/metal-go"
-	sizemodel "github.com/metal-stack/metal-go/api/client/size"
+	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
 func newSizeCmd(c *config) *cobra.Command {
@@ -138,6 +137,41 @@ Example:
 	return sizeCmd
 }
 
+type sizeGeneric struct {
+	c metalgo.Client
+}
+
+func (a sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
+	resp, err := a.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (a sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
+	resp, err := a.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		var r *size.CreateSizeConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (a sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+	resp, err := a.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func (c *config) sizeList() error {
 	resp, err := c.driver.SizeList()
 	if err != nil {
@@ -159,7 +193,6 @@ func (c *config) sizeDescribe(args []string) error {
 }
 
 func (c *config) sizeTry() error {
-
 	cores := viper.GetInt32("cores")
 	memory, err := humanize.ParseBytes(viper.GetString("memory"))
 	if err != nil {
@@ -175,118 +208,71 @@ func (c *config) sizeTry() error {
 }
 
 func (c *config) sizeCreate() error {
-	var icrs []metalgo.SizeCreateRequest
-	var icr metalgo.SizeCreateRequest
 	if viper.GetString("file") != "" {
-		err := readFrom(viper.GetString("file"), &icr, func(data interface{}) {
-			doc := data.(*metalgo.SizeCreateRequest)
-			icrs = append(icrs, *doc)
-		})
+		a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
 		if err != nil {
 			return err
 		}
-		if len(icrs) != 1 {
-			return fmt.Errorf("size create error more or less than one size given:%d", len(icrs))
+
+		response, err := a.CreateFromFile(viper.GetString("file"))
+		if err != nil {
+			return err
 		}
-		icr = icrs[0]
-	} else {
-		max := viper.GetInt64("min")
-		min := viper.GetInt64("max")
-		t := viper.GetString("type")
-		icr = metalgo.SizeCreateRequest{
-			Description: viper.GetString("description"),
-			ID:          viper.GetString("id"),
-			Name:        viper.GetString("name"),
-			Constraints: []*models.V1SizeConstraint{
-				{
-					Max:  &max,
-					Min:  &min,
-					Type: &t,
-				},
+
+		return output.NewDetailer().Detail(response)
+	}
+
+	max := viper.GetInt64("min")
+	min := viper.GetInt64("max")
+	t := viper.GetString("type")
+
+	icr := metalgo.SizeCreateRequest{
+		Description: viper.GetString("description"),
+		ID:          viper.GetString("id"),
+		Name:        viper.GetString("name"),
+		Constraints: []*models.V1SizeConstraint{
+			{
+				Max:  &max,
+				Min:  &min,
+				Type: &t,
 			},
-		}
+		},
 	}
 
 	resp, err := c.driver.SizeCreate(icr)
 	if err != nil {
 		return err
 	}
+
 	return output.NewDetailer().Detail(resp.Size)
 }
 
 func (c *config) sizeUpdate() error {
-	icrs, err := readSizeCreateRequests(viper.GetString("file"))
+	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
 	if err != nil {
 		return err
 	}
-	if len(icrs) != 1 {
-		return fmt.Errorf("size update error more or less than one size given:%d", len(icrs))
-	}
-	resp, err := c.driver.SizeUpdate(icrs[0])
+
+	response, err := a.UpdateFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
-	return output.NewDetailer().Detail(resp.Size)
-}
 
-func readSizeCreateRequests(filename string) ([]metalgo.SizeCreateRequest, error) {
-	var icrs []metalgo.SizeCreateRequest
-	var uir metalgo.SizeCreateRequest
-	err := readFrom(filename, &uir, func(data interface{}) {
-		doc := data.(*metalgo.SizeCreateRequest)
-		icrs = append(icrs, *doc)
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(icrs) != 1 {
-		return nil, fmt.Errorf("size update error more or less than one size given:%d", len(icrs))
-	}
-	return icrs, nil
-}
-
-// TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) sizeApply() error {
-	var iars []metalgo.SizeCreateRequest
-	var iar metalgo.SizeCreateRequest
-	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
-		doc := data.(*metalgo.SizeCreateRequest)
-		iars = append(iars, *doc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		iar = metalgo.SizeCreateRequest{}
-	})
-	if err != nil {
-		return err
-	}
-	var response []*models.V1SizeResponse
-	for _, iar := range iars {
-		p, err := c.driver.SizeGet(iar.ID)
-		if err != nil {
-			var r *sizemodel.FindSizeDefault
-			if !errors.As(err, &r) {
-				return err
-			}
-			if r.Code() != http.StatusNotFound {
-				return err
-			}
-		}
-		if p.Size == nil {
-			resp, err := c.driver.SizeCreate(iar)
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Size)
-			continue
-		}
-
-		resp, err := c.driver.SizeUpdate(iar)
-		if err != nil {
-			return err
-		}
-		response = append(response, resp.Size)
-	}
 	return output.NewDetailer().Detail(response)
+}
+
+func (c *config) sizeApply() error {
+	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
+	if err != nil {
+		return err
+	}
+
+	response, err := a.ApplyFromFile(viper.GetString("file"))
+	if err != nil {
+		return err
+	}
+
+	return output.New().Print(response)
 }
 
 func (c *config) sizeDelete(args []string) error {
@@ -307,31 +293,15 @@ func (c *config) sizeEdit(args []string) error {
 	}
 	sizeID := args[0]
 
-	getFunc := func(id string) ([]byte, error) {
-		resp, err := c.driver.SizeGet(sizeID)
-		if err != nil {
-			return nil, err
-		}
-		content, err := yaml.Marshal(resp.Size)
-		if err != nil {
-			return nil, err
-		}
-		return content, nil
-	}
-	updateFunc := func(filename string) error {
-		iars, err := readSizeCreateRequests(filename)
-		if err != nil {
-			return err
-		}
-		if len(iars) != 1 {
-			return fmt.Errorf("size update error more or less than one size given:%d", len(iars))
-		}
-		uresp, err := c.driver.SizeUpdate(iars[0])
-		if err != nil {
-			return err
-		}
-		return output.NewDetailer().Detail(uresp.Size)
+	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
+	if err != nil {
+		return err
 	}
 
-	return edit(sizeID, getFunc, updateFunc)
+	size, err := a.Edit(sizeID)
+	if err != nil {
+		return err
+	}
+
+	return output.NewDetailer().Detail(size)
 }
