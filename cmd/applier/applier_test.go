@@ -46,7 +46,13 @@ func Test_readYAML(t *testing.T) {
 		want    []*models.V1ProjectCreateRequest
 		wantErr error
 	}{
-		// TODO: add test for empty file
+		{
+			name: "parsing empty file",
+			mockFn: func(fs afero.Fs) {
+				require.NoError(t, afero.WriteFile(fs, testFile, []byte(""), 0755))
+			},
+			want: nil,
+		},
 		{
 			name: "parsing multi-document yaml",
 			mockFn: func(fs afero.Fs) {
