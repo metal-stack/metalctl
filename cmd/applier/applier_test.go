@@ -1,6 +1,7 @@
 package applier
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,6 +36,18 @@ meta:
     labels:
         - b
 `
+	errorComparer = cmp.Comparer(func(x, y error) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if x == nil && y != nil {
+			return false
+		}
+		if x != nil && y == nil {
+			return false
+		}
+		return x.Error() == y.Error()
+	})
 )
 
 func Test_readYAML(t *testing.T) {
@@ -96,7 +109,7 @@ func Test_readYAML(t *testing.T) {
 
 			got, err := readYAML[*models.V1ProjectCreateRequest](fs, testFile)
 
-			if diff := cmp.Diff(tt.wantErr, err); diff != "" {
+			if diff := cmp.Diff(tt.wantErr, err, errorComparer); diff != "" {
 				t.Errorf("error diff (+got -want):\n %s", diff)
 			}
 
@@ -155,6 +168,14 @@ func Test_readYAMLIndex(t *testing.T) {
 				TenantID: "tenant-b",
 			},
 		},
+		{
+			name: "not existing index",
+			mockFn: func(fs afero.Fs) {
+				require.NoError(t, afero.WriteFile(fs, testFile, []byte(projectCreateRequests), 0755))
+			},
+			index:   2,
+			wantErr: fmt.Errorf("index not found in document: 2"),
+		},
 	}
 	for _, tt := range tests {
 		tt := tt
@@ -166,7 +187,7 @@ func Test_readYAMLIndex(t *testing.T) {
 
 			got, err := readYAMLIndex[*models.V1ProjectCreateRequest](fs, testFile, tt.index)
 
-			if diff := cmp.Diff(tt.wantErr, err); diff != "" {
+			if diff := cmp.Diff(tt.wantErr, err, errorComparer); diff != "" {
 				t.Errorf("error diff (+got -want):\n %s", diff)
 			}
 
