@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/dustin/go-humanize"
 	metalgo "github.com/metal-stack/metal-go"
@@ -14,8 +13,44 @@ import (
 	"github.com/spf13/viper"
 )
 
+type sizeGeneric struct {
+	c metalgo.Client
+}
+
+func (a sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
+	resp, err := a.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (a sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
+	resp, err := a.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		var r *size.CreateSizeConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (a sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+	resp, err := a.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
 func newSizeCmd(c *config) *cobra.Command {
-	genericCLI := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
+	g := sizeGeneric{c: c.client}
+	genericCLI := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](g)
 
 	sizeCmd := &cobra.Command{
 		Use:   "size",
@@ -36,7 +71,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "describe <sizeID>",
 		Short: "describe a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeDescribe(args)
+			return c.sizeDescribe(args, g)
 		},
 		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
@@ -139,41 +174,6 @@ Example:
 	return sizeCmd
 }
 
-type sizeGeneric struct {
-	c metalgo.Client
-}
-
-func (a sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
-	resp, err := a.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
-func (a sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
-	resp, err := a.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
-	if err != nil {
-		var r *size.CreateSizeConflict
-		if errors.As(err, &r) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &resp.Payload, nil
-}
-
-func (a sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
-	resp, err := a.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
 func (c *config) sizeList() error {
 	resp, err := c.driver.SizeList()
 	if err != nil {
@@ -182,16 +182,18 @@ func (c *config) sizeList() error {
 	return output.New().Print(resp.Size)
 }
 
-func (c *config) sizeDescribe(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no size ID given")
-	}
-	sizeID := args[0]
-	resp, err := c.driver.SizeGet(sizeID)
+func (c *config) sizeDescribe(args []string, g genericcli.Generic[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
-	return output.NewDetailer().Detail(resp.Size)
+
+	resp, err := g.Get(id)
+	if err != nil {
+		return err
+	}
+
+	return output.NewDetailer().Detail(resp)
 }
 
 func (c *config) sizeTry() error {
@@ -263,24 +265,26 @@ func (c *config) sizeApply(g *genericcli.GenericCLI[*models.V1SizeCreateRequest,
 }
 
 func (c *config) sizeDelete(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no size ID given")
-	}
-	sizeID := args[0]
-	resp, err := c.driver.SizeDelete(sizeID)
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
+
+	resp, err := c.driver.SizeDelete(id)
+	if err != nil {
+		return err
+	}
+
 	return output.NewDetailer().Detail(resp.Size)
 }
 
 func (c *config) sizeEdit(args []string, g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no size ID given")
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
 	}
-	sizeID := args[0]
 
-	size, err := g.Edit(sizeID)
+	size, err := g.Edit(id)
 	if err != nil {
 		return err
 	}

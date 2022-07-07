@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
 	metalgo "github.com/metal-stack/metal-go"
@@ -15,8 +14,52 @@ import (
 	"github.com/spf13/viper"
 )
 
+type projectGeneric struct {
+	c metalgo.Client
+}
+
+func (a projectGeneric) Get(id string) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (a projectGeneric) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		var r *projectmodel.CreateProjectConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
+	rq.Meta.Version = resp.Payload.Meta.Version + 1
+
+	updateResp, err := a.c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResp.Payload, nil
+}
+
 func newProjectCmd(c *config) *cobra.Command {
-	genericCLI := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
+	g := projectGeneric{c: c.client}
+	genericCLI := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](g)
 
 	projectCmd := &cobra.Command{
 		Use:   "project",
@@ -36,7 +79,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectDescribe(args)
+			return c.projectDescribe(args, g)
 		},
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
@@ -44,7 +87,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectCreate()
+			return c.projectCreate(genericCLI)
 		},
 		PreRun: bindPFlags,
 	}
@@ -114,49 +157,6 @@ Example project update:
 	return projectCmd
 }
 
-type projectGeneric struct {
-	c metalgo.Client
-}
-
-func (a projectGeneric) Get(id string) (*models.V1ProjectResponse, error) {
-	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
-func (a projectGeneric) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
-	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
-	if err != nil {
-		var r *projectmodel.CreateProjectConflict
-		if errors.As(err, &r) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &resp.Payload, nil
-}
-
-func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
-	rq.Meta.Version = resp.Payload.Meta.Version + 1
-
-	updateResp, err := a.c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return updateResp.Payload, nil
-}
-
 func (c *config) projectList() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
 		pfr := v1.ProjectFindRequest{}
@@ -186,19 +186,30 @@ func (c *config) projectList() error {
 	return output.New().Print(resp.Project)
 }
 
-func (c *config) projectDescribe(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no project ID given")
-	}
-	projectID := args[0]
-	resp, err := c.driver.ProjectGet(projectID)
+func (c *config) projectDescribe(args []string, g genericcli.Generic[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
-	return output.NewDetailer().Detail(resp.Project)
+
+	resp, err := g.Get(id)
+	if err != nil {
+		return err
+	}
+
+	return output.NewDetailer().Detail(resp)
 }
 
-func (c *config) projectCreate() error {
+func (c *config) projectCreate(g *genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]) error {
+	if viper.GetString("file") != "" {
+		response, err := g.CreateFromFile(viper.GetString("file"))
+		if err != nil {
+			return err
+		}
+
+		return output.NewDetailer().Detail(response)
+	}
+
 	tenant := viper.GetString("tenant")
 	name := viper.GetString("name")
 	desc := viper.GetString("description")
@@ -263,7 +274,7 @@ func (c *config) projectApply(g *genericcli.GenericCLI[*models.V1ProjectCreateRe
 }
 
 func (c *config) projectEdit(args []string, g *genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]) error {
-	id, err := projectID("edit", args)
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
@@ -277,7 +288,7 @@ func (c *config) projectEdit(args []string, g *genericcli.GenericCLI[*models.V1P
 }
 
 func (c *config) projectDelete(args []string) error {
-	id, err := projectID("delete", args)
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
@@ -288,14 +299,4 @@ func (c *config) projectDelete(args []string) error {
 	}
 
 	return output.New().Print(response.Project)
-}
-
-func projectID(verb string, args []string) (string, error) {
-	if len(args) == 0 {
-		return "", fmt.Errorf("project %s requires projectID as argument", verb)
-	}
-	if len(args) == 1 {
-		return args[0], nil
-	}
-	return "", fmt.Errorf("project %s requires exactly one projectID as argument", verb)
 }
