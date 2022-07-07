@@ -3,11 +3,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	v1 "github.com/metal-stack/masterdata-api/api/rest/v1"
+	metalgo "github.com/metal-stack/metal-go"
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metalctl/cmd/applier"
 	"github.com/metal-stack/metalctl/cmd/output"
 
 	"github.com/spf13/cobra"
@@ -208,55 +209,54 @@ func (c *config) projectCreate() error {
 	return output.New().Print(response.Project)
 }
 
+type projectApplier struct {
+	c metalgo.Client
+}
+
+func (a projectApplier) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		var r *projectmodel.CreateProjectConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (a projectApplier) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	rq.Meta.Version = resp.Payload.Meta.Version + 1
+
+	updateResp, err := a.c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return updateResp.Payload, nil
+}
+
 func (c *config) projectApply() error {
-	var pars []v1.Project
-	var par v1.Project
-	err := readFrom(viper.GetString("file"), &par, func(data interface{}) {
-		doc := data.(*v1.Project)
-		pars = append(pars, *doc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		par = v1.Project{}
-	})
+	a, err := applier.NewApplier[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](viper.GetString("file"))
 	if err != nil {
 		return err
 	}
-	var response []*models.V1ProjectResponse
-	for _, par := range pars {
-		if par.Meta.Id == "" {
-			resp, err := c.driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Project)
-			continue
-		}
 
-		resp, err := c.driver.ProjectGet(par.Meta.Id)
-		if err != nil {
-			var r *projectmodel.FindProjectDefault
-			if !errors.As(err, &r) {
-				return err
-			}
-			if r.Code() != http.StatusNotFound {
-				return err
-			}
-		}
-		if resp.Project == nil {
-			resp, err := c.driver.ProjectCreate(v1.ProjectCreateRequest{Project: par})
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Project)
-			continue
-		}
-
-		resp, err = c.driver.ProjectUpdate(v1.ProjectUpdateRequest{Project: par})
-		if err != nil {
-			return err
-		}
-		response = append(response, resp.Project)
+	p := projectApplier{
+		c: c.client,
 	}
+
+	response, err := a.Apply(p)
+	if err != nil {
+		return err
+	}
+
 	return output.New().Print(response)
 }
 

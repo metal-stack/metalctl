@@ -121,6 +121,7 @@ type config struct {
 	driverURL string
 	comp      *completion.Completion
 	driver    *metalgo.Driver
+	client    metalgo.Client
 	log       *zap.SugaredLogger
 }
 
@@ -182,7 +183,7 @@ func getConfig(name string) *config {
 		}
 	}
 
-	_, driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	client, driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -192,6 +193,7 @@ func getConfig(name string) *config {
 		comp:      completion.NewCompletion(driver),
 		driver:    driver,
 		driverURL: driverURL,
+		client:    client,
 		log:       logger,
 	}
 }
