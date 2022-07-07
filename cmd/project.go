@@ -16,6 +16,8 @@ import (
 )
 
 func newProjectCmd(c *config) *cobra.Command {
+	genericCLI := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
+
 	projectCmd := &cobra.Command{
 		Use:   "project",
 		Short: "manage projects",
@@ -60,7 +62,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectApply()
+			return c.projectApply(genericCLI)
 		},
 		PreRun: bindPFlags,
 	}
@@ -68,7 +70,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.projectEdit(args)
+			return c.projectEdit(args, genericCLI)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -251,13 +253,8 @@ func (c *config) projectCreate() error {
 	return output.New().Print(response.Project)
 }
 
-func (c *config) projectApply() error {
-	a, err := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
-	if err != nil {
-		return err
-	}
-
-	response, err := a.ApplyFromFile(viper.GetString("file"))
+func (c *config) projectApply(g *genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]) error {
+	response, err := g.ApplyFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -265,18 +262,13 @@ func (c *config) projectApply() error {
 	return output.New().Print(response)
 }
 
-func (c *config) projectEdit(args []string) error {
+func (c *config) projectEdit(args []string, g *genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]) error {
 	id, err := projectID("edit", args)
 	if err != nil {
 		return err
 	}
 
-	a, err := genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client})
-	if err != nil {
-		return err
-	}
-
-	response, err := a.Edit(id)
+	response, err := g.Edit(id)
 	if err != nil {
 		return err
 	}

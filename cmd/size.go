@@ -15,6 +15,8 @@ import (
 )
 
 func newSizeCmd(c *config) *cobra.Command {
+	genericCLI := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
+
 	sizeCmd := &cobra.Command{
 		Use:   "size",
 		Short: "manage sizes",
@@ -50,7 +52,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeCreate()
+			return c.sizeCreate(genericCLI)
 		},
 		PreRun: bindPFlags,
 	}
@@ -58,7 +60,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeUpdate()
+			return c.sizeUpdate(genericCLI)
 		},
 		PreRun: bindPFlags,
 	}
@@ -66,7 +68,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeApply()
+			return c.sizeApply(genericCLI)
 		},
 		PreRun: bindPFlags,
 	}
@@ -84,7 +86,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "edit <sizeID>",
 		Short: "edit a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeEdit(args)
+			return c.sizeEdit(args, genericCLI)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.SizeListCompletion,
@@ -207,14 +209,9 @@ func (c *config) sizeTry() error {
 	return output.New().Print(resp.Logs)
 }
 
-func (c *config) sizeCreate() error {
+func (c *config) sizeCreate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
 	if viper.GetString("file") != "" {
-		a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
-		if err != nil {
-			return err
-		}
-
-		response, err := a.CreateFromFile(viper.GetString("file"))
+		response, err := g.CreateFromFile(viper.GetString("file"))
 		if err != nil {
 			return err
 		}
@@ -247,13 +244,8 @@ func (c *config) sizeCreate() error {
 	return output.NewDetailer().Detail(resp.Size)
 }
 
-func (c *config) sizeUpdate() error {
-	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
-	if err != nil {
-		return err
-	}
-
-	response, err := a.UpdateFromFile(viper.GetString("file"))
+func (c *config) sizeUpdate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
+	response, err := g.UpdateFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -261,13 +253,8 @@ func (c *config) sizeUpdate() error {
 	return output.NewDetailer().Detail(response)
 }
 
-func (c *config) sizeApply() error {
-	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
-	if err != nil {
-		return err
-	}
-
-	response, err := a.ApplyFromFile(viper.GetString("file"))
+func (c *config) sizeApply(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
+	response, err := g.ApplyFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -287,18 +274,13 @@ func (c *config) sizeDelete(args []string) error {
 	return output.NewDetailer().Detail(resp.Size)
 }
 
-func (c *config) sizeEdit(args []string) error {
+func (c *config) sizeEdit(args []string, g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no size ID given")
 	}
 	sizeID := args[0]
 
-	a, err := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client})
-	if err != nil {
-		return err
-	}
-
-	size, err := a.Edit(sizeID)
+	size, err := g.Edit(sizeID)
 	if err != nil {
 		return err
 	}
