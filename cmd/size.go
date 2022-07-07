@@ -8,49 +8,24 @@ import (
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-type sizeGeneric struct {
-	c metalgo.Client
-}
-
-func (a sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
-	resp, err := a.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
-}
-
-func (a sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
-	resp, err := a.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
-	if err != nil {
-		var r *size.CreateSizeConflict
-		if errors.As(err, &r) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return &resp.Payload, nil
-}
-
-func (a sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
-	resp, err := a.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.Payload, nil
+type sizeCmdWrapper struct {
+	c      metalgo.Client
+	driver *metalgo.Driver
+	gcli   *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
 }
 
 func newSizeCmd(c *config) *cobra.Command {
-	g := sizeGeneric{c: c.client}
-	genericCLI := genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](g)
+	w := sizeCmdWrapper{
+		c:      c.client,
+		driver: c.driver,
+		gcli:   genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client}),
+	}
 
 	sizeCmd := &cobra.Command{
 		Use:   "size",
@@ -63,7 +38,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all sizes",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeList()
+			return w.list()
 		},
 		PreRun: bindPFlags,
 	}
@@ -71,7 +46,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "describe <sizeID>",
 		Short: "describe a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeDescribe(args, g)
+			return w.describe(args)
 		},
 		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
@@ -79,7 +54,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "try",
 		Short: "try a specific hardware spec and give the chosen size back",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeTry()
+			return w.try()
 		},
 		PreRun: bindPFlags,
 	}
@@ -87,7 +62,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeCreate(genericCLI)
+			return w.create()
 		},
 		PreRun: bindPFlags,
 	}
@@ -95,7 +70,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeUpdate(genericCLI)
+			return w.update()
 		},
 		PreRun: bindPFlags,
 	}
@@ -103,7 +78,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeApply(genericCLI)
+			return w.sizeApply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -112,7 +87,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Short:   "delete a size",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeDelete(args)
+			return w.delete(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.SizeListCompletion,
@@ -121,7 +96,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "edit <sizeID>",
 		Short: "edit a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.sizeEdit(args, genericCLI)
+			return w.edit(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.SizeListCompletion,
@@ -174,21 +149,57 @@ Example:
 	return sizeCmd
 }
 
-func (c *config) sizeList() error {
-	resp, err := c.driver.SizeList()
+type sizeGeneric struct {
+	c metalgo.Client
+}
+
+func (g sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
+	resp, err := g.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (g sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
+	resp, err := g.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		var r *size.CreateSizeConflict
+		if errors.As(err, &r) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &resp.Payload, nil
+}
+
+func (g sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+	resp, err := g.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (w *sizeCmdWrapper) list() error {
+	resp, err := w.c.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Size)
+
+	return output.New().Print(resp.Payload)
 }
 
-func (c *config) sizeDescribe(args []string, g genericcli.Generic[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
+func (w *sizeCmdWrapper) describe(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := g.Get(id)
+	resp, err := w.gcli.Interface().Get(id)
 	if err != nil {
 		return err
 	}
@@ -196,24 +207,9 @@ func (c *config) sizeDescribe(args []string, g genericcli.Generic[*models.V1Size
 	return output.NewDetailer().Detail(resp)
 }
 
-func (c *config) sizeTry() error {
-	cores := viper.GetInt32("cores")
-	memory, err := humanize.ParseBytes(viper.GetString("memory"))
-	if err != nil {
-		return err
-	}
-	storagesize, err := humanize.ParseBytes(viper.GetString("storagesize"))
-	if err != nil {
-		return err
-	}
-
-	resp, _ := c.driver.SizeTry(cores, memory, storagesize)
-	return output.New().Print(resp.Logs)
-}
-
-func (c *config) sizeCreate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
-	if viper.GetString("file") != "" {
-		response, err := g.CreateFromFile(viper.GetString("file"))
+func (w *sizeCmdWrapper) create() error {
+	if viper.IsSet("file") {
+		response, err := w.gcli.CreateFromFile(viper.GetString("file"))
 		if err != nil {
 			return err
 		}
@@ -225,9 +221,9 @@ func (c *config) sizeCreate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest
 	min := viper.GetInt64("max")
 	t := viper.GetString("type")
 
-	icr := metalgo.SizeCreateRequest{
+	icr := &models.V1SizeCreateRequest{
 		Description: viper.GetString("description"),
-		ID:          viper.GetString("id"),
+		ID:          pointer.To(viper.GetString("id")),
 		Name:        viper.GetString("name"),
 		Constraints: []*models.V1SizeConstraint{
 			{
@@ -238,16 +234,16 @@ func (c *config) sizeCreate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest
 		},
 	}
 
-	resp, err := c.driver.SizeCreate(icr)
+	resp, err := w.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(icr), nil)
 	if err != nil {
 		return err
 	}
 
-	return output.NewDetailer().Detail(resp.Size)
+	return output.NewDetailer().Detail(resp.Payload)
 }
 
-func (c *config) sizeUpdate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
-	response, err := g.UpdateFromFile(viper.GetString("file"))
+func (w *sizeCmdWrapper) update() error {
+	response, err := w.gcli.UpdateFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -255,8 +251,22 @@ func (c *config) sizeUpdate(g *genericcli.GenericCLI[*models.V1SizeCreateRequest
 	return output.NewDetailer().Detail(response)
 }
 
-func (c *config) sizeApply(g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
-	response, err := g.ApplyFromFile(viper.GetString("file"))
+func (w *sizeCmdWrapper) delete(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := w.c.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
+	if err != nil {
+		return err
+	}
+
+	return output.NewDetailer().Detail(resp.Payload)
+}
+
+func (w *sizeCmdWrapper) sizeApply() error {
+	response, err := w.gcli.ApplyFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
 	}
@@ -264,30 +274,33 @@ func (c *config) sizeApply(g *genericcli.GenericCLI[*models.V1SizeCreateRequest,
 	return output.New().Print(response)
 }
 
-func (c *config) sizeDelete(args []string) error {
+func (w *sizeCmdWrapper) edit(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.SizeDelete(id)
-	if err != nil {
-		return err
-	}
-
-	return output.NewDetailer().Detail(resp.Size)
-}
-
-func (c *config) sizeEdit(args []string, g *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	size, err := g.Edit(id)
+	size, err := w.gcli.Edit(id)
 	if err != nil {
 		return err
 	}
 
 	return output.NewDetailer().Detail(size)
+}
+
+func (w *sizeCmdWrapper) try() error {
+	cores := viper.GetInt32("cores")
+	memory, err := humanize.ParseBytes(viper.GetString("memory"))
+	if err != nil {
+		return err
+	}
+	storagesize, err := humanize.ParseBytes(viper.GetString("storagesize"))
+	if err != nil {
+		return err
+	}
+
+	// TODO: replace driver with client
+	resp, _ := w.driver.SizeTry(cores, memory, storagesize)
+
+	return output.New().Print(resp.Logs)
 }
