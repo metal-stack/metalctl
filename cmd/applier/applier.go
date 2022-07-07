@@ -21,7 +21,7 @@ type Appliable[C any, U any, R any] interface {
 	// Create tries to create the entity with the given request, if it already exists it does NOT return an error but nil for both return arguments.
 	// if the creation was successful it returns the success response.
 	Create(rq C) (*R, error)
-	// Create tries to create the entity with the given request.
+	// Update tries to update the entity with the given request.
 	// if the update was successful it returns the success response.
 	Update(rq U) (R, error)
 }
