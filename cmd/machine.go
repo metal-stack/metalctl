@@ -580,7 +580,7 @@ MODE can be omitted or one of:
 }
 
 func (c *config) machineCreate() error {
-	mcr, err := c.machineCreateRequest()
+	mcr, err := machineCreateRequest()
 	if err != nil {
 		return fmt.Errorf("machine create error:%w", err)
 	}
@@ -592,7 +592,7 @@ func (c *config) machineCreate() error {
 	return output.New().Print(resp.Machine)
 }
 
-func (c *config) machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
+func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {

@@ -38,14 +38,14 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Use:   "detail",
 		Short: "switch details",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchDetail()
+			return w.switchDetail()
 		},
 	}
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "puts a switch in replace mode in preparation for physical replacement",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchReplace(args)
+			return w.switchReplace(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -99,7 +99,7 @@ func (c switchCRUD) Delete(id string) (*models.V1SwitchResponse, error) {
 }
 
 func (c switchCRUD) Create(rq any) (*models.V1SwitchResponse, error) {
-	return nil, fmt.Errorf("switch entity has no create operation")
+	return nil, fmt.Errorf("switch entity does not support create operation")
 }
 
 func (c switchCRUD) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
@@ -113,14 +113,15 @@ func (c switchCRUD) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchRe
 
 // non-generic command handling
 
-func (c *config) switchDetail() error {
-	resp, err := c.driver.SwitchList()
+func (c *switchCmd) switchDetail() error {
+	resp, err := c.List()
 	if err != nil {
 		return err
 	}
+
 	result := make([]*models.V1SwitchResponse, 0)
 	filter := viper.GetString("filter")
-	for _, s := range resp.Switch {
+	for _, s := range resp {
 		partitionID := ""
 		if s.Partition != nil {
 			partitionID = *s.Partition.ID
@@ -140,27 +141,27 @@ func (c *config) switchDetail() error {
 	return output.NewDetailer().Detail(result)
 }
 
-func (c *config) switchReplace(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no switch ID given")
+func (c *switchCmd) switchReplace(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
 	}
-	switchID := args[0]
 
-	resp, err := c.driver.SwitchGet(switchID)
+	resp, err := c.Interface().Get(id)
 	if err != nil {
 		return err
 	}
-	s := resp.Switch
-	sur := metalgo.SwitchUpdateRequest{
-		ID:          *s.ID,
-		Name:        s.Name,
-		Description: s.Description,
-		RackID:      *s.RackID,
+
+	uresp, err := c.Update(&models.V1SwitchUpdateRequest{
+		ID:          resp.ID,
+		Name:        resp.Name,
+		Description: resp.Description,
+		RackID:      resp.RackID,
 		Mode:        "replace",
-	}
-	uresp, err := c.driver.SwitchUpdate(sur)
+	})
 	if err != nil {
 		return err
 	}
-	return output.NewDetailer().Detail(uresp.Switch)
+
+	return output.NewDetailer().Detail(uresp)
 }
