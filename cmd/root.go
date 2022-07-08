@@ -39,7 +39,6 @@ func Execute() {
 		if viper.GetBool("debug") {
 			panic(err)
 		}
-		fmt.Printf("%+v\n", err)
 		os.Exit(1)
 	}
 }
@@ -48,7 +47,7 @@ func newRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          name,
 		Aliases:      []string{"m"},
-		Short:        "a cli to manage metal devices.",
+		Short:        "a cli to manage metal-stack api",
 		Long:         "",
 		SilenceUsage: true,
 	}

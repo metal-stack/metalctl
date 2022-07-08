@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-type projectCmdWrapper struct {
+type projectCmd struct {
 	c      metalgo.Client
 	driver *metalgo.Driver
 	gcli   *genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]
 }
 
 func newProjectCmd(c *config) *cobra.Command {
-	w := projectCmdWrapper{
+	w := projectCmd{
 		c:      c.client,
 		driver: c.driver,
 		gcli:   genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectGeneric{c: c.client}),
@@ -44,7 +44,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.describe(args)
+			return w.gcli.DescribeAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
@@ -52,7 +52,18 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if viper.IsSet("file") {
+				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+			}
 			return w.create()
+		},
+		PreRun: bindPFlags,
+	}
+	projectUpdateCmd := &cobra.Command{
+		Use:   "update",
+		Short: "update a project",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -61,7 +72,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Short:   "delete a project",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.delete(args)
+			return w.gcli.DeleteAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -70,7 +81,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.apply()
+			return w.gcli.ApplyFromFileAndPrint(viper.GetString("file"), output.New())
 		},
 		PreRun: bindPFlags,
 	}
@@ -78,7 +89,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.edit(args)
+			return w.gcli.EditAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -106,6 +117,9 @@ Example project update:
 `)
 	must(projectApplyCmd.MarkFlagRequired("file"))
 
+	projectUpdateCmd.Flags().StringP("file", "f", "", "filename of the update request in yaml format, or - for stdin.")
+	must(projectUpdateCmd.MarkFlagRequired("file"))
+
 	projectListCmd.Flags().StringP("name", "", "", "Name of the project.")
 	projectListCmd.Flags().StringP("id", "", "", "ID of the project.")
 	projectListCmd.Flags().StringP("tenant", "", "", "tenant of this project.")
@@ -116,6 +130,7 @@ Example project update:
 	projectCmd.AddCommand(projectListCmd)
 	projectCmd.AddCommand(projectApplyCmd)
 	projectCmd.AddCommand(projectEditCmd)
+	projectCmd.AddCommand(projectUpdateCmd)
 
 	must(viper.BindPFlags(projectListCmd.Flags()))
 
@@ -128,6 +143,15 @@ type projectGeneric struct {
 
 func (a projectGeneric) Get(id string) (*models.V1ProjectResponse, error) {
 	resp, err := a.c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (a projectGeneric) Delete(id string) (*models.V1ProjectResponse, error) {
+	resp, err := a.c.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +189,9 @@ func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Pro
 	return updateResp.Payload, nil
 }
 
-func (w *projectCmdWrapper) list() error {
+// non-generic command handling:
+
+func (w *projectCmd) list() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
 		rq := &models.V1ProjectFindRequest{
 			ID:       viper.GetString("id"),
@@ -189,30 +215,7 @@ func (w *projectCmdWrapper) list() error {
 	return output.New().Print(resp.Payload)
 }
 
-func (w *projectCmdWrapper) describe(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	resp, err := w.gcli.Interface().Get(id)
-	if err != nil {
-		return err
-	}
-
-	return output.NewDetailer().Detail(resp)
-}
-
-func (w *projectCmdWrapper) create() error {
-	if viper.GetString("file") != "" {
-		response, err := w.gcli.CreateFromFile(viper.GetString("file"))
-		if err != nil {
-			return err
-		}
-
-		return output.NewDetailer().Detail(response)
-	}
-
+func (w *projectCmd) create() error {
 	var (
 		clusterQuota, machineQuota, ipQuota *models.V1Quota
 	)
@@ -254,41 +257,4 @@ func (w *projectCmdWrapper) create() error {
 	}
 
 	return output.New().Print(response)
-}
-
-func (w *projectCmdWrapper) apply() error {
-	response, err := w.gcli.ApplyFromFile(viper.GetString("file"))
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(response)
-}
-
-func (w *projectCmdWrapper) edit(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	response, err := w.gcli.Edit(id)
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(response)
-}
-
-func (w *projectCmdWrapper) delete(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	response, err := w.driver.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(response.Payload)
 }

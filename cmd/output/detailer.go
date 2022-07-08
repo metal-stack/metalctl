@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
@@ -15,6 +16,10 @@ type (
 	Detailer interface {
 		Detail(data interface{}) error
 	}
+
+	JSONDetailer struct{}
+	YAMLDetailer struct{}
+
 	// TableDetailer produces a human readable model representation
 	TableDetailer struct {
 		table *tablewriter.Table
@@ -35,9 +40,9 @@ func NewDetailer() Detailer {
 	var detailer Detailer
 	switch format {
 	case "yaml":
-		detailer = &YAMLPrinter{}
+		detailer = &YAMLDetailer{}
 	case "json":
-		detailer = &JSONPrinter{}
+		detailer = &JSONDetailer{}
 	case "table", "wide", "markdown", "template":
 		detailer = newTableDetailer("custom")
 	default:
@@ -70,13 +75,13 @@ func newTableDetailer(format string) TableDetailer {
 }
 
 // Detail is identical to Print for json
-func (j JSONPrinter) Detail(data interface{}) error {
-	return j.Print(data)
+func (j JSONDetailer) Detail(data interface{}) error {
+	return genericcli.NewJSONPrinter().Print(data)
 }
 
 // Detail is identical to Print for json
-func (y YAMLPrinter) Detail(data interface{}) error {
-	return y.Print(data)
+func (y YAMLDetailer) Detail(data interface{}) error {
+	return genericcli.NewYAMLPrinter().Print(data)
 }
 
 // Detail a model in a human readable table
@@ -144,6 +149,6 @@ func filterColumns(f models.V1BGPFilter, i int) []string {
 
 // Detail MetalIP
 func (m MetalAnyTableDetailer) Detail(data interface{}) {
-	y := &YAMLPrinter{}
+	y := genericcli.NewYAMLPrinter()
 	y.Print(data)
 }

@@ -20,11 +20,11 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -39,14 +39,6 @@ const (
 )
 
 type (
-	// Printer main Interface for implementations which spits out to stdout
-	Printer interface {
-		Print(data interface{}) error
-	}
-	// JSONPrinter returns the model in json format
-	JSONPrinter struct{}
-	// YAMLPrinter returns the model in yaml format
-	YAMLPrinter struct{}
 	// TablePrinter produces a human readable model representation
 	TablePrinter struct {
 		table       *tablewriter.Table
@@ -141,7 +133,7 @@ type (
 )
 
 // New returns a suitable stdout printer for the given format
-func New() Printer {
+func New() genericcli.Printer {
 	printer, err := newPrinter(
 		viper.GetString("output-format"),
 		viper.GetString("order"),
@@ -223,13 +215,13 @@ func (t *TablePrinter) rowOrTemplate(row []string, data interface{}) []string {
 }
 
 // NewPrinter returns a suitable stdout printer for the given format
-func newPrinter(format, order, tpl string, noHeaders bool) (Printer, error) {
-	var printer Printer
+func newPrinter(format, order, tpl string, noHeaders bool) (genericcli.Printer, error) {
+	var printer genericcli.Printer
 	switch format {
 	case "yaml":
-		printer = &YAMLPrinter{}
+		printer = genericcli.NewYAMLPrinter()
 	case "json":
-		printer = &JSONPrinter{}
+		printer = genericcli.NewJSONPrinter()
 	case "table", "wide", "markdown":
 		printer = newTablePrinter(format, order, noHeaders, nil)
 	case "template":
@@ -273,26 +265,6 @@ func newTablePrinter(format, order string, noHeaders bool, template *template.Te
 		noHeaders: noHeaders,
 		template:  template,
 	}
-}
-
-// Print a model in json format
-func (j JSONPrinter) Print(data interface{}) error {
-	json, err := json.MarshalIndent(data, "", "    ")
-	if err != nil {
-		return fmt.Errorf("unable to marshal to json:%w", err)
-	}
-	fmt.Printf("%s\n", string(json))
-	return nil
-}
-
-// Print a model in yaml format
-func (y YAMLPrinter) Print(data interface{}) error {
-	yml, err := yaml.Marshal(data)
-	if err != nil {
-		return fmt.Errorf("unable to marshal to yaml:%w", err)
-	}
-	fmt.Printf("%s", string(yml))
-	return nil
 }
 
 // Print a model in yaml format
