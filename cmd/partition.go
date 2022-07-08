@@ -2,19 +2,30 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
 
 	metalgo "github.com/metal-stack/metal-go"
-	partitionmodel "github.com/metal-stack/metal-go/api/client/partition"
+	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
+type partitionCmd struct {
+	c      metalgo.Client
+	driver *metalgo.Driver
+	gcli   *genericcli.GenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]
+}
+
 func newPartitionCmd(c *config) *cobra.Command {
+	w := partitionCmd{
+		c:      c.client,
+		driver: c.driver,
+		gcli:   genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionGeneric{c: c.client}),
+	}
+
 	partitionCmd := &cobra.Command{
 		Use:   "partition",
 		Short: "manage partitions",
@@ -42,7 +53,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "describe <partitionID>",
 		Short: "describe a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionDescribe(args)
+			return w.gcli.DescribeAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		ValidArgsFunction: c.comp.PartitionListCompletion,
 	}
@@ -50,7 +61,21 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionCreate()
+			if viper.IsSet("file") {
+				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+			}
+
+			return w.gcli.CreateAndPrint(&models.V1PartitionCreateRequest{
+				ID:                 pointer.Pointer(viper.GetString("id")),
+				Description:        viper.GetString("description"),
+				Name:               viper.GetString("name"),
+				Mgmtserviceaddress: viper.GetString("mgmtserver"),
+				Bootconfig: &models.V1PartitionBootConfiguration{
+					Commandline: viper.GetString("cmdline"),
+					Imageurl:    viper.GetString("imageurl"),
+					Kernelurl:   viper.GetString("kernelurl"),
+				},
+			}, genericcli.NewYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -58,7 +83,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionUpdate()
+			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -66,7 +91,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionApply()
+			return w.gcli.ApplyFromFileAndPrint(viper.GetString("file"), output.New())
 		},
 		PreRun: bindPFlags,
 	}
@@ -75,7 +100,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Short:   "delete a partition",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionDelete(args)
+			return w.gcli.DeleteAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.PartitionListCompletion,
@@ -84,7 +109,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "edit <partitionID>",
 		Short: "edit a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionEdit(args)
+			return w.gcli.EditAndPrint(args, genericcli.NewYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.PartitionListCompletion,
@@ -137,24 +162,58 @@ Example:
 	return partitionCmd
 }
 
+type partitionGeneric struct {
+	c metalgo.Client
+}
+
+func (g partitionGeneric) Get(id string) (*models.V1PartitionResponse, error) {
+	resp, err := g.c.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (g partitionGeneric) Delete(id string) (*models.V1PartitionResponse, error) {
+	resp, err := g.c.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (g partitionGeneric) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
+	resp, err := g.c.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
+	if err != nil {
+		var r *partition.CreatePartitionConflict
+		if errors.As(err, &r) {
+			return nil, genericcli.AlreadyExistsError()
+		}
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (g partitionGeneric) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
+	resp, err := g.c.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+// non-generic command handling
+
 func (c *config) partitionList() error {
 	resp, err := c.driver.PartitionList()
 	if err != nil {
 		return err
 	}
 	return output.New().Print(resp.Partition)
-}
-
-func (c *config) partitionDescribe(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no partition ID given")
-	}
-	partitionID := args[0]
-	resp, err := c.driver.PartitionGet(partitionID)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Partition)
 }
 
 func (c *config) partitionCapacity() error {
@@ -176,162 +235,4 @@ func (c *config) partitionCapacity() error {
 		return err
 	}
 	return output.New().Print(resp.Capacity)
-}
-
-func (c *config) partitionCreate() error {
-	var icrs []metalgo.PartitionCreateRequest
-	var icr metalgo.PartitionCreateRequest
-	if viper.GetString("file") != "" {
-		err := readFrom(viper.GetString("file"), &icr, func(data interface{}) {
-			doc := data.(*metalgo.PartitionCreateRequest)
-			icrs = append(icrs, *doc)
-		})
-		if err != nil {
-			return err
-		}
-		if len(icrs) != 1 {
-			return fmt.Errorf("partition create error more or less than one partition given:%d", len(icrs))
-		}
-		icr = icrs[0]
-	} else {
-		icr = metalgo.PartitionCreateRequest{
-			Description:        viper.GetString("description"),
-			ID:                 viper.GetString("id"),
-			Name:               viper.GetString("name"),
-			Mgmtserviceaddress: viper.GetString("mgmtserver"),
-			Bootconfig: metalgo.BootConfig{
-				Commandline: viper.GetString("cmdline"),
-				Imageurl:    viper.GetString("imageurl"),
-				Kernelurl:   viper.GetString("kernelurl"),
-			},
-		}
-	}
-
-	resp, err := c.driver.PartitionCreate(icr)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Partition)
-}
-
-func (c *config) partitionUpdate() error {
-	icrs, err := readPartitionCreateRequests(viper.GetString("file"))
-	if err != nil {
-		return err
-	}
-	if len(icrs) != 1 {
-		return fmt.Errorf("partition update error more or less than one partition given:%d", len(icrs))
-	}
-	resp, err := c.driver.PartitionUpdate(icrs[0])
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Partition)
-}
-
-func readPartitionCreateRequests(filename string) ([]metalgo.PartitionCreateRequest, error) {
-	var icrs []metalgo.PartitionCreateRequest
-	var uir metalgo.PartitionCreateRequest
-	err := readFrom(filename, &uir, func(data interface{}) {
-		doc := data.(*metalgo.PartitionCreateRequest)
-		icrs = append(icrs, *doc)
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(icrs) != 1 {
-		return nil, fmt.Errorf("partition update error more or less than one partition given:%d", len(icrs))
-	}
-	return icrs, nil
-}
-
-// TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) partitionApply() error {
-	var iars []metalgo.PartitionCreateRequest
-	var iar metalgo.PartitionCreateRequest
-	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
-		doc := data.(*metalgo.PartitionCreateRequest)
-		iars = append(iars, *doc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		iar = metalgo.PartitionCreateRequest{}
-	})
-	if err != nil {
-		return err
-	}
-	var response []*models.V1PartitionResponse
-	for _, iar := range iars {
-		resp, err := c.driver.PartitionGet(iar.ID)
-		if err != nil {
-			var r *partitionmodel.FindPartitionDefault
-			if !errors.As(err, &r) {
-				return err
-			}
-			if r.Code() != http.StatusNotFound {
-				return err
-			}
-		}
-		if resp.Partition == nil {
-			resp, err := c.driver.PartitionCreate(iar)
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Partition)
-			continue
-		}
-
-		updateResponse, err := c.driver.PartitionUpdate(iar)
-		if err != nil {
-			return err
-		}
-		response = append(response, updateResponse.Partition)
-	}
-	return output.NewDetailer().Detail(response)
-}
-
-func (c *config) partitionDelete(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no partition ID given")
-	}
-	partitionID := args[0]
-	resp, err := c.driver.PartitionDelete(partitionID)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Partition)
-}
-
-func (c *config) partitionEdit(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no partition ID given")
-	}
-	partitionID := args[0]
-
-	getFunc := func(id string) ([]byte, error) {
-		resp, err := c.driver.PartitionGet(partitionID)
-		if err != nil {
-			return nil, err
-		}
-		content, err := yaml.Marshal(resp.Partition)
-		if err != nil {
-			return nil, err
-		}
-		return content, nil
-	}
-	updateFunc := func(filename string) error {
-		iars, err := readPartitionCreateRequests(filename)
-		if err != nil {
-			return err
-		}
-		if len(iars) != 1 {
-			return fmt.Errorf("partition update error more or less than one partition given:%d", len(iars))
-		}
-		uresp, err := c.driver.PartitionUpdate(iars[0])
-		if err != nil {
-			return err
-		}
-		return output.NewDetailer().Detail(uresp.Partition)
-	}
-
-	return edit(partitionID, getFunc, updateFunc)
 }
