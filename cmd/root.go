@@ -222,9 +222,11 @@ func newLogger() (*zap.SugaredLogger, error) {
 }
 
 type defaultCmdsConfig[C any, U any, R any] struct {
-	gcli                          *genericcli.GenericCLI[C, U, R]
-	singular, plural, description string
-	aliases                       []string
+	gcli *genericcli.GenericCLI[C, U, R]
+
+	singular, plural string
+	description      string
+	aliases          []string
 
 	createRequestFromCLI func() (C, error)
 	updateRequestFromCLI func() (U, error)
@@ -265,8 +267,9 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			PreRun: bindPFlags,
 		},
 		describeCmd: &cobra.Command{
-			Use:   "describe <id>",
-			Short: fmt.Sprintf("describes the %s", c.singular),
+			Use:     "describe <id>",
+			Aliases: []string{"get"},
+			Short:   fmt.Sprintf("describes the %s", c.singular),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				return c.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
 			},
@@ -336,13 +339,13 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 		return fmt.Sprintf(`filename of the create or update request in yaml format, or - for stdin.
 
 Example:
-# %[1]s %[1]s describe %[1]s-1 -o yaml > %[1]s.yaml
+# %[2]s %[1]s describe %[1]s-1 -o yaml > %[1]s.yaml
 # vi %[1]s.yaml
 ## either via stdin
-# cat %[1]s.yaml | cloudctl %[1]s %[2]s -f -
+# cat %[1]s.yaml | %[2]s %[1]s %[3]s -f -
 ## or via file
-# %[1]s %[1]s %[2]s -f %[1]s.yaml
-	`, c.singular, binaryName)
+# %[2]s %[1]s %[3]s -f %[1]s.yaml
+	`, c.singular, binaryName, command)
 	}
 
 	cmds.applyCmd.Flags().String("file", "", helpText("apply"))

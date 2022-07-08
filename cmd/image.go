@@ -45,8 +45,10 @@ func newImageCmd(c *config) *cobra.Command {
 	cmds.createCmd.Flags().StringP("id", "", "", "ID of the image. [required]")
 	cmds.createCmd.Flags().StringP("url", "", "", "url of the image. [required]")
 	cmds.createCmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
-	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
+	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the image. [optional]")
 	cmds.createCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
+	must(cmds.createCmd.MarkFlagRequired("id"))
+	must(cmds.createCmd.MarkFlagRequired("url"))
 
 	cmds.listCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
 
