@@ -5,9 +5,8 @@ go 1.18
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/metal-stack/masterdata-api v0.8.12
 	github.com/metal-stack/metal-go v0.18.5
-	github.com/metal-stack/metal-lib v0.9.3-0.20220707201119-ba2a71bb15c7
+	github.com/metal-stack/metal-lib v0.9.3-0.20220708081453-254fa1548917
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -46,6 +45,7 @@ require (
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/google/go-github/v32 v32.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -65,6 +65,7 @@ require (
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/metal-stack/masterdata-api v0.8.12 // indirect
 	github.com/metal-stack/security v0.6.4 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect

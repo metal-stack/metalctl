@@ -37,14 +37,14 @@ func newProjectCmd(c *config) *cobra.Command {
 		Aliases: []string{"ls"},
 		Short:   "list all projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectList()
+			return w.list()
 		},
 	}
 	projectDescribeCmd := &cobra.Command{
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectDescribe(args)
+			return w.describe(args)
 		},
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
@@ -52,7 +52,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "create",
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectCreate()
+			return w.create()
 		},
 		PreRun: bindPFlags,
 	}
@@ -61,7 +61,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Short:   "delete a project",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectDelete(args)
+			return w.delete(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -70,7 +70,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "apply",
 		Short: "create/update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectApply()
+			return w.apply()
 		},
 		PreRun: bindPFlags,
 	}
@@ -78,7 +78,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.projectEdit(args)
+			return w.edit(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -135,17 +135,17 @@ func (a projectGeneric) Get(id string) (*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (a projectGeneric) Create(rq *models.V1ProjectCreateRequest) (**models.V1ProjectResponse, error) {
+func (a projectGeneric) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
 	resp, err := a.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		var r *projectmodel.CreateProjectConflict
 		if errors.As(err, &r) {
-			return nil, nil
+			return nil, genericcli.AlreadyExistsError()
 		}
 		return nil, err
 	}
 
-	return &resp.Payload, nil
+	return resp.Payload, nil
 }
 
 func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
@@ -165,26 +165,19 @@ func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Pro
 	return updateResp.Payload, nil
 }
 
-func (w *projectCmdWrapper) projectList() error {
+func (w *projectCmdWrapper) list() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
-		pfr := &models.V1ProjectFindRequest{}
-		id := viper.GetString("id")
-		name := viper.GetString("name")
-		tenantID := viper.GetString("tenant")
+		rq := &models.V1ProjectFindRequest{
+			ID:       viper.GetString("id"),
+			Name:     viper.GetString("name"),
+			TenantID: viper.GetString("tenant"),
+		}
 
-		if id != "" {
-			pfr.ID = id
-		}
-		if name != "" {
-			pfr.Name = name
-		}
-		if tenantID != "" {
-			pfr.TenantID = tenantID
-		}
-		resp, err := w.c.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(pfr), nil)
+		resp, err := w.c.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(rq), nil)
 		if err != nil {
 			return err
 		}
+
 		return output.New().Print(resp.Payload)
 	}
 
@@ -196,7 +189,7 @@ func (w *projectCmdWrapper) projectList() error {
 	return output.New().Print(resp.Payload)
 }
 
-func (w *projectCmdWrapper) projectDescribe(args []string) error {
+func (w *projectCmdWrapper) describe(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
@@ -210,7 +203,7 @@ func (w *projectCmdWrapper) projectDescribe(args []string) error {
 	return output.NewDetailer().Detail(resp)
 }
 
-func (w *projectCmdWrapper) projectCreate() error {
+func (w *projectCmdWrapper) create() error {
 	if viper.GetString("file") != "" {
 		response, err := w.gcli.CreateFromFile(viper.GetString("file"))
 		if err != nil {
@@ -220,36 +213,28 @@ func (w *projectCmdWrapper) projectCreate() error {
 		return output.NewDetailer().Detail(response)
 	}
 
-	tenant := viper.GetString("tenant")
-	name := viper.GetString("name")
-	desc := viper.GetString("description")
-	labels := viper.GetStringSlice("label")
-	as := viper.GetStringSlice("annotation")
 	var (
 		clusterQuota, machineQuota, ipQuota *models.V1Quota
 	)
 	if viper.IsSet("cluster-quota") {
-		q := viper.GetInt32("cluster-quota")
-		clusterQuota = &models.V1Quota{Quota: q}
+		clusterQuota = &models.V1Quota{Quota: viper.GetInt32("cluster-quota")}
 	}
 	if viper.IsSet("machine-quota") {
-		q := viper.GetInt32("machine-quota")
-		machineQuota = &models.V1Quota{Quota: q}
+		machineQuota = &models.V1Quota{Quota: viper.GetInt32("machine-quota")}
 	}
 	if viper.IsSet("ip-quota") {
-		q := viper.GetInt32("ip-quota")
-		ipQuota = &models.V1Quota{Quota: q}
+		ipQuota = &models.V1Quota{Quota: viper.GetInt32("ip-quota")}
 	}
 
-	annotations, err := annotationsAsMap(as)
+	annotations, err := annotationsAsMap(viper.GetStringSlice("annotation"))
 	if err != nil {
 		return err
 	}
 
-	pcr := &models.V1ProjectCreateRequest{
-		Name:        name,
-		Description: desc,
-		TenantID:    tenant,
+	rq := &models.V1ProjectCreateRequest{
+		Name:        viper.GetString("name"),
+		Description: viper.GetString("description"),
+		TenantID:    viper.GetString("tenant"),
 		Quotas: &models.V1QuotaSet{
 			Cluster: clusterQuota,
 			Machine: machineQuota,
@@ -259,19 +244,19 @@ func (w *projectCmdWrapper) projectCreate() error {
 			Kind:        "Project",
 			Apiversion:  "v1",
 			Annotations: annotations,
-			Labels:      labels,
+			Labels:      viper.GetStringSlice("label"),
 		},
 	}
 
-	response, err := w.c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(pcr), nil)
+	response, err := w.gcli.Interface().Create(rq)
 	if err != nil {
 		return err
 	}
 
-	return output.New().Print(response.Payload)
+	return output.New().Print(response)
 }
 
-func (w *projectCmdWrapper) projectApply() error {
+func (w *projectCmdWrapper) apply() error {
 	response, err := w.gcli.ApplyFromFile(viper.GetString("file"))
 	if err != nil {
 		return err
@@ -280,7 +265,7 @@ func (w *projectCmdWrapper) projectApply() error {
 	return output.New().Print(response)
 }
 
-func (w *projectCmdWrapper) projectEdit(args []string) error {
+func (w *projectCmdWrapper) edit(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
@@ -294,7 +279,7 @@ func (w *projectCmdWrapper) projectEdit(args []string) error {
 	return output.New().Print(response)
 }
 
-func (w *projectCmdWrapper) projectDelete(args []string) error {
+func (w *projectCmdWrapper) delete(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err

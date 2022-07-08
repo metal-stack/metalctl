@@ -109,6 +109,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	sizeCreateCmd.Flags().Int64P("min", "", 0, "min value of given size constraint type. [required]")
 	sizeCreateCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
 	sizeCreateCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
+	sizeCreateCmd.Flags().StringP("file", "f", "", "filename of the create request in yaml format, or - for stdin.")
 
 	sizeApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
 Example:
@@ -162,17 +163,17 @@ func (g sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (g sizeGeneric) Create(rq *models.V1SizeCreateRequest) (**models.V1SizeResponse, error) {
+func (g sizeGeneric) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
 	resp, err := g.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
 		if errors.As(err, &r) {
-			return nil, nil
+			return nil, genericcli.AlreadyExistsError()
 		}
 		return nil, err
 	}
 
-	return &resp.Payload, nil
+	return resp.Payload, nil
 }
 
 func (g sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
@@ -217,29 +218,25 @@ func (w *sizeCmdWrapper) create() error {
 		return output.NewDetailer().Detail(response)
 	}
 
-	max := viper.GetInt64("min")
-	min := viper.GetInt64("max")
-	t := viper.GetString("type")
-
-	icr := &models.V1SizeCreateRequest{
-		Description: viper.GetString("description"),
-		ID:          pointer.To(viper.GetString("id")),
+	rq := &models.V1SizeCreateRequest{
+		ID:          pointer.Pointer(viper.GetString("id")),
 		Name:        viper.GetString("name"),
+		Description: viper.GetString("description"),
 		Constraints: []*models.V1SizeConstraint{
 			{
-				Max:  &max,
-				Min:  &min,
-				Type: &t,
+				Max:  pointer.Pointer(viper.GetInt64("max")),
+				Min:  pointer.Pointer(viper.GetInt64("min")),
+				Type: pointer.Pointer(viper.GetString("type")),
 			},
 		},
 	}
 
-	resp, err := w.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(icr), nil)
+	resp, err := w.gcli.Interface().Create(rq)
 	if err != nil {
 		return err
 	}
 
-	return output.NewDetailer().Detail(resp.Payload)
+	return output.NewDetailer().Detail(resp)
 }
 
 func (w *sizeCmdWrapper) update() error {
@@ -299,7 +296,6 @@ func (w *sizeCmdWrapper) try() error {
 		return err
 	}
 
-	// TODO: replace driver with client
 	resp, _ := w.driver.SizeTry(cores, memory, storagesize)
 
 	return output.New().Print(resp.Logs)
