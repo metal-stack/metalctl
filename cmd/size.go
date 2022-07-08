@@ -46,7 +46,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "describe <sizeID>",
 		Short: "describe a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DescribeAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
 		},
 		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
@@ -63,7 +63,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Short: "create a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if viper.IsSet("file") {
-				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 			}
 
 			return w.gcli.CreateAndPrint(&models.V1SizeCreateRequest{
@@ -77,7 +77,7 @@ func newSizeCmd(c *config) *cobra.Command {
 						Type: pointer.Pointer(viper.GetString("type")),
 					},
 				},
-			}, genericcli.NewYAMLPrinter())
+			}, defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -85,7 +85,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -102,7 +102,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Short:   "delete a size",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DeleteAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.SizeListCompletion,
@@ -111,7 +111,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		Use:   "edit <sizeID>",
 		Short: "edit a size",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.EditAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.EditAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.SizeListCompletion,

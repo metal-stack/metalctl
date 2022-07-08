@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/pkg/api"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -18,6 +20,13 @@ import (
 
 	"github.com/spf13/viper"
 )
+
+func defaultToYAMLPrinter() genericcli.Printer {
+	if viper.IsSet("output-format") {
+		return output.New()
+	}
+	return genericcli.NewYAMLPrinter()
+}
 
 func atLeastOneViperStringFlagGiven(flags ...string) bool {
 	for _, flag := range flags {

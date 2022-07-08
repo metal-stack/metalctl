@@ -53,7 +53,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "describe <partitionID>",
 		Short: "describe a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DescribeAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
 		},
 		ValidArgsFunction: c.comp.PartitionListCompletion,
 	}
@@ -62,7 +62,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Short: "create a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if viper.IsSet("file") {
-				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 			}
 
 			return w.gcli.CreateAndPrint(&models.V1PartitionCreateRequest{
@@ -75,7 +75,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 					Imageurl:    viper.GetString("imageurl"),
 					Kernelurl:   viper.GetString("kernelurl"),
 				},
-			}, genericcli.NewYAMLPrinter())
+			}, defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -83,7 +83,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -100,7 +100,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Short:   "delete a partition",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DeleteAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.PartitionListCompletion,
@@ -109,7 +109,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "edit <partitionID>",
 		Short: "edit a partition",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.EditAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.EditAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.PartitionListCompletion,
@@ -234,5 +234,6 @@ func (c *config) partitionCapacity() error {
 	if err != nil {
 		return err
 	}
+
 	return output.New().Print(resp.Capacity)
 }

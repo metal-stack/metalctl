@@ -44,7 +44,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "describe <projectID>",
 		Short: "describe a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DescribeAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
 		},
 		ValidArgsFunction: c.comp.ProjectListCompletion,
 	}
@@ -53,7 +53,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Short: "create a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if viper.IsSet("file") {
-				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 			}
 			return w.create()
 		},
@@ -63,7 +63,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "update",
 		Short: "update a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
+			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -72,7 +72,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Short:   "delete a project",
 		Aliases: []string{"destroy", "rm", "remove"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DeleteAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -89,7 +89,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Use:   "edit <projectID>",
 		Short: "edit a project",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.EditAndPrint(args, genericcli.NewYAMLPrinter())
+			return w.gcli.EditAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.ProjectListCompletion,
@@ -249,5 +249,5 @@ func (w *projectCmd) create() error {
 			Annotations: annotations,
 			Labels:      viper.GetStringSlice("label"),
 		},
-	}, genericcli.NewYAMLPrinter())
+	}, defaultToYAMLPrinter())
 }
