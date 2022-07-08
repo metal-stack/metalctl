@@ -66,7 +66,18 @@ func newSizeCmd(c *config) *cobra.Command {
 				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), genericcli.NewYAMLPrinter())
 			}
 
-			return w.create()
+			return w.gcli.CreateAndPrint(&models.V1SizeCreateRequest{
+				ID:          pointer.Pointer(viper.GetString("id")),
+				Name:        viper.GetString("name"),
+				Description: viper.GetString("description"),
+				Constraints: []*models.V1SizeConstraint{
+					{
+						Max:  pointer.Pointer(viper.GetInt64("max")),
+						Min:  pointer.Pointer(viper.GetInt64("min")),
+						Type: pointer.Pointer(viper.GetString("type")),
+					},
+				},
+			}, genericcli.NewYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -198,6 +209,8 @@ func (g sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeRespo
 	return resp.Payload, nil
 }
 
+// non-generic command handling
+
 func (w *sizeCmd) list() error {
 	resp, err := w.c.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
@@ -205,28 +218,6 @@ func (w *sizeCmd) list() error {
 	}
 
 	return output.New().Print(resp.Payload)
-}
-
-// non-generic command handling:
-
-func (w *sizeCmd) create() error {
-	resp, err := w.gcli.Interface().Create(&models.V1SizeCreateRequest{
-		ID:          pointer.Pointer(viper.GetString("id")),
-		Name:        viper.GetString("name"),
-		Description: viper.GetString("description"),
-		Constraints: []*models.V1SizeConstraint{
-			{
-				Max:  pointer.Pointer(viper.GetInt64("max")),
-				Min:  pointer.Pointer(viper.GetInt64("min")),
-				Type: pointer.Pointer(viper.GetString("type")),
-			},
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	return output.NewDetailer().Detail(resp)
 }
 
 func (w *sizeCmd) try() error {

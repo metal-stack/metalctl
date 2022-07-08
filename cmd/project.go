@@ -189,7 +189,7 @@ func (a projectGeneric) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Pro
 	return updateResp.Payload, nil
 }
 
-// non-generic command handling:
+// non-generic command handling
 
 func (w *projectCmd) list() error {
 	if atLeastOneViperStringFlagGiven("id", "name", "tenant") {
@@ -229,12 +229,12 @@ func (w *projectCmd) create() error {
 		ipQuota = &models.V1Quota{Quota: viper.GetInt32("ip-quota")}
 	}
 
-	annotations, err := annotationsAsMap(viper.GetStringSlice("annotation"))
+	annotations, err := genericcli.LabelsToMap(viper.GetStringSlice("annotation"))
 	if err != nil {
 		return err
 	}
 
-	rq := &models.V1ProjectCreateRequest{
+	return w.gcli.CreateAndPrint(&models.V1ProjectCreateRequest{
 		Name:        viper.GetString("name"),
 		Description: viper.GetString("description"),
 		TenantID:    viper.GetString("tenant"),
@@ -249,12 +249,5 @@ func (w *projectCmd) create() error {
 			Annotations: annotations,
 			Labels:      viper.GetStringSlice("label"),
 		},
-	}
-
-	response, err := w.gcli.Interface().Create(rq)
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(response)
+	}, genericcli.NewYAMLPrinter())
 }
