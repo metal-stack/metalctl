@@ -17,56 +17,24 @@ import (
 type sizeCmd struct {
 	c      metalgo.Client
 	driver *metalgo.Driver
-	gcli   *genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
+	*genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
 }
 
 func newSizeCmd(c *config) *cobra.Command {
 	w := sizeCmd{
-		c:      c.client,
-		driver: c.driver,
-		gcli:   genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeGeneric{c: c.client}),
+		c:          c.client,
+		driver:     c.driver,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeCRUD{Client: c.client}),
 	}
 
-	sizeCmd := &cobra.Command{
-		Use:   "size",
-		Short: "manage sizes",
-		Long:  "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
-	}
-
-	sizeListCmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list all sizes",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.list()
-		},
-		PreRun: bindPFlags,
-	}
-	sizeDescribeCmd := &cobra.Command{
-		Use:   "describe <sizeID>",
-		Short: "describe a size",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
-		},
-		ValidArgsFunction: c.comp.SizeListCompletion,
-	}
-	sizeTryCmd := &cobra.Command{
-		Use:   "try",
-		Short: "try a specific hardware spec and give the chosen size back",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.try()
-		},
-		PreRun: bindPFlags,
-	}
-	sizeCreateCmd := &cobra.Command{
-		Use:   "create",
-		Short: "create a size",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if viper.IsSet("file") {
-				return w.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
-			}
-
-			return w.gcli.CreateAndPrint(&models.V1SizeCreateRequest{
+	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
+		gcli:          w.GenericCLI,
+		singular:      "size",
+		plural:        "sizes",
+		description:   "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
+		validArgsFunc: c.comp.SizeListCompletion,
+		createRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
+			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
 				Name:        viper.GetString("name"),
 				Description: viper.GetString("description"),
@@ -77,100 +45,45 @@ func newSizeCmd(c *config) *cobra.Command {
 						Type: pointer.Pointer(viper.GetString("type")),
 					},
 				},
-			}, defaultToYAMLPrinter())
+			}, nil
+		},
+	})
+
+	tryCmd := &cobra.Command{
+		Use:   "try",
+		Short: "try a specific hardware spec and give the chosen size back",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.try()
 		},
 		PreRun: bindPFlags,
-	}
-	sizeUpdateCmd := &cobra.Command{
-		Use:   "update",
-		Short: "update a size",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
-		},
-		PreRun: bindPFlags,
-	}
-	sizeApplyCmd := &cobra.Command{
-		Use:   "apply",
-		Short: "create/update a size",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.ApplyFromFileAndPrint(viper.GetString("file"), output.New())
-		},
-		PreRun: bindPFlags,
-	}
-	sizeDeleteCmd := &cobra.Command{
-		Use:     "delete <sizeID>",
-		Short:   "delete a size",
-		Aliases: []string{"destroy", "rm", "remove"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.SizeListCompletion,
-	}
-	sizeEditCmd := &cobra.Command{
-		Use:   "edit <sizeID>",
-		Short: "edit a size",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.gcli.EditAndPrint(args, defaultToYAMLPrinter())
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.SizeListCompletion,
 	}
 
-	sizeCreateCmd.Flags().StringP("id", "", "", "ID of the size. [required]")
-	sizeCreateCmd.Flags().StringP("name", "n", "", "Name of the size. [optional]")
-	sizeCreateCmd.Flags().StringP("description", "d", "", "Description of the size. [required]")
+	cmds.createCmd.Flags().StringP("id", "", "", "ID of the size. [required]")
+	cmds.createCmd.Flags().StringP("name", "n", "", "Name of the size. [optional]")
+	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the size. [required]")
 	// FIXME constraints must be given in a slice
-	sizeCreateCmd.Flags().Int64P("min", "", 0, "min value of given size constraint type. [required]")
-	sizeCreateCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
-	sizeCreateCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
-	sizeCreateCmd.Flags().StringP("file", "f", "", "filename of the create request in yaml format, or - for stdin.")
+	cmds.createCmd.Flags().Int64P("min", "", 0, "min value of given size constraint type. [required]")
+	cmds.createCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
+	cmds.createCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
 
-	sizeApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example:
+	tryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
+	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
+	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-# metalctl size describe c1-xlarge-x86 > c1-xlarge-x86.yaml
-# vi c1-xlarge-x86.yaml
-## either via stdin
-# cat c1-xlarge-x86.yaml | metalctl size apply -f -
-## or via file
-# metalctl size apply -f c1-xlarge-x86.yaml`)
-	must(sizeApplyCmd.MarkFlagRequired("file"))
+	root := cmds.RootCmd()
 
-	sizeUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example:
+	root.AddCommand(tryCmd)
+	root.AddCommand(newSizeImageConstraintCmd(c))
 
-# metalctl size describe c1-xlarge-x86 > c1-xlarge-x86.yaml
-# vi c1-xlarge-x86.yaml
-## either via stdin
-# cat c1-xlarge-x86.yaml | metalctl size update -f -
-## or via file
-# metalctl size update -f c1-xlarge-x86.yaml`)
-	must(sizeUpdateCmd.MarkFlagRequired("file"))
-
-	sizeTryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
-	sizeTryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
-	sizeTryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
-
-	sizeCmd.AddCommand(sizeListCmd)
-	sizeCmd.AddCommand(sizeDescribeCmd)
-	sizeCmd.AddCommand(sizeTryCmd)
-	sizeCmd.AddCommand(sizeCreateCmd)
-	sizeCmd.AddCommand(sizeUpdateCmd)
-	sizeCmd.AddCommand(sizeDeleteCmd)
-	sizeCmd.AddCommand(sizeApplyCmd)
-	sizeCmd.AddCommand(sizeEditCmd)
-	sizeCmd.AddCommand(newSizeImageConstraintCmd(c))
-
-	return sizeCmd
+	return root
 }
 
-type sizeGeneric struct {
-	c metalgo.Client
+type sizeCRUD struct {
+	metalgo.Client
 }
 
-func (g sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
-	resp, err := g.c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
+	resp, err := c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -178,8 +91,8 @@ func (g sizeGeneric) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (g sizeGeneric) Delete(id string) (*models.V1SizeResponse, error) {
-	resp, err := g.c.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
+func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
+	resp, err := c.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -187,8 +100,17 @@ func (g sizeGeneric) Delete(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (g sizeGeneric) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
-	resp, err := g.c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+func (c sizeCRUD) Delete(id string) (*models.V1SizeResponse, error) {
+	resp, err := c.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c sizeCRUD) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
+	resp, err := c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
 		if errors.As(err, &r) {
@@ -200,8 +122,8 @@ func (g sizeGeneric) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeRespo
 	return resp.Payload, nil
 }
 
-func (g sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
-	resp, err := g.c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+func (c sizeCRUD) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+	resp, err := c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -210,15 +132,6 @@ func (g sizeGeneric) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeRespo
 }
 
 // non-generic command handling
-
-func (w *sizeCmd) list() error {
-	resp, err := w.c.Size().ListSizes(size.NewListSizesParams(), nil)
-	if err != nil {
-		return err
-	}
-
-	return output.New().Print(resp.Payload)
-}
 
 func (w *sizeCmd) try() error {
 	cores := viper.GetInt32("cores")

@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/completion"
+	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -15,6 +17,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
+)
+
+const (
+	binaryName = "metalctl"
 )
 
 var (
@@ -43,7 +49,7 @@ func Execute() {
 	}
 }
 func newRootCmd() *cobra.Command {
-	name := "metalctl"
+	name := binaryName
 	rootCmd := &cobra.Command{
 		Use:          name,
 		Aliases:      []string{"m"},
@@ -213,4 +219,152 @@ func newLogger() (*zap.SugaredLogger, error) {
 	}
 
 	return l.Sugar(), nil
+}
+
+type defaultCmdsConfig[C any, U any, R any] struct {
+	gcli                          *genericcli.GenericCLI[C, U, R]
+	singular, plural, description string
+	aliases                       []string
+
+	createRequestFromCLI func() (C, error)
+	updateRequestFromCLI func() (U, error)
+
+	validArgsFunc func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
+}
+
+type defaultCmds struct {
+	rootCmd     *cobra.Command
+	listCmd     *cobra.Command
+	describeCmd *cobra.Command
+	createCmd   *cobra.Command
+	updateCmd   *cobra.Command
+	deleteCmd   *cobra.Command
+	applyCmd    *cobra.Command
+	editCmd     *cobra.Command
+}
+
+func (d *defaultCmds) RootCmd() *cobra.Command {
+	return d.rootCmd
+}
+
+func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *defaultCmds {
+	cmds := &defaultCmds{
+		rootCmd: &cobra.Command{
+			Use:     c.singular,
+			Short:   fmt.Sprintf("manage %s entities", c.singular),
+			Long:    c.description,
+			Aliases: c.aliases,
+		},
+		listCmd: &cobra.Command{
+			Use:     "list",
+			Aliases: []string{"ls"},
+			Short:   fmt.Sprintf("list all %s", c.plural),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return c.gcli.ListAndPrint(output.New())
+			},
+			PreRun: bindPFlags,
+		},
+		describeCmd: &cobra.Command{
+			Use:   "describe <id>",
+			Short: fmt.Sprintf("describes the %s", c.singular),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return c.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
+			},
+			ValidArgsFunction: c.validArgsFunc,
+		},
+		createCmd: &cobra.Command{
+			Use:   "create",
+			Short: fmt.Sprintf("creates the %s", c.singular),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if c.createRequestFromCLI != nil && !viper.IsSet("file") {
+					rq, err := c.createRequestFromCLI()
+					if err != nil {
+						return err
+					}
+					return c.gcli.CreateAndPrint(rq, defaultToYAMLPrinter())
+				}
+				return c.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
+			},
+			PreRun: bindPFlags,
+		},
+		updateCmd: &cobra.Command{
+			Use:   "update",
+			Short: fmt.Sprintf("updates the %s", c.singular),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if c.updateRequestFromCLI != nil && !viper.IsSet("file") {
+					rq, err := c.updateRequestFromCLI()
+					if err != nil {
+						return err
+					}
+					return c.gcli.UpdateAndPrint(rq, defaultToYAMLPrinter())
+				}
+				return c.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
+			},
+			PreRun:            bindPFlags,
+			ValidArgsFunction: c.validArgsFunc,
+		},
+		deleteCmd: &cobra.Command{
+			Use:     "delete <id>",
+			Short:   fmt.Sprintf("deletes the %s", c.singular),
+			Aliases: []string{"destroy", "rm", "remove"},
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return c.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
+			},
+			PreRun:            bindPFlags,
+			ValidArgsFunction: c.validArgsFunc,
+		},
+		applyCmd: &cobra.Command{
+			Use:   "apply",
+			Short: fmt.Sprintf("applies one or more %s from a given file", c.plural),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), output.New())
+			},
+			PreRun: bindPFlags,
+		},
+		editCmd: &cobra.Command{
+			Use:   "edit <id>",
+			Short: fmt.Sprintf("updates the %s through an editor", c.singular),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				return c.gcli.EditAndPrint(args, defaultToYAMLPrinter())
+			},
+			PreRun:            bindPFlags,
+			ValidArgsFunction: c.validArgsFunc,
+		},
+	}
+
+	helpText := func(command string) string {
+		return fmt.Sprintf(`filename of the create or update request in yaml format, or - for stdin.
+
+Example:
+# %[1]s %[1]s describe %[1]s-1 -o yaml > %[1]s.yaml
+# vi %[1]s.yaml
+## either via stdin
+# cat %[1]s.yaml | cloudctl %[1]s %[2]s -f -
+## or via file
+# %[1]s %[1]s %[2]s -f %[1]s.yaml
+	`, c.singular, binaryName)
+	}
+
+	cmds.applyCmd.Flags().String("file", "", helpText("apply"))
+	must(cmds.applyCmd.MarkFlagRequired("file"))
+
+	if c.createRequestFromCLI != nil {
+		cmds.createCmd.Flags().String("file", "", helpText("create"))
+	}
+
+	if c.updateRequestFromCLI != nil {
+		cmds.updateCmd.Flags().String("file", "", helpText("update"))
+	}
+
+	cmds.rootCmd.AddCommand(
+		cmds.listCmd,
+		cmds.describeCmd,
+		cmds.createCmd,
+		cmds.updateCmd,
+		cmds.deleteCmd,
+		cmds.applyCmd,
+		cmds.editCmd,
+	)
+
+	return cmds
 }
