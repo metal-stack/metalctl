@@ -6,27 +6,33 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
+type switchCmd struct {
+	c      metalgo.Client
+	driver *metalgo.Driver
+	*genericcli.GenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]
+}
+
 func newSwitchCmd(c *config) *cobra.Command {
-	switchCmd := &cobra.Command{
-		Use:   "switch",
-		Short: "manage switches",
+	w := switchCmd{
+		c:          c.client,
+		driver:     c.driver,
+		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](switchCRUD{Client: c.client}),
 	}
 
-	switchListCmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list all switches",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchList()
-		},
-	}
+	cmds := newDefaultCmds(&defaultCmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
+		gcli:        w.GenericCLI,
+		singular:    "switch",
+		plural:      "switches",
+		description: "switch are the leaf switches in the data center that are controlled by metal-stack.",
+	})
 
 	switchDetailCmd := &cobra.Command{
 		Use:   "detail",
@@ -35,25 +41,6 @@ func newSwitchCmd(c *config) *cobra.Command {
 			return c.switchDetail()
 		},
 	}
-
-	switchUpdateCmd := &cobra.Command{
-		Use:   "update",
-		Short: "update a switch",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchUpdate()
-		},
-		PreRun: bindPFlags,
-	}
-
-	switchEditCmd := &cobra.Command{
-		Use:   "edit <switchID>",
-		Short: "edit a switch",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.switchEdit(args)
-		},
-		PreRun: bindPFlags,
-	}
-
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "puts a switch in replace mode in preparation for physical replacement",
@@ -63,28 +50,68 @@ func newSwitchCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	switchCmd.AddCommand(switchListCmd)
-	switchCmd.AddCommand(switchUpdateCmd)
-	switchCmd.AddCommand(switchEditCmd)
-	switchCmd.AddCommand(switchDetailCmd)
-	switchCmd.AddCommand(switchReplaceCmd)
-
-	switchUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.`)
-	must(switchUpdateCmd.MarkFlagRequired("file"))
-
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
 	must(viper.BindPFlags(switchDetailCmd.Flags()))
 
-	return switchCmd
+	cmds.rootCmd.AddCommand(
+		cmds.listCmd,
+		cmds.describeCmd,
+		cmds.updateCmd,
+		cmds.deleteCmd,
+		cmds.editCmd,
+	)
+
+	cmds.rootCmd.AddCommand(switchDetailCmd)
+	cmds.rootCmd.AddCommand(switchReplaceCmd)
+
+	return cmds.rootCmd
 }
 
-func (c *config) switchList() error {
-	resp, err := c.driver.SwitchList()
-	if err != nil {
-		return err
-	}
-	return output.New().Print(resp.Switch)
+type switchCRUD struct {
+	metalgo.Client
 }
+
+func (c switchCRUD) Get(id string) (*models.V1SwitchResponse, error) {
+	resp, err := c.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
+	resp, err := c.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c switchCRUD) Delete(id string) (*models.V1SwitchResponse, error) {
+	resp, err := c.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c switchCRUD) Create(rq any) (*models.V1SwitchResponse, error) {
+	return nil, fmt.Errorf("switch entity has no create operation")
+}
+
+func (c switchCRUD) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
+	resp, err := c.SwitchOperations().UpdateSwitch(switch_operations.NewUpdateSwitchParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+// non-generic command handling
 
 func (c *config) switchDetail() error {
 	resp, err := c.driver.SwitchList()
@@ -109,51 +136,8 @@ func (c *config) switchDetail() error {
 		log.Printf("no switch detail for filter: %s", filter)
 		return nil
 	}
+
 	return output.NewDetailer().Detail(result)
-}
-
-func (c *config) switchUpdate() error {
-	surs, err := readSwitchUpdateRequests(viper.GetString("file"))
-	if err != nil {
-		return err
-	}
-	resp, err := c.driver.SwitchUpdate(surs[0])
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Switch)
-}
-
-func (c *config) switchEdit(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no switch ID given")
-	}
-	switchID := args[0]
-
-	getFunc := func(id string) ([]byte, error) {
-		resp, err := c.driver.SwitchGet(switchID)
-		if err != nil {
-			return nil, err
-		}
-		content, err := yaml.Marshal(resp.Switch)
-		if err != nil {
-			return nil, err
-		}
-		return content, nil
-	}
-	updateFunc := func(filename string) error {
-		items, err := readSwitchUpdateRequests(filename)
-		if err != nil {
-			return err
-		}
-		uresp, err := c.driver.SwitchUpdate(items[0])
-		if err != nil {
-			return err
-		}
-		return output.NewDetailer().Detail(uresp.Switch)
-	}
-
-	return edit(switchID, getFunc, updateFunc)
 }
 
 func (c *config) switchReplace(args []string) error {
@@ -179,20 +163,4 @@ func (c *config) switchReplace(args []string) error {
 		return err
 	}
 	return output.NewDetailer().Detail(uresp.Switch)
-}
-
-func readSwitchUpdateRequests(filename string) ([]metalgo.SwitchUpdateRequest, error) {
-	var items []metalgo.SwitchUpdateRequest
-	var item metalgo.SwitchUpdateRequest
-	err := readFrom(filename, &item, func(data interface{}) {
-		doc := data.(*metalgo.SwitchUpdateRequest)
-		items = append(items, *doc)
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(items) != 1 {
-		return nil, fmt.Errorf("switch update error more or less than one switch given:%d", len(items))
-	}
-	return items, nil
 }

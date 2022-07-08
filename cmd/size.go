@@ -70,7 +70,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	root := cmds.RootCmd()
+	root := cmds.BuildRootCmd()
 
 	root.AddCommand(tryCmd)
 	root.AddCommand(newSizeImageConstraintCmd(c))

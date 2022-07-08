@@ -52,7 +52,7 @@ func newImageCmd(c *config) *cobra.Command {
 
 	cmds.listCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
 
-	return cmds.RootCmd()
+	return cmds.BuildRootCmd()
 }
 
 type imageCRUD struct {

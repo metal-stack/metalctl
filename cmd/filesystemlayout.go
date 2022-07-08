@@ -67,7 +67,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	must(filesystemMatchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
 	must(filesystemMatchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
-	root := cmds.RootCmd()
+	root := cmds.BuildRootCmd()
 
 	root.AddCommand(filesystemTryCmd)
 	root.AddCommand(filesystemMatchCmd)

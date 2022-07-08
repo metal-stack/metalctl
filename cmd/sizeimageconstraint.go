@@ -49,7 +49,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	must(tryCmd.MarkFlagRequired("size"))
 	must(tryCmd.MarkFlagRequired("image"))
 
-	root := cmds.RootCmd()
+	root := cmds.BuildRootCmd()
 
 	root.AddCommand(tryCmd)
 

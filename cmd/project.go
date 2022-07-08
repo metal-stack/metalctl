@@ -49,7 +49,7 @@ func newProjectCmd(c *config) *cobra.Command {
 	cmds.listCmd.Flags().StringP("tenant", "", "", "tenant of this project.")
 	must(viper.BindPFlags(cmds.listCmd.Flags()))
 
-	return cmds.RootCmd()
+	return cmds.BuildRootCmd()
 }
 
 type projectCRUD struct {

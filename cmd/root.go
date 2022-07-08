@@ -245,7 +245,16 @@ type defaultCmds struct {
 	editCmd     *cobra.Command
 }
 
-func (d *defaultCmds) RootCmd() *cobra.Command {
+func (d *defaultCmds) BuildRootCmd() *cobra.Command {
+	d.rootCmd.AddCommand(
+		d.listCmd,
+		d.describeCmd,
+		d.createCmd,
+		d.updateCmd,
+		d.deleteCmd,
+		d.applyCmd,
+		d.editCmd,
+	)
 	return d.rootCmd
 }
 
@@ -358,16 +367,6 @@ Example:
 	if c.updateRequestFromCLI != nil {
 		cmds.updateCmd.Flags().String("file", "", helpText("update"))
 	}
-
-	cmds.rootCmd.AddCommand(
-		cmds.listCmd,
-		cmds.describeCmd,
-		cmds.createCmd,
-		cmds.updateCmd,
-		cmds.deleteCmd,
-		cmds.applyCmd,
-		cmds.editCmd,
-	)
 
 	return cmds
 }

@@ -69,7 +69,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 
-	root := cmds.RootCmd()
+	root := cmds.BuildRootCmd()
 
 	root.AddCommand(partitionCapacityCmd)
 
