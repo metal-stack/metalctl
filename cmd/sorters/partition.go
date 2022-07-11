@@ -1,8 +1,11 @@
 package sorters
 
 import (
+	"sort"
+
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/multisort"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	p "github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
@@ -35,14 +38,16 @@ func PartitionCapacitySorter() *multisort.Sorter[*models.V1PartitionCapacity] {
 		"description": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
 			return multisort.Compare(a.Description, b.Description, descending)
 		},
-		// TODO: make this work
-		// "servers": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
-		// 	// sort.SliceStable(pc.Servers, func(i, j int) bool { return *pc.Servers[i].Size < *pc.Servers[j].Size })
-		// 	return multisort.Compare(a.Servers, b.Description, descending)
-		// },
 	})
 }
 
 func PartitionCapacitySort(data []*models.V1PartitionCapacity) error {
+	for _, pc := range data {
+		pc := pc
+		sort.SliceStable(pc.Servers, func(i, j int) bool {
+			return pointer.Deref(pointer.Deref(pc.Servers[i]).Size) < pointer.Deref(pointer.Deref(pc.Servers[j]).Size)
+		})
+	}
+
 	return PartitionCapacitySorter().SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)
 }

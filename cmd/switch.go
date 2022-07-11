@@ -89,7 +89,7 @@ func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
 		return nil, err
 	}
 
-	err = sorters.SwitchSorter().SortBy(resp.Payload)
+	err = sorters.SwitchSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return defaultToYAMLPrinter().Print(result)
+	return newPrinterFromCLI().Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {

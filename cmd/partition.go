@@ -157,7 +157,7 @@ func (c *config) partitionCapacity() error {
 		return err
 	}
 
-	err = sorters.PartitionCapacitySorter().SortBy(resp.Capacity)
+	err = sorters.PartitionCapacitySort(resp.Capacity)
 	if err != nil {
 		return err
 	}

@@ -1194,7 +1194,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISort(resp.Payload)
 	if err != nil {
 		return err
 	}
