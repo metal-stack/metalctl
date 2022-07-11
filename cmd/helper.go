@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/user"
@@ -18,7 +16,6 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"gopkg.in/yaml.v3"
 
 	"github.com/spf13/viper"
 )
@@ -127,33 +124,6 @@ func splitNetwork(value string) (string, bool, error) {
 // 	}
 // 	return string(result)
 // }
-
-// readFrom will either read from stdin (-) or a file path an marshall from yaml to data
-func readFrom(from string, data interface{}, f func(target interface{})) error {
-	var reader io.Reader
-	var err error
-	switch from {
-	case "-":
-		reader = os.Stdin
-	default:
-		reader, err = os.Open(from)
-		if err != nil {
-			return fmt.Errorf("unable to open %s %w", from, err)
-		}
-	}
-	dec := yaml.NewDecoder(reader)
-	for {
-		err := dec.Decode(data)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("decode error: %w", err)
-		}
-		f(data)
-	}
-	return nil
-}
 
 const cloudContext = "cloudctl"
 
