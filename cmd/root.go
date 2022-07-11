@@ -227,7 +227,7 @@ type defaultCmdsConfig[C any, U any, R any] struct {
 	aliases          []string
 
 	createRequestFromCLI func() (C, error)
-	updateRequestFromCLI func() (U, error)
+	updateRequestFromCLI func(args []string) (U, error)
 
 	availableSortKeys []string
 
@@ -305,7 +305,7 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			Short: fmt.Sprintf("updates the %s", c.singular),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if c.updateRequestFromCLI != nil && !viper.IsSet("file") {
-					rq, err := c.updateRequestFromCLI()
+					rq, err := c.updateRequestFromCLI(args)
 					if err != nil {
 						return err
 					}
@@ -371,9 +371,7 @@ Example:
 
 	if len(c.availableSortKeys) > 0 {
 		cmds.listCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(c.availableSortKeys, "|")))
-		must(cmds.listCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			return c.availableSortKeys, cobra.ShellCompDirectiveNoFileComp
-		}))
+		must(cmds.listCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(c.availableSortKeys, cobra.ShellCompDirectiveNoFileComp)))
 	}
 
 	return cmds

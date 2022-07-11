@@ -24,7 +24,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 	w := partitionCmd{
 		c:          c.client,
 		driver:     c.driver,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{c: c.client}),
+		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{Client: c.client}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
@@ -75,11 +75,11 @@ func newPartitionCmd(c *config) *cobra.Command {
 }
 
 type partitionCRUD struct {
-	c metalgo.Client
+	metalgo.Client
 }
 
 func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.c.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
+	resp, err := c.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
-	resp, err := c.c.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
+	resp, err := c.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.c.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
+	resp, err := c.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.c.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
+	resp, err := c.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		var r *partition.CreatePartitionConflict
 		if errors.As(err, &r) {
@@ -124,7 +124,7 @@ func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1Pa
 }
 
 func (c partitionCRUD) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.c.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
+	resp, err := c.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

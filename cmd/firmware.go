@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"fmt"
-
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+// TODO: API responses are much different from the rest and it does not work well with generic cli
 
 type firmwareTask int
 
@@ -160,10 +161,12 @@ func (c *config) manageFirmware(task firmwareTask, kind metalgo.FirmwareKind, ar
 	var err error
 	switch task {
 	case upload:
-		if len(args) < 1 {
-			return fmt.Errorf("no firmware file given")
+		var file string
+		file, err = genericcli.GetExactlyOneArg(args)
+		if err != nil {
+			return err
 		}
-		_, err = c.driver.UploadFirmware(kind, vendor, board, revision, args[0])
+		_, err = c.driver.UploadFirmware(kind, vendor, board, revision, file)
 	case remove:
 		_, err = c.driver.RemoveFirmware(kind, vendor, board, revision)
 	}
