@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"github.com/metal-stack/metal-go/api/client/size"
 	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -93,7 +92,7 @@ func (c sizeImageConstraintCRUD) Delete(id string) (*models.V1SizeImageConstrain
 func (c sizeImageConstraintCRUD) Create(rq *models.V1SizeImageConstraintCreateRequest) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.Sizeimageconstraint().CreateSizeImageConstraint(sizemodel.NewCreateSizeImageConstraintParams().WithBody(rq), nil)
 	if err != nil {
-		var r *size.CreateSizeConflict
+		var r *sizemodel.CreateSizeImageConstraintConflict
 		if errors.As(err, &r) {
 			return nil, genericcli.AlreadyExistsError()
 		}
