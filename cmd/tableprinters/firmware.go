@@ -6,7 +6,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 )
 
-func FirmwareTable(data *models.V1FirmwaresResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) FirmwareTable(data *models.V1FirmwaresResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
 		rows   [][]string

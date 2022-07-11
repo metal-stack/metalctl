@@ -9,7 +9,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func SwitchTable(data []*models.V1SwitchResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -73,7 +73,7 @@ type SwitchDetail struct {
 	*models.V1SwitchResponse
 }
 
-func SwitchDetailTable(data []*SwitchDetail, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SwitchDetailTable(data []*SwitchDetail, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Partition", "Rack", "Switch", "Port", "Machine", "VNI-Filter", "CIDR-Filter"}
 		rows   [][]string

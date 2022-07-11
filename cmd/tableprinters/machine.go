@@ -11,7 +11,7 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 )
 
-func MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -107,7 +107,7 @@ func MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]st
 	return header, rows, nil
 }
 
-func MachineIPMITable(data []*models.V1MachineIPMIResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -196,7 +196,7 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	return short, wide
 }
 
-func MachineLogsTable(data []*models.V1MachineProvisioningEvent, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEvent, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Time", "Event", "Message"}
 		rows   [][]string
@@ -206,12 +206,12 @@ func MachineLogsTable(data []*models.V1MachineProvisioningEvent, wide bool) ([]s
 		rows = append(rows, []string{i.Time.String(), pointer.Deref(i.Event), i.Message})
 	}
 
-	// TODO: make this available
-	// m.table.SetAutoWrapText(false)
+	t.t.GetTable().SetAutoWrapText(false)
+
 	return header, rows, nil
 }
 
-func MachineIssuesTable(data api.MachineIssues, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -300,6 +300,8 @@ func MachineIssuesTable(data api.MachineIssues, wide bool) ([]string, [][]string
 			rows = append(rows, []string{id, power, allocated, lockEmoji, lockDesc, statusEmoji, lastEventEmoji, when, strings.Join(issues, "\n")})
 		}
 	}
+
+	t.t.GetTable().SetAutoWrapText(false)
 
 	return header, rows, nil
 }

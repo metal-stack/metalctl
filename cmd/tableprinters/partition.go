@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func PartitionTable(data []*models.V1PartitionResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Name", "Description"}
 		rows   [][]string
@@ -21,7 +21,7 @@ func PartitionTable(data []*models.V1PartitionResponse, wide bool) ([]string, []
 	return header, rows, nil
 }
 
-func PartitionCapacityTable(data []*models.V1PartitionCapacity, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Partition", "Size", "Total", "Free", "Allocated", "Other", "Faulty"}
 		rows   [][]string

@@ -30,16 +30,19 @@ func newPrinterFromCLI() genericcli.Printer {
 	case "json":
 		printer = genericcli.NewJSONPrinter()
 	case "table", "wide", "markdown":
+		tp := tableprinters.New()
 		cfg := &genericcli.TablePrinterConfig{
-			ToHeaderAndRows: tableprinters.ToHeaderAndRows,
+			ToHeaderAndRows: tp.ToHeaderAndRows,
 			Wide:            format == "wide",
 			Markdown:        format == "markdown",
 			NoHeaders:       viper.GetBool("no-headers"),
 		}
-		printer, err = genericcli.NewTablePrinter(cfg)
+		tablePrinter, err := genericcli.NewTablePrinter(cfg)
 		if err != nil {
 			log.Fatalf("unable to initialize printer: %v", err)
 		}
+		tp.SetPrinter(tablePrinter)
+		printer = tablePrinter
 	case "template":
 		printer, err = genericcli.NewTemplatePrinter(viper.GetString("template"))
 		if err != nil {

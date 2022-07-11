@@ -4,7 +4,7 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 )
 
-func ContextTable(data *api.Contexts, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) ContextTable(data *api.Contexts, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Name", "API URL", "Issuer URL"}
 		rows   [][]string

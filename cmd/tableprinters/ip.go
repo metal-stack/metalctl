@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/tag"
 )
 
-func IPTable(data []*models.V1IPResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) IPTable(data []*models.V1IPResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)

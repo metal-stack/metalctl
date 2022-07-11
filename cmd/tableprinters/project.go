@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 )
 
-func ProjectTable(data []*models.V1ProjectResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) ProjectTable(data []*models.V1ProjectResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
 		rows   [][]string

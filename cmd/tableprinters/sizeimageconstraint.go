@@ -5,7 +5,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func SizeImageConstraintTable(data []*models.V1SizeImageConstraintResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SizeImageConstraintTable(data []*models.V1SizeImageConstraintResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Name", "Description", "Image", "Constraint"}
 		rows   [][]string

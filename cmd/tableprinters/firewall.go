@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func FirewallTable(data []*models.V1FirewallResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) FirewallTable(data []*models.V1FirewallResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Age", "Hostname", "Project", "Networks", "IPs", "Partition"}
 		rows   [][]string

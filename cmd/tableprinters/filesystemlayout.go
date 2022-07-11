@@ -11,7 +11,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func FSLTable(data []*models.V1FilesystemLayoutResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Description", "Filesystems", "Sizes", "Images"}
 		rows   [][]string
@@ -39,7 +39,7 @@ func FSLTable(data []*models.V1FilesystemLayoutResponse, wide bool) ([]string, [
 		rows = append(rows, []string{pointer.Deref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
 	}
 
-	// TODO: make this available:
-	// m.table.SetAutoWrapText(false)
+	t.t.GetTable().SetAutoWrapText(false)
+
 	return header, rows, nil
 }

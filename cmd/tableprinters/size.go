@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
 		rows   [][]string
@@ -33,7 +33,7 @@ func SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, 
 	return header, rows, nil
 }
 
-func SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Name", "Match", "CPU Constraint", "Memory Constraint", "Storage Constraint"}
 		rows   [][]string
@@ -57,9 +57,8 @@ func SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wide bool) ([]string
 		rows = append(rows, []string{*d.Name, sizeMatch, cpu, memory, storage})
 	}
 
-	// TODO: make this available
-	// m.table.SetAutoWrapText(false)
-	// m.table.SetColMinWidth(3, 40)
+	t.t.GetTable().SetAutoWrapText(false)
+	t.t.GetTable().SetColMinWidth(3, 40)
 
 	return header, rows, nil
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
 		rows   [][]string

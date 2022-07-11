@@ -16,7 +16,7 @@ type network struct {
 
 type networks []*network
 
-func NetworkTable(data []*models.V1NetworkResponse, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) NetworkTable(data []*models.V1NetworkResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
