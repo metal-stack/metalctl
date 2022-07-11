@@ -271,7 +271,7 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			Aliases: []string{"ls"},
 			Short:   fmt.Sprintf("list all %s", c.plural),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ListAndPrint(NewPrinterFromCLI())
+				return c.gcli.ListAndPrint(newPrinterFromCLI())
 			},
 			PreRun: bindPFlags,
 		},
@@ -329,7 +329,7 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			Use:   "apply",
 			Short: fmt.Sprintf("applies one or more %s from a given file", c.plural),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), NewPrinterFromCLI())
+				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), newPrinterFromCLI())
 			},
 			PreRun: bindPFlags,
 		},

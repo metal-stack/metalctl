@@ -111,5 +111,5 @@ func (c *config) contextList() error {
 	if err != nil {
 		return err
 	}
-	return NewPrinterFromCLI().Print(ctxs)
+	return newPrinterFromCLI().Print(ctxs)
 }

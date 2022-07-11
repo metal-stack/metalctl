@@ -6,7 +6,6 @@ import (
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/network"
-	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -19,6 +18,7 @@ type networkCmd struct {
 	c      metalgo.Client
 	driver *metalgo.Driver
 	*genericcli.GenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]
+	childCLI *genericcli.GenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse]
 }
 
 func newNetworkCmd(c *config) *cobra.Command {
@@ -26,6 +26,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		c:          c.client,
 		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](networkCRUD{Client: c.client}),
+		childCLI:   genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{Client: c.client}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
@@ -43,7 +44,34 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "allocate",
 		Short: "allocate a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkAllocate()
+			if !viper.IsSet("file") {
+				shared := viper.GetBool("shared")
+				nat := false
+				var destinationPrefixes []string
+				if viper.GetBool("dmz") {
+					shared = true
+					destinationPrefixes = []string{"0.0.0.0/0"}
+					nat = true
+				}
+
+				labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+				if err != nil {
+					return err
+				}
+
+				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
+					Description:         viper.GetString("description"),
+					Name:                viper.GetString("name"),
+					Partitionid:         viper.GetString("partition"),
+					Projectid:           viper.GetString("project"),
+					Shared:              shared,
+					Labels:              labels,
+					Destinationprefixes: destinationPrefixes,
+					Nat:                 nat,
+				}, defaultToYAMLPrinter())
+			}
+
+			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -51,7 +79,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkFree(args)
+			return w.childCLI.DeleteAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
@@ -187,7 +215,7 @@ func (c networkCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
 func (c networkCRUD) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
 	resp, err := c.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
 	if err != nil {
-		var r *partition.CreatePartitionConflict
+		var r *network.CreateNetworkConflict
 		if errors.As(err, &r) {
 			return nil, genericcli.AlreadyExistsError()
 		}
@@ -229,71 +257,45 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 	}, nil
 }
 
+type networkChildCRUD struct {
+	metalgo.Client
+}
+
+func (c networkChildCRUD) Get(id string) (*models.V1NetworkResponse, error) {
+	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+}
+
+func (c networkChildCRUD) List() ([]*models.V1NetworkResponse, error) {
+	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+}
+
+func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
+	resp, err := c.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c networkChildCRUD) Create(rq *models.V1NetworkAllocateRequest) (*models.V1NetworkResponse, error) {
+	resp, err := c.Network().AllocateNetwork(network.NewAllocateNetworkParams().WithBody(rq), nil)
+	if err != nil {
+		var r *network.AllocateNetworkConflict
+		if errors.As(err, &r) {
+			return nil, genericcli.AlreadyExistsError()
+		}
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
+	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+}
+
 // non-generic command handling
-
-func (c *networkCmd) networkAllocate() error {
-	// TODO: replace with generic cli and only implement create and delete
-	var ncrs []metalgo.NetworkAllocateRequest
-	var ncr metalgo.NetworkAllocateRequest
-	if viper.GetString("file") != "" {
-		err := readFrom(viper.GetString("file"), &ncr, func(data interface{}) {
-			doc := data.(*metalgo.NetworkAllocateRequest)
-			ncrs = append(ncrs, *doc)
-		})
-		if err != nil {
-			return err
-		}
-		if len(ncrs) != 1 {
-			return fmt.Errorf("network allocate error: more or less than one network given:%d", len(ncrs))
-		}
-		ncr = ncrs[0]
-	} else {
-		shared := viper.GetBool("shared")
-		nat := false
-		var destinationPrefixes []string
-		if viper.GetBool("dmz") {
-			shared = true
-			destinationPrefixes = []string{"0.0.0.0/0"}
-			nat = true
-		}
-
-		labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
-		if err != nil {
-			return err
-		}
-
-		ncr = metalgo.NetworkAllocateRequest{
-			Description:         viper.GetString("description"),
-			Name:                viper.GetString("name"),
-			PartitionID:         viper.GetString("partition"),
-			ProjectID:           viper.GetString("project"),
-			Shared:              shared,
-			Labels:              labels,
-			Destinationprefixes: destinationPrefixes,
-			Nat:                 nat,
-		}
-	}
-	resp, err := c.driver.NetworkAllocate(&ncr)
-	if err != nil {
-		return fmt.Errorf("network allocate error:%w", err)
-	}
-
-	return defaultToYAMLPrinter().Print(resp.Network)
-}
-
-func (c *networkCmd) networkFree(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.c.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
-	if err != nil {
-		return fmt.Errorf("network free error:%w", err)
-	}
-
-	return defaultToYAMLPrinter().Print(resp)
-}
 
 func (c *config) networkPrefixAdd(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)

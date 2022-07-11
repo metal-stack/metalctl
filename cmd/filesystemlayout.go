@@ -144,7 +144,7 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -160,5 +160,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp)
 }

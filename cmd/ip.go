@@ -226,5 +226,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return NewPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp)
 }

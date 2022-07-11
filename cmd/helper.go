@@ -23,16 +23,33 @@ import (
 	"github.com/spf13/viper"
 )
 
-// NewPrinterFromCLI returns a suitable stdout printer for the given format
-func NewPrinterFromCLI() genericcli.Printer {
-	printer, err := newPrinter(
-		viper.GetString("output-format"),
-		viper.GetString("order"),
-		viper.GetString("template"),
-		viper.GetBool("no-headers"),
-	)
-	if err != nil {
-		log.Fatalf("unable to initialize printer:%v", err)
+func newPrinterFromCLI() genericcli.Printer {
+	var printer genericcli.Printer
+	var err error
+
+	switch format := viper.GetString("output-format"); format {
+	case "yaml":
+		printer = genericcli.NewYAMLPrinter()
+	case "json":
+		printer = genericcli.NewJSONPrinter()
+	case "table", "wide", "markdown":
+		cfg := &genericcli.TablePrinterConfig{
+			ToHeaderAndRows: tableprinters.ToHeaderAndRows,
+			Wide:            format == "wide",
+			Markdown:        format == "markdown",
+			NoHeaders:       viper.GetBool("no-headers"),
+		}
+		printer, err = genericcli.NewTablePrinter(cfg)
+		if err != nil {
+			log.Fatalf("unable to initialize printer: %v", err)
+		}
+	case "template":
+		printer, err = genericcli.NewTemplatePrinter(viper.GetString("template"))
+		if err != nil {
+			log.Fatalf("unable to initialize printer: %v", err)
+		}
+	default:
+		log.Fatalf("unknown output format: %q", format)
 	}
 
 	if viper.IsSet("force-color") {
@@ -43,45 +60,13 @@ func NewPrinterFromCLI() genericcli.Printer {
 			color.NoColor = true
 		}
 	}
+
 	return printer
-}
-
-// NewPrinter returns a suitable stdout printer for the given format
-func newPrinter(format, order, tpl string, noHeaders bool) (genericcli.Printer, error) {
-	var printer genericcli.Printer
-	var err error
-
-	switch format {
-	case "yaml":
-		printer = genericcli.NewYAMLPrinter()
-	case "json":
-		printer = genericcli.NewJSONPrinter()
-	case "table", "wide", "markdown":
-		cfg := &genericcli.TablePrinterConfig{
-			ToHeaderAndRows: tableprinters.ToHeaderAndRows,
-			Wide:            format == "wide",
-			Markdown:        format == "markdown",
-			NoHeaders:       noHeaders,
-		}
-		printer, err = genericcli.NewTablePrinter(cfg)
-		if err != nil {
-			return nil, err
-		}
-	case "template":
-		printer, err = genericcli.NewTemplatePrinter(tpl)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unknown format: %s", format)
-	}
-
-	return printer, nil
 }
 
 func defaultToYAMLPrinter() genericcli.Printer {
 	if viper.IsSet("output-format") {
-		return NewPrinterFromCLI()
+		return newPrinterFromCLI()
 	}
 	return genericcli.NewYAMLPrinter()
 }

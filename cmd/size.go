@@ -147,5 +147,5 @@ func (w *sizeCmd) try() error {
 
 	resp, _ := w.driver.SizeTry(cores, memory, storagesize)
 
-	return NewPrinterFromCLI().Print(resp.Logs)
+	return newPrinterFromCLI().Print(resp.Logs)
 }

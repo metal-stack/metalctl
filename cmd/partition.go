@@ -162,5 +162,5 @@ func (c *config) partitionCapacity() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Capacity)
+	return newPrinterFromCLI().Print(resp.Capacity)
 }
