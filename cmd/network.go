@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -233,6 +232,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 // non-generic command handling
 
 func (c *networkCmd) networkAllocate() error {
+	// TODO: replace with generic cli and only implement create and delete
 	var ncrs []metalgo.NetworkAllocateRequest
 	var ncr metalgo.NetworkAllocateRequest
 	if viper.GetString("file") != "" {
@@ -256,13 +256,19 @@ func (c *networkCmd) networkAllocate() error {
 			destinationPrefixes = []string{"0.0.0.0/0"}
 			nat = true
 		}
+
+		labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+		if err != nil {
+			return err
+		}
+
 		ncr = metalgo.NetworkAllocateRequest{
 			Description:         viper.GetString("description"),
 			Name:                viper.GetString("name"),
 			PartitionID:         viper.GetString("partition"),
 			ProjectID:           viper.GetString("project"),
 			Shared:              shared,
-			Labels:              labelsFromTags(viper.GetStringSlice("labels")),
+			Labels:              labels,
 			Destinationprefixes: destinationPrefixes,
 			Nat:                 nat,
 		}
@@ -271,7 +277,8 @@ func (c *networkCmd) networkAllocate() error {
 	if err != nil {
 		return fmt.Errorf("network allocate error:%w", err)
 	}
-	return output.NewDetailer().Detail(resp.Network)
+
+	return defaultToYAMLPrinter().Print(resp.Network)
 }
 
 func (c *networkCmd) networkFree(args []string) error {
@@ -285,7 +292,7 @@ func (c *networkCmd) networkFree(args []string) error {
 		return fmt.Errorf("network free error:%w", err)
 	}
 
-	return output.NewDetailer().Detail(resp)
+	return defaultToYAMLPrinter().Print(resp)
 }
 
 func (c *config) networkPrefixAdd(args []string) error {
@@ -303,7 +310,7 @@ func (c *config) networkPrefixAdd(args []string) error {
 		return err
 	}
 
-	return output.NewDetailer().Detail(resp.Network)
+	return defaultToYAMLPrinter().Print(resp.Network)
 }
 
 func (c *config) networkPrefixRemove(args []string) error {
@@ -320,5 +327,6 @@ func (c *config) networkPrefixRemove(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.NewDetailer().Detail(resp.Network)
+
+	return defaultToYAMLPrinter().Print(resp.Network)
 }

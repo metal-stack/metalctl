@@ -5,7 +5,6 @@ import (
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/health"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +26,7 @@ func newHealthCmd(c *config) *cobra.Command {
 				}
 			}
 
-			return output.NewDetailer().Detail(resp.Health)
+			return defaultToYAMLPrinter().Print(resp.Health)
 		},
 		PreRun: bindPFlags,
 	}

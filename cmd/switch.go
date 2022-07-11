@@ -9,7 +9,8 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,6 +33,8 @@ func newSwitchCmd(c *config) *cobra.Command {
 		singular:    "switch",
 		plural:      "switches",
 		description: "switch are the leaf switches in the data center that are controlled by metal-stack.",
+
+		availableSortKeys: sorters.SwitchSorter().AvailableKeys(),
 	})
 
 	switchDetailCmd := &cobra.Command{
@@ -86,6 +89,11 @@ func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
 		return nil, err
 	}
 
+	err = sorters.SwitchSorter().SortBy(resp.Payload)
+	if err != nil {
+		return nil, err
+	}
+
 	return resp.Payload, nil
 }
 
@@ -119,7 +127,7 @@ func (c *switchCmd) switchDetail() error {
 		return err
 	}
 
-	result := make([]*models.V1SwitchResponse, 0)
+	var result []*tableprinters.SwitchDetail
 	filter := viper.GetString("filter")
 	for _, s := range resp {
 		partitionID := ""
@@ -129,7 +137,7 @@ func (c *switchCmd) switchDetail() error {
 		if strings.Contains(*s.ID, filter) ||
 			strings.Contains(partitionID, filter) ||
 			strings.Contains(*s.RackID, filter) {
-			result = append(result, s)
+			result = append(result, &tableprinters.SwitchDetail{V1SwitchResponse: s})
 		}
 	}
 
@@ -138,7 +146,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return output.NewDetailer().Detail(result)
+	return defaultToYAMLPrinter().Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -163,5 +171,5 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	return output.NewDetailer().Detail(uresp)
+	return defaultToYAMLPrinter().Print(uresp)
 }

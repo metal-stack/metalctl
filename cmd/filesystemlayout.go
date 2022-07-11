@@ -7,7 +7,6 @@ import (
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -145,7 +144,7 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return output.New().Print(resp)
+	return NewPrinterFromCLI().Print(resp)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -161,5 +160,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return output.New().Print(resp)
+	return NewPrinterFromCLI().Print(resp)
 }

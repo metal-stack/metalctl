@@ -5,14 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 
 	metalgo "github.com/metal-stack/metal-go"
@@ -21,79 +23,67 @@ import (
 	"github.com/spf13/viper"
 )
 
+// NewPrinterFromCLI returns a suitable stdout printer for the given format
+func NewPrinterFromCLI() genericcli.Printer {
+	printer, err := newPrinter(
+		viper.GetString("output-format"),
+		viper.GetString("order"),
+		viper.GetString("template"),
+		viper.GetBool("no-headers"),
+	)
+	if err != nil {
+		log.Fatalf("unable to initialize printer:%v", err)
+	}
+
+	if viper.IsSet("force-color") {
+		enabled := viper.GetBool("force-color")
+		if enabled {
+			color.NoColor = false
+		} else {
+			color.NoColor = true
+		}
+	}
+	return printer
+}
+
+// NewPrinter returns a suitable stdout printer for the given format
+func newPrinter(format, order, tpl string, noHeaders bool) (genericcli.Printer, error) {
+	var printer genericcli.Printer
+	var err error
+
+	switch format {
+	case "yaml":
+		printer = genericcli.NewYAMLPrinter()
+	case "json":
+		printer = genericcli.NewJSONPrinter()
+	case "table", "wide", "markdown":
+		cfg := &genericcli.TablePrinterConfig{
+			ToHeaderAndRows: tableprinters.ToHeaderAndRows,
+			Wide:            format == "wide",
+			Markdown:        format == "markdown",
+			NoHeaders:       noHeaders,
+		}
+		printer, err = genericcli.NewTablePrinter(cfg)
+		if err != nil {
+			return nil, err
+		}
+	case "template":
+		printer, err = genericcli.NewTemplatePrinter(tpl)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown format: %s", format)
+	}
+
+	return printer, nil
+}
+
 func defaultToYAMLPrinter() genericcli.Printer {
 	if viper.IsSet("output-format") {
-		return output.New()
+		return NewPrinterFromCLI()
 	}
 	return genericcli.NewYAMLPrinter()
-}
-
-func atLeastOneViperStringFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetString(flag) != "" {
-			return true
-		}
-	}
-	return false
-}
-
-func atLeastOneViperStringSliceFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if len(viper.GetStringSlice(flag)) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func atLeastOneViperBoolFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetBool(flag) {
-			return true
-		}
-	}
-	return false
-}
-
-func atLeastOneViperInt64FlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetInt64(flag) != 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func viperString(flag string) *string {
-	if viper.GetString(flag) == "" {
-		return nil
-	}
-	value := viper.GetString(flag)
-	return &value
-}
-
-func viperStringSlice(flag string) []string {
-	value := viper.GetStringSlice(flag)
-	if len(value) == 0 {
-		return nil
-	}
-	return value
-}
-
-func viperBool(flag string) *bool {
-	if !viper.GetBool(flag) {
-		return nil
-	}
-	value := viper.GetBool(flag)
-	return &value
-}
-
-func viperInt64(flag string) *int64 {
-	if viper.GetInt64(flag) == 0 {
-		return nil
-	}
-	value := viper.GetInt64(flag)
-	return &value
 }
 
 func parseNetworks(values []string) ([]metalgo.MachineAllocationNetwork, error) {
@@ -153,24 +143,6 @@ func splitNetwork(value string) (string, bool, error) {
 // 	return string(result)
 // }
 
-func labelsFromTags(tags []string) map[string]string {
-	labels := make(map[string]string)
-	for _, tag := range tags {
-		parts := strings.Split(tag, "=")
-		partslen := len(parts)
-		switch partslen {
-		case 1:
-			labels[tag] = "true"
-		case 2:
-			labels[parts[0]] = parts[1]
-		default:
-			values := strings.Join(parts[1:], "")
-			labels[parts[0]] = values
-		}
-	}
-	return labels
-}
-
 // readFrom will either read from stdin (-) or a file path an marshall from yaml to data
 func readFrom(from string, data interface{}, f func(target interface{})) error {
 	var reader io.Reader
@@ -225,18 +197,6 @@ func formatContextName(prefix string, suffix string) string {
 		contextName = fmt.Sprintf("%s-%s", cloudContext, suffix)
 	}
 	return contextName
-}
-
-func annotationsAsMap(annotations []string) (map[string]string, error) {
-	result := make(map[string]string)
-	for _, a := range annotations {
-		parts := strings.Split(strings.TrimSpace(a), "=")
-		if len(parts) != 2 {
-			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
-		}
-		result[parts[0]] = parts[1]
-	}
-	return result, nil
 }
 
 // Prompt the user to given compare text

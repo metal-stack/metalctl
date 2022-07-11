@@ -18,7 +18,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
@@ -761,7 +760,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -775,7 +774,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -789,7 +788,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -803,7 +802,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -936,7 +935,7 @@ func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID,
 		return err
 	}
 
-	return output.New().Print(resp)
+	return NewPrinterFromCLI().Print(resp)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {
@@ -950,7 +949,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -964,7 +963,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -978,7 +977,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -993,7 +992,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -1008,7 +1007,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1033,7 +1032,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 		}
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1058,7 +1057,7 @@ func (c *machineCmd) machineLock(args []string) error {
 		}
 	}
 
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1075,7 +1074,7 @@ func (c *machineCmd) machineReinstall(args []string) error {
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+	return NewPrinterFromCLI().Print(resp.Machine)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
@@ -1085,7 +1084,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp)
+	return NewPrinterFromCLI().Print(resp)
 }
 
 func (c *machineCmd) machineConsole(args []string) error {
@@ -1187,7 +1186,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		hidden := "<hidden>"
 		resp.Machine.Ipmi.Password = &hidden
 
-		return output.NewDetailer().Detail(resp.Machine)
+		return defaultToYAMLPrinter().Print(resp.Machine)
 	}
 
 	resp, err := c.c.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1195,7 +1194,12 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return output.New().Print(resp)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	if err != nil {
+		return err
+	}
+
+	return NewPrinterFromCLI().Print(resp)
 }
 
 func (c *machineCmd) machineIssues() error {
@@ -1376,7 +1380,7 @@ func (c *machineCmd) machineIssues() error {
 		}
 	}
 
-	return output.New().Print(res)
+	return NewPrinterFromCLI().Print(res)
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {

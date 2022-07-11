@@ -3,7 +3,6 @@ package cmd
 import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -138,7 +137,7 @@ func (c *config) firmwareList() error {
 		return err
 	}
 
-	return output.New().Print(resp.Firmwares)
+	return NewPrinterFromCLI().Print(resp.Firmwares)
 }
 
 func (c *config) firmwareUploadBios(args []string) error {

@@ -9,7 +9,6 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/completion"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -272,7 +271,7 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			Aliases: []string{"ls"},
 			Short:   fmt.Sprintf("list all %s", c.plural),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ListAndPrint(output.New())
+				return c.gcli.ListAndPrint(NewPrinterFromCLI())
 			},
 			PreRun: bindPFlags,
 		},
@@ -330,7 +329,7 @@ func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *default
 			Use:   "apply",
 			Short: fmt.Sprintf("applies one or more %s from a given file", c.plural),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), output.New())
+				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), NewPrinterFromCLI())
 			},
 			PreRun: bindPFlags,
 		},

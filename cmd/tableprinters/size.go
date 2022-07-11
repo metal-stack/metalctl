@@ -32,3 +32,34 @@ func SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, 
 
 	return header, rows, nil
 }
+
+func SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wide bool) ([]string, [][]string, error) {
+	var (
+		header = []string{"Name", "Match", "CPU Constraint", "Memory Constraint", "Storage Constraint"}
+		rows   [][]string
+	)
+
+	for _, d := range data {
+		var cpu, memory, storage string
+		for _, cs := range d.Constraints {
+			c := cs.Constraint
+			switch *c.Type {
+			case "cores":
+				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", *c.Min, *c.Max, *cs.Log, *cs.Match)
+			case "memory":
+				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+			case "storage":
+				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+			}
+		}
+		sizeMatch := fmt.Sprintf("%v", *d.Match)
+
+		rows = append(rows, []string{*d.Name, sizeMatch, cpu, memory, storage})
+	}
+
+	// TODO: make this available
+	// m.table.SetAutoWrapText(false)
+	// m.table.SetColMinWidth(3, 40)
+
+	return header, rows, nil
+}

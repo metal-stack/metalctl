@@ -12,7 +12,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -227,5 +226,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return output.New().Print(resp)
+	return NewPrinterFromCLI().Print(resp)
 }

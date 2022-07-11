@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -66,10 +67,13 @@ func newPartitionCmd(c *config) *cobra.Command {
 	cmds.createCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 	cmds.createCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
+	capacitySorter := sorters.PartitionCapacitySorter()
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
+	partitionCapacityCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(capacitySorter.AvailableKeys(), "|")))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(capacitySorter.AvailableKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
 	return cmds.buildRootCmd(partitionCapacityCmd)
 }
@@ -153,5 +157,10 @@ func (c *config) partitionCapacity() error {
 		return err
 	}
 
-	return output.New().Print(resp.Capacity)
+	err = sorters.PartitionCapacitySorter().SortBy(resp.Capacity)
+	if err != nil {
+		return err
+	}
+
+	return NewPrinterFromCLI().Print(resp.Capacity)
 }

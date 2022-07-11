@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -148,5 +147,5 @@ func (w *sizeCmd) try() error {
 
 	resp, _ := w.driver.SizeTry(cores, memory, storagesize)
 
-	return output.New().Print(resp.Logs)
+	return NewPrinterFromCLI().Print(resp.Logs)
 }
