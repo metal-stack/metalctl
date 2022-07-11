@@ -7,6 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -32,12 +33,14 @@ func newFirewallCmd(c *config) *cobra.Command {
 		aliases:     []string{"fw"},
 
 		createRequestFromCLI: w.createRequestFromCLI,
-		validArgsFunc:        c.comp.FirewallListCompletion,
+
+		availableSortKeys: sorters.FirewallSorter().AvailableKeys(),
+		validArgsFunc:     c.comp.FirewallListCompletion,
 	})
 
 	c.addMachineCreateFlags(cmds.createCmd, "firewall")
 
-	cmds.createCmd.Use = "allocate"
+	cmds.createCmd.Aliases = []string{"allocate"}
 
 	cmds.listCmd.Flags().String("id", "", "ID to filter [optional]")
 	cmds.listCmd.Flags().String("partition", "", "partition to filter [optional]")
@@ -54,7 +57,13 @@ func newFirewallCmd(c *config) *cobra.Command {
 	must(cmds.listCmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
 	must(cmds.listCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
-	return cmds.BuildRootCmd()
+	cmds.rootCmd.AddCommand(
+		cmds.listCmd,
+		cmds.describeCmd,
+		cmds.createCmd,
+	)
+
+	return cmds.rootCmd
 }
 
 type firewallCRUD struct {
@@ -82,6 +91,11 @@ func (c firewallCRUD) List() ([]*models.V1FirewallResponse, error) {
 		NicsMacAddresses:   viper.GetStringSlice("mac"),
 		Tags:               viper.GetStringSlice("tags"),
 	}), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.FirewallSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

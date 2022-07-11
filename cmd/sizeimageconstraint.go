@@ -9,6 +9,7 @@ import (
 	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,12 +28,13 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
-		gcli:          w.GenericCLI,
-		singular:      "imageconstraint",
-		plural:        "imageconstraints",
-		description:   "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
-		aliases:       []string{"ic"},
-		validArgsFunc: c.comp.SizeImageConstraintListCompletion,
+		gcli:              w.GenericCLI,
+		singular:          "imageconstraint",
+		plural:            "imageconstraints",
+		description:       "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
+		aliases:           []string{"ic"},
+		availableSortKeys: sorters.SizeImageConstraintSorter().AvailableKeys(),
+		validArgsFunc:     c.comp.SizeImageConstraintListCompletion,
 	})
 
 	tryCmd := &cobra.Command{
@@ -49,11 +51,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	must(tryCmd.MarkFlagRequired("size"))
 	must(tryCmd.MarkFlagRequired("image"))
 
-	root := cmds.BuildRootCmd()
-
-	root.AddCommand(tryCmd)
-
-	return root
+	return cmds.buildRootCmd(tryCmd)
 }
 
 type sizeImageConstraintCRUD struct {
@@ -71,6 +69,11 @@ func (c sizeImageConstraintCRUD) Get(id string) (*models.V1SizeImageConstraintRe
 
 func (c sizeImageConstraintCRUD) List() ([]*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.Sizeimageconstraint().ListSizeImageConstraints(sizemodel.NewListSizeImageConstraintsParams(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.SizeImageConstraintSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

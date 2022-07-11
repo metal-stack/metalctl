@@ -77,7 +77,6 @@ apitoken: "alongtoken"
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with METALCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
-	rootCmd.PersistentFlags().StringP("order", "", "", "order by (comma separated) column(s), possible values: size|id|status|event|when|partition|project")
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
 For property names inspect the output of -o json or -o yaml for reference.
@@ -92,7 +91,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 
 	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
-	must(rootCmd.RegisterFlagCompletionFunc("order", completion.OutputOrderListCompletion))
 
 	c := getConfig(name)
 
@@ -231,6 +229,8 @@ type defaultCmdsConfig[C any, U any, R any] struct {
 	createRequestFromCLI func() (C, error)
 	updateRequestFromCLI func() (U, error)
 
+	availableSortKeys []string
+
 	validArgsFunc func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
 }
 
@@ -245,7 +245,7 @@ type defaultCmds struct {
 	editCmd     *cobra.Command
 }
 
-func (d *defaultCmds) BuildRootCmd() *cobra.Command {
+func (d *defaultCmds) buildRootCmd(additionalCmds ...*cobra.Command) *cobra.Command {
 	d.rootCmd.AddCommand(
 		d.listCmd,
 		d.describeCmd,
@@ -255,6 +255,7 @@ func (d *defaultCmds) BuildRootCmd() *cobra.Command {
 		d.applyCmd,
 		d.editCmd,
 	)
+	d.rootCmd.AddCommand(additionalCmds...)
 	return d.rootCmd
 }
 
@@ -366,6 +367,13 @@ Example:
 
 	if c.updateRequestFromCLI != nil {
 		cmds.updateCmd.Flags().String("file", "", helpText("update"))
+	}
+
+	if len(c.availableSortKeys) > 0 {
+		cmds.listCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(c.availableSortKeys, "|")))
+		must(cmds.listCmd.RegisterFlagCompletionFunc("order", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return c.availableSortKeys, cobra.ShellCompDirectiveNoFileComp
+		}))
 	}
 
 	return cmds

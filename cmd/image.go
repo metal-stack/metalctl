@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,11 +27,12 @@ func newImageCmd(c *config) *cobra.Command {
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
-		gcli:          w.GenericCLI,
-		singular:      "image",
-		plural:        "images",
-		description:   "os images available to be installed on machines.",
-		validArgsFunc: c.comp.ImageListCompletion,
+		gcli:              w.GenericCLI,
+		singular:          "image",
+		plural:            "images",
+		description:       "os images available to be installed on machines.",
+		availableSortKeys: sorters.ImageSorter().AvailableKeys(),
+		validArgsFunc:     c.comp.ImageListCompletion,
 		createRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -52,7 +54,7 @@ func newImageCmd(c *config) *cobra.Command {
 
 	cmds.listCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
 
-	return cmds.BuildRootCmd()
+	return cmds.buildRootCmd()
 }
 
 type imageCRUD struct {
@@ -70,6 +72,11 @@ func (c imageCRUD) Get(id string) (*models.V1ImageResponse, error) {
 
 func (c imageCRUD) List() ([]*models.V1ImageResponse, error) {
 	resp, err := c.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.ImageSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

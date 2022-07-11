@@ -9,6 +9,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,11 +28,12 @@ func newPartitionCmd(c *config) *cobra.Command {
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
-		gcli:          w.GenericCLI,
-		singular:      "partition",
-		plural:        "partitions",
-		description:   "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
-		validArgsFunc: c.comp.PartitionListCompletion,
+		gcli:              w.GenericCLI,
+		singular:          "partition",
+		plural:            "partitions",
+		description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
+		validArgsFunc:     c.comp.PartitionListCompletion,
+		availableSortKeys: sorters.PartitionSorter().AvailableKeys(),
 		createRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -69,11 +71,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 
-	root := cmds.BuildRootCmd()
-
-	root.AddCommand(partitionCapacityCmd)
-
-	return root
+	return cmds.buildRootCmd(partitionCapacityCmd)
 }
 
 type partitionCRUD struct {
@@ -91,6 +89,11 @@ func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
 
 func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
 	resp, err := c.c.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.PartitionSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

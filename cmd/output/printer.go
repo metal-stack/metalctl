@@ -834,7 +834,6 @@ func (m MetalFirewallTablePrinter) Print(data []*models.V1FirewallResponse) {
 
 // Print a MetalSize in a table
 func (m MetalSizeTablePrinter) Print(data []*models.V1SizeResponse) {
-	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	for _, size := range data {
 		id := strValue(size.ID)
 		cs := size.Constraints

@@ -7,6 +7,7 @@ import (
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,6 +31,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		singular:             "project",
 		plural:               "projects",
 		description:          "a project groups multiple networks for a tenant.",
+		availableSortKeys:    sorters.ProjectSorter().AvailableKeys(),
 		validArgsFunc:        c.comp.ProjectListCompletion,
 		createRequestFromCLI: w.createFromCLI,
 	})
@@ -49,7 +51,7 @@ func newProjectCmd(c *config) *cobra.Command {
 	cmds.listCmd.Flags().StringP("tenant", "", "", "tenant of this project.")
 	must(viper.BindPFlags(cmds.listCmd.Flags()))
 
-	return cmds.BuildRootCmd()
+	return cmds.buildRootCmd()
 }
 
 type projectCRUD struct {
@@ -71,6 +73,11 @@ func (c projectCRUD) List() ([]*models.V1ProjectResponse, error) {
 		Name:     viper.GetString("name"),
 		TenantID: viper.GetString("tenant"),
 	}), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.ProjectSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

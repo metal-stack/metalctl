@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,11 +29,12 @@ func newSizeCmd(c *config) *cobra.Command {
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
-		gcli:          w.GenericCLI,
-		singular:      "size",
-		plural:        "sizes",
-		description:   "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
-		validArgsFunc: c.comp.SizeListCompletion,
+		gcli:              w.GenericCLI,
+		singular:          "size",
+		plural:            "sizes",
+		description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
+		availableSortKeys: sorters.SizeSorter().AvailableKeys(),
+		validArgsFunc:     c.comp.SizeListCompletion,
 		createRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -70,12 +72,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	root := cmds.BuildRootCmd()
-
-	root.AddCommand(tryCmd)
-	root.AddCommand(newSizeImageConstraintCmd(c))
-
-	return root
+	return cmds.buildRootCmd(newSizeImageConstraintCmd(c), tryCmd)
 }
 
 type sizeCRUD struct {
@@ -93,6 +90,11 @@ func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
 
 func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.Size().ListSizes(size.NewListSizesParams(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.SizeSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}
