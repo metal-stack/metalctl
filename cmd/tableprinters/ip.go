@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 )
@@ -18,7 +19,6 @@ func (t *TablePrinter) IPTable(data []*models.V1IPResponse, wide bool) ([]string
 		header = []string{"IP", "Allocation UUID", "Description", "Name", "Network", "Project", "Type", "Tags"}
 	}
 
-	data = sortIPs(data)
 	for _, i := range data {
 		ipaddress := pointer.Deref(i.Ipaddress)
 		ipType := pointer.Deref(i.Type)
@@ -37,8 +37,8 @@ func (t *TablePrinter) IPTable(data []*models.V1IPResponse, wide bool) ([]string
 			}
 		}
 
-		name := truncate(i.Name, 30)
-		description := truncate(i.Description, 30)
+		name := genericcli.TruncateMiddle(i.Name, 30)
+		description := genericcli.TruncateMiddle(i.Description, 30)
 		allocationUUID := ""
 		if i.Allocationuuid != nil {
 			allocationUUID = *i.Allocationuuid

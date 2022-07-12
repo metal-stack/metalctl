@@ -7,6 +7,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
 )
@@ -50,7 +51,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		hostname := pointer.Deref(alloc.Hostname)
 		image := pointer.Deref(alloc.Image).Name
 
-		truncatedHostname := truncate(hostname, 30)
+		truncatedHostname := genericcli.TruncateEnd(hostname, 30)
 
 		var nwIPs []string
 		for _, nw := range alloc.Networks {
@@ -270,7 +271,7 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 		}
 		if machine.State != nil && machine.State.Value != nil && *machine.State.Description != "" {
 			lockDescWide = *machine.State.Description
-			lockDesc = truncateEnd(lockDescWide, 30)
+			lockDesc = genericcli.TruncateEnd(lockDescWide, 30)
 		}
 
 		power, powerText := extractPowerState(machine.Ipmi)

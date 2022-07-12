@@ -913,7 +913,7 @@ func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID,
 	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
-		err = Prompt("Do you want to continue? (y/n)", "y")
+		err = genericcli.Prompt()
 		if err != nil {
 			return err
 		}

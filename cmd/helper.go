@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -157,20 +156,6 @@ func formatContextName(prefix string, suffix string) string {
 	return contextName
 }
 
-// Prompt the user to given compare text
-func Prompt(msg, compare string) error {
-	fmt.Print(msg + " ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	if err := scanner.Err(); err != nil {
-		panic(err)
-	}
-	text := scanner.Text()
-	if text != compare {
-		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
-	}
-	return nil
-}
 func searchSSHKey() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
