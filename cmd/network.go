@@ -36,7 +36,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 
 		createRequestFromCLI: w.createRequestFromCLI,
 
-		availableSortKeys: sorters.NetworkSorter().AvailableKeys(),
+		availableSortKeys: sorters.NetworkSortKeys(),
 		validArgsFunc:     c.comp.NetworkListCompletion,
 	})
 

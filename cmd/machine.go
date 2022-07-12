@@ -54,7 +54,7 @@ func newMachineCmd(c *config) *cobra.Command {
 		createRequestFromCLI: w.createRequestFromCLI,
 		updateRequestFromCLI: w.updateRequestFromCLI,
 
-		availableSortKeys: sorters.MachineSorter().AvailableKeys(),
+		availableSortKeys: sorters.MachineSortKeys(),
 		validArgsFunc:     c.comp.MachineListCompletion,
 	})
 

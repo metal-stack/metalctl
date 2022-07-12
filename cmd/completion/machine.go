@@ -1,14 +1,17 @@
 package completion
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/metal-stack/metal-go/api/client/machine"
+	"github.com/spf13/cobra"
+)
 
 func (c *Completion) MachineListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	resp, err := c.driver.MachineList()
+	resp, err := c.client.Machine().ListMachines(machine.NewListMachinesParams(), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 	var names []string
-	for _, m := range resp.Machines {
+	for _, m := range resp.Payload {
 		name := *m.ID
 		if m.Allocation != nil && *m.Allocation.Hostname != "" {
 			name = name + "\t" + *m.Allocation.Hostname

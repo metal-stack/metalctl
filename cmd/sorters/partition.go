@@ -9,36 +9,40 @@ import (
 	p "github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
-func PartitionSorter() *multisort.Sorter[*models.V1PartitionResponse] {
-	return multisort.New(multisort.FieldMap[*models.V1PartitionResponse]{
-		"id": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
-			return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
-		},
-		"name": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
-			return multisort.Compare(a.Name, b.Name, descending)
-		},
-		"description": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
-			return multisort.Compare(a.Description, b.Description, descending)
-		},
-	})
+var partitionSorter = multisort.New(multisort.FieldMap[*models.V1PartitionResponse]{
+	"id": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
+		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+	},
+	"name": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
+		return multisort.Compare(a.Name, b.Name, descending)
+	},
+	"description": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
+		return multisort.Compare(a.Description, b.Description, descending)
+	},
+})
+
+var partitionCapacitySorter = multisort.New(multisort.FieldMap[*models.V1PartitionCapacity]{
+	"id": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
+		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+	},
+	"name": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
+		return multisort.Compare(a.Name, b.Name, descending)
+	},
+	"description": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
+		return multisort.Compare(a.Description, b.Description, descending)
+	},
+})
+
+func PartitionSortKeys() []string {
+	return partitionSorter.AvailableKeys()
 }
 
 func PartitionSort(data []*models.V1PartitionResponse) error {
-	return PartitionSorter().SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)
+	return partitionSorter.SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)
 }
 
-func PartitionCapacitySorter() *multisort.Sorter[*models.V1PartitionCapacity] {
-	return multisort.New(multisort.FieldMap[*models.V1PartitionCapacity]{
-		"id": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
-			return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
-		},
-		"name": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
-			return multisort.Compare(a.Name, b.Name, descending)
-		},
-		"description": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
-			return multisort.Compare(a.Description, b.Description, descending)
-		},
-	})
+func PartitionCapacitySortKeys() []string {
+	return partitionCapacitySorter.AvailableKeys()
 }
 
 func PartitionCapacitySort(data []*models.V1PartitionCapacity) error {
@@ -49,5 +53,5 @@ func PartitionCapacitySort(data []*models.V1PartitionCapacity) error {
 		})
 	}
 
-	return PartitionCapacitySorter().SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)
+	return partitionCapacitySorter.SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)
 }

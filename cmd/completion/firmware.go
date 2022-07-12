@@ -2,6 +2,9 @@ package completion
 
 import (
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/client/firmware"
+	"github.com/metal-stack/metal-go/api/client/machine"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 )
 
@@ -10,13 +13,13 @@ func (c *Completion) FirmwareKindCompletion(cmd *cobra.Command, args []string, t
 }
 
 func (c *Completion) FirmwareVendorCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	resp, err := c.driver.ListFirmwares("", "", "")
+	resp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams(), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	var vendors []string
-	for _, vv := range resp.Firmwares.Revisions {
+	for _, vv := range resp.Payload.Revisions {
 		for v := range vv.VendorRevisions {
 			vendors = append(vendors, v)
 		}
@@ -25,13 +28,13 @@ func (c *Completion) FirmwareVendorCompletion(cmd *cobra.Command, args []string,
 }
 
 func (c *Completion) FirmwareBoardCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	resp, err := c.driver.ListFirmwares("", "", "")
+	resp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams(), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	var boards []string
-	for _, vv := range resp.Firmwares.Revisions {
+	for _, vv := range resp.Payload.Revisions {
 		for _, bb := range vv.VendorRevisions {
 			for b := range bb.BoardRevisions {
 				boards = append(boards, b)
@@ -60,20 +63,20 @@ func (c *Completion) firmwareRevisions(machineID string, kind metalgo.FirmwareKi
 	vendor := ""
 	board := ""
 	if machineID != "" {
-		m, err := c.driver.MachineIPMIGet(machineID)
+		m, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(machineID), nil)
 		if err != nil {
 			return nil, cobra.ShellCompDirectiveError
 		}
-		board = m.Machine.Ipmi.Fru.BoardPartNumber
-		vendor = m.Machine.Ipmi.Fru.BoardMfg
+		board = m.Payload.Ipmi.Fru.BoardPartNumber
+		vendor = m.Payload.Ipmi.Fru.BoardMfg
 	}
-	resp, err := c.driver.ListFirmwares(kind, vendor, board)
+	resp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(pointer.Pointer(string(kind))).WithVendor(&vendor).WithBoard(&board), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	var revisions []string
-	for _, vv := range resp.Firmwares.Revisions {
+	for _, vv := range resp.Payload.Revisions {
 		for _, bb := range vv.VendorRevisions {
 			for _, rr := range bb.BoardRevisions {
 				revisions = append(revisions, rr...)

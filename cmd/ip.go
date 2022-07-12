@@ -43,7 +43,7 @@ func newIPCmd(c *config) *cobra.Command {
 
 		createRequestFromCLI: w.createRequestFromCLI,
 
-		availableSortKeys: sorters.IPSorter().AvailableKeys(),
+		availableSortKeys: sorters.IPSortKeys(),
 		validArgsFunc:     c.comp.IpListCompletion,
 	})
 

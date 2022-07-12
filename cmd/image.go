@@ -31,7 +31,7 @@ func newImageCmd(c *config) *cobra.Command {
 		singular:          "image",
 		plural:            "images",
 		description:       "os images available to be installed on machines.",
-		availableSortKeys: sorters.ImageSorter().AvailableKeys(),
+		availableSortKeys: sorters.ImageSortKeys(),
 		validArgsFunc:     c.comp.ImageListCompletion,
 		createRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{

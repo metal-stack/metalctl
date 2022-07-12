@@ -32,7 +32,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		plural:            "imageconstraints",
 		description:       "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
 		aliases:           []string{"ic"},
-		availableSortKeys: sorters.SizeImageConstraintSorter().AvailableKeys(),
+		availableSortKeys: sorters.SizeImageConstraintSortKeys(),
 		validArgsFunc:     c.comp.SizeImageConstraintListCompletion,
 	})
 

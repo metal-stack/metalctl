@@ -32,7 +32,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		plural:            "filesystemlayouts",
 		description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 		aliases:           []string{"fsl"},
-		availableSortKeys: sorters.FilesystemLayoutSorter().AvailableKeys(),
+		availableSortKeys: sorters.FilesystemLayoutSortKeys(),
 		validArgsFunc:     c.comp.FilesystemLayoutListCompletion,
 	})
 

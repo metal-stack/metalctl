@@ -34,7 +34,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		plural:      "switches",
 		description: "switch are the leaf switches in the data center that are controlled by metal-stack.",
 
-		availableSortKeys: sorters.SwitchSorter().AvailableKeys(),
+		availableSortKeys: sorters.SwitchSortKeys(),
 	})
 
 	switchDetailCmd := &cobra.Command{

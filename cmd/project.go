@@ -31,7 +31,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		singular:             "project",
 		plural:               "projects",
 		description:          "a project groups multiple networks for a tenant.",
-		availableSortKeys:    sorters.ProjectSorter().AvailableKeys(),
+		availableSortKeys:    sorters.ProjectSortKeys(),
 		validArgsFunc:        c.comp.ProjectListCompletion,
 		createRequestFromCLI: w.createFromCLI,
 	})

@@ -34,7 +34,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		plural:            "partitions",
 		description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
 		validArgsFunc:     c.comp.PartitionListCompletion,
-		availableSortKeys: sorters.PartitionSorter().AvailableKeys(),
+		availableSortKeys: sorters.PartitionSortKeys(),
 		createRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -67,13 +67,12 @@ func newPartitionCmd(c *config) *cobra.Command {
 	cmds.createCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 	cmds.createCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
-	capacitySorter := sorters.PartitionCapacitySorter()
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
-	partitionCapacityCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(capacitySorter.AvailableKeys(), "|")))
+	partitionCapacityCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(sorters.PartitionCapacitySortKeys(), "|")))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(capacitySorter.AvailableKeys(), cobra.ShellCompDirectiveNoFileComp)))
+	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(sorters.PartitionCapacitySortKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
 	return cmds.buildRootCmd(partitionCapacityCmd)
 }

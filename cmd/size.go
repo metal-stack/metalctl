@@ -32,7 +32,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		singular:          "size",
 		plural:            "sizes",
 		description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
-		availableSortKeys: sorters.SizeSorter().AvailableKeys(),
+		availableSortKeys: sorters.SizeSortKeys(),
 		validArgsFunc:     c.comp.SizeListCompletion,
 		createRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{

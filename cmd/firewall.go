@@ -34,7 +34,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 
 		createRequestFromCLI: w.createRequestFromCLI,
 
-		availableSortKeys: sorters.FirewallSorter().AvailableKeys(),
+		availableSortKeys: sorters.FirewallSortKeys(),
 		validArgsFunc:     c.comp.FirewallListCompletion,
 	})
 

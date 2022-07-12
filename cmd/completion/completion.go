@@ -6,12 +6,12 @@ import (
 )
 
 type Completion struct {
-	driver *metalgo.Driver
+	client metalgo.Client
 }
 
-func NewCompletion(driver *metalgo.Driver) *Completion {
+func NewCompletion(client metalgo.Client) *Completion {
 	return &Completion{
-		driver: driver,
+		client: client,
 	}
 }
 
