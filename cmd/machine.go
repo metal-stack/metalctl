@@ -1199,7 +1199,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIssues() error {
