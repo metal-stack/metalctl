@@ -357,15 +357,15 @@ Example:
 	`, c.singular, binaryName, command)
 	}
 
-	cmds.applyCmd.Flags().String("file", "", helpText("apply"))
+	cmds.applyCmd.Flags().StringP("file", "f", "", helpText("apply"))
 	must(cmds.applyCmd.MarkFlagRequired("file"))
 
 	if c.createRequestFromCLI != nil {
-		cmds.createCmd.Flags().String("file", "", helpText("create"))
+		cmds.createCmd.Flags().StringP("file", "f", "", helpText("create"))
 	}
 
 	if c.updateRequestFromCLI != nil {
-		cmds.updateCmd.Flags().String("file", "", helpText("update"))
+		cmds.updateCmd.Flags().StringP("file", "f", "", helpText("update"))
 	}
 
 	if len(c.availableSortKeys) > 0 {
