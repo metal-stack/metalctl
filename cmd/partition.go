@@ -16,15 +16,13 @@ import (
 )
 
 type partitionCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]
 }
 
 func newPartitionCmd(c *config) *cobra.Command {
 	w := partitionCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{Client: c.client}),
 	}
 
@@ -54,7 +52,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Use:   "capacity",
 		Short: "show partition capacity",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.partitionCapacity()
+			return w.partitionCapacity()
 		},
 		PreRun: bindPFlags,
 	}
@@ -137,29 +135,19 @@ func (c partitionCRUD) Update(rq *models.V1PartitionUpdateRequest) (*models.V1Pa
 
 // non-generic command handling
 
-func (c *config) partitionCapacity() error {
-	var (
-		pcr  = metalgo.PartitionCapacityRequest{}
-		id   = viper.GetString("id")
-		size = viper.GetString("size")
-	)
-
-	if id != "" {
-		pcr.ID = &id
-	}
-	if size != "" {
-		pcr.Size = &size
-	}
-
-	resp, err := c.driver.PartitionCapacity(pcr)
+func (c *partitionCmd) partitionCapacity() error {
+	resp, err := c.c.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
+		ID:     viper.GetString("id"),
+		Sizeid: viper.GetString("size"),
+	}), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.PartitionCapacitySort(resp.Capacity)
+	err = sorters.PartitionCapacitySort(resp.Payload)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Capacity)
+	return newPrinterFromCLI().Print(resp.Payload)
 }

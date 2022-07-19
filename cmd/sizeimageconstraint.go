@@ -8,21 +8,20 @@ import (
 	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type sizeImageConstraintCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]
 }
 
 func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	w := sizeImageConstraintCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](sizeImageConstraintCRUD{Client: c.client}),
 	}
 
@@ -114,13 +113,15 @@ func (c sizeImageConstraintCRUD) Update(rq *models.V1SizeImageConstraintUpdateRe
 // non-generic command handling
 
 func (c *sizeImageConstraintCmd) try() error {
-	size := viper.GetString("size")
-	image := viper.GetString("image")
-
-	err := c.driver.TrySizeImageConstraint(size, image)
+	_, err := c.c.Sizeimageconstraint().TrySizeImageConstraint(sizemodel.NewTrySizeImageConstraintParams().WithBody(&models.V1SizeImageConstraintTryRequest{
+		Size:  pointer.Pointer(viper.GetString("size")),
+		Image: pointer.Pointer(viper.GetString("image")),
+	}), nil)
 	if err != nil {
 		return err
 	}
+
 	fmt.Println("allocation is possible")
+
 	return nil
 }

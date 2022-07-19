@@ -92,7 +92,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "add <networkid>",
 		Short: "add a prefix to a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkPrefixAdd(args)
+			return w.networkPrefixAdd(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
@@ -101,7 +101,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "remove <networkid>",
 		Short: "remove a prefix from a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.networkPrefixRemove(args)
+			return w.networkPrefixRemove(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
@@ -297,7 +297,7 @@ func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
 
 // non-generic command handling
 
-func (c *config) networkPrefixAdd(args []string) error {
+func (c *networkCmd) networkPrefixAdd(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
@@ -315,7 +315,7 @@ func (c *config) networkPrefixAdd(args []string) error {
 	return defaultToYAMLPrinter().Print(resp.Network)
 }
 
-func (c *config) networkPrefixRemove(args []string) error {
+func (c *networkCmd) networkPrefixRemove(args []string) error {
 	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err

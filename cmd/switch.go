@@ -16,15 +16,13 @@ import (
 )
 
 type switchCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]
 }
 
 func newSwitchCmd(c *config) *cobra.Command {
 	w := switchCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](switchCRUD{Client: c.client}),
 	}
 

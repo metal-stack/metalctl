@@ -13,15 +13,13 @@ import (
 )
 
 type firewallCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]
 }
 
 func newFirewallCmd(c *config) *cobra.Command {
 	w := firewallCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](firewallCRUD{Client: c.client}),
 	}
 

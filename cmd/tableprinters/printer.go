@@ -76,6 +76,8 @@ func (t *TablePrinter) ToHeaderAndRows(data interface{}, wide bool) ([]string, [
 		return t.SizeTable(toArray(d), wide)
 	case []*models.V1SizeResponse:
 		return t.SizeTable(d, wide)
+	case *models.V1SizeMatchingLog:
+		return t.SizeMatchingLogTable(toArray(d), wide)
 	case []*models.V1SizeMatchingLog:
 		return t.SizeMatchingLogTable(d, wide)
 	default:

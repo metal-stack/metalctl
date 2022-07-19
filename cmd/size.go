@@ -15,15 +15,13 @@ import (
 )
 
 type sizeCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
 }
 
 func newSizeCmd(c *config) *cobra.Command {
 	w := sizeCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeCRUD{Client: c.client}),
 	}
 
@@ -67,7 +65,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	cmds.createCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
 	cmds.createCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
 
-	tryCmd.Flags().Int32P("cores", "C", 1, "Cores of the hardware to try")
+	tryCmd.Flags().Int32P("cores", "C", 0, "Cores of the hardware to try")
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
@@ -134,18 +132,39 @@ func (c sizeCRUD) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse
 
 // non-generic command handling
 
-func (w *sizeCmd) try() error {
-	cores := viper.GetInt32("cores")
-	memory, err := humanize.ParseBytes(viper.GetString("memory"))
-	if err != nil {
-		return err
+func (c *sizeCmd) try() error {
+	var (
+		memory int64
+		disks  []*models.V1MachineBlockDevice
+	)
+
+	if viper.IsSet("memory") {
+		m, err := humanize.ParseBytes(viper.GetString("memory"))
+		if err != nil {
+			return err
+		}
+		memory = int64(m)
 	}
-	storagesize, err := humanize.ParseBytes(viper.GetString("storagesize"))
+
+	if viper.IsSet("storagesize") {
+		s, err := humanize.ParseBytes(viper.GetString("storagesize"))
+		if err != nil {
+			return err
+		}
+		disks = append(disks, &models.V1MachineBlockDevice{
+			Name: pointer.Pointer("/dev/trydisk"),
+			Size: pointer.Pointer(int64(s)),
+		})
+	}
+
+	resp, err := c.c.Size().FromHardware(size.NewFromHardwareParams().WithBody(&models.V1MachineHardware{
+		CPUCores: pointer.Pointer(viper.GetInt32("cores")),
+		Memory:   &memory,
+		Disks:    disks,
+	}), nil)
 	if err != nil {
 		return err
 	}
 
-	resp, _ := w.driver.SizeTry(cores, memory, storagesize)
-
-	return newPrinterFromCLI().Print(resp.Logs)
+	return newPrinterFromCLI().Print(resp.Payload)
 }

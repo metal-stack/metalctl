@@ -8,6 +8,7 @@ import (
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/ip"
+	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -24,15 +25,13 @@ type ipAllocateRequest struct {
 }
 
 type ipCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]
 }
 
 func newIPCmd(c *config) *cobra.Command {
 	w := ipCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](ipCRUD{Client: c.client}),
 	}
 
@@ -59,7 +58,7 @@ func newIPCmd(c *config) *cobra.Command {
 	cmds.createCmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
 	cmds.createCmd.Flags().StringP("description", "d", "", "description of the IP to allocate. [optional]")
 	cmds.createCmd.Flags().StringP("name", "n", "", "name of the IP to allocate. [optional]")
-	cmds.createCmd.Flags().StringP("type", "", metalgo.IPTypeEphemeral, "type of the IP to allocate: "+metalgo.IPTypeEphemeral+"|"+metalgo.IPTypeStatic+" [optional]")
+	cmds.createCmd.Flags().StringP("type", "", models.V1IPAllocateRequestTypeEphemeral, "type of the IP to allocate: "+models.V1IPAllocateRequestTypeEphemeral+"|"+models.V1IPAllocateRequestTypeStatic+" [optional]")
 	cmds.createCmd.Flags().StringP("network", "", "", "network from where the IP should be allocated.")
 	cmds.createCmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 	cmds.createCmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
@@ -181,34 +180,34 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 // non-generic command handling
 
 func (c *ipCmd) ipIssues() error {
-	ml, err := c.driver.MachineList()
+	ml, err := c.c.Machine().ListMachines(machine.NewListMachinesParams(), nil)
 	if err != nil {
 		return fmt.Errorf("machine list error:%w", err)
 	}
 
 	machines := make(map[string]*models.V1MachineResponse)
-	for _, m := range ml.Machines {
+	for _, m := range ml.Payload {
 		machines[*m.ID] = m
 	}
 
-	var resp []*models.V1IPResponse
+	var ips []*models.V1IPResponse
 
-	ips, err := c.List()
+	resp, err := c.List()
 	if err != nil {
 		return err
 	}
 
-	for _, ip := range ips {
-		if *ip.Type == metalgo.IPTypeStatic {
+	for _, ip := range resp {
+		if *ip.Type == models.V1IPAllocateRequestTypeStatic {
 			continue
 		}
 		if ip.Description == "autoassigned" && len(ip.Tags) == 0 {
 			ip.Description = fmt.Sprintf("%s, but no tags", ip.Description)
-			resp = append(resp, ip)
+			ips = append(ips, ip)
 		}
 		if strings.HasPrefix(ip.Name, "metallb-") && len(ip.Tags) == 0 {
 			ip.Description = fmt.Sprintf("metallb ip without tags %s", ip.Description)
-			resp = append(resp, ip)
+			ips = append(ips, ip)
 		}
 
 		for _, t := range ip.Tags {
@@ -217,14 +216,14 @@ func (c *ipCmd) ipIssues() error {
 				m := machines[parts[1]]
 				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
 					ip.Description = "bound to unallocated machine"
-					resp = append(resp, ip)
+					ips = append(ips, ip)
 				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
 					ip.Description = "hostname mismatch"
-					resp = append(resp, ip)
+					ips = append(ips, ip)
 				}
 			}
 		}
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(ips)
 }

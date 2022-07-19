@@ -935,7 +935,7 @@ func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID,
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {

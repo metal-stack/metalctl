@@ -14,15 +14,13 @@ import (
 )
 
 type fslCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]
 }
 
 func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	w := fslCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](fslCRUD{Client: c.client}),
 	}
 
@@ -139,12 +137,12 @@ func (c *fslCmd) filesystemTry() error {
 		Image: &image,
 	}
 
-	resp, err := c.driver.FilesystemLayoutTry(try)
+	resp, err := c.c.Filesystemlayout().TryFilesystemLayout(fsmodel.NewTryFilesystemLayoutParams().WithBody(&try), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -155,10 +153,10 @@ func (c *fslCmd) filesystemMatch() error {
 		Filesystemlayout: &fsl,
 	}
 
-	resp, err := c.driver.FilesystemLayoutMatch(match)
+	resp, err := c.c.Filesystemlayout().MatchFilesystemLayout(fsmodel.NewMatchFilesystemLayoutParams().WithBody(&match), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(resp.Payload)
 }

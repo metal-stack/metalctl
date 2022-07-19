@@ -14,15 +14,13 @@ import (
 )
 
 type imageCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	c metalgo.Client
 	*genericcli.GenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]
 }
 
 func newImageCmd(c *config) *cobra.Command {
 	w := imageCmd{
 		c:          c.client,
-		driver:     c.driver,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](imageCRUD{Client: c.client}),
 	}
 
