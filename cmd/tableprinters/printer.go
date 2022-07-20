@@ -5,6 +5,7 @@ import (
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
 )
 
@@ -20,18 +21,18 @@ func (t *TablePrinter) SetPrinter(printer *genericcli.TablePrinter) {
 	t.t = printer
 }
 
-func (t *TablePrinter) ToHeaderAndRows(data interface{}, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {
 	switch d := data.(type) {
 	case []*models.V1MachineResponse:
 		return t.MachineTable(d, wide)
 	case *models.V1MachineResponse:
-		return t.MachineTable(toArray(d), wide)
+		return t.MachineTable(pointer.WrapInSlice(d), wide)
 	case api.MachineIssues:
 		return t.MachineIssuesTable(d, wide)
 	case []*models.V1FirewallResponse:
 		return t.FirewallTable(d, wide)
 	case *models.V1FirewallResponse:
-		return t.FirewallTable(toArray(d), wide)
+		return t.FirewallTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1ImageResponse:
 		return t.ImageTable(d, wide)
 	case []*models.V1PartitionResponse:
@@ -43,48 +44,44 @@ func (t *TablePrinter) ToHeaderAndRows(data interface{}, wide bool) ([]string, [
 	case []*SwitchDetail:
 		return t.SwitchDetailTable(d, wide)
 	case *models.V1NetworkResponse:
-		return t.NetworkTable(toArray(d), wide)
+		return t.NetworkTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1NetworkResponse:
 		return t.NetworkTable(d, wide)
 	case *models.V1IPResponse:
-		return t.IPTable(toArray(d), wide)
+		return t.IPTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1IPResponse:
 		return t.IPTable(d, wide)
 	case *models.V1ProjectResponse:
-		return t.ProjectTable(toArray(d), wide)
+		return t.ProjectTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1ProjectResponse:
 		return t.ProjectTable(d, wide)
 	case []*models.V1MachineIPMIResponse:
 		return t.MachineIPMITable(d, wide)
 	case *models.V1MachineIPMIResponse:
-		return t.MachineIPMITable(toArray(d), wide)
+		return t.MachineIPMITable(pointer.WrapInSlice(d), wide)
 	case []*models.V1MachineProvisioningEvent:
 		return t.MachineLogsTable(d, wide)
 	case *models.V1FirmwaresResponse:
 		return t.FirmwareTable(d, wide)
 	case *models.V1FilesystemLayoutResponse:
-		return t.FSLTable(toArray(d), wide)
+		return t.FSLTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1FilesystemLayoutResponse:
 		return t.FSLTable(d, wide)
 	case *api.Contexts:
 		return t.ContextTable(d, wide)
 	case *models.V1SizeImageConstraintResponse:
-		return t.SizeImageConstraintTable(toArray(d), wide)
+		return t.SizeImageConstraintTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeImageConstraintResponse:
 		return t.SizeImageConstraintTable(d, wide)
 	case *models.V1SizeResponse:
-		return t.SizeTable(toArray(d), wide)
+		return t.SizeTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeResponse:
 		return t.SizeTable(d, wide)
 	case *models.V1SizeMatchingLog:
-		return t.SizeMatchingLogTable(toArray(d), wide)
+		return t.SizeMatchingLogTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeMatchingLog:
 		return t.SizeMatchingLogTable(d, wide)
 	default:
 		return nil, nil, fmt.Errorf("unknown table printer for type: %T", d)
 	}
-}
-
-func toArray[E any](e E) []E {
-	return []E{e}
 }
