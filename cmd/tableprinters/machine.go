@@ -29,7 +29,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			machineID = blue(machineID)
 		}
 
-		status := pointer.Deref(machine.Liveliness)
+		status := pointer.SafeDeref(machine.Liveliness)
 		statusEmoji := ""
 		switch status {
 		case "Alive":
@@ -42,14 +42,14 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			statusEmoji = question
 		}
 
-		alloc := pointer.Deref(machine.Allocation)
-		sizeID := pointer.Deref(pointer.Deref(machine.Size).ID)
-		partitionID := pointer.Deref(pointer.Deref(machine.Partition).ID)
-		project := pointer.Deref(alloc.Project)
-		name := pointer.Deref(alloc.Name)
+		alloc := pointer.SafeDeref(machine.Allocation)
+		sizeID := pointer.SafeDeref(pointer.SafeDeref(machine.Size).ID)
+		partitionID := pointer.SafeDeref(pointer.SafeDeref(machine.Partition).ID)
+		project := pointer.SafeDeref(alloc.Project)
+		name := pointer.SafeDeref(alloc.Name)
 		desc := alloc.Description
-		hostname := pointer.Deref(alloc.Hostname)
-		image := pointer.Deref(alloc.Image).Name
+		hostname := pointer.SafeDeref(alloc.Hostname)
+		image := pointer.SafeDeref(alloc.Image).Name
 
 		truncatedHostname := genericcli.TruncateEnd(hostname, 30)
 
@@ -119,9 +119,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 	}
 
 	for _, machine := range data {
-		id := pointer.Deref(machine.ID)
-		partition := pointer.Deref(pointer.Deref(machine.Partition).ID)
-		size := pointer.Deref(pointer.Deref(machine.Size).ID)
+		id := pointer.SafeDeref(machine.ID)
+		partition := pointer.SafeDeref(pointer.SafeDeref(machine.Partition).ID)
+		size := pointer.SafeDeref(pointer.SafeDeref(machine.Size).ID)
 
 		statusEmoji := ""
 		if machine.Liveliness != nil {
@@ -148,9 +148,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		ipmi := machine.Ipmi
 
 		if ipmi != nil {
-			ipAddress = pointer.Deref(ipmi.Address)
-			mac = pointer.Deref(ipmi.Mac)
-			bmcVersion = pointer.Deref(ipmi.Bmcversion)
+			ipAddress = pointer.SafeDeref(ipmi.Address)
+			mac = pointer.SafeDeref(ipmi.Mac)
+			bmcVersion = pointer.SafeDeref(ipmi.Bmcversion)
 			fru := ipmi.Fru
 
 			if fru != nil {
@@ -165,7 +165,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		biosVersion := ""
 		bios := machine.Bios
 		if bios != nil {
-			biosVersion = pointer.Deref(bios.Version)
+			biosVersion = pointer.SafeDeref(bios.Version)
 		}
 
 		if wide {
@@ -204,7 +204,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 	)
 
 	for _, i := range data {
-		rows = append(rows, []string{i.Time.String(), pointer.Deref(i.Event), i.Message})
+		rows = append(rows, []string{i.Time.String(), pointer.SafeDeref(i.Event), i.Message})
 	}
 
 	t.t.GetTable().SetAutoWrapText(false)
@@ -243,7 +243,7 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 			allocated = "yes"
 		}
 
-		status := pointer.Deref(machine.Liveliness)
+		status := pointer.SafeDeref(machine.Liveliness)
 		statusEmoji := ""
 		switch status {
 		case "Alive":

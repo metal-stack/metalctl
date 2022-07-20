@@ -13,7 +13,7 @@ func (t *TablePrinter) SizeImageConstraintTable(data []*models.V1SizeImageConstr
 
 	for _, size := range data {
 		for i, c := range size.Constraints.Images {
-			rows = append(rows, []string{pointer.Deref(size.ID), size.Name, size.Description, i, c})
+			rows = append(rows, []string{pointer.SafeDeref(size.ID), size.Name, size.Description, i, c})
 		}
 	}
 

@@ -11,7 +11,7 @@ import (
 
 var partitionSorter = multisort.New(multisort.FieldMap[*models.V1PartitionResponse]{
 	"id": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+		return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
 	},
 	"name": func(a, b *models.V1PartitionResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)
@@ -23,7 +23,7 @@ var partitionSorter = multisort.New(multisort.FieldMap[*models.V1PartitionRespon
 
 var partitionCapacitySorter = multisort.New(multisort.FieldMap[*models.V1PartitionCapacity]{
 	"id": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+		return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
 	},
 	"name": func(a, b *models.V1PartitionCapacity, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)
@@ -49,7 +49,7 @@ func PartitionCapacitySort(data []*models.V1PartitionCapacity) error {
 	for _, pc := range data {
 		pc := pc
 		sort.SliceStable(pc.Servers, func(i, j int) bool {
-			return pointer.Deref(pointer.Deref(pc.Servers[i]).Size) < pointer.Deref(pointer.Deref(pc.Servers[j]).Size)
+			return pointer.SafeDeref(pointer.SafeDeref(pc.Servers[i]).Size) < pointer.SafeDeref(pointer.SafeDeref(pc.Servers[j]).Size)
 		})
 	}
 

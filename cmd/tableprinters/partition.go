@@ -15,7 +15,7 @@ func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide b
 	)
 
 	for _, p := range data {
-		rows = append(rows, []string{pointer.Deref(p.ID), p.Name, p.Description})
+		rows = append(rows, []string{pointer.SafeDeref(p.ID), p.Name, p.Description})
 	}
 
 	return header, rows, nil
@@ -37,7 +37,7 @@ func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity
 		pc := pc
 
 		for _, c := range pc.Servers {
-			id := pointer.Deref(c.Size)
+			id := pointer.SafeDeref(c.Size)
 
 			allocated := fmt.Sprintf("%d", *c.Allocated)
 			total := fmt.Sprintf("%d", *c.Total)

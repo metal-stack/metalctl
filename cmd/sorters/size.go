@@ -8,7 +8,7 @@ import (
 
 var sizeSorter = multisort.New(multisort.FieldMap[*models.V1SizeResponse]{
 	"id": func(a, b *models.V1SizeResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+		return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
 	},
 	"name": func(a, b *models.V1SizeResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)

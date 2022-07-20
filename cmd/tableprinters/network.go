@@ -55,7 +55,7 @@ func (t *TablePrinter) NetworkTable(data []*models.V1NetworkResponse, wide bool)
 }
 
 func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string {
-	id := fmt.Sprintf("%s%s", prefix, pointer.Deref(n.ID))
+	id := fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(n.ID))
 
 	prefixes := strings.Join(n.Prefixes, ",")
 	flag := false

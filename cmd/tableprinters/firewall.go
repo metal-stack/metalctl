@@ -15,10 +15,10 @@ func (t *TablePrinter) FirewallTable(data []*models.V1FirewallResponse, wide boo
 	)
 
 	for _, firewall := range data {
-		partition := pointer.Deref(pointer.Deref(firewall.Partition).ID)
-		alloc := pointer.Deref(firewall.Allocation)
-		project := pointer.Deref(alloc.Project)
-		hostname := pointer.Deref(alloc.Hostname)
+		partition := pointer.SafeDeref(pointer.SafeDeref(firewall.Partition).ID)
+		alloc := pointer.SafeDeref(firewall.Allocation)
+		project := pointer.SafeDeref(alloc.Project)
+		hostname := pointer.SafeDeref(alloc.Hostname)
 
 		var nwIPs []string
 		var nws []string

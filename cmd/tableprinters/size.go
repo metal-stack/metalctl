@@ -27,7 +27,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			}
 		}
 
-		rows = append(rows, []string{pointer.Deref(size.ID), size.Name, size.Description, cpu, memory, storage})
+		rows = append(rows, []string{pointer.SafeDeref(size.ID), size.Name, size.Description, cpu, memory, storage})
 	}
 
 	return header, rows, nil

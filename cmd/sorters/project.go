@@ -8,7 +8,7 @@ import (
 
 var projectSorter = multisort.New(multisort.FieldMap[*models.V1ProjectResponse]{
 	"id": func(a, b *models.V1ProjectResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.Meta).ID, p.Deref(b.Meta).ID, descending)
+		return multisort.Compare(p.SafeDeref(a.Meta).ID, p.SafeDeref(b.Meta).ID, descending)
 	},
 	"name": func(a, b *models.V1ProjectResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)

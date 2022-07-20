@@ -18,7 +18,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 
 	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	for _, image := range data {
-		id := pointer.Deref(image.ID)
+		id := pointer.SafeDeref(image.ID)
 		features := strings.Join(image.Features, ",")
 		name := image.Name
 		description := image.Description

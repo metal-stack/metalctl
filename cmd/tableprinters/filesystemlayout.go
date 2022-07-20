@@ -36,7 +36,7 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 			return nil, nil, err
 		}
 
-		rows = append(rows, []string{pointer.Deref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
+		rows = append(rows, []string{pointer.SafeDeref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
 	}
 
 	t.t.GetTable().SetAutoWrapText(false)

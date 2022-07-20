@@ -20,9 +20,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 	}
 
 	for _, s := range data {
-		id := pointer.Deref(s.ID)
-		partition := pointer.Deref(pointer.Deref(s.Partition).ID)
-		rack := pointer.Deref(s.RackID)
+		id := pointer.SafeDeref(s.ID)
+		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
+		rack := pointer.SafeDeref(s.RackID)
 
 		syncAgeStr := ""
 		syncDurStr := ""

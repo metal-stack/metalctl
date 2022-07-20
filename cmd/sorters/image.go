@@ -10,7 +10,7 @@ import (
 
 var imageSorter = multisort.New(multisort.FieldMap[*models.V1ImageResponse]{
 	"id": func(a, b *models.V1ImageResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+		return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
 	},
 	"name": func(a, b *models.V1ImageResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)
@@ -22,7 +22,7 @@ var imageSorter = multisort.New(multisort.FieldMap[*models.V1ImageResponse]{
 		return multisort.Compare(a.Classification, b.Classification, descending)
 	},
 	"expiration": func(a, b *models.V1ImageResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(time.Time(p.Deref(a.ExpirationDate)).Unix(), time.Time(p.Deref(b.ExpirationDate)).Unix(), descending)
+		return multisort.Compare(time.Time(p.SafeDeref(a.ExpirationDate)).Unix(), time.Time(p.SafeDeref(b.ExpirationDate)).Unix(), descending)
 	},
 })
 

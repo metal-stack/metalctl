@@ -11,7 +11,7 @@ import (
 
 var switchSorter = multisort.New(multisort.FieldMap[*models.V1SwitchResponse]{
 	"id": func(a, b *models.V1SwitchResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.Deref(a.ID), p.Deref(b.ID), descending)
+		return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
 	},
 	"name": func(a, b *models.V1SwitchResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(a.Name, b.Name, descending)
@@ -29,7 +29,7 @@ func SwitchSort(data []*models.V1SwitchResponse) error {
 	for _, s := range data {
 		s := s
 		sort.SliceStable(s.Connections, func(i, j int) bool {
-			return pointer.Deref(pointer.Deref((pointer.Deref(s.Connections[i])).Nic).Name) < pointer.Deref(pointer.Deref((pointer.Deref(s.Connections[j])).Nic).Name)
+			return pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[i])).Nic).Name) < pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[j])).Nic).Name)
 		})
 	}
 	return switchSorter.SortBy(data, MustKeysFromCLIOrDefaults(multisort.Keys{{ID: "id"}})...)

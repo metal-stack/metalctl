@@ -20,10 +20,10 @@ func (t *TablePrinter) IPTable(data []*models.V1IPResponse, wide bool) ([]string
 	}
 
 	for _, i := range data {
-		ipaddress := pointer.Deref(i.Ipaddress)
-		ipType := pointer.Deref(i.Type)
-		network := pointer.Deref(i.Networkid)
-		project := pointer.Deref(i.Projectid)
+		ipaddress := pointer.SafeDeref(i.Ipaddress)
+		ipType := pointer.SafeDeref(i.Type)
+		network := pointer.SafeDeref(i.Networkid)
+		project := pointer.SafeDeref(i.Projectid)
 
 		var shortTags []string
 		for _, t := range i.Tags {
