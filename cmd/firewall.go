@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -13,14 +12,14 @@ import (
 )
 
 type firewallCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]
 }
 
 func newFirewallCmd(c *config) *cobra.Command {
 	w := firewallCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](firewallCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](firewallCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
@@ -65,11 +64,11 @@ func newFirewallCmd(c *config) *cobra.Command {
 }
 
 type firewallCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c firewallCRUD) Get(id string) (*models.V1FirewallResponse, error) {
-	resp, err := c.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
+	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +77,7 @@ func (c firewallCRUD) Get(id string) (*models.V1FirewallResponse, error) {
 }
 
 func (c firewallCRUD) List() ([]*models.V1FirewallResponse, error) {
-	resp, err := c.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
+	resp, err := c.client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
 		Sizeid:             viper.GetString("size"),
@@ -106,7 +105,7 @@ func (c firewallCRUD) Delete(_ string) (*models.V1FirewallResponse, error) {
 }
 
 func (c firewallCRUD) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
-	resp, err := c.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
+	resp, err := c.client.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

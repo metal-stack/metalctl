@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -16,14 +15,14 @@ import (
 )
 
 type partitionCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]
 }
 
 func newPartitionCmd(c *config) *cobra.Command {
 	w := partitionCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
@@ -76,11 +75,11 @@ func newPartitionCmd(c *config) *cobra.Command {
 }
 
 type partitionCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
+	resp, err := c.client.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +88,7 @@ func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
-	resp, err := c.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
+	resp, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +102,7 @@ func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
+	resp, err := c.client.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
+	resp, err := c.client.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		var r *partition.CreatePartitionConflict
 		if errors.As(err, &r) {
@@ -125,7 +124,7 @@ func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1Pa
 }
 
 func (c partitionCRUD) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
+	resp, err := c.client.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +135,7 @@ func (c partitionCRUD) Update(rq *models.V1PartitionUpdateRequest) (*models.V1Pa
 // non-generic command handling
 
 func (c *partitionCmd) partitionCapacity() error {
-	resp, err := c.c.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
+	resp, err := c.client.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
 		ID:     viper.GetString("id"),
 		Sizeid: viper.GetString("size"),
 	}), nil)

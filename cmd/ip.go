@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/ip"
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
@@ -25,14 +24,14 @@ type ipAllocateRequest struct {
 }
 
 type ipCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]
 }
 
 func newIPCmd(c *config) *cobra.Command {
 	w := ipCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](ipCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](ipCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
@@ -84,11 +83,11 @@ func newIPCmd(c *config) *cobra.Command {
 }
 
 type ipCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c ipCRUD) Get(id string) (*models.V1IPResponse, error) {
-	resp, err := c.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
+	resp, err := c.client.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func (c ipCRUD) Get(id string) (*models.V1IPResponse, error) {
 }
 
 func (c ipCRUD) List() ([]*models.V1IPResponse, error) {
-	resp, err := c.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
+	resp, err := c.client.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
 		Ipaddress:     viper.GetString("ipaddress"),
 		Name:          viper.GetString("name"),
 		Type:          viper.GetString("type"),
@@ -120,7 +119,7 @@ func (c ipCRUD) List() ([]*models.V1IPResponse, error) {
 }
 
 func (c ipCRUD) Delete(id string) (*models.V1IPResponse, error) {
-	resp, err := c.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
+	resp, err := c.client.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +129,7 @@ func (c ipCRUD) Delete(id string) (*models.V1IPResponse, error) {
 
 func (c ipCRUD) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	if rq.SpecificIP == "" {
-		resp, err := c.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
+		resp, err := c.client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
 		if err != nil {
 			var r *ip.AllocateIPDefault // FIXME: API should define to return conflict
 			if errors.As(err, &r) && r.Code() == http.StatusConflict {
@@ -142,7 +141,7 @@ func (c ipCRUD) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 		return resp.Payload, nil
 	}
 
-	resp, err := c.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
+	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
 		var r *ip.AllocateIPDefault // FIXME: API should define to return conflict
 		if errors.As(err, &r) && r.Code() == http.StatusConflict {
@@ -155,7 +154,7 @@ func (c ipCRUD) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 }
 
 func (c ipCRUD) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
-	resp, err := c.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
+	resp, err := c.client.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +179,7 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 // non-generic command handling
 
 func (c *ipCmd) ipIssues() error {
-	ml, err := c.c.Machine().ListMachines(machine.NewListMachinesParams(), nil)
+	ml, err := c.client.Machine().ListMachines(machine.NewListMachinesParams(), nil)
 	if err != nil {
 		return fmt.Errorf("machine list error:%w", err)
 	}

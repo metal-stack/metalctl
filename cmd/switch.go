@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -16,14 +15,14 @@ import (
 )
 
 type switchCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]
 }
 
 func newSwitchCmd(c *config) *cobra.Command {
 	w := switchCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](switchCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](switchCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
@@ -69,11 +68,11 @@ func newSwitchCmd(c *config) *cobra.Command {
 }
 
 type switchCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c switchCRUD) Get(id string) (*models.V1SwitchResponse, error) {
-	resp, err := c.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
+	resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +81,7 @@ func (c switchCRUD) Get(id string) (*models.V1SwitchResponse, error) {
 }
 
 func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
-	resp, err := c.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
+	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
 }
 
 func (c switchCRUD) Delete(id string) (*models.V1SwitchResponse, error) {
-	resp, err := c.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id), nil)
+	resp, err := c.client.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,7 @@ func (c switchCRUD) Create(rq any) (*models.V1SwitchResponse, error) {
 }
 
 func (c switchCRUD) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
-	resp, err := c.SwitchOperations().UpdateSwitch(switch_operations.NewUpdateSwitchParams().WithBody(rq), nil)
+	resp, err := c.client.SwitchOperations().UpdateSwitch(switch_operations.NewUpdateSwitchParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

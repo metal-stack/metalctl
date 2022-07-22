@@ -9,10 +9,8 @@ type Completion struct {
 	client metalgo.Client
 }
 
-func NewCompletion(client metalgo.Client) *Completion {
-	return &Completion{
-		client: client,
-	}
+func (c *Completion) SetClient(client metalgo.Client) {
+	c.client = client
 }
 
 func OutputFormatListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/dustin/go-humanize"
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -15,14 +14,14 @@ import (
 )
 
 type sizeCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
 }
 
 func newSizeCmd(c *config) *cobra.Command {
 	w := sizeCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
@@ -73,11 +72,11 @@ func newSizeCmd(c *config) *cobra.Command {
 }
 
 type sizeCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
-	resp, err := c.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +85,7 @@ func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
 }
 
 func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
-	resp, err := c.Size().ListSizes(size.NewListSizesParams(), nil)
+	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,7 @@ func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
 }
 
 func (c sizeCRUD) Delete(id string) (*models.V1SizeResponse, error) {
-	resp, err := c.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
+	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,7 @@ func (c sizeCRUD) Delete(id string) (*models.V1SizeResponse, error) {
 }
 
 func (c sizeCRUD) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
-	resp, err := c.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
 		if errors.As(err, &r) {
@@ -122,7 +121,7 @@ func (c sizeCRUD) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse
 }
 
 func (c sizeCRUD) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
-	resp, err := c.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +156,7 @@ func (c *sizeCmd) try() error {
 		})
 	}
 
-	resp, err := c.c.Size().FromHardware(size.NewFromHardwareParams().WithBody(&models.V1MachineHardware{
+	resp, err := c.client.Size().FromHardware(size.NewFromHardwareParams().WithBody(&models.V1MachineHardware{
 		CPUCores: pointer.Pointer(viper.GetInt32("cores")),
 		Memory:   &memory,
 		Disks:    disks,

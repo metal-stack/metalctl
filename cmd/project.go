@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 
-	metalgo "github.com/metal-stack/metal-go"
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -14,14 +13,14 @@ import (
 )
 
 type projectCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]
 }
 
 func newProjectCmd(c *config) *cobra.Command {
 	w := projectCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
@@ -53,11 +52,11 @@ func newProjectCmd(c *config) *cobra.Command {
 }
 
 type projectCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c projectCRUD) Get(id string) (*models.V1ProjectResponse, error) {
-	resp, err := c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
+	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func (c projectCRUD) Get(id string) (*models.V1ProjectResponse, error) {
 }
 
 func (c projectCRUD) List() ([]*models.V1ProjectResponse, error) {
-	resp, err := c.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
+	resp, err := c.client.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
 		ID:       viper.GetString("id"),
 		Name:     viper.GetString("name"),
 		TenantID: viper.GetString("tenant"),
@@ -84,7 +83,7 @@ func (c projectCRUD) List() ([]*models.V1ProjectResponse, error) {
 }
 
 func (c projectCRUD) Delete(id string) (*models.V1ProjectResponse, error) {
-	resp, err := c.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
+	resp, err := c.client.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +92,7 @@ func (c projectCRUD) Delete(id string) (*models.V1ProjectResponse, error) {
 }
 
 func (c projectCRUD) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := c.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
+	resp, err := c.client.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		var r *projectmodel.CreateProjectConflict
 		if errors.As(err, &r) {
@@ -106,7 +105,7 @@ func (c projectCRUD) Create(rq *models.V1ProjectCreateRequest) (*models.V1Projec
 }
 
 func (c projectCRUD) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := c.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +113,7 @@ func (c projectCRUD) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Projec
 	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
 	rq.Meta.Version = resp.Payload.Meta.Version + 1
 
-	updateResp, err := c.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
+	updateResp, err := c.client.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -14,14 +13,14 @@ import (
 )
 
 type imageCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]
 }
 
 func newImageCmd(c *config) *cobra.Command {
 	w := imageCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](imageCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](imageCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
@@ -56,11 +55,11 @@ func newImageCmd(c *config) *cobra.Command {
 }
 
 type imageCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c imageCRUD) Get(id string) (*models.V1ImageResponse, error) {
-	resp, err := c.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
+	resp, err := c.client.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +68,7 @@ func (c imageCRUD) Get(id string) (*models.V1ImageResponse, error) {
 }
 
 func (c imageCRUD) List() ([]*models.V1ImageResponse, error) {
-	resp, err := c.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
+	resp, err := c.client.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,7 @@ func (c imageCRUD) List() ([]*models.V1ImageResponse, error) {
 }
 
 func (c imageCRUD) Delete(id string) (*models.V1ImageResponse, error) {
-	resp, err := c.Image().DeleteImage(image.NewDeleteImageParams().WithID(id), nil)
+	resp, err := c.client.Image().DeleteImage(image.NewDeleteImageParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func (c imageCRUD) Delete(id string) (*models.V1ImageResponse, error) {
 }
 
 func (c imageCRUD) Create(rq *models.V1ImageCreateRequest) (*models.V1ImageResponse, error) {
-	resp, err := c.Image().CreateImage(image.NewCreateImageParams().WithBody(rq), nil)
+	resp, err := c.client.Image().CreateImage(image.NewCreateImageParams().WithBody(rq), nil)
 	if err != nil {
 		var r *image.CreateImageConflict
 		if errors.As(err, &r) {
@@ -105,7 +104,7 @@ func (c imageCRUD) Create(rq *models.V1ImageCreateRequest) (*models.V1ImageRespo
 }
 
 func (c imageCRUD) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageResponse, error) {
-	resp, err := c.Image().UpdateImage(image.NewUpdateImageParams().WithBody(rq), nil)
+	resp, err := c.client.Image().UpdateImage(image.NewUpdateImageParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

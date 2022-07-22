@@ -15,18 +15,16 @@ import (
 )
 
 type networkCmd struct {
-	c      metalgo.Client
-	driver *metalgo.Driver
+	*config
 	*genericcli.GenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]
 	childCLI *genericcli.GenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse]
 }
 
 func newNetworkCmd(c *config) *cobra.Command {
 	w := networkCmd{
-		c:          c.client,
-		driver:     c.driver,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](networkCRUD{Client: c.client}),
-		childCLI:   genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](networkCRUD{config: c}),
+		childCLI:   genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
@@ -165,11 +163,11 @@ func newNetworkCmd(c *config) *cobra.Command {
 }
 
 type networkCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c networkCRUD) Get(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
+	resp, err := c.client.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +176,7 @@ func (c networkCRUD) Get(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c networkCRUD) List() ([]*models.V1NetworkResponse, error) {
-	resp, err := c.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
+	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
 		Partitionid:         viper.GetString("partition"),
@@ -204,7 +202,7 @@ func (c networkCRUD) List() ([]*models.V1NetworkResponse, error) {
 }
 
 func (c networkCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
+	resp, err := c.client.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +211,7 @@ func (c networkCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c networkCRUD) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
+	resp, err := c.client.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.CreateNetworkConflict
 		if errors.As(err, &r) {
@@ -226,7 +224,7 @@ func (c networkCRUD) Create(rq *models.V1NetworkCreateRequest) (*models.V1Networ
 }
 
 func (c networkCRUD) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq), nil)
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +256,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 }
 
 type networkChildCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c networkChildCRUD) Get(id string) (*models.V1NetworkResponse, error) {
@@ -270,7 +268,7 @@ func (c networkChildCRUD) List() ([]*models.V1NetworkResponse, error) {
 }
 
 func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
+	resp, err := c.client.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +277,7 @@ func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c networkChildCRUD) Create(rq *models.V1NetworkAllocateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.Network().AllocateNetwork(network.NewAllocateNetworkParams().WithBody(rq), nil)
+	resp, err := c.client.Network().AllocateNetwork(network.NewAllocateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.AllocateNetworkConflict
 		if errors.As(err, &r) {

@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 
-	metalgo "github.com/metal-stack/metal-go"
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -14,14 +13,14 @@ import (
 )
 
 type fslCmd struct {
-	c metalgo.Client
+	*config
 	*genericcli.GenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]
 }
 
 func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	w := fslCmd{
-		c:          c.client,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](fslCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](fslCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
@@ -70,11 +69,11 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 }
 
 type fslCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c fslCRUD) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
-	resp, err := c.Filesystemlayout().GetFilesystemLayout(fsmodel.NewGetFilesystemLayoutParams().WithID(id), nil)
+	resp, err := c.client.Filesystemlayout().GetFilesystemLayout(fsmodel.NewGetFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +82,7 @@ func (c fslCRUD) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 }
 
 func (c fslCRUD) List() ([]*models.V1FilesystemLayoutResponse, error) {
-	resp, err := c.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
+	resp, err := c.client.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +96,7 @@ func (c fslCRUD) List() ([]*models.V1FilesystemLayoutResponse, error) {
 }
 
 func (c fslCRUD) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
-	resp, err := c.Filesystemlayout().DeleteFilesystemLayout(fsmodel.NewDeleteFilesystemLayoutParams().WithID(id), nil)
+	resp, err := c.client.Filesystemlayout().DeleteFilesystemLayout(fsmodel.NewDeleteFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,7 @@ func (c fslCRUD) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 }
 
 func (c fslCRUD) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
-	resp, err := c.Filesystemlayout().CreateFilesystemLayout(fsmodel.NewCreateFilesystemLayoutParams().WithBody(rq), nil)
+	resp, err := c.client.Filesystemlayout().CreateFilesystemLayout(fsmodel.NewCreateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		var r *fsmodel.CreateFilesystemLayoutConflict
 		if errors.As(err, &r) {
@@ -119,7 +118,7 @@ func (c fslCRUD) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1F
 }
 
 func (c fslCRUD) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
-	resp, err := c.Filesystemlayout().UpdateFilesystemLayout(fsmodel.NewUpdateFilesystemLayoutParams().WithBody(rq), nil)
+	resp, err := c.client.Filesystemlayout().UpdateFilesystemLayout(fsmodel.NewUpdateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +136,7 @@ func (c *fslCmd) filesystemTry() error {
 		Image: &image,
 	}
 
-	resp, err := c.c.Filesystemlayout().TryFilesystemLayout(fsmodel.NewTryFilesystemLayoutParams().WithBody(&try), nil)
+	resp, err := c.client.Filesystemlayout().TryFilesystemLayout(fsmodel.NewTryFilesystemLayoutParams().WithBody(&try), nil)
 	if err != nil {
 		return err
 	}
@@ -153,7 +152,7 @@ func (c *fslCmd) filesystemMatch() error {
 		Filesystemlayout: &fsl,
 	}
 
-	resp, err := c.c.Filesystemlayout().MatchFilesystemLayout(fsmodel.NewMatchFilesystemLayoutParams().WithBody(&match), nil)
+	resp, err := c.client.Filesystemlayout().MatchFilesystemLayout(fsmodel.NewMatchFilesystemLayoutParams().WithBody(&match), nil)
 	if err != nil {
 		return err
 	}

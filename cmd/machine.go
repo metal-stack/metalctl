@@ -31,18 +31,14 @@ const (
 )
 
 type machineCmd struct {
-	c         metalgo.Client
-	driver    *metalgo.Driver
-	driverURL string
+	*config
 	*genericcli.GenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]
 }
 
 func newMachineCmd(c *config) *cobra.Command {
 	w := machineCmd{
-		c:          c.client,
-		driver:     c.driver,
-		driverURL:  c.driverURL,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](machineCRUD{Client: c.client}),
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](machineCRUD{config: c}),
 	}
 
 	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
@@ -514,11 +510,11 @@ MODE can be omitted or one of:
 }
 
 type machineCRUD struct {
-	metalgo.Client
+	*config
 }
 
 func (c machineCRUD) Get(id string) (*models.V1MachineResponse, error) {
-	resp, err := c.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
+	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -527,7 +523,7 @@ func (c machineCRUD) Get(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c machineCRUD) List() ([]*models.V1MachineResponse, error) {
-	resp, err := c.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -560,7 +556,7 @@ func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
 		}
 
-		resp, err := c.Machine().DeleteMachine(machine.NewDeleteMachineParams().WithID(id), nil)
+		resp, err := c.client.Machine().DeleteMachine(machine.NewDeleteMachineParams().WithID(id), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -568,7 +564,7 @@ func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
 		return resp.Payload, nil
 	}
 
-	resp, err := c.Machine().FreeMachine(machine.NewFreeMachineParams().WithID(id), nil)
+	resp, err := c.client.Machine().FreeMachine(machine.NewFreeMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +573,7 @@ func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c machineCRUD) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
-	resp, err := c.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
+	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -586,7 +582,7 @@ func (c machineCRUD) Create(rq *models.V1MachineAllocateRequest) (*models.V1Mach
 }
 
 func (c machineCRUD) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
-	resp, err := c.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
+	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -840,7 +836,7 @@ func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse,
 		return nil, "", "", err
 	}
 
-	resp, err := c.c.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+	resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -1189,7 +1185,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return defaultToYAMLPrinter().Print(resp.Machine)
 	}
 
-	resp, err := c.c.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
@@ -1203,7 +1199,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 }
 
 func (c *machineCmd) machineIssues() error {
-	resp, err := c.c.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}

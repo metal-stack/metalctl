@@ -18,6 +18,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+type config struct {
+	driverURL string
+	comp      *completion.Completion
+	driver    *metalgo.Driver
+	client    metalgo.Client
+	log       *zap.SugaredLogger
+}
+
 const (
 	binaryName = "metalctl"
 )
@@ -36,7 +44,6 @@ var (
 	}
 )
 
-// Execute is the entrypoint of the metal-go application
 func Execute() {
 	cmd := newRootCmd()
 	err := cmd.Execute()
@@ -47,10 +54,16 @@ func Execute() {
 		os.Exit(1)
 	}
 }
+
 func newRootCmd() *cobra.Command {
-	name := binaryName
+	// the config will be provided with values on cobra init
+	// cobra flags do not work so early in the game
+	c := &config{
+		comp: &completion.Completion{},
+	}
+
 	rootCmd := &cobra.Command{
-		Use:          name,
+		Use:          binaryName,
 		Aliases:      []string{"m"},
 		Short:        "a cli to manage metal-stack api",
 		Long:         "",
@@ -76,6 +89,7 @@ apitoken: "alongtoken"
 	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with METALCTL_URL environment variable.")
 	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
+
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
 	rootCmd.PersistentFlags().StringP("template", "", "", `output template for template output-format, go template format.
 For property names inspect the output of -o json or -o yaml for reference.
@@ -85,13 +99,15 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 `)
 	rootCmd.PersistentFlags().Bool("no-headers", false, "do not print headers of table output format (default print headers)")
+
 	rootCmd.PersistentFlags().Bool(forceFlag, false, "skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 
 	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
-	c := getConfig(name)
+	must(viper.BindPFlags(rootCmd.Flags()))
+	must(viper.BindPFlags(rootCmd.PersistentFlags()))
 
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
@@ -111,24 +127,21 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newContextCmd(c))
 
-	rootCmd.AddCommand(newUpdateCmd(c.name))
+	rootCmd.AddCommand(newUpdateCmd())
 
-	must(viper.BindPFlags(rootCmd.PersistentFlags()))
+	configReadFn := func() {
+		must(readConfigFile())
+		// we cannot instantiate the client earlier because
+		// cobra flags do not work so early in the game
+		must(initClient(c))
+	}
+	cobra.OnInitialize(configReadFn)
 
 	return rootCmd
 }
 
-type config struct {
-	name      string
-	driverURL string
-	comp      *completion.Completion
-	driver    *metalgo.Driver
-	client    metalgo.Client
-	log       *zap.SugaredLogger
-}
-
-func getConfig(name string) *config {
-	viper.SetEnvPrefix(strings.ToUpper(name))
+func readConfigFile() error {
+	viper.SetEnvPrefix(strings.ToUpper(binaryName))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 	viper.AutomaticEnv()
 
@@ -138,31 +151,37 @@ func getConfig(name string) *config {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 		if err := viper.ReadInConfig(); err != nil {
-			log.Fatalf("config file path set explicitly, but unreadable:%v", err)
+			return fmt.Errorf("config file path set explicitly, but unreadable: %w", err)
 		}
 	} else {
 		viper.SetConfigName("config")
-		viper.AddConfigPath(fmt.Sprintf("/etc/%s", name))
+		viper.AddConfigPath(fmt.Sprintf("/etc/%s", binaryName))
+
 		h, err := os.UserHomeDir()
 		if err != nil {
-			log.Printf("unable to figure out user home directory, skipping config lookup path: %v", err)
+			return fmt.Errorf("unable to figure out user home directory, skipping config lookup path: %w", err)
 		} else {
-			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", name))
+			viper.AddConfigPath(fmt.Sprintf(h+"/.%s", binaryName))
 		}
+
 		viper.AddConfigPath(".")
 		if err := viper.ReadInConfig(); err != nil {
 			usedCfg := viper.ConfigFileUsed()
 			if usedCfg != "" {
-				log.Fatalf("config %s file unreadable:%v", usedCfg, err)
+				return fmt.Errorf("config %s file unreadable: %w", usedCfg, err)
 			}
 		}
 	}
 
+	return nil
+}
+
+func initClient(c *config) error {
 	ctx := api.MustDefaultContext()
 
 	logger, err := newLogger()
 	if err != nil {
-		log.Fatalf("error creating logger: %v", err)
+		return fmt.Errorf("error creating logger: %w", err)
 	}
 
 	driverURL := viper.GetString("url")
@@ -187,17 +206,16 @@ func getConfig(name string) *config {
 
 	client, driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	return &config{
-		name:      name,
-		comp:      completion.NewCompletion(driver),
-		driver:    driver,
-		driverURL: driverURL,
-		client:    client,
-		log:       logger,
-	}
+	c.comp.SetClient(client)
+	c.driver = driver
+	c.driverURL = driverURL
+	c.client = client
+	c.log = logger
+
+	return nil
 }
 
 func newLogger() (*zap.SugaredLogger, error) {
