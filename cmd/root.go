@@ -129,13 +129,12 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 	rootCmd.AddCommand(newUpdateCmd())
 
-	configReadFn := func() {
+	cobra.OnInitialize(func() {
 		must(readConfigFile())
 		// we cannot instantiate the client earlier because
 		// cobra flags do not work so early in the game
 		must(initClient(c))
-	}
-	cobra.OnInitialize(configReadFn)
+	})
 
 	return rootCmd
 }
