@@ -17,6 +17,7 @@ const (
 	nbr             = " "
 	question        = "❓"
 	skull           = "💀"
+	ambulance       = "🚑"
 )
 
 func depth(path string) uint {

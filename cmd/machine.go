@@ -1276,17 +1276,15 @@ func (c *machineCmd) machineIssues() error {
 			addIssue(m, api.IssueLivelinessNotAvailable)
 		}
 
-		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
+		if pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim) {
 			addIssue(m, api.IssueFailedMachineReclaim)
 		}
 
-		if m.Events.IncompleteProvisioningCycles != nil &&
-			*m.Events.IncompleteProvisioningCycles != "" &&
-			*m.Events.IncompleteProvisioningCycles != "0" {
+		if pointer.SafeDeref(pointer.SafeDeref(m.Events).CrashLoop) {
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 				// Machine which are waiting are not considered to have issues
 			} else {
-				addIssue(m, api.IssueIncompleteCycles)
+				addIssue(m, api.IssueCrashLoop)
 			}
 		}
 

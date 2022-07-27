@@ -42,6 +42,11 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			statusEmoji = question
 		}
 
+		if machine.Events.FailedMachineReclaim != nil && *machine.Events.FailedMachineReclaim {
+			status = "Failed Reclaim"
+			statusEmoji = ambulance
+		}
+
 		alloc := pointer.SafeDeref(machine.Allocation)
 		sizeID := pointer.SafeDeref(pointer.SafeDeref(machine.Size).ID)
 		partitionID := pointer.SafeDeref(pointer.SafeDeref(machine.Partition).ID)
@@ -91,11 +96,9 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			lastEventEmoji = lastEvent
 		}
 
-		if machine.Events.IncompleteProvisioningCycles != nil {
-			if *machine.Events.IncompleteProvisioningCycles != "" && *machine.Events.IncompleteProvisioningCycles != "0" {
-				lastEvent += " (!)"
-				lastEventEmoji += nbr + circle
-			}
+		if machine.Events.CrashLoop != nil && *machine.Events.CrashLoop {
+			lastEvent += " (!)"
+			lastEventEmoji += nbr + circle
 		}
 
 		if wide {

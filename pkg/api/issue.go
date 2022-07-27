@@ -52,10 +52,10 @@ var (
 		Description: "machine phones home but not allocated",
 		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#failed-machine-reclaim",
 	}
-	IssueIncompleteCycles = Issue{
-		ShortName:   "incomplete-cycles",
-		Description: fmt.Sprintf("machine has an incomplete lifecycle (%s)", circle),
-		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#incomplete-cycles",
+	IssueCrashLoop = Issue{
+		ShortName:   "crashloop",
+		Description: fmt.Sprintf("machine is in a provisioning crash loop (%s)", circle),
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#crashloop",
 	}
 	IssueASNUniqueness = Issue{
 		ShortName:   "asn-not-unique",
@@ -84,7 +84,7 @@ var (
 		IssueLivelinessUnknown,
 		IssueLivelinessNotAvailable,
 		IssueFailedMachineReclaim,
-		IssueIncompleteCycles,
+		IssueCrashLoop,
 		IssueASNUniqueness,
 		IssueBMCWithoutMAC,
 		IssueBMCWithoutIP,
