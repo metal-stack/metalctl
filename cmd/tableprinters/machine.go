@@ -204,7 +204,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 	)
 
 	for _, i := range data {
-		rows = append(rows, []string{i.Time.String(), pointer.SafeDeref(i.Event), i.Message})
+		rows = append(rows, []string{time.Time(i.Time).String(), pointer.SafeDeref(i.Event), i.Message})
 	}
 
 	t.t.GetTable().SetAutoWrapText(false)

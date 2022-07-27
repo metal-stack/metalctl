@@ -1080,7 +1080,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp)
+	return newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
 }
 
 func (c *machineCmd) machineConsole(args []string) error {
