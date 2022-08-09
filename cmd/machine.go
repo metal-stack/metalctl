@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"fmt"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -351,12 +353,15 @@ In case the machine did not register properly a direct ipmi console access is av
 		c := c
 		must(cmds.listCmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
+	cmds.listCmd.Long = cmds.listCmd.Short + "\n" + api.EmojiHelpText()
 
 	machineIpmiCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
+	machineIpmiCmd.Long = machineIpmiCmd.Short + "\n" + api.EmojiHelpText()
 
 	machineIssuesCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
+	machineIssuesCmd.Long = machineIssuesCmd.Short + "\n" + api.EmojiHelpText()
 
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
@@ -1080,7 +1085,25 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	err = newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	if err != nil {
+		return err
+	}
+
+	if pointer.SafeDeref(resp.Events).LastErrorEvent != nil {
+		timeSince := time.Since(time.Time(resp.Events.LastErrorEvent.Time))
+		if timeSince > tableprinters.LastErrorEventRelevant {
+			return nil
+		}
+
+		fmt.Println()
+		fmt.Printf("Recent last error (%s ago):\n", timeSince.String())
+		fmt.Println()
+
+		return newPrinterFromCLI().Print(resp.Events.LastErrorEvent)
+	}
+
+	return nil
 }
 
 func (c *machineCmd) machineConsole(args []string) error {
@@ -1204,6 +1227,11 @@ func (c *machineCmd) machineIssues() error {
 		return err
 	}
 
+	err = sorters.MachineIPMISort(resp.Payload)
+	if err != nil {
+		return err
+	}
+
 	var (
 		only = viper.GetStringSlice("only")
 		omit = viper.GetStringSlice("omit")
@@ -1240,15 +1268,22 @@ func (c *machineCmd) machineIssues() error {
 				return
 			}
 
-			mWithIssues, ok := res[*m.ID]
-			if !ok {
-				mWithIssues = api.MachineWithIssues{
+			var mWithIssues *api.MachineWithIssues
+			for _, machine := range res {
+				machine := machine
+				if pointer.SafeDeref(m.ID) == pointer.SafeDeref(machine.Machine.ID) {
+					mWithIssues = &machine
+					break
+				}
+			}
+			if mWithIssues == nil {
+				mWithIssues = &api.MachineWithIssues{
 					Machine: *m,
 				}
+				res = append(res, *mWithIssues)
 			}
 
 			mWithIssues.Issues = append(mWithIssues.Issues, issue)
-			res[*m.ID] = mWithIssues
 		}
 	)
 
@@ -1285,6 +1320,15 @@ func (c *machineCmd) machineIssues() error {
 				// Machine which are waiting are not considered to have issues
 			} else {
 				addIssue(m, api.IssueCrashLoop)
+			}
+		}
+
+		if pointer.SafeDeref(m.Events).LastErrorEvent != nil {
+			timeSince := time.Since(time.Time(m.Events.LastErrorEvent.Time))
+			if timeSince < tableprinters.LastErrorEventRelevant {
+				issue := api.IssueLastEventError
+				issue.Description = fmt.Sprintf("%s (%s ago)", issue.Description, timeSince.String())
+				addIssue(m, issue)
 			}
 		}
 

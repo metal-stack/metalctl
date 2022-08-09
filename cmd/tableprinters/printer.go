@@ -61,6 +61,8 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.MachineIPMITable(pointer.WrapInSlice(d), wide)
 	case []*models.V1MachineProvisioningEvent:
 		return t.MachineLogsTable(d, wide)
+	case *models.V1MachineProvisioningEvent:
+		return t.MachineLogsTable(pointer.WrapInSlice(d), wide)
 	case *models.V1FirmwaresResponse:
 		return t.FirmwareTable(d, wide)
 	case *models.V1FilesystemLayoutResponse:

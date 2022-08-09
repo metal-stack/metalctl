@@ -81,7 +81,7 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	if *n.Usage.AvailablePrefixes > 0 {
 		prefixUse := float64(*n.Usage.UsedPrefixes) / float64(*n.Usage.AvailablePrefixes)
 		if prefixUse >= 0.9 {
-			shortPrefixUsage = exclamationMark
+			shortPrefixUsage = color.RedString(dot)
 		}
 		usage = fmt.Sprintf("%s\nPrefixes:%d/%d", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
 	}

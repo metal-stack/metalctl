@@ -13,7 +13,7 @@ type (
 		Issues  Issues
 	}
 	// MachineIssues is map of a machine response to a list of machine issues
-	MachineIssues map[string]MachineWithIssues
+	MachineIssues []MachineWithIssues
 
 	// Issue formulates an issue of a machine
 	Issue struct {
@@ -26,8 +26,6 @@ type (
 )
 
 var (
-	circle = "↻"
-
 	IssueNoPartition = Issue{
 		ShortName:   "no-partition",
 		Description: "machine with no partition",
@@ -54,7 +52,7 @@ var (
 	}
 	IssueCrashLoop = Issue{
 		ShortName:   "crashloop",
-		Description: fmt.Sprintf("machine is in a provisioning crash loop (%s)", circle),
+		Description: fmt.Sprintf("machine is in a provisioning crash loop (%s)", Loop),
 		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#crashloop",
 	}
 	IssueASNUniqueness = Issue{
@@ -77,6 +75,11 @@ var (
 		Description: "BMC IP address is not distinct",
 		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#bmc-no-distinct-ip",
 	}
+	IssueLastEventError = Issue{
+		ShortName:   "last-event-error",
+		Description: "the machine had an error during the provisioning lifecycle",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#last-event-error",
+	}
 
 	AllIssues = Issues{
 		IssueNoPartition,
@@ -89,5 +92,6 @@ var (
 		IssueBMCWithoutMAC,
 		IssueBMCWithoutIP,
 		IssueNonDistinctBMCIP,
+		IssueLastEventError,
 	}
 )
