@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"github.com/metal-stack/metalctl/cmd/completion"
-	"github.com/metal-stack/metalctl/pkg/api"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/metal-stack/metalctl/cmd/completion"
+	"github.com/metal-stack/metalctl/pkg/api"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
@@ -108,6 +109,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newLogoutCmd(c))
 	rootCmd.AddCommand(newWhoamiCmd())
 	rootCmd.AddCommand(newContextCmd(c))
+	rootCmd.AddCommand(newVPNCmd(c))
 
 	rootCmd.AddCommand(newUpdateCmd(c.name))
 
