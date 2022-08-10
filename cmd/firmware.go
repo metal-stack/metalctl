@@ -74,6 +74,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	must(firmwareListCmd.RegisterFlagCompletionFunc("kind", c.comp.FirmwareKindCompletion))
 	must(firmwareListCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
 	must(firmwareListCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
+	must(firmwareListCmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
 	firmwareCmd.AddCommand(firmwareListCmd)
 
 	firmwareUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor (required)")

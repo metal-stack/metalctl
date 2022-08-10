@@ -3,7 +3,8 @@ package cmd
 import (
 	"testing"
 
-	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -86,48 +87,48 @@ func Test_parseNetworks(t *testing.T) {
 	tests := []struct {
 		possibleNetworks []string
 		isError          bool
-		expected         []metalgo.MachineAllocationNetwork
+		expected         []*models.V1MachineAllocationNetwork
 		name             string
 	}{
 		{
 			name:             "empty networks",
 			possibleNetworks: []string{},
 			isError:          false,
-			expected:         []metalgo.MachineAllocationNetwork{},
+			expected:         []*models.V1MachineAllocationNetwork{},
 		},
 		{
 			name:             "single network",
 			possibleNetworks: []string{"network"},
 			isError:          false,
-			expected: []metalgo.MachineAllocationNetwork{
-				{NetworkID: "network", Autoacquire: true},
+			expected: []*models.V1MachineAllocationNetwork{
+				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(true)},
 			},
 		},
 		{
 			name:             "multiple networks",
 			possibleNetworks: []string{"network1", "network2"},
 			isError:          false,
-			expected: []metalgo.MachineAllocationNetwork{
-				{NetworkID: "network1", Autoacquire: true},
-				{NetworkID: "network2", Autoacquire: true},
+			expected: []*models.V1MachineAllocationNetwork{
+				{Networkid: pointer.Pointer("network1"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: pointer.Pointer("network2"), Autoacquire: pointer.Pointer(true)},
 			},
 		},
 		{
 			name:             "single network with auto flag",
 			possibleNetworks: []string{"network:auto"},
 			isError:          false,
-			expected: []metalgo.MachineAllocationNetwork{
-				{NetworkID: "network", Autoacquire: true},
+			expected: []*models.V1MachineAllocationNetwork{
+				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(true)},
 			},
 		},
 		{
 			name:             "multiple networks with auto, noauto and empty flag",
 			possibleNetworks: []string{"network1:auto", "network2:noauto", "network3"},
 			isError:          false,
-			expected: []metalgo.MachineAllocationNetwork{
-				{NetworkID: "network1", Autoacquire: true},
-				{NetworkID: "network2", Autoacquire: false},
-				{NetworkID: "network3", Autoacquire: true},
+			expected: []*models.V1MachineAllocationNetwork{
+				{Networkid: pointer.Pointer("network1"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: pointer.Pointer("network2"), Autoacquire: pointer.Pointer(false)},
+				{Networkid: pointer.Pointer("network3"), Autoacquire: pointer.Pointer(true)},
 			},
 		},
 		{
@@ -146,8 +147,8 @@ func Test_parseNetworks(t *testing.T) {
 			name:             "single network with noauto",
 			possibleNetworks: []string{"network:noauto"},
 			isError:          false,
-			expected: []metalgo.MachineAllocationNetwork{
-				{NetworkID: "network", Autoacquire: false},
+			expected: []*models.V1MachineAllocationNetwork{
+				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(false)},
 			},
 		},
 	}

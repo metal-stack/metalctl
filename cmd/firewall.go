@@ -123,28 +123,19 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		return nil, fmt.Errorf("firewall create error:%w", err)
 	}
 
-	var nets []*models.V1MachineAllocationNetwork
-	for i := range mcr.Networks {
-		net := models.V1MachineAllocationNetwork{
-			Networkid:   &mcr.Networks[i].NetworkID,
-			Autoacquire: &mcr.Networks[i].Autoacquire,
-		}
-		nets = append(nets, &net)
-	}
-
 	return &models.V1FirewallCreateRequest{
 		Description: mcr.Description,
-		Partitionid: &mcr.Partition,
+		Partitionid: mcr.Partitionid,
 		Hostname:    mcr.Hostname,
-		Imageid:     &mcr.Image,
+		Imageid:     mcr.Imageid,
 		Name:        mcr.Name,
 		UUID:        mcr.UUID,
-		Projectid:   &mcr.Project,
-		Sizeid:      &mcr.Size,
-		SSHPubKeys:  mcr.SSHPublicKeys,
+		Projectid:   mcr.Projectid,
+		Sizeid:      mcr.Sizeid,
+		SSHPubKeys:  mcr.SSHPubKeys,
 		UserData:    mcr.UserData,
 		Tags:        mcr.Tags,
-		Networks:    nets,
-		Ips:         mcr.IPs,
+		Networks:    mcr.Networks,
+		Ips:         mcr.Ips,
 	}, nil
 }

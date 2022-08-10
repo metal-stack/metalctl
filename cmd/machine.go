@@ -14,7 +14,6 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
@@ -602,33 +601,10 @@ func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, e
 		return nil, fmt.Errorf("machine create error:%w", err)
 	}
 
-	var nets []*models.V1MachineAllocationNetwork
-	for i := range mcr.Networks {
-		net := models.V1MachineAllocationNetwork{
-			Networkid:   &mcr.Networks[i].NetworkID,
-			Autoacquire: &mcr.Networks[i].Autoacquire,
-		}
-		nets = append(nets, &net)
-	}
-
-	return &models.V1MachineAllocateRequest{
-		Description: mcr.Description,
-		Partitionid: &mcr.Partition,
-		Hostname:    mcr.Hostname,
-		Imageid:     &mcr.Image,
-		Name:        mcr.Name,
-		UUID:        mcr.UUID,
-		Projectid:   &mcr.Project,
-		Sizeid:      &mcr.Size,
-		SSHPubKeys:  mcr.SSHPublicKeys,
-		UserData:    mcr.UserData,
-		Tags:        mcr.Tags,
-		Networks:    nets,
-		Ips:         mcr.IPs,
-	}, nil
+	return mcr, nil
 }
 
-func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
+func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
@@ -674,23 +650,24 @@ func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 		return nil, err
 	}
 
-	mcr := &metalgo.MachineCreateRequest{
-		Description:   viper.GetString("description"),
-		Partition:     viper.GetString("partition"),
-		Hostname:      viper.GetString("hostname"),
-		Image:         viper.GetString("image"),
-		Name:          viper.GetString("name"),
-		UUID:          viper.GetString("id"),
-		Project:       viper.GetString("project"),
-		Size:          viper.GetString("size"),
-		SSHPublicKeys: keys,
-		Tags:          viper.GetStringSlice("tags"),
-		UserData:      userDataArgument,
-		Networks:      networks,
-		IPs:           viper.GetStringSlice("ips"),
+	mcr := &models.V1MachineAllocateRequest{
+		Description: viper.GetString("description"),
+		Partitionid: pointer.Pointer(viper.GetString("partition")),
+		Hostname:    viper.GetString("hostname"),
+		Imageid:     pointer.Pointer(viper.GetString("image")),
+		Name:        viper.GetString("name"),
+		UUID:        viper.GetString("id"),
+		Projectid:   pointer.Pointer(viper.GetString("project")),
+		Sizeid:      pointer.Pointer(viper.GetString("size")),
+		SSHPubKeys:  keys,
+		Tags:        viper.GetStringSlice("tags"),
+		UserData:    userDataArgument,
+		Networks:    networks,
+		Ips:         viper.GetStringSlice("ips"),
 	}
-	if viper.GetString("filesystemlayout") != "" {
-		mcr.FilesystemLayout = viper.GetString("filesystemlayout")
+
+	if viper.IsSet("filesystemlayout") {
+		mcr.Filesystemlayoutid = viper.GetString("filesystemlayout")
 	}
 
 	return mcr, nil
