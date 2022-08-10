@@ -227,7 +227,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 			}
 			msg = genericcli.TruncateEnd(msg, 120)
 		}
-		rows = append(rows, []string{time.Time(i.Time).String(), pointer.SafeDeref(i.Event), msg})
+		rows = append(rows, []string{time.Time(i.Time).Format(time.RFC1123), pointer.SafeDeref(i.Event), msg})
 	}
 
 	t.t.GetTable().SetAutoWrapText(false)
