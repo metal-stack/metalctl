@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
-	github.com/metal-stack/metal-go v0.18.5
-	github.com/metal-stack/metal-lib v0.10.1-0.20220720131928-d4393229d6ae
+	github.com/metal-stack/metal-go v0.18.6-0.20220809101900-6c94eb580780
+	github.com/metal-stack/metal-lib v0.10.1-0.20220809104615-84e6267b5546
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/spf13/cobra v1.5.0

@@ -9,14 +9,10 @@ import (
 )
 
 const (
-	bark            = "🚧"
-	circle          = "↻"
-	dot             = "●"
-	exclamationMark = "❗"
-	lock            = "🔒"
-	nbr             = " "
-	question        = "❓"
-	skull           = "💀"
+	LastErrorEventRelevant = 7 * 24 * time.Hour
+
+	dot = "●"
+	nbr = " "
 )
 
 func depth(path string) uint {

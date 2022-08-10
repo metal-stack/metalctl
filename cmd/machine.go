@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"fmt"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -293,6 +295,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIpmiCmd := &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
 		Short: `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.`,
+		Long:  `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
@@ -301,6 +304,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
+		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIssues()
 		},
@@ -351,6 +355,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		c := c
 		must(cmds.listCmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
+	cmds.listCmd.Long = cmds.listCmd.Short + "\n" + api.EmojiHelpText()
 
 	machineIpmiCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 
@@ -1080,7 +1085,25 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	err = newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	if err != nil {
+		return err
+	}
+
+	if pointer.SafeDeref(resp.Events).LastErrorEvent != nil {
+		timeSince := time.Since(time.Time(resp.Events.LastErrorEvent.Time))
+		if timeSince > tableprinters.LastErrorEventRelevant {
+			return nil
+		}
+
+		fmt.Println()
+		fmt.Printf("Recent last error (%s ago):\n", timeSince.String())
+		fmt.Println()
+
+		return newPrinterFromCLI().Print(resp.Events.LastErrorEvent)
+	}
+
+	return nil
 }
 
 func (c *machineCmd) machineConsole(args []string) error {
@@ -1204,6 +1227,11 @@ func (c *machineCmd) machineIssues() error {
 		return err
 	}
 
+	err = sorters.MachineIPMISort(resp.Payload)
+	if err != nil {
+		return err
+	}
+
 	var (
 		only = viper.GetStringSlice("only")
 		omit = viper.GetStringSlice("omit")
@@ -1240,15 +1268,22 @@ func (c *machineCmd) machineIssues() error {
 				return
 			}
 
-			mWithIssues, ok := res[*m.ID]
-			if !ok {
-				mWithIssues = api.MachineWithIssues{
+			var mWithIssues *api.MachineWithIssues
+			for _, machine := range res {
+				machine := machine
+				if pointer.SafeDeref(m.ID) == pointer.SafeDeref(machine.Machine.ID) {
+					mWithIssues = &machine
+					break
+				}
+			}
+			if mWithIssues == nil {
+				mWithIssues = &api.MachineWithIssues{
 					Machine: *m,
 				}
+				res = append(res, *mWithIssues)
 			}
 
 			mWithIssues.Issues = append(mWithIssues.Issues, issue)
-			res[*m.ID] = mWithIssues
 		}
 	)
 
@@ -1276,17 +1311,24 @@ func (c *machineCmd) machineIssues() error {
 			addIssue(m, api.IssueLivelinessNotAvailable)
 		}
 
-		if m.Allocation == nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Phoned Home" {
+		if pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim) {
 			addIssue(m, api.IssueFailedMachineReclaim)
 		}
 
-		if m.Events.IncompleteProvisioningCycles != nil &&
-			*m.Events.IncompleteProvisioningCycles != "" &&
-			*m.Events.IncompleteProvisioningCycles != "0" {
+		if pointer.SafeDeref(pointer.SafeDeref(m.Events).CrashLoop) {
 			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 				// Machine which are waiting are not considered to have issues
 			} else {
-				addIssue(m, api.IssueIncompleteCycles)
+				addIssue(m, api.IssueCrashLoop)
+			}
+		}
+
+		if pointer.SafeDeref(m.Events).LastErrorEvent != nil {
+			timeSince := time.Since(time.Time(m.Events.LastErrorEvent.Time))
+			if timeSince < tableprinters.LastErrorEventRelevant {
+				issue := api.IssueLastEventError
+				issue.Description = fmt.Sprintf("%s (%s ago)", issue.Description, timeSince.String())
+				addIssue(m, issue)
 			}
 		}
 
