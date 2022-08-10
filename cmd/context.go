@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 )
@@ -111,5 +112,5 @@ func (c *config) contextList() error {
 	if err != nil {
 		return err
 	}
-	return newPrinterFromCLI().Print(ctxs)
+	return printers.NewPrinterFromCLI().Print(ctxs)
 }

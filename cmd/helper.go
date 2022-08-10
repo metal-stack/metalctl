@@ -2,72 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/auth"
-	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
-
-	"github.com/spf13/viper"
 )
-
-func newPrinterFromCLI() genericcli.Printer {
-	var printer genericcli.Printer
-	var err error
-
-	switch format := viper.GetString("output-format"); format {
-	case "yaml":
-		printer = genericcli.NewYAMLPrinter()
-	case "json":
-		printer = genericcli.NewJSONPrinter()
-	case "table", "wide", "markdown":
-		tp := tableprinters.New()
-		cfg := &genericcli.TablePrinterConfig{
-			ToHeaderAndRows: tp.ToHeaderAndRows,
-			Wide:            format == "wide",
-			Markdown:        format == "markdown",
-			NoHeaders:       viper.GetBool("no-headers"),
-		}
-		tablePrinter, err := genericcli.NewTablePrinter(cfg)
-		if err != nil {
-			log.Fatalf("unable to initialize printer: %v", err)
-		}
-		tp.SetPrinter(tablePrinter)
-		printer = tablePrinter
-	case "template":
-		printer, err = genericcli.NewTemplatePrinter(viper.GetString("template"))
-		if err != nil {
-			log.Fatalf("unable to initialize printer: %v", err)
-		}
-	default:
-		log.Fatalf("unknown output format: %q", format)
-	}
-
-	if viper.IsSet("force-color") {
-		enabled := viper.GetBool("force-color")
-		if enabled {
-			color.NoColor = false
-		} else {
-			color.NoColor = true
-		}
-	}
-
-	return printer
-}
-
-func defaultToYAMLPrinter() genericcli.Printer {
-	if viper.IsSet("output-format") {
-		return newPrinterFromCLI()
-	}
-	return genericcli.NewYAMLPrinter()
-}
 
 func parseNetworks(values []string) ([]*models.V1MachineAllocationNetwork, error) {
 	nets := []*models.V1MachineAllocationNetwork{}
@@ -106,25 +49,6 @@ func splitNetwork(value string) (string, bool, error) {
 	// case: NETWORK, defaults to NETWORK:auto
 	return id, true, nil
 }
-
-// func shortID(machineID string) string {
-// 	result := strings.ReplaceAll(machineID, "00000000-", "")
-// 	result = strings.ReplaceAll(result, "0000-", "")
-// 	return result
-// }
-
-// func longID(shortID string) string {
-// 	machineIDPattern := []byte("00000000-0000-0000-0000-000000000000")
-// 	longIDLength := len(machineIDPattern)
-// 	result := machineIDPattern
-// 	shortIDSlice := []byte(strings.TrimSpace(shortID))
-// 	for i := len(shortID) - 1; i >= 0; i-- {
-// 		pos := longIDLength - i - 1
-// 		shortPos := len(shortIDSlice) - i - 1
-// 		result[pos] = shortIDSlice[shortPos]
-// 	}
-// 	return string(result)
-// }
 
 const cloudContext = "cloudctl"
 

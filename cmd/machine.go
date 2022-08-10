@@ -19,8 +19,10 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
+	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
 	"github.com/metal-stack/metalctl/cmd/sorters"
-	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,67 +36,105 @@ const (
 
 type machineCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]
+}
+
+func (c *machineCmd) listCmdFlags(cmd *cobra.Command) {
+	listFlagCompletions := []struct {
+		flagName string
+		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
+	}{
+		{flagName: "partition", f: c.comp.PartitionListCompletion},
+		{flagName: "size", f: c.comp.SizeListCompletion},
+		{flagName: "project", f: c.comp.ProjectListCompletion},
+		{flagName: "id", f: c.comp.MachineListCompletion},
+		{flagName: "image", f: c.comp.ImageListCompletion},
+	}
+
+	cmd.Flags().String("id", "", "ID to filter [optional]")
+	cmd.Flags().String("partition", "", "partition to filter [optional]")
+	cmd.Flags().String("size", "", "size to filter [optional]")
+	cmd.Flags().String("name", "", "allocation name to filter [optional]")
+	cmd.Flags().String("project", "", "allocation project to filter [optional]")
+	cmd.Flags().String("image", "", "allocation image to filter [optional]")
+	cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
+	cmd.Flags().String("mac", "", "mac to filter [optional]")
+	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	for _, c := range listFlagCompletions {
+		c := c
+		must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
+	}
+	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
 }
 
 func newMachineCmd(c *config) *cobra.Command {
 	w := machineCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](machineCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
-		gcli:     w.GenericCLI,
-		singular: "machine",
-		plural:   "machines",
-		aliases:  []string{"ms"},
+	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
+		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w),
+		Singular:   "machine",
+		Plural:     "machines",
+		Aliases:    []string{"ms"},
 
-		createRequestFromCLI: w.createRequestFromCLI,
-		updateRequestFromCLI: w.updateRequestFromCLI,
+		CreateRequestFromCLI: w.createRequestFromCLI,
+		UpdateRequestFromCLI: w.updateRequestFromCLI,
 
-		availableSortKeys: sorters.MachineSortKeys(),
-		validArgsFunc:     c.comp.MachineListCompletion,
+		AvailableSortKeys: sorters.MachineSortKeys(),
+		ValidArgsFunc:     c.comp.MachineListCompletion,
+
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			c.addMachineCreateFlags(cmd, "machine")
+			cmd.Aliases = []string{"allocate"}
+			cmd.Example = `machine create can be done in two different ways:
+
+			- default with automatic allocation:
+
+			metalctl machine create \
+				--hostname worker01 \
+				--name worker \
+				--image ubuntu-18.04 \ # query available with: metalctl image list
+				--size t1-small-x86 \  # query available with: metalctl size list
+				--partition test \     # query available with: metalctl partition list
+				--project cluster01 \
+				--sshpublickey "@~/.ssh/id_rsa.pub"
+
+			- for metal administration with reserved machines:
+
+			reserve a machine you want to allocate:
+
+			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
+
+			allocate this machine:
+
+			metalctl machine create \
+				--hostname worker01 \
+				--name worker \
+				--image ubuntu-18.04 \ # query available with: metalctl image list
+				--project cluster01 \
+				--sshpublickey "@~/.ssh/id_rsa.pub" \
+				--id 00000000-0000-0000-0000-0cc47ae54694
+
+			after you do not want to use this machine exclusive, remove the reservation:
+
+			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
+
+			Once created the machine installation can not be modified anymore.
+			`
+		},
+		DeleteCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Long = `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects. A destroyed machine can not restored anymore`
+			cmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
+		},
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			w.listCmdFlags(cmd)
+		},
+		UpdateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("description", "", "the description of the machine [optional]")
+			cmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
+			cmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
+		},
 	})
-
-	c.addMachineCreateFlags(cmds.createCmd, "machine")
-	cmds.createCmd.Aliases = []string{"allocate"}
-	cmds.createCmd.Example = `machine create can be done in two different ways:
-
-	- default with automatic allocation:
-
-	metalctl machine create \
-		--hostname worker01 \
-		--name worker \
-		--image ubuntu-18.04 \ # query available with: metalctl image list
-		--size t1-small-x86 \  # query available with: metalctl size list
-		--partition test \     # query available with: metalctl partition list
-		--project cluster01 \
-		--sshpublickey "@~/.ssh/id_rsa.pub"
-
-	- for metal administration with reserved machines:
-
-	reserve a machine you want to allocate:
-
-	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
-
-	allocate this machine:
-
-	metalctl machine create \
-		--hostname worker01 \
-		--name worker \
-		--image ubuntu-18.04 \ # query available with: metalctl image list
-		--project cluster01 \
-		--sshpublickey "@~/.ssh/id_rsa.pub" \
-		--id 00000000-0000-0000-0000-0cc47ae54694
-
-	after you do not want to use this machine exclusive, remove the reservation:
-
-	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
-
-	Once created the machine installation can not be modified anymore.
-	`
-
-	cmds.deleteCmd.Long = `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects. A destroyed machine can not restored anymore`
 
 	machineConsolePasswordCmd := &cobra.Command{
 		Use:   "consolepassword <machine ID>",
@@ -331,35 +371,9 @@ In case the machine did not register properly a direct ipmi console access is av
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	listFlagCompletions := []struct {
-		flagName string
-		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
-	}{
-		{flagName: "partition", f: c.comp.PartitionListCompletion},
-		{flagName: "size", f: c.comp.SizeListCompletion},
-		{flagName: "project", f: c.comp.ProjectListCompletion},
-		{flagName: "id", f: c.comp.MachineListCompletion},
-		{flagName: "image", f: c.comp.ImageListCompletion},
-	}
+	w.listCmdFlags(machineIpmiCmd)
+	w.listCmdFlags(machineIssuesCmd)
 
-	cmds.listCmd.Flags().String("id", "", "ID to filter [optional]")
-	cmds.listCmd.Flags().String("partition", "", "partition to filter [optional]")
-	cmds.listCmd.Flags().String("size", "", "size to filter [optional]")
-	cmds.listCmd.Flags().String("name", "", "allocation name to filter [optional]")
-	cmds.listCmd.Flags().String("project", "", "allocation project to filter [optional]")
-	cmds.listCmd.Flags().String("image", "", "allocation image to filter [optional]")
-	cmds.listCmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-	cmds.listCmd.Flags().String("mac", "", "mac to filter [optional]")
-	cmds.listCmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
-	for _, c := range listFlagCompletions {
-		c := c
-		must(cmds.listCmd.RegisterFlagCompletionFunc(c.flagName, c.f))
-	}
-	cmds.listCmd.Long = cmds.listCmd.Short + "\n" + api.EmojiHelpText()
-
-	machineIpmiCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
-
-	machineIssuesCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
 
@@ -377,12 +391,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	}))
-
-	cmds.updateCmd.Flags().String("description", "", "the description of the machine [optional]")
-	cmds.updateCmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
-	cmds.updateCmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
-
-	cmds.deleteCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
@@ -430,7 +438,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIpmiEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
 	machineIpmiCmd.AddCommand(machineIpmiEventsCmd)
 
-	return cmds.buildRootCmd(
+	return cmds.Build(
 		machineConsolePasswordCmd,
 		machineConsoleCmd,
 		machineIpmiCmd,
@@ -514,11 +522,7 @@ MODE can be omitted or one of:
 	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-type machineCRUD struct {
-	*config
-}
-
-func (c machineCRUD) Get(id string) (*models.V1MachineResponse, error) {
+func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -527,7 +531,7 @@ func (c machineCRUD) Get(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCRUD) List() ([]*models.V1MachineResponse, error) {
+func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
@@ -555,7 +559,7 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 	}
 }
 
-func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
+func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	if viper.GetBool("remove-from-database") {
 		if !viper.GetBool(forceFlag) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
@@ -577,7 +581,7 @@ func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCRUD) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -586,7 +590,7 @@ func (c machineCRUD) Create(rq *models.V1MachineAllocateRequest) (*models.V1Mach
 	return resp.Payload, nil
 }
 
-func (c machineCRUD) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -679,7 +683,7 @@ func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdat
 		return nil, err
 	}
 
-	resp, err := c.Interface().Get(id)
+	resp, err := c.Get(id)
 	if err != nil {
 		return nil, err
 	}
@@ -740,7 +744,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -754,7 +758,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -768,7 +772,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -782,7 +786,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -917,7 +921,7 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {
@@ -931,7 +935,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -945,7 +949,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -959,7 +963,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -974,7 +978,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -989,7 +993,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1007,7 +1011,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 			return err
 		}
 
-		return newPrinterFromCLI().Print(resp.Payload)
+		return printers.NewPrinterFromCLI().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1018,7 +1022,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1036,7 +1040,7 @@ func (c *machineCmd) machineLock(args []string) error {
 			return err
 		}
 
-		return newPrinterFromCLI().Print(resp.Payload)
+		return printers.NewPrinterFromCLI().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1047,7 +1051,7 @@ func (c *machineCmd) machineLock(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1065,17 +1069,22 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
-	// FIXME add ipmi sel as well
-	resp, err := c.Describe(args)
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	err = newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	// FIXME add ipmi sel as well
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	err = printers.NewPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
 	if err != nil {
 		return err
 	}
@@ -1090,7 +1099,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		fmt.Printf("Recent last error (%s ago):\n", timeSince.String())
 		fmt.Println()
 
-		return newPrinterFromCLI().Print(resp.Events.LastErrorEvent)
+		return printers.NewPrinterFromCLI().Print(resp.Events.LastErrorEvent)
 	}
 
 	return nil
@@ -1195,7 +1204,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		hidden := "<hidden>"
 		resp.Payload.Ipmi.Password = &hidden
 
-		return defaultToYAMLPrinter().Print(resp.Payload)
+		return printers.DefaultToYAMLPrinter().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1208,7 +1217,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIssues() error {
@@ -1408,7 +1417,7 @@ func (c *machineCmd) machineIssues() error {
 		}
 	}
 
-	return newPrinterFromCLI().Print(res)
+	return printers.NewPrinterFromCLI().Print(res)
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {

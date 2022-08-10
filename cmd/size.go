@@ -8,6 +8,8 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,23 +17,21 @@ import (
 
 type sizeCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]
 }
 
 func newSizeCmd(c *config) *cobra.Command {
 	w := sizeCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](sizeCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
-		gcli:              w.GenericCLI,
-		singular:          "size",
-		plural:            "sizes",
-		description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
-		availableSortKeys: sorters.SizeSortKeys(),
-		validArgsFunc:     c.comp.SizeListCompletion,
-		createRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
+	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w),
+		Singular:          "size",
+		Plural:            "sizes",
+		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
+		AvailableSortKeys: sorters.SizeSortKeys(),
+		ValidArgsFunc:     c.comp.SizeListCompletion,
+		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
 				Name:        viper.GetString("name"),
@@ -45,6 +45,15 @@ func newSizeCmd(c *config) *cobra.Command {
 				},
 			}, nil
 		},
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().StringP("id", "", "", "ID of the size. [required]")
+			cmd.Flags().StringP("name", "n", "", "Name of the size. [optional]")
+			cmd.Flags().StringP("description", "d", "", "Description of the size. [required]")
+			// FIXME constraints must be given in a slice
+			cmd.Flags().Int64P("min", "", 0, "min value of given size constraint type. [required]")
+			cmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
+			cmd.Flags().StringP("type", "", "", "type of constraints. [required]")
+		},
 	})
 
 	tryCmd := &cobra.Command{
@@ -56,26 +65,14 @@ func newSizeCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	cmds.createCmd.Flags().StringP("id", "", "", "ID of the size. [required]")
-	cmds.createCmd.Flags().StringP("name", "n", "", "Name of the size. [optional]")
-	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the size. [required]")
-	// FIXME constraints must be given in a slice
-	cmds.createCmd.Flags().Int64P("min", "", 0, "min value of given size constraint type. [required]")
-	cmds.createCmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
-	cmds.createCmd.Flags().StringP("type", "", "", "type of constraints. [required]")
-
 	tryCmd.Flags().Int32P("cores", "C", 0, "Cores of the hardware to try")
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	return cmds.buildRootCmd(newSizeImageConstraintCmd(c), tryCmd)
+	return cmds.Build(newSizeImageConstraintCmd(c), tryCmd)
 }
 
-type sizeCRUD struct {
-	*config
-}
-
-func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
+func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -84,7 +81,7 @@ func (c sizeCRUD) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
+func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
@@ -98,7 +95,7 @@ func (c sizeCRUD) List() ([]*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCRUD) Delete(id string) (*models.V1SizeResponse, error) {
+func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -107,7 +104,7 @@ func (c sizeCRUD) Delete(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCRUD) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
+func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
@@ -120,7 +117,7 @@ func (c sizeCRUD) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse
 	return resp.Payload, nil
 }
 
-func (c sizeCRUD) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -165,5 +162,5 @@ func (c *sizeCmd) try() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }

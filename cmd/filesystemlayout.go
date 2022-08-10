@@ -6,6 +6,9 @@ import (
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -14,39 +17,28 @@ import (
 
 type fslCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]
 }
 
 func newFilesystemLayoutCmd(c *config) *cobra.Command {
-	w := fslCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](fslCRUD{config: c}),
+	w := &fslCmd{
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
-		gcli:              w.GenericCLI,
-		singular:          "filesystemlayout",
-		plural:            "filesystemlayouts",
-		description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
-		aliases:           []string{"fsl"},
-		availableSortKeys: sorters.FilesystemLayoutSortKeys(),
-		validArgsFunc:     c.comp.FilesystemLayoutListCompletion,
-	})
+	defaultConfig := &defaultscmds.Config[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w),
+		Singular:          "filesystemlayout",
+		Plural:            "filesystemlayouts",
+		Description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
+		Aliases:           []string{"fsl"},
+		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
+		ValidArgsFunc:     c.comp.FilesystemLayoutListCompletion,
+	}
 
 	tryCmd := &cobra.Command{
 		Use:   "try",
 		Short: "try to detect a filesystem by given size and image",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.filesystemTry()
-		},
-		PreRun: bindPFlags,
-	}
-
-	matchCmd := &cobra.Command{
-		Use:   "match",
-		Short: "check if a machine satisfies all disk requirements of a given filesystemlayout",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.filesystemMatch()
 		},
 		PreRun: bindPFlags,
 	}
@@ -58,6 +50,15 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	must(tryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	must(tryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
+	matchCmd := &cobra.Command{
+		Use:   "match",
+		Short: "check if a machine satisfies all disk requirements of a given filesystemlayout",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.filesystemMatch()
+		},
+		PreRun: bindPFlags,
+	}
+
 	matchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	matchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
 	must(matchCmd.MarkFlagRequired("machine"))
@@ -65,14 +66,10 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
 	must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
-	return cmds.buildRootCmd(matchCmd, tryCmd)
+	return defaultscmds.New(defaultConfig).Build(tryCmd, matchCmd)
 }
 
-type fslCRUD struct {
-	*config
-}
-
-func (c fslCRUD) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().GetFilesystemLayout(fsmodel.NewGetFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -81,7 +78,7 @@ func (c fslCRUD) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCRUD) List() ([]*models.V1FilesystemLayoutResponse, error) {
+func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -95,7 +92,7 @@ func (c fslCRUD) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCRUD) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().DeleteFilesystemLayout(fsmodel.NewDeleteFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -104,7 +101,7 @@ func (c fslCRUD) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCRUD) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().CreateFilesystemLayout(fsmodel.NewCreateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		var r *fsmodel.CreateFilesystemLayoutConflict
@@ -117,7 +114,7 @@ func (c fslCRUD) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1F
 	return resp.Payload, nil
 }
 
-func (c fslCRUD) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().UpdateFilesystemLayout(fsmodel.NewUpdateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -141,15 +138,13 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *fslCmd) filesystemMatch() error {
-	machine := viper.GetString("machine")
-	fsl := viper.GetString("filesystemlayout")
 	match := models.V1FilesystemLayoutMatchRequest{
-		Machine:          &machine,
-		Filesystemlayout: &fsl,
+		Machine:          pointer.Pointer(viper.GetString("machine")),
+		Filesystemlayout: pointer.Pointer(viper.GetString("filesystemlayout")),
 	}
 
 	resp, err := c.client.Filesystemlayout().MatchFilesystemLayout(fsmodel.NewMatchFilesystemLayoutParams().WithBody(&match), nil)
@@ -157,5 +152,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return printers.NewPrinterFromCLI().Print(resp.Payload)
 }
