@@ -295,6 +295,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIpmiCmd := &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
 		Short: `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.`,
+		Long:  `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.` + "\n\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
@@ -303,6 +304,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
+		Long:  `display machines which are in a potential bad state` + "\n\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIssues()
 		},
@@ -356,12 +358,10 @@ In case the machine did not register properly a direct ipmi console access is av
 	cmds.listCmd.Long = cmds.listCmd.Short + "\n" + api.EmojiHelpText()
 
 	machineIpmiCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
-	machineIpmiCmd.Long = machineIpmiCmd.Short + "\n" + api.EmojiHelpText()
 
 	machineIssuesCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
-	machineIssuesCmd.Long = machineIssuesCmd.Short + "\n" + api.EmojiHelpText()
 
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
