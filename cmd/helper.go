@@ -1,90 +1,73 @@
 package cmd
 
 import (
-	"bufio"
-	"errors"
 	"fmt"
-	"io"
+	"log"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/metal-stack/metal-lib/auth"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"gopkg.in/yaml.v3"
 
 	"github.com/spf13/viper"
 )
 
-func atLeastOneViperStringFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetString(flag) != "" {
-			return true
+func newPrinterFromCLI() genericcli.Printer {
+	var printer genericcli.Printer
+	var err error
+
+	switch format := viper.GetString("output-format"); format {
+	case "yaml":
+		printer = genericcli.NewYAMLPrinter()
+	case "json":
+		printer = genericcli.NewJSONPrinter()
+	case "table", "wide", "markdown":
+		tp := tableprinters.New()
+		cfg := &genericcli.TablePrinterConfig{
+			ToHeaderAndRows: tp.ToHeaderAndRows,
+			Wide:            format == "wide",
+			Markdown:        format == "markdown",
+			NoHeaders:       viper.GetBool("no-headers"),
+		}
+		tablePrinter, err := genericcli.NewTablePrinter(cfg)
+		if err != nil {
+			log.Fatalf("unable to initialize printer: %v", err)
+		}
+		tp.SetPrinter(tablePrinter)
+		printer = tablePrinter
+	case "template":
+		printer, err = genericcli.NewTemplatePrinter(viper.GetString("template"))
+		if err != nil {
+			log.Fatalf("unable to initialize printer: %v", err)
+		}
+	default:
+		log.Fatalf("unknown output format: %q", format)
+	}
+
+	if viper.IsSet("force-color") {
+		enabled := viper.GetBool("force-color")
+		if enabled {
+			color.NoColor = false
+		} else {
+			color.NoColor = true
 		}
 	}
-	return false
+
+	return printer
 }
 
-func atLeastOneViperStringSliceFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if len(viper.GetStringSlice(flag)) > 0 {
-			return true
-		}
+func defaultToYAMLPrinter() genericcli.Printer {
+	if viper.IsSet("output-format") {
+		return newPrinterFromCLI()
 	}
-	return false
-}
-
-func atLeastOneViperBoolFlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetBool(flag) {
-			return true
-		}
-	}
-	return false
-}
-
-func atLeastOneViperInt64FlagGiven(flags ...string) bool {
-	for _, flag := range flags {
-		if viper.GetInt64(flag) != 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func viperString(flag string) *string {
-	if viper.GetString(flag) == "" {
-		return nil
-	}
-	value := viper.GetString(flag)
-	return &value
-}
-
-func viperStringSlice(flag string) []string {
-	value := viper.GetStringSlice(flag)
-	if len(value) == 0 {
-		return nil
-	}
-	return value
-}
-
-func viperBool(flag string) *bool {
-	if !viper.GetBool(flag) {
-		return nil
-	}
-	value := viper.GetBool(flag)
-	return &value
-}
-
-func viperInt64(flag string) *int64 {
-	if viper.GetInt64(flag) == 0 {
-		return nil
-	}
-	value := viper.GetInt64(flag)
-	return &value
+	return genericcli.NewYAMLPrinter()
 }
 
 func parseNetworks(values []string) ([]metalgo.MachineAllocationNetwork, error) {
@@ -144,51 +127,6 @@ func splitNetwork(value string) (string, bool, error) {
 // 	return string(result)
 // }
 
-func labelsFromTags(tags []string) map[string]string {
-	labels := make(map[string]string)
-	for _, tag := range tags {
-		parts := strings.Split(tag, "=")
-		partslen := len(parts)
-		switch partslen {
-		case 1:
-			labels[tag] = "true"
-		case 2:
-			labels[parts[0]] = parts[1]
-		default:
-			values := strings.Join(parts[1:], "")
-			labels[parts[0]] = values
-		}
-	}
-	return labels
-}
-
-// readFrom will either read from stdin (-) or a file path an marshall from yaml to data
-func readFrom(from string, data interface{}, f func(target interface{})) error {
-	var reader io.Reader
-	var err error
-	switch from {
-	case "-":
-		reader = os.Stdin
-	default:
-		reader, err = os.Open(from)
-		if err != nil {
-			return fmt.Errorf("unable to open %s %w", from, err)
-		}
-	}
-	dec := yaml.NewDecoder(reader)
-	for {
-		err := dec.Decode(data)
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return fmt.Errorf("decode error: %w", err)
-		}
-		f(data)
-	}
-	return nil
-}
-
 const cloudContext = "cloudctl"
 
 // getAuthContext reads AuthContext from given kubeconfig
@@ -218,32 +156,6 @@ func formatContextName(prefix string, suffix string) string {
 	return contextName
 }
 
-func annotationsAsMap(annotations []string) (map[string]string, error) {
-	result := make(map[string]string)
-	for _, a := range annotations {
-		parts := strings.Split(strings.TrimSpace(a), "=")
-		if len(parts) != 2 {
-			return result, fmt.Errorf("given annotation %s does not contain exactly one =", a)
-		}
-		result[parts[0]] = parts[1]
-	}
-	return result, nil
-}
-
-// Prompt the user to given compare text
-func Prompt(msg, compare string) error {
-	fmt.Print(msg + " ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	if err := scanner.Err(); err != nil {
-		panic(err)
-	}
-	text := scanner.Text()
-	if text != compare {
-		return fmt.Errorf("unexpected answer given (%q), aborting...", text)
-	}
-	return nil
-}
 func searchSSHKey() (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {

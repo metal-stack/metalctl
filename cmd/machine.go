@@ -16,23 +16,13 @@ import (
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-type FilterOpts struct {
-	ID        string
-	Partition string
-	Size      string
-	Name      string
-	Project   string
-	Image     string
-	Hostname  string
-	Mac       string
-	Tags      []string
-}
 
 const (
 	// Port open on our control-plane to connect via ssh to get machine console access.
@@ -40,112 +30,75 @@ const (
 	forceFlag      = "yes-i-really-mean-it"
 )
 
-var filterOpts = &FilterOpts{}
+type machineCmd struct {
+	*config
+	*genericcli.GenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]
+}
 
 func newMachineCmd(c *config) *cobra.Command {
-
-	machineCmd := &cobra.Command{
-		Use:   "machine",
-		Short: "manage machines",
-		Long:  "metal machines are bare metal servers.",
+	w := machineCmd{
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](machineCRUD{config: c}),
 	}
 
-	machineCreateCmd := &cobra.Command{
-		Use:   "create",
-		Short: "create a machine",
-		Long:  `create a new machine with the given operating system, the size and a project.`,
-		Example: `machine create can be done in two different ways:
+	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
+		gcli:     w.GenericCLI,
+		singular: "machine",
+		plural:   "machines",
+		aliases:  []string{"ms"},
 
-- default with automatic allocation:
+		createRequestFromCLI: w.createRequestFromCLI,
+		updateRequestFromCLI: w.updateRequestFromCLI,
 
-metalctl machine create \
-	--hostname worker01 \
-	--name worker \
-	--image ubuntu-18.04 \ # query available with: metalctl image list
-	--size t1-small-x86 \  # query available with: metalctl size list
-	--partition test \     # query available with: metalctl partition list
-	--project cluster01 \
-	--sshpublickey "@~/.ssh/id_rsa.pub"
+		availableSortKeys: sorters.MachineSortKeys(),
+		validArgsFunc:     c.comp.MachineListCompletion,
+	})
 
-- for metal administration with reserved machines:
+	c.addMachineCreateFlags(cmds.createCmd, "machine")
+	cmds.createCmd.Aliases = []string{"allocate"}
+	cmds.createCmd.Example = `machine create can be done in two different ways:
 
-reserve a machine you want to allocate:
+	- default with automatic allocation:
 
-metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--size t1-small-x86 \  # query available with: metalctl size list
+		--partition test \     # query available with: metalctl partition list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub"
 
-allocate this machine:
+	- for metal administration with reserved machines:
 
-metalctl machine create \
-	--hostname worker01 \
-	--name worker \
-	--image ubuntu-18.04 \ # query available with: metalctl image list
-	--project cluster01 \
-	--sshpublickey "@~/.ssh/id_rsa.pub" \
-	--id 00000000-0000-0000-0000-0cc47ae54694
+	reserve a machine you want to allocate:
 
-after you do not want to use this machine exclusive, remove the reservation:
+	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
 
-metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
+	allocate this machine:
 
-Once created the machine installation can not be modified anymore.
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub" \
+		--id 00000000-0000-0000-0000-0cc47ae54694
 
-`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineCreate()
-		},
-		PreRun: bindPFlags,
-	}
+	after you do not want to use this machine exclusive, remove the reservation:
 
-	machineListCmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list all machines",
-		Long:    "list all machines with almost all properties in tabular form.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineList()
-		},
-		PreRun: bindPFlags,
-	}
+	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
 
-	machineDescribeCmd := &cobra.Command{
-		Use:   "describe <machine ID>",
-		Short: "describe a machine",
-		Long:  "describe a machine in a very detailed form with all properties.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineDescribe(args)
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.MachineListCompletion,
-	}
+	Once created the machine installation can not be modified anymore.
+	`
 
-	machineUpdateCmd := &cobra.Command{
-		Use:   "update <machine ID>",
-		Short: "update a machine",
-		Long:  "updates a machine, which is only possible for allocated machines.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineUpdate(args)
-		},
-		PreRun: bindPFlags,
-	}
+	cmds.deleteCmd.Long = `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects. A destroyed machine can not restored anymore`
 
 	machineConsolePasswordCmd := &cobra.Command{
 		Use:   "consolepassword <machine ID>",
 		Short: "fetch the consolepassword for a machine",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineConsolePassword(args)
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.MachineListCompletion,
-	}
-
-	machineDestroyCmd := &cobra.Command{
-		Use:     "delete <machine ID>",
-		Short:   "delete a machine",
-		Aliases: []string{"destroy", "rm", "remove"},
-		Long: `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects.
-A destroyed machine can not restored anymore`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineDestroy(args)
+			return w.machineConsolePassword(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -161,7 +114,7 @@ A destroyed machine can not restored anymore`,
 		Short: "power on a machine",
 		Long:  "set the machine to power on state, if the machine already was on nothing happens.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machinePowerOn(args)
+			return w.machinePowerOn(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -174,7 +127,7 @@ A destroyed machine can not restored anymore`,
 It will usually take some time to power off the machine, depending on the machine type.
 Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machinePowerOff(args)
+			return w.machinePowerOff(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -185,7 +138,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "power reset a machine",
 		Long:  "(hard) reset the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machinePowerReset(args)
+			return w.machinePowerReset(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -196,7 +149,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "power cycle a machine",
 		Long:  "(soft) cycle the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machinePowerCycle(args)
+			return w.machinePowerCycle(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -213,7 +166,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "update a machine BIOS",
 		Long:  "the machine BIOS will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineUpdateBios(args)
+			return w.machineUpdateBios(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -224,7 +177,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "update a machine BMC",
 		Long:  "the machine BMC will be updated to given revision. If revision flag is not specified an update plan will be printed instead.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineUpdateBmc(args)
+			return w.machineUpdateBmc(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -235,7 +188,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "boot a machine into BIOS",
 		Long:  "the machine will boot into bios. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineBootBios(args)
+			return w.machineBootBios(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -246,7 +199,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "boot a machine from PXE",
 		Long:  "the machine will boot from PXE. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineBootPxe(args)
+			return w.machineBootPxe(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -257,7 +210,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "boot a machine from disk",
 		Long:  "the machine will boot from disk. (machine does not reboot automatically)",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineBootDisk(args)
+			return w.machineBootDisk(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -273,7 +226,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "power on the machine chassis identify LED",
 		Long:  `set the machine chassis identify LED to on state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIdentifyOn(args)
+			return w.machineIdentifyOn(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -284,7 +237,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		Short: "power off the machine chassis identify LED",
 		Long:  `set the machine chassis identify LED to off state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIdentifyOff(args)
+			return w.machineIdentifyOff(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -297,7 +250,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 This is useful for maintenance of the machine or testing. After the reservation is not needed anymore, the reservation
 should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineReserve(args)
+			return w.machineReserve(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -308,7 +261,7 @@ should be removed with --remove.`,
 		Short: "lock a machine",
 		Long:  `when a machine is locked, it can not be destroyed, to destroy a machine you must first remove the lock from that machine with --remove`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineLock(args)
+			return w.machineLock(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -320,18 +273,19 @@ should be removed with --remove.`,
 		Long: `reinstalls an already allocated machine. If it is not yet allocated, nothing happens, otherwise only the machine's primary disk
 is wiped and the new image will subsequently be installed on that device`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineReinstall(args)
+			return w.machineReinstall(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
 	machineConsoleCmd := &cobra.Command{
-		Use: "console <machine ID>",
-		Short: `console access to a machine, machine must be created with a ssh public key, authentication is done with your private key.
+		Use:   "console <machine ID>",
+		Short: `console access to a machine`,
+		Long: `console access to a machine, machine must be created with a ssh public key, authentication is done with your private key.
 In case the machine did not register properly a direct ipmi console access is available via the --ipmi flag. This is only for administrative access.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineConsole(args)
+			return w.machineConsole(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -340,7 +294,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		Use:   "ipmi [<machine ID>]",
 		Short: `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIpmi(args)
+			return w.machineIpmi(args)
 		},
 		PreRun: bindPFlags,
 	}
@@ -348,7 +302,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIssues()
+			return w.machineIssues()
 		},
 		PreRun: bindPFlags,
 	}
@@ -357,7 +311,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		Aliases: []string{"log"},
 		Short:   `display machine provisioning logs`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineLogs(args)
+			return w.machineLogs(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
@@ -367,116 +321,43 @@ In case the machine did not register properly a direct ipmi console access is av
 		Aliases: []string{"event"},
 		Short:   `display machine hardware events`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.machineIpmiEvents(args)
+			return w.machineIpmiEvents(args)
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	c.addMachineCreateFlags(machineCreateCmd, "machine")
-	machineCmd.AddCommand(machineCreateCmd)
+	listFlagCompletions := []struct {
+		flagName string
+		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
+	}{
+		{flagName: "partition", f: c.comp.PartitionListCompletion},
+		{flagName: "size", f: c.comp.SizeListCompletion},
+		{flagName: "project", f: c.comp.ProjectListCompletion},
+		{flagName: "id", f: c.comp.MachineListCompletion},
+		{flagName: "image", f: c.comp.ImageListCompletion},
+	}
 
-	machineListCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Size, "size", "", "", "size to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Name, "name", "", "", "allocation name to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Project, "project", "", "", "allocation project to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Image, "image", "", "", "allocation image to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Hostname, "hostname", "", "", "allocation hostname to filter [optional]")
-	machineListCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
-	machineListCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	cmds.listCmd.Flags().String("id", "", "ID to filter [optional]")
+	cmds.listCmd.Flags().String("partition", "", "partition to filter [optional]")
+	cmds.listCmd.Flags().String("size", "", "size to filter [optional]")
+	cmds.listCmd.Flags().String("name", "", "allocation name to filter [optional]")
+	cmds.listCmd.Flags().String("project", "", "allocation project to filter [optional]")
+	cmds.listCmd.Flags().String("image", "", "allocation image to filter [optional]")
+	cmds.listCmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
+	cmds.listCmd.Flags().String("mac", "", "mac to filter [optional]")
+	cmds.listCmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	for _, c := range listFlagCompletions {
+		c := c
+		must(cmds.listCmd.RegisterFlagCompletionFunc(c.flagName, c.f))
+	}
 
-	must(machineListCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(machineListCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(machineListCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(machineListCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	must(machineListCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	machineIpmiCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Size, "size", "", "", "size to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Name, "name", "", "", "allocation name to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Project, "project", "", "", "allocation project to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Image, "image", "", "", "allocation image to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Hostname, "hostname", "", "", "allocation hostname to filter [optional]")
-	machineIpmiCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
-	machineIpmiCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
-
-	must(machineIpmiCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(machineIpmiCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(machineIpmiCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(machineIpmiCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-
-	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
-
-	machineCmd.AddCommand(machineListCmd)
-	machineCmd.AddCommand(machineDestroyCmd)
-	machineCmd.AddCommand(machineDescribeCmd)
-	machineCmd.AddCommand(machineConsolePasswordCmd)
-	machineCmd.AddCommand(machineUpdateCmd)
-
-	machineUpdateCmd.Flags().String("description", "", "the description of the machine [optional]")
-	machineUpdateCmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
-	machineUpdateCmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
-
-	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
-	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
-	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
-
-	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
-	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
-	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
-
-	machineCmd.AddCommand(machineUpdateFirmwareCmd)
-
-	machinePowerCmd.AddCommand(machinePowerOnCmd)
-	machinePowerCmd.AddCommand(machinePowerOffCmd)
-	machinePowerCmd.AddCommand(machinePowerResetCmd)
-	machinePowerCmd.AddCommand(machinePowerCycleCmd)
-	machinePowerCmd.AddCommand(machineBootBiosCmd)
-	machinePowerCmd.AddCommand(machineBootDiskCmd)
-	machinePowerCmd.AddCommand(machineBootPxeCmd)
-	machineCmd.AddCommand(machinePowerCmd)
-
-	machineIdentifyOnCmd.Flags().StringP("description", "d", "", "description of the reason for chassis identify LED turn-on.")
-	machineIdentifyCmd.AddCommand(machineIdentifyOnCmd)
-
-	machineIdentifyOffCmd.Flags().StringP("description", "d", "Triggered by metalctl", "description of the reason for chassis identify LED turn-off.")
-	machineIdentifyCmd.AddCommand(machineIdentifyOffCmd)
-	machineCmd.AddCommand(machineIdentifyCmd)
-
-	machineReserveCmd.Flags().StringP("description", "d", "", "description of the reason for the reservation.")
-	machineReserveCmd.Flags().BoolP("remove", "r", false, "remove the reservation.")
-	machineCmd.AddCommand(machineReserveCmd)
-
-	machineLockCmd.Flags().StringP("description", "d", "", "description of the reason for the lock.")
-	machineLockCmd.Flags().BoolP("remove", "r", false, "remove the lock.")
-	machineCmd.AddCommand(machineLockCmd)
-
-	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
-	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
-	must(machineReinstallCmd.MarkFlagRequired("image"))
-	machineCmd.AddCommand(machineReinstallCmd)
-
+	machineIssuesCmd.Flags().AddFlagSet(cmds.listCmd.Flags())
 	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.ID, "id", "", "", "ID to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Partition, "partition", "", "", "partition to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Size, "size", "", "", "size to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Name, "name", "", "", "allocation name to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Project, "project", "", "", "allocation project to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Image, "image", "", "", "allocation image to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Hostname, "hostname", "", "", "allocation hostname to filter [optional]")
-	machineIssuesCmd.Flags().StringVarP(&filterOpts.Mac, "mac", "", "", "mac to filter [optional]")
-	machineIssuesCmd.Flags().StringSliceVar(&filterOpts.Tags, "tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
 		for _, i := range api.AllIssues {
@@ -492,22 +373,71 @@ In case the machine did not register properly a direct ipmi console access is av
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	}))
 
+	cmds.updateCmd.Flags().String("description", "", "the description of the machine [optional]")
+	cmds.updateCmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
+	cmds.updateCmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
+
+	cmds.deleteCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
+
+	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
+
+	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
+	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
+	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
+	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
+
+	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
+	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
+	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
+	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
+
+	machinePowerCmd.AddCommand(machinePowerOnCmd)
+	machinePowerCmd.AddCommand(machinePowerOffCmd)
+	machinePowerCmd.AddCommand(machinePowerResetCmd)
+	machinePowerCmd.AddCommand(machinePowerCycleCmd)
+	machinePowerCmd.AddCommand(machineBootBiosCmd)
+	machinePowerCmd.AddCommand(machineBootDiskCmd)
+	machinePowerCmd.AddCommand(machineBootPxeCmd)
+
+	machineIdentifyOnCmd.Flags().StringP("description", "d", "", "description of the reason for chassis identify LED turn-on.")
+	machineIdentifyCmd.AddCommand(machineIdentifyOnCmd)
+
+	machineIdentifyOffCmd.Flags().StringP("description", "d", "Triggered by metalctl", "description of the reason for chassis identify LED turn-off.")
+	machineIdentifyCmd.AddCommand(machineIdentifyOffCmd)
+
+	machineReserveCmd.Flags().StringP("description", "d", "", "description of the reason for the reservation.")
+	machineReserveCmd.Flags().BoolP("remove", "r", false, "remove the reservation.")
+
+	machineLockCmd.Flags().StringP("description", "d", "", "description of the reason for the lock.")
+	machineLockCmd.Flags().BoolP("remove", "r", false, "remove the lock.")
+
+	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
+	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
+	must(machineReinstallCmd.MarkFlagRequired("image"))
+
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
-	machineCmd.AddCommand(machineConsoleCmd)
-	machineCmd.AddCommand(machineIpmiCmd)
-	machineCmd.AddCommand(machineIssuesCmd)
-	machineCmd.AddCommand(machineLogsCmd)
+
 	machineIpmiEventsCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
 	machineIpmiEventsCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
 	machineIpmiEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
 	machineIpmiCmd.AddCommand(machineIpmiEventsCmd)
 
-	machineDestroyCmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
-
-	return machineCmd
+	return cmds.buildRootCmd(
+		machineConsolePasswordCmd,
+		machineConsoleCmd,
+		machineIpmiCmd,
+		machineIssuesCmd,
+		machineLogsCmd,
+		machineUpdateFirmwareCmd,
+		machinePowerCmd,
+		machineIdentifyCmd,
+		machineReserveCmd,
+		machineLockCmd,
+		machineReinstallCmd,
+	)
 }
 
 func (c *config) addMachineCreateFlags(cmd *cobra.Command, name string) {
@@ -579,20 +509,120 @@ MODE can be omitted or one of:
 	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func (c *config) machineCreate() error {
-	mcr, err := c.machineCreateRequest()
-	if err != nil {
-		return fmt.Errorf("machine create error:%w", err)
-	}
-
-	resp, err := c.driver.MachineCreate(mcr)
-	if err != nil {
-		return fmt.Errorf("machine create error:%w", err)
-	}
-	return output.New().Print(resp.Machine)
+type machineCRUD struct {
+	*config
 }
 
-func (c *config) machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
+func (c machineCRUD) Get(id string) (*models.V1MachineResponse, error) {
+	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c machineCRUD) List() ([]*models.V1MachineResponse, error) {
+	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	err = sorters.MachineSort(resp.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func machineFindRequestFromCLI() *models.V1MachineFindRequest {
+	return &models.V1MachineFindRequest{
+		ID:                 viper.GetString("id"),
+		PartitionID:        viper.GetString("partition"),
+		Sizeid:             viper.GetString("size"),
+		Name:               viper.GetString("name"),
+		AllocationProject:  viper.GetString("project"),
+		AllocationImageID:  viper.GetString("image"),
+		AllocationHostname: viper.GetString("hostname"),
+		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		Tags:               viper.GetStringSlice("tags"),
+	}
+}
+
+func (c machineCRUD) Delete(id string) (*models.V1MachineResponse, error) {
+	if viper.GetBool("remove-from-database") {
+		if !viper.GetBool(forceFlag) {
+			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
+		}
+
+		resp, err := c.client.Machine().DeleteMachine(machine.NewDeleteMachineParams().WithID(id), nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp.Payload, nil
+	}
+
+	resp, err := c.client.Machine().FreeMachine(machine.NewFreeMachineParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c machineCRUD) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c machineCRUD) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, error) {
+	mcr, err := machineCreateRequest()
+	if err != nil {
+		return nil, fmt.Errorf("machine create error:%w", err)
+	}
+
+	var nets []*models.V1MachineAllocationNetwork
+	for i := range mcr.Networks {
+		net := models.V1MachineAllocationNetwork{
+			Networkid:   &mcr.Networks[i].NetworkID,
+			Autoacquire: &mcr.Networks[i].Autoacquire,
+		}
+		nets = append(nets, &net)
+	}
+
+	return &models.V1MachineAllocateRequest{
+		Description: mcr.Description,
+		Partitionid: &mcr.Partition,
+		Hostname:    mcr.Hostname,
+		Imageid:     &mcr.Image,
+		Name:        mcr.Name,
+		UUID:        mcr.UUID,
+		Projectid:   &mcr.Project,
+		Sizeid:      &mcr.Size,
+		SSHPubKeys:  mcr.SSHPublicKeys,
+		UserData:    mcr.UserData,
+		Tags:        mcr.Tags,
+		Networks:    nets,
+		Ips:         mcr.IPs,
+	}, nil
+}
+
+func machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
@@ -660,205 +690,123 @@ func (c *config) machineCreateRequest() (*metalgo.MachineCreateRequest, error) {
 	return mcr, nil
 }
 
-func (c *config) machineList() error {
-	var resp *metalgo.MachineListResponse
-	var err error
-	if atLeastOneViperStringFlagGiven("id", "partition", "size", "name", "project", "image", "hostname", "mac") ||
-		atLeastOneViperStringSliceFlagGiven("tags") {
-		mfr := &metalgo.MachineFindRequest{}
-		if filterOpts.ID != "" {
-			mfr.ID = &filterOpts.ID
-		}
-		if filterOpts.Partition != "" {
-			mfr.PartitionID = &filterOpts.Partition
-		}
-		if filterOpts.Size != "" {
-			mfr.SizeID = &filterOpts.Size
-		}
-		if filterOpts.Name != "" {
-			mfr.AllocationName = &filterOpts.Name
-		}
-		if filterOpts.Project != "" {
-			mfr.AllocationProject = &filterOpts.Project
-		}
-		if filterOpts.Image != "" {
-			mfr.AllocationImageID = &filterOpts.Image
-		}
-		if filterOpts.Hostname != "" {
-			mfr.AllocationHostname = &filterOpts.Hostname
-		}
-		if filterOpts.Hostname != "" {
-			mfr.AllocationHostname = &filterOpts.Hostname
-		}
-		if filterOpts.Mac != "" {
-			mfr.NicsMacAddresses = []string{filterOpts.Mac}
-		}
-		if len(filterOpts.Tags) > 0 {
-			mfr.Tags = filterOpts.Tags
-		}
-		resp, err = c.driver.MachineFind(mfr)
-	} else {
-		resp, err = c.driver.MachineList()
-	}
+func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdateRequest, error) {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return output.New().Print(resp.Machines)
-}
 
-func (c *config) machineDescribe(args []string) error {
-	machineID, err := c.getMachineID(args)
+	resp, err := c.Interface().Get(id)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	resp, err := c.driver.MachineGet(machineID)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Machine)
-}
 
-func (c *config) machineUpdate(args []string) error {
-	description := viper.GetString("description")
 	addTags := viper.GetStringSlice("add-tags")
 	removeTags := viper.GetStringSlice("remove-tags")
 
-	machineID, err := c.getMachineID(args)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.driver.MachineGet(machineID)
-	if err != nil {
-		return err
-	}
-
 	for _, removeTag := range removeTags {
-		if !slices.Contains(resp.Machine.Tags, removeTag) {
-			return fmt.Errorf("cannot remove tag because it is currently not present: %s", removeTag)
+		if !slices.Contains(resp.Tags, removeTag) {
+			return nil, fmt.Errorf("cannot remove tag because it is currently not present: %s", removeTag)
 		}
 	}
 
 	newTags := addTags
-	for _, t := range resp.Machine.Tags {
+	for _, t := range resp.Tags {
 		if slices.Contains(removeTags, t) {
 			continue
 		}
 		newTags = append(newTags, t)
 	}
 
-	mur := &metalgo.MachineUpdateRequest{
-		ID:   machineID,
-		Tags: newTags,
-	}
-
-	if viper.IsSet("description") {
-		mur.Description = &description
-	}
-
-	updateResp, err := c.driver.MachineUpdate(mur)
-	if err != nil {
-		return err
-	}
-
-	return output.NewDetailer().Detail(updateResp.Machine)
+	return &models.V1MachineUpdateRequest{
+		ID:          pointer.Pointer(id),
+		Description: pointer.Pointer(viper.GetString("description")),
+		Tags:        newTags,
+	}, nil
 }
 
-func (c *config) machineConsolePassword(args []string) error {
-	machineID, err := c.getMachineID(args)
+// non-generic command handling
+
+func (c *machineCmd) machineConsolePassword(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
+
 	reason := viper.GetString("reason")
-	resp, err := c.driver.MachineConsolePassword(machineID, reason)
+
+	resp, err := c.driver.MachineConsolePassword(id, reason)
 	if err != nil {
 		return err
 	}
+
 	fmt.Printf("%s\n", *resp.ConsolePassword)
+
 	return nil
 }
 
-func (c *config) machineDestroy(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machinePowerOn(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	if viper.GetBool("remove-from-database") {
-		if !viper.GetBool(forceFlag) {
-			return fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
-		}
-		resp, err := c.driver.MachineDeleteFromDatabase(machineID)
-		if err != nil {
-			return err
-		}
-		return output.New().Print(resp.Machine)
-	}
-
-	resp, err := c.driver.MachineDelete(machineID)
+	resp, err := c.driver.MachinePowerOn(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machinePowerOn(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machinePowerOff(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerOn(machineID)
+	resp, err := c.driver.MachinePowerOff(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machinePowerOff(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machinePowerReset(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerOff(machineID)
+	resp, err := c.driver.MachinePowerReset(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machinePowerReset(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machinePowerCycle(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerReset(machineID)
+	resp, err := c.driver.MachinePowerCycle(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machinePowerCycle(args []string) error {
-	machineID, err := c.getMachineID(args)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.driver.MachinePowerCycle(machineID)
-	if err != nil {
-		return err
-	}
-	return output.New().Print(resp.Machine)
-}
-
-func (c *config) machineUpdateBios(args []string) error {
+func (c *machineCmd) machineUpdateBios(args []string) error {
 	m, vendor, board, err := c.firmwareData(args)
 	if err != nil {
 		return err
 	}
+
 	revision := viper.GetString("revision")
 	currentVersion := ""
 	if m.Bios != nil && m.Bios.Version != nil {
@@ -868,7 +816,7 @@ func (c *config) machineUpdateBios(args []string) error {
 	return c.machineUpdateFirmware(metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
 }
 
-func (c *config) machineUpdateBmc(args []string) error {
+func (c *machineCmd) machineUpdateBmc(args []string) error {
 	m, vendor, board, err := c.firmwareData(args)
 	if err != nil {
 		return err
@@ -882,14 +830,20 @@ func (c *config) machineUpdateBmc(args []string) error {
 	return c.machineUpdateFirmware(metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
 }
 
-func (c *config) firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
-	m, err := c.getMachine(args)
+func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return nil, "", "", err
 	}
-	machineID := *m.ID
+
+	resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	m := resp.Payload
 	if m.Ipmi == nil {
-		return nil, "", "", fmt.Errorf("no ipmi data available of machine %s", machineID)
+		return nil, "", "", fmt.Errorf("no ipmi data available of machine %s", id)
 	}
 
 	fru := *m.Ipmi.Fru
@@ -899,7 +853,7 @@ func (c *config) firmwareData(args []string) (*models.V1MachineIPMIResponse, str
 	return m, vendor, board, nil
 }
 
-func (c *config) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
+func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
 	f, err := c.driver.ListFirmwares(kind, "", "")
 	if err != nil {
 		return err
@@ -955,7 +909,7 @@ func (c *config) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, ven
 	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
-		err = Prompt("Do you want to continue? (y/n)", "y")
+		err = genericcli.Prompt()
 		if err != nil {
 			return err
 		}
@@ -976,158 +930,165 @@ func (c *config) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, ven
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp)
+
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
-func (c *config) machineBootBios(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineBootBios(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootBios(machineID)
+	resp, err := c.driver.MachineBootBios(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineBootDisk(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineBootDisk(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootDisk(machineID)
+	resp, err := c.driver.MachineBootDisk(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineBootPxe(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineBootPxe(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootPxe(machineID)
+	resp, err := c.driver.MachineBootPxe(id)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineIdentifyOn(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineIdentifyOn(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
 	description := viper.GetString("description")
-	resp, err := c.driver.ChassisIdentifyLEDPowerOn(machineID, description)
+	resp, err := c.driver.ChassisIdentifyLEDPowerOn(id, description)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineIdentifyOff(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineIdentifyOff(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
 
 	description := viper.GetString("description")
-	resp, err := c.driver.ChassisIdentifyLEDPowerOff(machineID, description)
+	resp, err := c.driver.ChassisIdentifyLEDPowerOff(id, description)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineReserve(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineReserve(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
-	description := viper.GetString("description")
-	remove := viper.GetBool("remove")
 
-	var resp *metalgo.MachineStateResponse
-	if remove {
-		resp, err = c.driver.MachineUnReserve(machineID)
-		if err != nil {
-			return err
-		}
-	} else {
-		resp, err = c.driver.MachineReserve(machineID, description)
-		if err != nil {
-			return err
-		}
-	}
-	return output.New().Print(resp.Machine)
-}
-
-func (c *config) machineLock(args []string) error {
-	machineID, err := c.getMachineID(args)
-	if err != nil {
-		return err
-	}
 	description := viper.GetString("description")
 	remove := viper.GetBool("remove")
 
 	var resp *metalgo.MachineStateResponse
 	if remove {
-		resp, err = c.driver.MachineUnLock(machineID)
+		resp, err = c.driver.MachineUnReserve(id)
 		if err != nil {
 			return err
 		}
 	} else {
-		resp, err = c.driver.MachineLock(machineID, description)
+		resp, err = c.driver.MachineReserve(id, description)
 		if err != nil {
 			return err
 		}
 	}
-	return output.New().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineReinstall(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineLock(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
+
+	description := viper.GetString("description")
+	remove := viper.GetBool("remove")
+
+	var resp *metalgo.MachineStateResponse
+	if remove {
+		resp, err = c.driver.MachineUnLock(id)
+		if err != nil {
+			return err
+		}
+	} else {
+		resp, err = c.driver.MachineLock(id, description)
+		if err != nil {
+			return err
+		}
+	}
+
+	return newPrinterFromCLI().Print(resp.Machine)
+}
+
+func (c *machineCmd) machineReinstall(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
 	imageID := viper.GetString("image")
 	description := viper.GetString("description")
 
 	var resp *metalgo.MachineGetResponse
-	resp, err = c.driver.MachineReinstall(machineID, imageID, description)
+	resp, err = c.driver.MachineReinstall(id, imageID, description)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Machine)
 }
 
-func (c *config) machineLogs(args []string) error {
+func (c *machineCmd) machineLogs(args []string) error {
 	// FIXME add ipmi sel as well
-	machineID, err := c.getMachineID(args)
+	resp, err := c.Describe(args)
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.driver.MachineGet(machineID)
-	if err != nil {
-		return err
-	}
-	machine := resp.Machine
-	return output.New().Print(machine.Events.Log)
+	return newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
 }
 
-func (c *config) machineConsole(args []string) error {
-	machineID, err := c.getMachineID(args)
+func (c *machineCmd) machineConsole(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
+
 	useIpmi := viper.GetBool("ipmi")
 	if useIpmi {
 		path, err := exec.LookPath("ipmitool")
@@ -1135,7 +1096,7 @@ func (c *config) machineConsole(args []string) error {
 			return fmt.Errorf("unable to locate ipmitool in path")
 		}
 
-		resp, err := c.driver.MachineIPMIGet(machineID)
+		resp, err := c.driver.MachineIPMIGet(id)
 		if err != nil {
 			return err
 		}
@@ -1185,6 +1146,7 @@ func (c *config) machineConsole(args []string) error {
 			return fmt.Errorf("machine console error:%w", err)
 		}
 	}
+
 	parsedurl, err := url.Parse(c.driverURL)
 	if err != nil {
 		return err
@@ -1197,97 +1159,47 @@ func (c *config) machineConsole(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = SSHClient(machineID, key, parsedurl.Host, bmcConsolePort)
+	err = SSHClient(id, key, parsedurl.Host, bmcConsolePort)
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
+
 	return nil
 }
 
-func (c *config) machineIpmi(args []string) error {
+func (c *machineCmd) machineIpmi(args []string) error {
 	if len(args) == 1 {
-		machineID, err := c.getMachineID(args)
+		id, err := genericcli.GetExactlyOneArg(args)
 		if err != nil {
 			return err
 		}
-		resp, err := c.driver.MachineIPMIGet(machineID)
+
+		resp, err := c.driver.MachineIPMIGet(id)
 		if err != nil {
 			return err
 		}
 
 		hidden := "<hidden>"
 		resp.Machine.Ipmi.Password = &hidden
-		return output.NewDetailer().Detail(resp.Machine)
+
+		return defaultToYAMLPrinter().Print(resp.Machine)
 	}
 
-	mfr := &metalgo.MachineFindRequest{}
-	if filterOpts.ID != "" {
-		mfr.ID = &filterOpts.ID
-	}
-	if filterOpts.Partition != "" {
-		mfr.PartitionID = &filterOpts.Partition
-	}
-	if filterOpts.Size != "" {
-		mfr.SizeID = &filterOpts.Size
-	}
-	if filterOpts.Name != "" {
-		mfr.AllocationName = &filterOpts.Name
-	}
-	if filterOpts.Project != "" {
-		mfr.AllocationProject = &filterOpts.Project
-	}
-	if filterOpts.Image != "" {
-		mfr.AllocationImageID = &filterOpts.Image
-	}
-	if filterOpts.Hostname != "" {
-		mfr.AllocationHostname = &filterOpts.Hostname
-	}
-	if filterOpts.Mac != "" {
-		mfr.NicsMacAddresses = []string{filterOpts.Mac}
-	}
-	if len(filterOpts.Tags) > 0 {
-		mfr.Tags = filterOpts.Tags
-	}
-	resp, err := c.driver.MachineIPMIList(mfr)
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
-	return output.New().Print(resp.Machines)
+
+	err = sorters.MachineIPMISort(resp.Payload)
+	if err != nil {
+		return err
+	}
+
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
-func (c *config) machineIssues() error {
-	mfr := &metalgo.MachineFindRequest{}
-	if filterOpts.ID != "" {
-		mfr.ID = &filterOpts.ID
-	}
-	if filterOpts.Partition != "" {
-		mfr.PartitionID = &filterOpts.Partition
-	}
-	if filterOpts.Size != "" {
-		mfr.SizeID = &filterOpts.Size
-	}
-	if filterOpts.Name != "" {
-		mfr.AllocationName = &filterOpts.Name
-	}
-	if filterOpts.Project != "" {
-		mfr.AllocationProject = &filterOpts.Project
-	}
-	if filterOpts.Image != "" {
-		mfr.AllocationImageID = &filterOpts.Image
-	}
-	if filterOpts.Hostname != "" {
-		mfr.AllocationHostname = &filterOpts.Hostname
-	}
-	if filterOpts.Hostname != "" {
-		mfr.AllocationHostname = &filterOpts.Hostname
-	}
-	if filterOpts.Mac != "" {
-		mfr.NicsMacAddresses = []string{filterOpts.Mac}
-	}
-	if len(filterOpts.Tags) > 0 {
-		mfr.Tags = filterOpts.Tags
-	}
-	resp, err := c.driver.MachineIPMIList(mfr)
+func (c *machineCmd) machineIssues() error {
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
@@ -1340,7 +1252,7 @@ func (c *config) machineIssues() error {
 		}
 	)
 
-	for _, m := range resp.Machines {
+	for _, m := range resp.Payload {
 		if m == nil {
 			continue
 		}
@@ -1464,46 +1376,21 @@ func (c *config) machineIssues() error {
 		}
 	}
 
-	return output.New().Print(res)
+	return newPrinterFromCLI().Print(res)
 }
 
-func (c *config) getMachineID(args []string) (string, error) {
-	if len(args) < 1 {
-		return "", fmt.Errorf("no machine ID given")
-	}
-
-	machineID := args[0]
-	_, err := c.driver.MachineGet(machineID)
-	if err != nil {
-		return "", err
-	}
-	return machineID, nil
-}
-
-func (c *config) getMachine(args []string) (*models.V1MachineIPMIResponse, error) {
-	if len(args) < 1 {
-		return nil, fmt.Errorf("no machine ID given")
-	}
-
-	machineID := args[0]
-	m, err := c.driver.MachineIPMIGet(machineID)
-	if err != nil {
-		return nil, err
-	}
-	return m.Machine, nil
-}
-
-func (c *config) machineIpmiEvents(id []string) error {
-	machineID, err := c.getMachineID(id)
+func (c *machineCmd) machineIpmiEvents(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
 	if err != nil {
 		return err
 	}
+
 	path, err := exec.LookPath("ipmitool")
 	if err != nil {
 		return fmt.Errorf("unable to locate ipmitool in path")
 	}
 
-	resp, err := c.driver.MachineIPMIGet(machineID)
+	resp, err := c.driver.MachineIPMIGet(id)
 	if err != nil {
 		return err
 	}
@@ -1536,9 +1423,10 @@ func (c *config) machineIpmiEvents(id []string) error {
 		password = ipmipassword
 	}
 
-	args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", "last", viper.GetString("last")}
-	cmd := exec.Command(path, args...)
+	cmdArgs := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", "last", viper.GetString("last")}
+	cmd := exec.Command(path, cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
+
 	return cmd.Run()
 }

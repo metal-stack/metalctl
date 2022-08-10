@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/metal-stack/metalctl/cmd/output"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -23,7 +22,7 @@ func newVersionCmd(c *config) *cobra.Command {
 			if err == nil {
 				v.Server = resp.Version
 			}
-			if err2 := output.NewDetailer().Detail(v); err2 != nil {
+			if err2 := defaultToYAMLPrinter().Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

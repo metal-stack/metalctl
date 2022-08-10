@@ -2,296 +2,112 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
 
-	metalgo "github.com/metal-stack/metal-go"
-	imagemodel "github.com/metal-stack/metal-go/api/client/image"
+	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metalctl/cmd/output"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gopkg.in/yaml.v3"
 )
 
+type imageCmd struct {
+	*config
+	*genericcli.GenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]
+}
+
 func newImageCmd(c *config) *cobra.Command {
-	imageCmd := &cobra.Command{
-		Use:   "image",
-		Short: "manage images",
-		Long:  "os images available to be installed on machines.",
+	w := imageCmd{
+		config:     c,
+		GenericCLI: genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](imageCRUD{config: c}),
 	}
 
-	imageListCmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list all images",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageList()
+	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
+		gcli:              w.GenericCLI,
+		singular:          "image",
+		plural:            "images",
+		description:       "os images available to be installed on machines.",
+		availableSortKeys: sorters.ImageSortKeys(),
+		validArgsFunc:     c.comp.ImageListCompletion,
+		createRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
+			return &models.V1ImageCreateRequest{
+				ID:          pointer.Pointer(viper.GetString("id")),
+				Name:        viper.GetString("name"),
+				Description: viper.GetString("description"),
+				URL:         pointer.Pointer(viper.GetString("url")),
+				Features:    viper.GetStringSlice("features"),
+			}, nil
 		},
-		PreRun: bindPFlags,
-	}
-	imageDescribeCmd := &cobra.Command{
-		Use:   "describe <imageID>",
-		Short: "describe a image",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageDescribe(args)
-		},
-		ValidArgsFunction: c.comp.ImageListCompletion,
-	}
-	imageCreateCmd := &cobra.Command{
-		Use:   "create",
-		Short: "create a image",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageCreate()
-		},
-		PreRun: bindPFlags,
-	}
-	imageUpdateCmd := &cobra.Command{
-		Use:   "update",
-		Short: "update a image",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageUpdate()
-		},
-		PreRun: bindPFlags,
-	}
-	imageApplyCmd := &cobra.Command{
-		Use:   "apply",
-		Short: "create/update a image",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageApply()
-		},
-		PreRun: bindPFlags,
-	}
-	imageDeleteCmd := &cobra.Command{
-		Use:     "delete <imageID>",
-		Short:   "delete a image",
-		Aliases: []string{"destroy", "rm", "remove"},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageDelete(args)
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.ImageListCompletion,
-	}
-	imageEditCmd := &cobra.Command{
-		Use:   "edit <imageID>",
-		Short: "edit a image",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.imageEdit(args)
-		},
-		PreRun:            bindPFlags,
-		ValidArgsFunction: c.comp.ImageListCompletion,
-	}
-
-	imageCreateCmd.Flags().StringP("id", "", "", "ID of the image. [required]")
-	imageCreateCmd.Flags().StringP("url", "", "", "url of the image. [required]")
-	imageCreateCmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
-	imageCreateCmd.Flags().StringP("description", "d", "", "Description of the image. [required]")
-	imageCreateCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
-
-	imageUpdateCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example:
-
-# metalctl image describe ubuntu-19.04 > ubuntu.yaml
-# vi ubuntu.yaml
-## either via stdin
-# cat ubuntu.yaml | metalctl image update -f -
-## or via file
-# metalctl image update -f ubuntu.yaml`)
-	must(imageUpdateCmd.MarkFlagRequired("file"))
-
-	imageApplyCmd.Flags().StringP("file", "f", "", `filename of the create or update request in yaml format, or - for stdin.
-Example:
-
-# metalctl image describe ubuntu-19.04 > ubuntu.yaml
-# vi ubuntu.yaml
-## either via stdin
-# cat ubuntu.yaml | metalctl image apply -f -
-## or via file
-# metalctl image apply -f ubuntu.yaml`)
-	must(imageApplyCmd.MarkFlagRequired("file"))
-
-	imageListCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
-
-	imageCmd.AddCommand(imageListCmd)
-	imageCmd.AddCommand(imageDescribeCmd)
-	imageCmd.AddCommand(imageCreateCmd)
-	imageCmd.AddCommand(imageUpdateCmd)
-	imageCmd.AddCommand(imageDeleteCmd)
-	imageCmd.AddCommand(imageApplyCmd)
-	imageCmd.AddCommand(imageEditCmd)
-
-	return imageCmd
-}
-
-func (c *config) imageList() error {
-	var (
-		resp *metalgo.ImageListResponse
-		err  error
-	)
-	if viper.GetBool("show-usage") {
-		resp, err = c.driver.ImageListWithUsage()
-	} else {
-		resp, err = c.driver.ImageList()
-	}
-	if err != nil {
-		return err
-	}
-	return output.New().Print(resp.Image)
-}
-
-func (c *config) imageDescribe(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no image ID given")
-	}
-	imageID := args[0]
-	resp, err := c.driver.ImageGet(imageID)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Image)
-}
-
-func (c *config) imageCreate() error {
-	var icr metalgo.ImageCreateRequest
-	if viper.GetString("file") != "" {
-		var iars []metalgo.ImageCreateRequest
-		err := readFrom(viper.GetString("file"), &icr, func(data interface{}) {
-			doc := data.(*metalgo.ImageCreateRequest)
-			iars = append(iars, *doc)
-		})
-		if err != nil {
-			return err
-		}
-		if len(iars) != 1 {
-			return fmt.Errorf("image create error more or less than one image given:%d", len(iars))
-		}
-		icr = iars[0]
-	} else {
-		icr = metalgo.ImageCreateRequest{
-			Description: viper.GetString("description"),
-			ID:          viper.GetString("id"),
-			Name:        viper.GetString("name"),
-			URL:         viper.GetString("url"),
-			Features:    viper.GetStringSlice("features"),
-		}
-	}
-	resp, err := c.driver.ImageCreate(icr)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Image)
-}
-func (c *config) imageUpdate() error {
-	iar, err := readImageCreateRequests(viper.GetString("file"))
-	if err != nil {
-		return err
-	}
-	resp, err := c.driver.ImageUpdate(iar)
-	if err != nil {
-		return err
-	}
-	return output.NewDetailer().Detail(resp.Image)
-}
-
-func readImageCreateRequests(filename string) (metalgo.ImageCreateRequest, error) {
-	var iar metalgo.ImageCreateRequest
-	err := readFrom(filename, &iar, func(data interface{}) {
-		doc := data.(*metalgo.ImageCreateRequest)
-		iar = *doc
 	})
-	if err != nil {
-		return iar, err
-	}
-	return iar, nil
+
+	cmds.createCmd.Flags().StringP("id", "", "", "ID of the image. [required]")
+	cmds.createCmd.Flags().StringP("url", "", "", "url of the image. [required]")
+	cmds.createCmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
+	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the image. [optional]")
+	cmds.createCmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
+	must(cmds.createCmd.MarkFlagRequired("id"))
+	must(cmds.createCmd.MarkFlagRequired("url"))
+
+	cmds.listCmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
+
+	return cmds.buildRootCmd()
 }
 
-// TODO: General apply method would be useful as these are quite a lot of lines and it's getting erroneous
-func (c *config) imageApply() error {
-	var iars []metalgo.ImageCreateRequest
-	var iar metalgo.ImageCreateRequest
-	err := readFrom(viper.GetString("file"), &iar, func(data interface{}) {
-		doc := data.(*metalgo.ImageCreateRequest)
-		iars = append(iars, *doc)
-		// the request needs to be renewed as otherwise the pointers in the request struct will
-		// always point to same last value in the multi-document loop
-		iar = metalgo.ImageCreateRequest{}
-	})
-	if err != nil {
-		return err
-	}
-	var response []*models.V1ImageResponse
-	for _, iar := range iars {
-		image, err := c.driver.ImageGet(iar.ID)
-		if err != nil {
-			var r *imagemodel.FindImageDefault
-			if !errors.As(err, &r) {
-				return err
-			}
-			if r.Code() != http.StatusNotFound {
-				return err
-			}
-		}
-		if image.Image == nil {
-			resp, err := c.driver.ImageCreate(iar)
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Image)
-			continue
-		}
-		if image.Image.ID != nil {
-			resp, err := c.driver.ImageUpdate(iar)
-			if err != nil {
-				return err
-			}
-			response = append(response, resp.Image)
-			continue
-		}
-	}
-	return output.NewDetailer().Detail(response)
+type imageCRUD struct {
+	*config
 }
 
-func (c *config) imageDelete(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no image ID given")
-	}
-	imageID := args[0]
-	resp, err := c.driver.ImageDelete(imageID)
+func (c imageCRUD) Get(id string) (*models.V1ImageResponse, error) {
+	resp, err := c.client.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return output.NewDetailer().Detail(resp.Image)
+
+	return resp.Payload, nil
 }
 
-func (c *config) imageEdit(args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("no image ID given")
-	}
-	imageID := args[0]
-
-	getFunc := func(id string) ([]byte, error) {
-		resp, err := c.driver.ImageGet(imageID)
-		if err != nil {
-			return nil, err
-		}
-		content, err := yaml.Marshal(resp.Image)
-		if err != nil {
-			return nil, err
-		}
-		return content, nil
-	}
-	updateFunc := func(filename string) error {
-		iar, err := readImageCreateRequests(filename)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("new image classification:%s\n", *iar.Classification)
-		uresp, err := c.driver.ImageUpdate(iar)
-		if err != nil {
-			return err
-		}
-		return output.NewDetailer().Detail(uresp.Image)
+func (c imageCRUD) List() ([]*models.V1ImageResponse, error) {
+	resp, err := c.client.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
+	if err != nil {
+		return nil, err
 	}
 
-	return edit(imageID, getFunc, updateFunc)
+	err = sorters.ImageSort(resp.Payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c imageCRUD) Delete(id string) (*models.V1ImageResponse, error) {
+	resp, err := c.client.Image().DeleteImage(image.NewDeleteImageParams().WithID(id), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c imageCRUD) Create(rq *models.V1ImageCreateRequest) (*models.V1ImageResponse, error) {
+	resp, err := c.client.Image().CreateImage(image.NewCreateImageParams().WithBody(rq), nil)
+	if err != nil {
+		var r *image.CreateImageConflict
+		if errors.As(err, &r) {
+			return nil, genericcli.AlreadyExistsError()
+		}
+		return nil, err
+	}
+
+	return resp.Payload, nil
+}
+
+func (c imageCRUD) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageResponse, error) {
+	resp, err := c.client.Image().UpdateImage(image.NewUpdateImageParams().WithBody(rq), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Payload, nil
 }
