@@ -62,7 +62,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short:   "delete a firmware",
 		Long:    "deletes the specified firmware.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareRemove(args)
+			return c.firmwareRemove()
 		},
 		PreRun: bindPFlags,
 	}
@@ -137,7 +137,7 @@ func (c *config) firmwareUploadBmc(args []string) error {
 	return c.uploadFirmware(models.V1MachineUpdateFirmwareRequestKindBmc, args)
 }
 
-func (c *config) firmwareRemove(args []string) error {
+func (c *config) firmwareRemove() error {
 	kind := viper.GetString("kind")
 	revision := viper.GetString("revision")
 	vendor := viper.GetString("vendor")
