@@ -295,7 +295,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIpmiCmd := &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
 		Short: `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.`,
-		Long:  `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.` + "\n\n" + api.EmojiHelpText(),
+		Long:  `display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
@@ -304,7 +304,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues",
 		Short: `display machines which are in a potential bad state`,
-		Long:  `display machines which are in a potential bad state` + "\n\n" + api.EmojiHelpText(),
+		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIssues()
 		},
