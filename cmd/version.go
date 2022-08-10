@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/metal-stack/metal-go/api/client/version"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -18,9 +19,9 @@ func newVersionCmd(c *config) *cobra.Command {
 				Client: v.V.String(),
 			}
 
-			resp, err := c.driver.VersionGet()
+			resp, err := c.client.Version().Info(version.NewInfoParams(), nil)
 			if err == nil {
-				v.Server = resp.Version
+				v.Server = resp.Payload
 			}
 			if err2 := defaultToYAMLPrinter().Print(v); err2 != nil {
 				return err2

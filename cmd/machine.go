@@ -15,6 +15,7 @@ import (
 	"golang.org/x/exp/slices"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -738,14 +739,15 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	reason := viper.GetString("reason")
-
-	resp, err := c.driver.MachineConsolePassword(id, reason)
+	resp, err := c.client.Machine().GetMachineConsolePassword(machine.NewGetMachineConsolePasswordParams().WithBody(&models.V1MachineConsolePasswordRequest{
+		ID:     &id,
+		Reason: pointer.Pointer(viper.GetString("reason")),
+	}), nil)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("%s\n", *resp.ConsolePassword)
+	fmt.Printf("%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
 
 	return nil
 }
@@ -756,12 +758,12 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerOn(id)
+	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -770,12 +772,12 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerOff(id)
+	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -784,12 +786,12 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerReset(id)
+	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -798,12 +800,12 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachinePowerCycle(id)
+	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -818,7 +820,7 @@ func (c *machineCmd) machineUpdateBios(args []string) error {
 		currentVersion = *m.Bios.Version
 	}
 
-	return c.machineUpdateFirmware(metalgo.Bios, *m.ID, vendor, board, revision, currentVersion)
+	return c.machineUpdateFirmware(models.V1MachineUpdateFirmwareRequestKindBios, *m.ID, vendor, board, revision, currentVersion)
 }
 
 func (c *machineCmd) machineUpdateBmc(args []string) error {
@@ -832,7 +834,7 @@ func (c *machineCmd) machineUpdateBmc(args []string) error {
 		currentVersion = *m.Ipmi.Bmcversion
 	}
 
-	return c.machineUpdateFirmware(metalgo.Bmc, *m.ID, vendor, board, revision, currentVersion)
+	return c.machineUpdateFirmware(models.V1MachineUpdateFirmwareRequestKindBmc, *m.ID, vendor, board, revision, currentVersion)
 }
 
 func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse, string, string, error) {
@@ -858,15 +860,15 @@ func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse,
 	return m, vendor, board, nil
 }
 
-func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID, vendor, board, revision, currentVersion string) error {
-	f, err := c.driver.ListFirmwares(kind, "", "")
+func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board, revision, currentVersion string) error {
+	firmwareResp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind), nil)
 	if err != nil {
 		return err
 	}
 
 	var rr []string
 	revisionAvailable, containsCurrentVersion := false, false
-	vv, ok := f.Firmwares.Revisions[string(kind)]
+	vv, ok := firmwareResp.Payload.Revisions[string(kind)]
 	if ok {
 		bb, ok := vv.VendorRevisions[vendor]
 		if ok {
@@ -907,10 +909,12 @@ func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID,
 	}
 
 	switch kind {
-	case metalgo.Bios:
+	case models.V1MachineUpdateFirmwareRequestKindBios:
 		fmt.Println("It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
-	case metalgo.Bmc:
+	case models.V1MachineUpdateFirmwareRequestKindBmc:
 		fmt.Println("The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
+	default:
+		return fmt.Errorf("unsupported firmware kind: %s", kind)
 	}
 
 	if !viper.GetBool("yes-i-really-mean-it") {
@@ -927,7 +931,7 @@ func (c *machineCmd) machineUpdateFirmware(kind metalgo.FirmwareKind, machineID,
 
 	kindString := string(kind)
 
-	resp, err := c.driver.Machine().UpdateFirmware(machine.NewUpdateFirmwareParams().WithID(machineID).WithBody(&models.V1MachineUpdateFirmwareRequest{
+	resp, err := c.client.Machine().UpdateFirmware(machine.NewUpdateFirmwareParams().WithID(machineID).WithBody(&models.V1MachineUpdateFirmwareRequest{
 		Description: &description,
 		Kind:        &kindString,
 		Revision:    &revision,
@@ -945,12 +949,12 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootBios(id)
+	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -959,12 +963,12 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootDisk(id)
+	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -973,12 +977,12 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	resp, err := c.driver.MachineBootPxe(id)
+	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -987,13 +991,13 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	description := viper.GetString("description")
-	resp, err := c.driver.ChassisIdentifyLEDPowerOn(id, description)
+	description := pointer.Pointer(viper.GetString("description"))
+	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -1002,13 +1006,13 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	description := viper.GetString("description")
-	resp, err := c.driver.ChassisIdentifyLEDPowerOff(id, description)
+	description := pointer.Pointer(viper.GetString("description"))
+	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1017,23 +1021,27 @@ func (c *machineCmd) machineReserve(args []string) error {
 		return err
 	}
 
-	description := viper.GetString("description")
-	remove := viper.GetBool("remove")
+	if viper.GetBool("remove") {
+		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+			Description: pointer.Pointer(""),
+			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
+		}), nil)
+		if err != nil {
+			return err
+		}
 
-	var resp *metalgo.MachineStateResponse
-	if remove {
-		resp, err = c.driver.MachineUnReserve(id)
-		if err != nil {
-			return err
-		}
-	} else {
-		resp, err = c.driver.MachineReserve(id, description)
-		if err != nil {
-			return err
-		}
+		return newPrinterFromCLI().Print(resp.Payload)
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+		Description: pointer.Pointer(viper.GetString("description")),
+		Value:       pointer.Pointer(models.V1MachineStateValueRESERVED),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1042,23 +1050,27 @@ func (c *machineCmd) machineLock(args []string) error {
 		return err
 	}
 
-	description := viper.GetString("description")
-	remove := viper.GetBool("remove")
+	if viper.GetBool("remove") {
+		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+			Description: pointer.Pointer(""),
+			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
+		}), nil)
+		if err != nil {
+			return err
+		}
 
-	var resp *metalgo.MachineStateResponse
-	if remove {
-		resp, err = c.driver.MachineUnLock(id)
-		if err != nil {
-			return err
-		}
-	} else {
-		resp, err = c.driver.MachineLock(id, description)
-		if err != nil {
-			return err
-		}
+		return newPrinterFromCLI().Print(resp.Payload)
 	}
 
-	return newPrinterFromCLI().Print(resp.Machine)
+	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+		Description: pointer.Pointer(viper.GetString("description")),
+		Value:       pointer.Pointer(models.V1MachineStateValueLOCKED),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1067,15 +1079,16 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	imageID := viper.GetString("image")
-	description := viper.GetString("description")
-
-	var resp *metalgo.MachineGetResponse
-	resp, err = c.driver.MachineReinstall(id, imageID, description)
+	resp, err := c.client.Machine().ReinstallMachine(machine.NewReinstallMachineParams().WithID(id).WithBody(&models.V1MachineReinstallRequest{
+		ID:          pointer.Pointer(id),
+		Description: viper.GetString("description"),
+		Imageid:     pointer.Pointer(viper.GetString("image")),
+	}), nil)
 	if err != nil {
 		return err
 	}
-	return newPrinterFromCLI().Print(resp.Machine)
+
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
@@ -1119,12 +1132,12 @@ func (c *machineCmd) machineConsole(args []string) error {
 			return fmt.Errorf("unable to locate ipmitool in path")
 		}
 
-		resp, err := c.driver.MachineIPMIGet(id)
+		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
-		ipmi := resp.Machine.Ipmi
+		ipmi := resp.Payload.Ipmi
 		intf := "lanplus"
 		if *ipmi.Interface != "" {
 			intf = *ipmi.Interface
@@ -1197,15 +1210,15 @@ func (c *machineCmd) machineIpmi(args []string) error {
 			return err
 		}
 
-		resp, err := c.driver.MachineIPMIGet(id)
+		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
 		hidden := "<hidden>"
-		resp.Machine.Ipmi.Password = &hidden
+		resp.Payload.Ipmi.Password = &hidden
 
-		return defaultToYAMLPrinter().Print(resp.Machine)
+		return defaultToYAMLPrinter().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1432,12 +1445,12 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 		return fmt.Errorf("unable to locate ipmitool in path")
 	}
 
-	resp, err := c.driver.MachineIPMIGet(id)
+	resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
 
-	ipmi := resp.Machine.Ipmi
+	ipmi := resp.Payload.Ipmi
 	intf := "lanplus"
 	if *ipmi.Interface != "" {
 		intf = *ipmi.Interface
