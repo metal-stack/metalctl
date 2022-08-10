@@ -1,20 +1,17 @@
 package cmd
 
 import (
-	metalgo "github.com/metal-stack/metal-go"
+	"os"
+
+	"github.com/go-openapi/runtime"
+	"github.com/metal-stack/metal-go/api/client/firmware"
+	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 // TODO: API responses are much different from the rest and it does not work well with generic cli
-
-type firmwareTask int
-
-const (
-	upload firmwareTask = iota
-	remove
-)
 
 func newFirmwareCmd(c *config) *cobra.Command {
 	firmwareCmd := &cobra.Command{
@@ -65,7 +62,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short:   "delete a firmware",
 		Long:    "deletes the specified firmware.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareRemove(args)
+			return c.firmwareRemove()
 		},
 		PreRun: bindPFlags,
 	}
@@ -77,6 +74,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	must(firmwareListCmd.RegisterFlagCompletionFunc("kind", c.comp.FirmwareKindCompletion))
 	must(firmwareListCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
 	must(firmwareListCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
+	must(firmwareListCmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
 	firmwareCmd.AddCommand(firmwareListCmd)
 
 	firmwareUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor (required)")
@@ -119,55 +117,70 @@ func newFirmwareCmd(c *config) *cobra.Command {
 }
 
 func (c *config) firmwareList() error {
-	var err error
-	var resp *metalgo.FirmwaresResponse
-
-	kind := metalgo.FirmwareKind(viper.GetString("kind"))
+	kind := viper.GetString("kind")
+	board := viper.GetString("board")
+	vendor := viper.GetString("vendor")
 	id := viper.GetString("machineid")
 
-	switch id {
-	case "":
-		vendor := viper.GetString("vendor")
-		board := viper.GetString("board")
-		resp, err = c.driver.ListFirmwares(kind, vendor, board)
-	default:
-		resp, err = c.driver.MachineListFirmwares(kind, id)
-	}
+	resp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind).WithBoard(&board).WithVendor(&vendor).WithMachineID(&id), nil)
 	if err != nil {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Firmwares)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *config) firmwareUploadBios(args []string) error {
-	return c.manageFirmware(upload, metalgo.Bios, args)
+	return c.uploadFirmware(models.V1MachineUpdateFirmwareRequestKindBios, args)
 }
 
 func (c *config) firmwareUploadBmc(args []string) error {
-	return c.manageFirmware(upload, metalgo.Bmc, args)
+	return c.uploadFirmware(models.V1MachineUpdateFirmwareRequestKindBmc, args)
 }
 
-func (c *config) firmwareRemove(args []string) error {
-	return c.manageFirmware(remove, metalgo.Bios, args)
+func (c *config) firmwareRemove() error {
+	kind := viper.GetString("kind")
+	revision := viper.GetString("revision")
+	vendor := viper.GetString("vendor")
+	board := viper.GetString("board")
+
+	_, err := c.client.Firmware().RemoveFirmware(firmware.NewRemoveFirmwareParams().
+		WithKind(kind).
+		WithBoard(board).
+		WithVendor(vendor).
+		WithRevision(revision), nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (c *config) manageFirmware(task firmwareTask, kind metalgo.FirmwareKind, args []string) error {
+func (c *config) uploadFirmware(kind string, args []string) error {
 	revision := viper.GetString("revision")
 	vendor := viper.GetString("vendor")
 	board := viper.GetString("board")
 
 	var err error
-	switch task {
-	case upload:
-		var file string
-		file, err = genericcli.GetExactlyOneArg(args)
-		if err != nil {
-			return err
-		}
-		_, err = c.driver.UploadFirmware(kind, vendor, board, revision, file)
-	case remove:
-		_, err = c.driver.RemoveFirmware(kind, vendor, board, revision)
+
+	var file string
+	file, err = genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
 	}
+
+	reader, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.client.Firmware().UploadFirmware(firmware.NewUploadFirmwareParams().
+		WithKind(kind).
+		WithBoard(board).
+		WithVendor(vendor).
+		WithRevision(revision).
+		WithFile(runtime.NamedReader(revision, reader)), nil)
+
 	return err
+
 }

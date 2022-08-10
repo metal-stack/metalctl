@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-go/api/client/network"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -296,37 +295,53 @@ func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
 // non-generic command handling
 
 func (c *networkCmd) networkPrefixAdd(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
+	net, err := c.Describe(args)
 	if err != nil {
 		return err
 	}
 
-	nur := &metalgo.NetworkUpdateRequest{
-		Networkid: id,
-		Prefix:    viper.GetString("prefix"),
-	}
-	resp, err := c.driver.NetworkAddPrefix(nur)
+	net.Prefixes = append(net.Prefixes, viper.GetString("prefix"))
+
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
+		ID:       net.ID,
+		Prefixes: net.Prefixes,
+	}), nil)
 	if err != nil {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(resp.Network)
+	return defaultToYAMLPrinter().Print(resp.Payload)
 }
 
 func (c *networkCmd) networkPrefixRemove(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
+	net, err := c.Describe(args)
 	if err != nil {
 		return err
 	}
 
-	nur := &metalgo.NetworkUpdateRequest{
-		Networkid: id,
-		Prefix:    viper.GetString("prefix"),
+	prefix := viper.GetString("prefix")
+
+	var newPrefixes []string
+	found := false
+	for _, p := range net.Prefixes {
+		if p == prefix {
+			found = true
+			continue
+		}
+		newPrefixes = append(newPrefixes, p)
 	}
-	resp, err := c.driver.NetworkRemovePrefix(nur)
+
+	if !found {
+		return fmt.Errorf("network does not have given prefix: %s", prefix)
+	}
+
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
+		ID:       net.ID,
+		Prefixes: newPrefixes,
+	}), nil)
 	if err != nil {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(resp.Network)
+	return defaultToYAMLPrinter().Print(resp.Payload)
 }

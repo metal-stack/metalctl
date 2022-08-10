@@ -21,7 +21,6 @@ import (
 type config struct {
 	driverURL string
 	comp      *completion.Completion
-	driver    *metalgo.Driver
 	client    metalgo.Client
 	log       *zap.SugaredLogger
 }
@@ -203,13 +202,12 @@ func initClient(c *config) error {
 		}
 	}
 
-	client, driver, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	client, _, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
 		return err
 	}
 
 	c.comp.SetClient(client)
-	c.driver = driver
 	c.driverURL = driverURL
 	c.client = client
 	c.log = logger

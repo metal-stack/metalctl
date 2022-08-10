@@ -9,12 +9,11 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
-
-	metalgo "github.com/metal-stack/metal-go"
 
 	"github.com/spf13/viper"
 )
@@ -70,19 +69,19 @@ func defaultToYAMLPrinter() genericcli.Printer {
 	return genericcli.NewYAMLPrinter()
 }
 
-func parseNetworks(values []string) ([]metalgo.MachineAllocationNetwork, error) {
-	nets := []metalgo.MachineAllocationNetwork{}
+func parseNetworks(values []string) ([]*models.V1MachineAllocationNetwork, error) {
+	nets := []*models.V1MachineAllocationNetwork{}
 	for _, netWithFlag := range values {
 		id, autoAcquire, err := splitNetwork(netWithFlag)
 		if err != nil {
 			return nil, err
 		}
 
-		net := metalgo.MachineAllocationNetwork{
-			Autoacquire: autoAcquire,
-			NetworkID:   id,
+		net := models.V1MachineAllocationNetwork{
+			Autoacquire: &autoAcquire,
+			Networkid:   &id,
 		}
-		nets = append(nets, net)
+		nets = append(nets, &net)
 	}
 	return nets, nil
 }
