@@ -13,8 +13,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 func Test_HealthCmd(t *testing.T) {
@@ -65,7 +63,7 @@ func Test_HealthCmd(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			var out bytes.Buffer
-			config, mock := newTestConfig(t, &out, tt.metalMocks)
+			config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 			cmd := newRootCmd(config)
 			os.Args = []string{binaryName, "health"}
@@ -75,13 +73,10 @@ func Test_HealthCmd(t *testing.T) {
 				t.Errorf("error diff (+got -want):\n %s", diff)
 			}
 
-			var got *rest.HealthResponse
-			err = yaml.Unmarshal(out.Bytes(), &got)
-			require.NoError(t, err, out.String())
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("diff (+got -want):\n %s", diff)
+			f := yamlOutputFormat[*rest.HealthResponse]{
+				want: tt.want,
 			}
+			f.Validate(t, out.Bytes())
 
 			mock.AssertExpectations(t)
 		})

@@ -9,7 +9,7 @@ metalctl image create [flags]
 ### Options
 
 ```
-  -d, --description string   Description of the image. [optional]
+  -d, --description string   Description of the image.
       --features strings     features of the image, can be one of machine|firewall
   -f, --file string          filename of the create or update request in yaml format, or - for stdin.
                              
@@ -22,14 +22,16 @@ metalctl image create [flags]
                              $ metalctl image create -f image.yaml
                              	
   -h, --help                 help for create
-      --id string            ID of the image. [required]
-  -n, --name string          Name of the image. [optional]
+      --id string            ID of the image.
+  -n, --name string          Name of the image.
+      --url string           url of the image.
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --apitoken string        api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
@@ -50,7 +52,6 @@ metalctl image create [flags]
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
                                
                                
-  -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 

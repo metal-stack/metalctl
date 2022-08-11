@@ -42,13 +42,14 @@ func newImageCmd(c *config) *cobra.Command {
 			}, nil
 		},
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
-			cmd.Flags().StringP("id", "", "", "ID of the image. [required]")
-			cmd.Flags().StringP("url", "", "", "url of the image. [required]")
-			cmd.Flags().StringP("name", "n", "", "Name of the image. [optional]")
-			cmd.Flags().StringP("description", "d", "", "Description of the image. [optional]")
+			cmd.Flags().StringP("id", "", "", "ID of the image.")
+			cmd.Flags().StringP("url", "", "", "url of the image.")
+			cmd.Flags().StringP("name", "n", "", "Name of the image.")
+			cmd.Flags().StringP("description", "d", "", "Description of the image.")
 			cmd.Flags().StringSlice("features", []string{}, "features of the image, can be one of machine|firewall")
-			must(cmd.MarkFlagRequired("id"))
-			must(cmd.MarkFlagRequired("url"))
+
+			cmd.MarkFlagsMutuallyExclusive("file", "id")
+			cmd.MarkFlagsRequiredTogether("id", "url")
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")

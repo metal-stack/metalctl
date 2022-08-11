@@ -91,8 +91,8 @@ apitoken: "alongtoken"
 ...
 
 `)
-	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with METALCTL_URL environment variable.")
-	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.")
+	rootCmd.PersistentFlags().StringP("api-url", "", "", "api server address. Can be specified with METALCTL_URL environment variable.")
+	rootCmd.PersistentFlags().String("api-token", "", "api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
@@ -192,7 +192,7 @@ func initConfigWithViperCtx(c *config) error {
 		return nil
 	}
 
-	driverURL := viper.GetString("url")
+	driverURL := viper.GetString("api-url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}

@@ -9,13 +9,24 @@ metalctl size imageconstraint update [flags]
 ### Options
 
 ```
-  -h, --help   help for update
+  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
+                      
+                      Example:
+                      $ metalctl imageconstraint describe imageconstraint-1 -o yaml > imageconstraint.yaml
+                      $ vi imageconstraint.yaml
+                      $ # either via stdin
+                      $ cat imageconstraint.yaml | metalctl imageconstraint update -f -
+                      $ # or via file
+                      $ metalctl imageconstraint update -f imageconstraint.yaml
+                      	
+  -h, --help          help for update
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --apitoken string        api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
@@ -36,7 +47,6 @@ metalctl size imageconstraint update [flags]
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
                                
                                
-  -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 

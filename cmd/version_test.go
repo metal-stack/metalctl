@@ -15,8 +15,6 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
 )
 
 func Test_VersionCmd(t *testing.T) {
@@ -49,7 +47,7 @@ func Test_VersionCmd(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			var out bytes.Buffer
-			config, mock := newTestConfig(t, &out, tt.metalMocks)
+			config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 			v.Version = "client v1.0.0"
 
@@ -61,13 +59,10 @@ func Test_VersionCmd(t *testing.T) {
 				t.Errorf("error diff (+got -want):\n %s", diff)
 			}
 
-			var got *api.Version
-			err = yaml.Unmarshal(out.Bytes(), &got)
-			require.NoError(t, err, out.String())
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("diff (+got -want):\n %s", diff)
+			f := yamlOutputFormat[*api.Version]{
+				want: tt.want,
 			}
+			f.Validate(t, out.Bytes())
 
 			mock.AssertExpectations(t)
 		})

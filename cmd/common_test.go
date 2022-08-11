@@ -15,14 +15,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func newTestConfig(t *testing.T, out io.Writer, mocks *client.MetalMockFns) (*config, *client.MetalMockClient) {
+func newTestConfig(t *testing.T, out io.Writer, mocks *client.MetalMockFns, fsMocks func(fs afero.Fs)) (*config, *client.MetalMockClient) {
 	mock, c := client.NewMetalMockClient(mocks)
+
+	fs := afero.NewMemMapFs()
+	if fsMocks != nil {
+		fsMocks(fs)
+	}
+
 	return &config{
-		fs:     afero.NewMemMapFs(),
+		fs:     fs,
 		out:    out,
 		client: c,
 		log:    zaptest.NewLogger(t).Sugar(),
 	}, mock
+}
+
+func mustMarshal(t *testing.T, d any) []byte {
+	b, err := json.Marshal(d)
+	require.NoError(t, err)
+	return b
 }
 
 func outputFormats[R any](want R, table string) []outputFormat[R] {

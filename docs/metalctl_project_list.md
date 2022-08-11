@@ -19,7 +19,8 @@ metalctl project list [flags]
 ### Options inherited from parent commands
 
 ```
-      --apitoken string        api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
@@ -40,7 +41,6 @@ metalctl project list [flags]
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
                                
                                
-  -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
