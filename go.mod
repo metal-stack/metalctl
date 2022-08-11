@@ -7,7 +7,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/go-openapi/runtime v0.24.1
 	github.com/google/go-cmp v0.5.8
-	github.com/metal-stack/metal-go v0.18.6-0.20220809101900-6c94eb580780
+	github.com/metal-stack/metal-go 4ea67d4050f18387d316dc371aef403fd0f214fb
 	github.com/metal-stack/metal-lib v0.10.1-0.20220811075016-35fa8fbbdbb6
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
@@ -22,8 +22,6 @@ require (
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	gopkg.in/yaml.v3 v3.0.1
 )
-
-replace github.com/metal-stack/metal-lib => ../metal-lib
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
