@@ -20,6 +20,7 @@ func Test_ImageListCmd(t *testing.T) {
 		name       string
 		metalMocks *client.MetalMockFns
 		want       []*models.V1ImageResponse
+		wantTable  string
 		wantErr    error
 	}{
 		{
@@ -58,12 +59,17 @@ func Test_ImageListCmd(t *testing.T) {
 					Usedby:   []string{},
 				},
 			},
+			wantTable: `
+ID       NAME     DESCRIPTION   FEATURES   EXPIRATION   STATUS   USEDBY
+debian   debian                 machine                          0
+ubuntu   ubuntu                 machine                          0
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats[[]*models.V1ImageResponse]() {
+			for _, format := range outputFormats(tt.want, tt.wantTable) {
 				format := format
 				t.Run(format.Name(), func(t *testing.T) {
 					var out bytes.Buffer
@@ -77,7 +83,7 @@ func Test_ImageListCmd(t *testing.T) {
 						t.Errorf("error diff (+got -want):\n %s", diff)
 					}
 
-					format.Validate(t, out.Bytes(), tt.want)
+					format.Validate(t, out.Bytes())
 
 					mock.AssertExpectations(t)
 				})
