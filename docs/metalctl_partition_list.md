@@ -10,7 +10,7 @@ metalctl partition list [flags]
 
 ```
   -h, --help            help for list
-      --order strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: id|name|description
+      --order strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
 ```
 
 ### Options inherited from parent commands

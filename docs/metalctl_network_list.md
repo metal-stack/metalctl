@@ -14,7 +14,7 @@ metalctl network list [flags]
       --id string                      ID to filter [optional]
       --name string                    name to filter [optional]
       --nat                            nat to filter [optional]
-      --order strings                  order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|partition|project|id|name
+      --order strings                  order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name|partition|project
       --parent string                  parent network to filter [optional]
       --partition string               partition to filter [optional]
       --prefixes strings               prefixes to filter, use it like: --prefixes prefix1,prefix2.

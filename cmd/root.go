@@ -77,6 +77,7 @@ func newRootCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doc.GenMarkdownTree(rootCmd, "./docs")
 		},
+		DisableAutoGenTag: true,
 	}
 
 	rootCmd.PersistentFlags().StringP("config", "c", "", `alternative config file path, (default is ~/.metalctl/config.yaml).
