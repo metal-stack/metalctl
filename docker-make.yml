@@ -17,9 +17,6 @@ after:
   - md5sum result/metalctl-darwin-amd64 > result/metalctl-darwin-amd64.md5
   - md5sum result/metalctl-darwin-arm64 > result/metalctl-darwin-arm64.md5
 builds:
-  - name: metalctl-slug
+  - name: metalctl
     tags:
       - ${TAG_NAME}
-  - name: metalctl-master
-    tags:
-      - latest

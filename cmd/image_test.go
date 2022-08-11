@@ -11,10 +11,8 @@ import (
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
-	"gopkg.in/yaml.v3"
 
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_ImageListCmd(t *testing.T) {
@@ -34,11 +32,13 @@ func Test_ImageListCmd(t *testing.T) {
 								Features: []string{"machine"},
 								ID:       pointer.Pointer("ubuntu"),
 								Name:     "ubuntu",
+								Usedby:   []string{},
 							},
 							{
 								Features: []string{"machine"},
 								ID:       pointer.Pointer("debian"),
 								Name:     "debian",
+								Usedby:   []string{},
 							},
 						},
 					}, nil)
@@ -63,26 +63,25 @@ func Test_ImageListCmd(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			var out bytes.Buffer
-			config, mock := newTestConfig(t, &out, tt.metalMocks)
+			for _, format := range outputFormats[[]*models.V1ImageResponse]() {
+				format := format
+				t.Run(format.Name(), func(t *testing.T) {
+					var out bytes.Buffer
+					config, mock := newTestConfig(t, &out, tt.metalMocks)
 
-			cmd := newRootCmd(config)
-			os.Args = []string{binaryName, "image", "list", "-o", "yaml"}
+					cmd := newRootCmd(config)
+					os.Args = []string{binaryName, "image", "list", "-o", format.Name()}
 
-			err := cmd.Execute()
-			if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-				t.Errorf("error diff (+got -want):\n %s", diff)
+					err := cmd.Execute()
+					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
+						t.Errorf("error diff (+got -want):\n %s", diff)
+					}
+
+					format.Validate(t, out.Bytes(), tt.want)
+
+					mock.AssertExpectations(t)
+				})
 			}
-
-			var got []*models.V1ImageResponse
-			err = yaml.Unmarshal(out.Bytes(), &got)
-			require.NoError(t, err, out.String())
-
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Errorf("diff (+got -want):\n %s", diff)
-			}
-
-			mock.AssertExpectations(t)
 		})
 	}
 }

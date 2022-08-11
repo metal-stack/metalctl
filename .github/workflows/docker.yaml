@@ -62,7 +62,7 @@ jobs:
         password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
         args: >
           --no-cache
-          --build-only metalctl-master
+          --build-only metalctl
           -x rule2,rule3
           --summary
 
