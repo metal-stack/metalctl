@@ -8,9 +8,8 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/printers"
-	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -38,8 +37,8 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Plural:            "switches",
 		Description:       "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		AvailableSortKeys: sorters.SwitchSortKeys(),
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 	}
 
 	switchDetailCmd := &cobra.Command{
@@ -136,7 +135,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return printers.NewPrinterFromCLI().Print(result)
+	return NewPrinterFromCLI().Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -161,5 +160,5 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	return printers.DefaultToYAMLPrinter().Print(uresp)
+	return DefaultToYAMLPrinter().Print(uresp)
 }

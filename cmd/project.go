@@ -6,7 +6,6 @@ import (
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -30,8 +29,8 @@ func newProjectCmd(c *config) *cobra.Command {
 		Description:          "a project groups multiple networks for a tenant.",
 		AvailableSortKeys:    sorters.ProjectSortKeys(),
 		ValidArgsFn:          c.comp.ProjectListCompletion,
-		DescribePrinter:      printers.DefaultToYAMLPrinter(),
-		ListPrinter:          printers.NewPrinterFromCLI(),
+		DescribePrinter:      DefaultToYAMLPrinter(),
+		ListPrinter:          NewPrinterFromCLI(),
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")

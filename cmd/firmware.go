@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -128,7 +127,7 @@ func (c *config) firmwareList() error {
 		return err
 	}
 
-	return printers.NewPrinterFromCLI().Print(resp.Payload)
+	return NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *config) firmwareUploadBios(args []string) error {

@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,8 +30,8 @@ func newSizeCmd(c *config) *cobra.Command {
 		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
 		AvailableSortKeys: sorters.SizeSortKeys(),
 		ValidArgsFn:       c.comp.SizeListCompletion,
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -164,5 +163,5 @@ func (c *sizeCmd) try() error {
 		return err
 	}
 
-	return printers.NewPrinterFromCLI().Print(resp.Payload)
+	return NewPrinterFromCLI().Print(resp.Payload)
 }

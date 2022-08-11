@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,8 +33,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.NetworkSortKeys(),
 		ValidArgsFn:          c.comp.NetworkListCompletion,
-		DescribePrinter:      printers.DefaultToYAMLPrinter(),
-		ListPrinter:          printers.NewPrinterFromCLI(),
+		DescribePrinter:      DefaultToYAMLPrinter(),
+		ListPrinter:          NewPrinterFromCLI(),
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 			cmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
@@ -98,10 +97,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
-				}, printers.DefaultToYAMLPrinter())
+				}, DefaultToYAMLPrinter())
 			}
 
-			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), printers.DefaultToYAMLPrinter())
+			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), DefaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -110,7 +109,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.childCLI.DeleteAndPrint(args, printers.DefaultToYAMLPrinter())
+			return w.childCLI.DeleteAndPrint(args, DefaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
@@ -319,7 +318,7 @@ func (c *networkCmd) networkPrefixAdd(args []string) error {
 		return err
 	}
 
-	return printers.DefaultToYAMLPrinter().Print(resp.Payload)
+	return DefaultToYAMLPrinter().Print(resp.Payload)
 }
 
 func (c *networkCmd) networkPrefixRemove(args []string) error {
@@ -357,5 +356,5 @@ func (c *networkCmd) networkPrefixRemove(args []string) error {
 		return err
 	}
 
-	return printers.DefaultToYAMLPrinter().Print(resp.Payload)
+	return DefaultToYAMLPrinter().Print(resp.Payload)
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/metal-stack/metal-go/api/client/health"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +24,7 @@ func newHealthCmd(c *config) *cobra.Command {
 				}
 			}
 
-			return printers.DefaultToYAMLPrinter().Print(resp.Payload)
+			return DefaultToYAMLPrinter().Print(resp.Payload)
 		},
 		PreRun: bindPFlags,
 	}

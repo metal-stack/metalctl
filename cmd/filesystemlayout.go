@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -32,8 +31,8 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Aliases:           []string{"fsl"},
 		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
 		ValidArgsFn:       c.comp.FilesystemLayoutListCompletion,
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 	}
 
 	tryCmd := &cobra.Command{
@@ -140,7 +139,7 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return printers.NewPrinterFromCLI().Print(resp.Payload)
+	return NewPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -154,5 +153,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return printers.NewPrinterFromCLI().Print(resp.Payload)
+	return NewPrinterFromCLI().Print(resp.Payload)
 }

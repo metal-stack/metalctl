@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,8 +31,8 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		Aliases:           []string{"ic"},
 		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
 		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 	}
 
 	tryCmd := &cobra.Command{

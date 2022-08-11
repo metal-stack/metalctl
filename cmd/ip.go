@@ -12,7 +12,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,8 +38,8 @@ func newIPCmd(c *config) *cobra.Command {
 		Singular:             "ip",
 		Plural:               "ips",
 		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",
-		DescribePrinter:      printers.DefaultToYAMLPrinter(),
-		ListPrinter:          printers.NewPrinterFromCLI(),
+		DescribePrinter:      DefaultToYAMLPrinter(),
+		ListPrinter:          NewPrinterFromCLI(),
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
@@ -223,5 +222,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return printers.NewPrinterFromCLI().Print(ips)
+	return NewPrinterFromCLI().Print(ips)
 }

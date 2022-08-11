@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,8 +29,8 @@ func newImageCmd(c *config) *cobra.Command {
 		Description:       "os images available to be installed on machines.",
 		AvailableSortKeys: sorters.ImageSortKeys(),
 		ValidArgsFn:       c.comp.ImageListCompletion,
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),

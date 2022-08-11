@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/metal-stack/metal-go/api/client/version"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
 	"github.com/spf13/cobra"
@@ -24,7 +23,7 @@ func newVersionCmd(c *config) *cobra.Command {
 			if err == nil {
 				v.Server = resp.Payload
 			}
-			if err2 := printers.DefaultToYAMLPrinter().Print(v); err2 != nil {
+			if err2 := DefaultToYAMLPrinter().Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

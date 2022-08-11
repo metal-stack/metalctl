@@ -1,11 +1,11 @@
-package printers
+package cmd
 
 import (
 	"log"
 
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/viper"
 )
 

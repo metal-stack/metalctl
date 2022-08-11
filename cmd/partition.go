@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,8 +31,8 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
 		ValidArgsFn:       c.comp.PartitionListCompletion,
 		AvailableSortKeys: sorters.PartitionSortKeys(),
-		DescribePrinter:   printers.DefaultToYAMLPrinter(),
-		ListPrinter:       printers.NewPrinterFromCLI(),
+		DescribePrinter:   DefaultToYAMLPrinter(),
+		ListPrinter:       NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -147,5 +146,5 @@ func (c *partitionCmd) partitionCapacity() error {
 		return err
 	}
 
-	return printers.NewPrinterFromCLI().Print(resp.Payload)
+	return NewPrinterFromCLI().Print(resp.Payload)
 }
