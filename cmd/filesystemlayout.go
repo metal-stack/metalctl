@@ -31,8 +31,8 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		Aliases:           []string{"fsl"},
 		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
 		ValidArgsFn:       c.comp.FilesystemLayoutListCompletion,
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 	}
 
 	tryCmd := &cobra.Command{
@@ -139,7 +139,7 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -153,5 +153,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }

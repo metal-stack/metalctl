@@ -29,8 +29,8 @@ func newImageCmd(c *config) *cobra.Command {
 		Description:       "os images available to be installed on machines.",
 		AvailableSortKeys: sorters.ImageSortKeys(),
 		ValidArgsFn:       c.comp.ImageListCompletion,
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),

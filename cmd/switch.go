@@ -37,8 +37,8 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Plural:            "switches",
 		Description:       "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		AvailableSortKeys: sorters.SwitchSortKeys(),
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 	}
 
 	switchDetailCmd := &cobra.Command{
@@ -135,7 +135,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return NewPrinterFromCLI().Print(result)
+	return newPrinterFromCLI().Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -160,5 +160,5 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	return DefaultToYAMLPrinter().Print(uresp)
+	return defaultToYAMLPrinter().Print(uresp)
 }

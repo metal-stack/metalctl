@@ -127,7 +127,7 @@ func (c *config) firmwareList() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *config) firmwareUploadBios(args []string) error {

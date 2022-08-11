@@ -38,8 +38,8 @@ func newIPCmd(c *config) *cobra.Command {
 		Singular:             "ip",
 		Plural:               "ips",
 		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",
-		DescribePrinter:      DefaultToYAMLPrinter(),
-		ListPrinter:          NewPrinterFromCLI(),
+		DescribePrinter:      defaultToYAMLPrinter(),
+		ListPrinter:          newPrinterFromCLI(),
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
@@ -222,5 +222,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return NewPrinterFromCLI().Print(ips)
+	return newPrinterFromCLI().Print(ips)
 }

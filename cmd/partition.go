@@ -31,8 +31,8 @@ func newPartitionCmd(c *config) *cobra.Command {
 		Description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
 		ValidArgsFn:       c.comp.PartitionListCompletion,
 		AvailableSortKeys: sorters.PartitionSortKeys(),
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -146,5 +146,5 @@ func (c *partitionCmd) partitionCapacity() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }

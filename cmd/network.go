@@ -33,8 +33,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.NetworkSortKeys(),
 		ValidArgsFn:          c.comp.NetworkListCompletion,
-		DescribePrinter:      DefaultToYAMLPrinter(),
-		ListPrinter:          NewPrinterFromCLI(),
+		DescribePrinter:      defaultToYAMLPrinter(),
+		ListPrinter:          newPrinterFromCLI(),
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 			cmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
@@ -97,10 +97,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
-				}, DefaultToYAMLPrinter())
+				}, defaultToYAMLPrinter())
 			}
 
-			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), DefaultToYAMLPrinter())
+			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
 		},
 		PreRun: bindPFlags,
 	}
@@ -109,7 +109,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.childCLI.DeleteAndPrint(args, DefaultToYAMLPrinter())
+			return w.childCLI.DeleteAndPrint(args, defaultToYAMLPrinter())
 		},
 		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
@@ -318,7 +318,7 @@ func (c *networkCmd) networkPrefixAdd(args []string) error {
 		return err
 	}
 
-	return DefaultToYAMLPrinter().Print(resp.Payload)
+	return defaultToYAMLPrinter().Print(resp.Payload)
 }
 
 func (c *networkCmd) networkPrefixRemove(args []string) error {
@@ -356,5 +356,5 @@ func (c *networkCmd) networkPrefixRemove(args []string) error {
 		return err
 	}
 
-	return DefaultToYAMLPrinter().Print(resp.Payload)
+	return defaultToYAMLPrinter().Print(resp.Payload)
 }

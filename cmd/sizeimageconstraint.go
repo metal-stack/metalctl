@@ -31,8 +31,8 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		Aliases:           []string{"ic"},
 		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
 		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 	}
 
 	tryCmd := &cobra.Command{

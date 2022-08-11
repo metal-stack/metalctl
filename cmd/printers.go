@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewPrinterFromCLI() printers.Printer {
+func newPrinterFromCLI() printers.Printer {
 	var printer printers.Printer
 
 	switch format := viper.GetString("output-format"); format {
@@ -46,9 +46,9 @@ func NewPrinterFromCLI() printers.Printer {
 	return printer
 }
 
-func DefaultToYAMLPrinter() printers.Printer {
+func defaultToYAMLPrinter() printers.Printer {
 	if viper.IsSet("output-format") {
-		return NewPrinterFromCLI()
+		return newPrinterFromCLI()
 	}
 	return printers.NewYAMLPrinter()
 }

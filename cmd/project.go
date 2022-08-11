@@ -29,8 +29,8 @@ func newProjectCmd(c *config) *cobra.Command {
 		Description:          "a project groups multiple networks for a tenant.",
 		AvailableSortKeys:    sorters.ProjectSortKeys(),
 		ValidArgsFn:          c.comp.ProjectListCompletion,
-		DescribePrinter:      DefaultToYAMLPrinter(),
-		ListPrinter:          NewPrinterFromCLI(),
+		DescribePrinter:      defaultToYAMLPrinter(),
+		ListPrinter:          newPrinterFromCLI(),
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")

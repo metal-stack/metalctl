@@ -80,8 +80,8 @@ func newMachineCmd(c *config) *cobra.Command {
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		AvailableSortKeys:    sorters.MachineSortKeys(),
 		ValidArgsFn:          c.comp.MachineListCompletion,
-		DescribePrinter:      DefaultToYAMLPrinter(),
-		ListPrinter:          NewPrinterFromCLI(),
+		DescribePrinter:      defaultToYAMLPrinter(),
+		ListPrinter:          newPrinterFromCLI(),
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "machine")
 			cmd.Aliases = []string{"allocate"}
@@ -744,7 +744,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -758,7 +758,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -772,7 +772,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -786,7 +786,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -921,7 +921,7 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {
@@ -935,7 +935,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -949,7 +949,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -963,7 +963,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -978,7 +978,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -993,7 +993,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1011,7 +1011,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 			return err
 		}
 
-		return NewPrinterFromCLI().Print(resp.Payload)
+		return newPrinterFromCLI().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1022,7 +1022,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1040,7 +1040,7 @@ func (c *machineCmd) machineLock(args []string) error {
 			return err
 		}
 
-		return NewPrinterFromCLI().Print(resp.Payload)
+		return newPrinterFromCLI().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1051,7 +1051,7 @@ func (c *machineCmd) machineLock(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1069,7 +1069,7 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
@@ -1084,7 +1084,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	err = NewPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	err = newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
 	if err != nil {
 		return err
 	}
@@ -1099,7 +1099,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		fmt.Printf("Recent last error (%s ago):\n", timeSince.String())
 		fmt.Println()
 
-		return NewPrinterFromCLI().Print(resp.Events.LastErrorEvent)
+		return newPrinterFromCLI().Print(resp.Events.LastErrorEvent)
 	}
 
 	return nil
@@ -1204,7 +1204,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		hidden := "<hidden>"
 		resp.Payload.Ipmi.Password = &hidden
 
-		return DefaultToYAMLPrinter().Print(resp.Payload)
+		return defaultToYAMLPrinter().Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1217,7 +1217,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIssues() error {
@@ -1417,7 +1417,7 @@ func (c *machineCmd) machineIssues() error {
 		}
 	}
 
-	return NewPrinterFromCLI().Print(res)
+	return newPrinterFromCLI().Print(res)
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {

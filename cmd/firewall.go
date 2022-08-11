@@ -34,8 +34,8 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Aliases:              []string{"fw"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.FirewallSortKeys(),
-		DescribePrinter:      DefaultToYAMLPrinter(),
-		ListPrinter:          NewPrinterFromCLI(),
+		DescribePrinter:      defaultToYAMLPrinter(),
+		ListPrinter:          newPrinterFromCLI(),
 		ValidArgsFn:          c.comp.FirewallListCompletion,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")

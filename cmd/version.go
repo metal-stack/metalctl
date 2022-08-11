@@ -23,7 +23,7 @@ func newVersionCmd(c *config) *cobra.Command {
 			if err == nil {
 				v.Server = resp.Payload
 			}
-			if err2 := DefaultToYAMLPrinter().Print(v); err2 != nil {
+			if err2 := defaultToYAMLPrinter().Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

@@ -30,8 +30,8 @@ func newSizeCmd(c *config) *cobra.Command {
 		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
 		AvailableSortKeys: sorters.SizeSortKeys(),
 		ValidArgsFn:       c.comp.SizeListCompletion,
-		DescribePrinter:   DefaultToYAMLPrinter(),
-		ListPrinter:       NewPrinterFromCLI(),
+		DescribePrinter:   defaultToYAMLPrinter(),
+		ListPrinter:       newPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -163,5 +163,5 @@ func (c *sizeCmd) try() error {
 		return err
 	}
 
-	return NewPrinterFromCLI().Print(resp.Payload)
+	return newPrinterFromCLI().Print(resp.Payload)
 }
