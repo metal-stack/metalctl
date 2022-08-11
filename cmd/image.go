@@ -6,6 +6,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -23,14 +24,14 @@ func newImageCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
 		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w),
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.fs),
 		Singular:          "image",
 		Plural:            "images",
 		Description:       "os images available to be installed on machines.",
 		AvailableSortKeys: sorters.ImageSortKeys(),
 		ValidArgsFn:       c.comp.ImageListCompletion,
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),

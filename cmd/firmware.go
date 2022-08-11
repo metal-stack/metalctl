@@ -28,7 +28,6 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firmwareList()
 		},
-		PreRun: bindPFlags,
 	}
 
 	firmwareUploadCmd := &cobra.Command{
@@ -43,7 +42,6 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firmwareUploadBios(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	firmwareUploadBmcCmd := &cobra.Command{
@@ -53,7 +51,6 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firmwareUploadBmc(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	firmwareRemoveCmd := &cobra.Command{
@@ -64,7 +61,6 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firmwareRemove()
 		},
-		PreRun: bindPFlags,
 	}
 
 	firmwareListCmd.Flags().StringP("kind", "", "", "the firmware kind [bmc|bios]")
@@ -127,7 +123,7 @@ func (c *config) firmwareList() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *config) firmwareUploadBios(args []string) error {

@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -25,14 +26,14 @@ func newPartitionCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
 		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w),
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
 		Singular:          "partition",
 		Plural:            "partitions",
 		Description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
 		ValidArgsFn:       c.comp.PartitionListCompletion,
 		AvailableSortKeys: sorters.PartitionSortKeys(),
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -63,7 +64,6 @@ func newPartitionCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.partitionCapacity()
 		},
-		PreRun: bindPFlags,
 	}
 
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
@@ -146,5 +146,5 @@ func (c *partitionCmd) partitionCapacity() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }

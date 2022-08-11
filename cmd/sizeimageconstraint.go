@@ -7,6 +7,7 @@ import (
 	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -24,15 +25,15 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
 		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w),
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w).WithFS(c.fs),
 		Singular:          "imageconstraint",
 		Plural:            "imageconstraints",
 		Description:       "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
 		Aliases:           []string{"ic"},
 		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
 		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 	}
 
 	tryCmd := &cobra.Command{
@@ -41,7 +42,6 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.try()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tryCmd.Flags().StringP("size", "", "", "size to check if allocaltion is possible")
@@ -117,7 +117,7 @@ func (c *sizeImageConstraintCmd) try() error {
 		return err
 	}
 
-	fmt.Println("allocation is possible")
+	fmt.Fprintln(c.out, "allocation is possible")
 
 	return nil
 }

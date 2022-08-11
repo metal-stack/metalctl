@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
 		BinaryName: binaryName,
-		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](w),
+		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](w).WithFS(c.fs),
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
 			genericcli.DescribeCmd,
@@ -37,8 +38,8 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Plural:            "switches",
 		Description:       "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		AvailableSortKeys: sorters.SwitchSortKeys(),
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 	}
 
 	switchDetailCmd := &cobra.Command{
@@ -54,11 +55,9 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchReplace(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-	must(viper.BindPFlags(switchDetailCmd.Flags()))
 
 	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
 }
@@ -135,7 +134,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return newPrinterFromCLI().Print(result)
+	return c.listPrinter.Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -160,5 +159,5 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(uresp)
+	return c.describePrinter.Print(uresp)
 }

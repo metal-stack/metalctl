@@ -6,6 +6,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,7 +23,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
 		BinaryName: binaryName,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w),
+		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w).WithFS(c.fs),
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
 			genericcli.DescribeCmd,
@@ -34,8 +35,8 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Aliases:              []string{"fw"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.FirewallSortKeys(),
-		DescribePrinter:      defaultToYAMLPrinter(),
-		ListPrinter:          newPrinterFromCLI(),
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		ValidArgsFn:          c.comp.FirewallListCompletion,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")

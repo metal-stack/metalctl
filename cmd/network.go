@@ -7,6 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/network"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -21,20 +22,20 @@ type networkCmd struct {
 func newNetworkCmd(c *config) *cobra.Command {
 	w := networkCmd{
 		config:   c,
-		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}),
+		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}).WithFS(c.fs),
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w),
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w).WithFS(c.fs),
 		Singular:             "network",
 		Plural:               "networks",
 		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.NetworkSortKeys(),
 		ValidArgsFn:          c.comp.NetworkListCompletion,
-		DescribePrinter:      defaultToYAMLPrinter(),
-		ListPrinter:          newPrinterFromCLI(),
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 			cmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
@@ -97,21 +98,19 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
-				}, defaultToYAMLPrinter())
+				}, c.describePrinter)
 			}
 
-			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
+			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), c.describePrinter)
 		},
-		PreRun: bindPFlags,
 	}
 
 	freeCmd := &cobra.Command{
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.childCLI.DeleteAndPrint(args, defaultToYAMLPrinter())
+			return w.childCLI.DeleteAndPrint(args, c.describePrinter)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
@@ -126,7 +125,6 @@ func newNetworkCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.networkPrefixAdd(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
@@ -136,7 +134,6 @@ func newNetworkCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.networkPrefixRemove(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
@@ -318,7 +315,7 @@ func (c *networkCmd) networkPrefixAdd(args []string) error {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(resp.Payload)
+	return c.describePrinter.Print(resp.Payload)
 }
 
 func (c *networkCmd) networkPrefixRemove(args []string) error {
@@ -356,5 +353,5 @@ func (c *networkCmd) networkPrefixRemove(args []string) error {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(resp.Payload)
+	return c.describePrinter.Print(resp.Payload)
 }

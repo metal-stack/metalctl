@@ -2,26 +2,32 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 )
 
 type config struct {
-	driverURL string
-	comp      *completion.Completion
-	client    metalgo.Client
-	log       *zap.SugaredLogger
+	fs              afero.Fs
+	out             io.Writer
+	driverURL       string
+	comp            *completion.Completion
+	client          metalgo.Client
+	log             *zap.SugaredLogger
+	describePrinter printers.Printer
+	listPrinter     printers.Printer
 }
 
 const (
@@ -30,21 +36,18 @@ const (
 
 var (
 	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
-
-	// will bind all viper flags to subcommands and
-	// prevent overwrite of identical flag names from other commands
-	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
-	bindPFlags = func(cmd *cobra.Command, args []string) {
-		err := viper.BindPFlags(cmd.Flags())
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
 )
 
 func Execute() {
-	cmd := newRootCmd()
-	err := cmd.Execute()
+	// the config will be provided with more values on cobra init
+	// cobra flags do not work so early in the game
+	c := &config{
+		fs:   afero.NewOsFs(),
+		out:  os.Stdout,
+		comp: &completion.Completion{},
+	}
+
+	err := newRootCmd(c).Execute()
 	if err != nil {
 		if viper.GetBool("debug") {
 			panic(err)
@@ -53,19 +56,19 @@ func Execute() {
 	}
 }
 
-func newRootCmd() *cobra.Command {
-	// the config will be provided with values on cobra init
-	// cobra flags do not work so early in the game
-	c := &config{
-		comp: &completion.Completion{},
-	}
-
+func newRootCmd(c *config) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          binaryName,
 		Aliases:      []string{"m"},
-		Short:        "a cli to manage metal-stack api",
-		Long:         "",
+		Short:        "a cli to manage entities in the metal-stack api",
 		SilenceUsage: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			must(viper.BindPFlags(cmd.Flags()))
+			must(viper.BindPFlags(cmd.PersistentFlags()))
+			// we cannot instantiate the config earlier because
+			// cobra flags do not work so early in the game
+			must(initConfigWithViperCtx(c))
+		},
 	}
 
 	markdownCmd := &cobra.Command{
@@ -104,9 +107,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
-	must(viper.BindPFlags(rootCmd.Flags()))
-	must(viper.BindPFlags(rootCmd.PersistentFlags()))
-
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
 	rootCmd.AddCommand(newFirewallCmd(c))
@@ -122,16 +122,13 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newVersionCmd(c))
 	rootCmd.AddCommand(newLoginCmd(c))
 	rootCmd.AddCommand(newLogoutCmd(c))
-	rootCmd.AddCommand(newWhoamiCmd())
+	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
 
 	rootCmd.AddCommand(newUpdateCmd())
 
 	cobra.OnInitialize(func() {
 		must(readConfigFile())
-		// we cannot instantiate the client earlier because
-		// cobra flags do not work so early in the game
-		must(initClient(c))
 	})
 
 	return rootCmd
@@ -173,12 +170,22 @@ func readConfigFile() error {
 	return nil
 }
 
-func initClient(c *config) error {
+func initConfigWithViperCtx(c *config) error {
 	ctx := api.MustDefaultContext()
 
-	logger, err := newLogger()
-	if err != nil {
-		return fmt.Errorf("error creating logger: %w", err)
+	c.listPrinter = newPrinterFromCLI(c.out)
+	c.describePrinter = defaultToYAMLPrinter(c.out)
+
+	if c.log == nil {
+		logger, err := newLogger()
+		if err != nil {
+			return fmt.Errorf("error creating logger: %w", err)
+		}
+		c.log = logger
+	}
+
+	if c.client != nil {
+		return nil
 	}
 
 	driverURL := viper.GetString("url")
@@ -209,7 +216,6 @@ func initClient(c *config) error {
 	c.comp.SetClient(client)
 	c.driverURL = driverURL
 	c.client = client
-	c.log = logger
 
 	return nil
 }

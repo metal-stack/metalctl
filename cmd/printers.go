@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"log"
 
 	"github.com/fatih/color"
@@ -9,14 +10,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newPrinterFromCLI() printers.Printer {
+func newPrinterFromCLI(out io.Writer) printers.Printer {
 	var printer printers.Printer
 
 	switch format := viper.GetString("output-format"); format {
 	case "yaml":
-		printer = printers.NewYAMLPrinter()
+		printer = printers.NewYAMLPrinter().WithOut(out)
 	case "json":
-		printer = printers.NewJSONPrinter()
+		printer = printers.NewJSONPrinter().WithOut(out)
 	case "table", "wide", "markdown":
 		tp := tableprinters.New()
 		cfg := &printers.TablePrinterConfig{
@@ -25,11 +26,11 @@ func newPrinterFromCLI() printers.Printer {
 			Markdown:        format == "markdown",
 			NoHeaders:       viper.GetBool("no-headers"),
 		}
-		tablePrinter := printers.NewTablePrinter(cfg)
+		tablePrinter := printers.NewTablePrinter(cfg).WithOut(out)
 		tp.SetPrinter(tablePrinter)
 		printer = tablePrinter
 	case "template":
-		printer = printers.NewTemplatePrinter(viper.GetString("template"))
+		printer = printers.NewTemplatePrinter(viper.GetString("template")).WithOut(out)
 	default:
 		log.Fatalf("unknown output format: %q", format)
 	}
@@ -46,9 +47,9 @@ func newPrinterFromCLI() printers.Printer {
 	return printer
 }
 
-func defaultToYAMLPrinter() printers.Printer {
+func defaultToYAMLPrinter(out io.Writer) printers.Printer {
 	if viper.IsSet("output-format") {
-		return newPrinterFromCLI()
+		return newPrinterFromCLI(out)
 	}
-	return printers.NewYAMLPrinter()
+	return printers.NewYAMLPrinter().WithOut(out)
 }

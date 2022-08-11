@@ -4,9 +4,12 @@ COMMONDIR := $(or ${COMMONDIR},../builder)
 
 include $(COMMONDIR)/Makefile.inc
 
+.PHONY: all
+all:: markdown
+
 release:: all
 
-markdown: all
+markdown:
 	rm -rf docs; \
 	mkdir -p docs ; \
 	bin/metalctl markdown

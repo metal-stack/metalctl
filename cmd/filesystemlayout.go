@@ -6,6 +6,7 @@ import (
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
@@ -24,15 +25,15 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
 		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w),
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w).WithFS(c.fs),
 		Singular:          "filesystemlayout",
 		Plural:            "filesystemlayouts",
 		Description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 		Aliases:           []string{"fsl"},
 		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
 		ValidArgsFn:       c.comp.FilesystemLayoutListCompletion,
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 	}
 
 	tryCmd := &cobra.Command{
@@ -41,7 +42,6 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.filesystemTry()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tryCmd.Flags().StringP("size", "", "", "size to try")
@@ -57,7 +57,6 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.filesystemMatch()
 		},
-		PreRun: bindPFlags,
 	}
 
 	matchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
@@ -139,7 +138,7 @@ func (c *fslCmd) filesystemTry() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *fslCmd) filesystemMatch() error {
@@ -153,5 +152,5 @@ func (c *fslCmd) filesystemMatch() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }

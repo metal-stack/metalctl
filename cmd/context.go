@@ -33,7 +33,6 @@ contexts:
 ...
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			if len(args) == 1 {
 				return contextSet(args)
 			}
@@ -42,7 +41,6 @@ contexts:
 			}
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 
 	contextShortCmd := &cobra.Command{
@@ -51,7 +49,6 @@ contexts:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return contextShort()
 		},
-		PreRun: bindPFlags,
 	}
 	contextCmd.AddCommand(contextShortCmd)
 	return contextCmd
@@ -111,5 +108,5 @@ func (c *config) contextList() error {
 	if err != nil {
 		return err
 	}
-	return newPrinterFromCLI().Print(ctxs)
+	return c.listPrinter.Print(ctxs)
 }

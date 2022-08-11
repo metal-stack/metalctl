@@ -13,7 +13,6 @@ func newVersionCmd(c *config) *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "print the client and server version information",
-		Long:  "print the client and server version information",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			v := api.Version{
 				Client: v.V.String(),
@@ -23,7 +22,7 @@ func newVersionCmd(c *config) *cobra.Command {
 			if err == nil {
 				v.Server = resp.Payload
 			}
-			if err2 := defaultToYAMLPrinter().Print(v); err2 != nil {
+			if err2 := c.describePrinter.Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {
@@ -31,7 +30,7 @@ func newVersionCmd(c *config) *cobra.Command {
 			}
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
+
 	return versionCmd
 }

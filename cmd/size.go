@@ -7,6 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -24,14 +25,14 @@ func newSizeCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
 		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w),
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
 		Singular:          "size",
 		Plural:            "sizes",
 		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
 		AvailableSortKeys: sorters.SizeSortKeys(),
 		ValidArgsFn:       c.comp.SizeListCompletion,
-		DescribePrinter:   defaultToYAMLPrinter(),
-		ListPrinter:       newPrinterFromCLI(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -63,7 +64,6 @@ func newSizeCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.try()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tryCmd.Flags().Int32P("cores", "C", 0, "Cores of the hardware to try")
@@ -163,5 +163,5 @@ func (c *sizeCmd) try() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }

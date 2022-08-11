@@ -12,7 +12,7 @@ import (
 
 func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
+		header = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 		rows   [][]string
 	)
 

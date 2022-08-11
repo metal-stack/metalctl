@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
@@ -34,12 +35,12 @@ func newIPCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w),
+		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w).WithFS(c.fs),
 		Singular:             "ip",
 		Plural:               "ips",
 		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",
-		DescribePrinter:      defaultToYAMLPrinter(),
-		ListPrinter:          newPrinterFromCLI(),
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
@@ -78,7 +79,6 @@ func newIPCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.ipIssues()
 		},
-		PreRun: bindPFlags,
 	}
 
 	return genericcli.NewCmds(cmdsConfig, issuesCmd)
@@ -222,5 +222,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return newPrinterFromCLI().Print(ips)
+	return c.listPrinter.Print(ips)
 }

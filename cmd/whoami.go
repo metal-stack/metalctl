@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newWhoamiCmd() *cobra.Command {
+func newWhoamiCmd(c *config) *cobra.Command {
 	whoamiCmd := &cobra.Command{
 		Use:   "whoami",
 		Short: "shows current user",
@@ -30,22 +30,22 @@ func newWhoamiCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Printf("UserId: %s\n", user.Name)
+			fmt.Fprintf(c.out, "UserId: %s\n", user.Name)
 			if user.Tenant != "" {
-				fmt.Printf("Tenant: %s\n", user.Tenant)
+				fmt.Fprintf(c.out, "Tenant: %s\n", user.Tenant)
 			}
 			if user.Issuer != "" {
-				fmt.Printf("Issuer: %s\n", user.Issuer)
+				fmt.Fprintf(c.out, "Issuer: %s\n", user.Issuer)
 			}
-			fmt.Printf("Groups:\n")
+			fmt.Fprintf(c.out, "Groups:\n")
 			for _, g := range user.Groups {
-				fmt.Printf(" %s\n", g)
+				fmt.Fprintf(c.out, " %s\n", g)
 			}
-			fmt.Printf("Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
+
+			fmt.Fprintf(c.out, "Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
 
 			return nil
 		},
-		PreRun: bindPFlags,
 	}
 	return whoamiCmd
 }

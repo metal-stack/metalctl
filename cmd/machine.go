@@ -18,6 +18,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
@@ -71,7 +72,7 @@ func newMachineCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w),
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.fs),
 		Singular:             "machine",
 		Plural:               "machines",
 		Description:          "a machine is a bare metal server provisioned through metal-stack that is intended to run user workload.",
@@ -80,8 +81,8 @@ func newMachineCmd(c *config) *cobra.Command {
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		AvailableSortKeys:    sorters.MachineSortKeys(),
 		ValidArgsFn:          c.comp.MachineListCompletion,
-		DescribePrinter:      defaultToYAMLPrinter(),
-		ListPrinter:          newPrinterFromCLI(),
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "machine")
 			cmd.Aliases = []string{"allocate"}
@@ -141,7 +142,6 @@ func newMachineCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineConsolePassword(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -157,7 +157,6 @@ func newMachineCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerOn(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -170,7 +169,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerOff(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -181,7 +179,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerReset(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -192,7 +189,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerCycle(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -209,7 +205,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineUpdateBios(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -220,7 +215,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineUpdateBmc(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -231,7 +225,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootBios(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -242,7 +235,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootPxe(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -253,7 +245,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootDisk(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -269,7 +260,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIdentifyOn(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -280,7 +270,6 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIdentifyOff(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -293,7 +282,6 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineReserve(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -304,7 +292,6 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineLock(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -316,7 +303,6 @@ is wiped and the new image will subsequently be installed on that device`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineReinstall(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -328,7 +314,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineConsole(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 	machineIpmiCmd := &cobra.Command{
@@ -338,7 +323,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
-		PreRun: bindPFlags,
 	}
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues",
@@ -347,7 +331,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIssues()
 		},
-		PreRun: bindPFlags,
 	}
 	machineLogsCmd := &cobra.Command{
 		Use:     "logs <machine ID>",
@@ -356,7 +339,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineLogs(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 	machineIpmiEventsCmd := &cobra.Command{
@@ -366,7 +348,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmiEvents(args)
 		},
-		PreRun:            bindPFlags,
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
@@ -728,7 +709,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	fmt.Printf("%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
+	fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
 
 	return nil
 }
@@ -744,7 +725,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -758,7 +739,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -772,7 +753,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -786,7 +767,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -869,16 +850,16 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		fmt.Println("Available:")
+		fmt.Fprintln(c.out, "Available:")
 		for _, rev := range rr {
 			if rev == currentVersion {
-				fmt.Printf("%s (current)\n", rev)
+				fmt.Fprintf(c.out, "%s (current)\n", rev)
 			} else {
-				fmt.Println(rev)
+				fmt.Fprintln(c.out, rev)
 			}
 		}
 		if !containsCurrentVersion {
-			fmt.Printf("---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
+			fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}
 
@@ -891,9 +872,9 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	switch kind {
 	case models.V1MachineUpdateFirmwareRequestKindBios:
-		fmt.Println("It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
+		fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
 	case models.V1MachineUpdateFirmwareRequestKindBmc:
-		fmt.Println("The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
+		fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
 	default:
 		return fmt.Errorf("unsupported firmware kind: %s", kind)
 	}
@@ -921,7 +902,7 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {
@@ -935,7 +916,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -949,7 +930,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -963,7 +944,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -978,7 +959,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -993,7 +974,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1011,7 +992,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 			return err
 		}
 
-		return newPrinterFromCLI().Print(resp.Payload)
+		return c.listPrinter.Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1022,7 +1003,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1040,7 +1021,7 @@ func (c *machineCmd) machineLock(args []string) error {
 			return err
 		}
 
-		return newPrinterFromCLI().Print(resp.Payload)
+		return c.listPrinter.Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
@@ -1051,7 +1032,7 @@ func (c *machineCmd) machineLock(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1069,7 +1050,7 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
@@ -1084,7 +1065,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	err = newPrinterFromCLI().Print(pointer.SafeDeref(resp.Events).Log)
+	err = c.listPrinter.Print(pointer.SafeDeref(resp.Events).Log)
 	if err != nil {
 		return err
 	}
@@ -1095,11 +1076,11 @@ func (c *machineCmd) machineLogs(args []string) error {
 			return nil
 		}
 
-		fmt.Println()
-		fmt.Printf("Recent last error (%s ago):\n", timeSince.String())
-		fmt.Println()
+		fmt.Fprintln(c.out)
+		fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
+		fmt.Fprintln(c.out)
 
-		return newPrinterFromCLI().Print(resp.Events.LastErrorEvent)
+		return c.listPrinter.Print(resp.Events.LastErrorEvent)
 	}
 
 	return nil
@@ -1135,7 +1116,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		usr := *ipmi.User
 		if *ipmi.User == "" {
-			fmt.Printf("no ipmi user stored, please specify with --ipmiuser\n")
+			fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 		}
 		ipmiuser := viper.GetString("ipmiuser")
 		if ipmiuser != "" {
@@ -1143,7 +1124,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		password := *ipmi.Password
 		if *ipmi.Password == "" {
-			fmt.Printf("no ipmi password stored, please specify with --ipmipassword\n")
+			fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 		}
 
 		ipmipassword := viper.GetString("ipmipassword")
@@ -1152,7 +1133,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 
 		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sol", "activate"}
-		fmt.Printf("connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+		fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
 		args[9] = password
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
@@ -1204,7 +1185,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		hidden := "<hidden>"
 		resp.Payload.Ipmi.Password = &hidden
 
-		return defaultToYAMLPrinter().Print(resp.Payload)
+		return c.describePrinter.Print(resp.Payload)
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1217,7 +1198,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIssues() error {
@@ -1417,7 +1398,7 @@ func (c *machineCmd) machineIssues() error {
 		}
 	}
 
-	return newPrinterFromCLI().Print(res)
+	return c.listPrinter.Print(res)
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {
@@ -1448,7 +1429,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 	}
 	usr := *ipmi.User
 	if *ipmi.User == "" {
-		fmt.Printf("no ipmi user stored, please specify with --ipmiuser\n")
+		fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 	}
 	ipmiuser := viper.GetString("ipmiuser")
 	if ipmiuser != "" {
@@ -1457,7 +1438,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 
 	password := *ipmi.Password
 	if *ipmi.Password == "" {
-		fmt.Printf("no ipmi password stored, please specify with --ipmipassword\n")
+		fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 	}
 	ipmipassword := viper.GetString("ipmipassword")
 	if ipmipassword != "" {
