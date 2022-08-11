@@ -7,8 +7,8 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/go-openapi/runtime v0.24.1
 	github.com/google/go-cmp v0.5.8
-	github.com/metal-stack/metal-go 4ea67d4050f18387d316dc371aef403fd0f214fb
-	github.com/metal-stack/metal-lib v0.10.1-0.20220811075016-35fa8fbbdbb6
+	github.com/metal-stack/metal-go v0.18.6-0.20220811063346-2d5d50a16c66
+	github.com/metal-stack/metal-lib v0.10.1-0.20220811094857-4ea67d4050f1
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
