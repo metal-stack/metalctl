@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"testing"
 
@@ -19,11 +20,14 @@ import (
 
 func Test_ImageListCmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       []*models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         []*models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "list images",
@@ -70,19 +74,37 @@ ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USE
 debian   debian-name   debian-description   machine                          0
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+debian debian-name
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| debian | debian-name | debian-description | machine  |            |        |      0 |
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[[]*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "list", "-o", format.Name()}
+					os.Args = append([]string{binaryName, "image", "list"}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
@@ -100,11 +122,14 @@ ubuntu   ubuntu-name   ubuntu-description   machine                          0
 
 func Test_ImageDescribeCmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         *models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "describe image",
@@ -132,19 +157,35 @@ func Test_ImageDescribeCmd(t *testing.T) {
 ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USEDBY
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "describe", "-o", format.Name(), *tt.want.ID}
+					os.Args = append([]string{binaryName, "image", "describe", *tt.want.ID}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
@@ -162,11 +203,14 @@ ubuntu   ubuntu-name   ubuntu-description   machine                          0
 
 func Test_ImageDeleteCmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         *models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "remove image",
@@ -194,19 +238,35 @@ func Test_ImageDeleteCmd(t *testing.T) {
 ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USEDBY
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "rm", "-o", format.Name(), *tt.want.ID}
+					os.Args = append([]string{binaryName, "image", "rm", *tt.want.ID}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
@@ -224,11 +284,14 @@ ubuntu   ubuntu-name   ubuntu-description   machine                          0
 
 func Test_ImageCreateFromCLICmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         *models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "create image",
@@ -264,25 +327,41 @@ func Test_ImageCreateFromCLICmd(t *testing.T) {
 ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USEDBY
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "create", "-o", format.Name(),
+					os.Args = append([]string{binaryName, "image", "create",
 						"--id", *tt.want.ID,
 						"--name", tt.want.Name,
 						"--description", tt.want.Description,
 						"--url", tt.want.URL,
 						"--features", tt.want.Features[0],
-					}
+					}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
@@ -300,11 +379,14 @@ ubuntu   ubuntu-name   ubuntu-description   machine                          0
 
 func Test_ImageCreateFromFileCmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         *models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "create image",
@@ -340,21 +422,37 @@ func Test_ImageCreateFromFileCmd(t *testing.T) {
 ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USEDBY
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
 						require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, tt.want), 0755))
 					})
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "create", "-o", format.Name(), "-f", "/file.yaml"}
+					os.Args = append([]string{binaryName, "image", "create", "-f", "/file.yaml"}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
@@ -372,11 +470,14 @@ ubuntu   ubuntu-name   ubuntu-description   machine                          0
 
 func Test_ImageUpdateFromFileCmd(t *testing.T) {
 	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *models.V1ImageResponse
-		wantTable  string
-		wantErr    error
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         *models.V1ImageResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
 	}{
 		{
 			name: "update image from file",
@@ -413,21 +514,37 @@ func Test_ImageUpdateFromFileCmd(t *testing.T) {
 ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS   USEDBY
 ubuntu   ubuntu-name   ubuntu-description   machine                          0
 `,
+			template: "{{ .id }} {{ .name }}",
+			wantTemplate: `
+ubuntu ubuntu-name
+`,
+			wantMarkdown: `
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION | STATUS | USEDBY |
+|--------|-------------|--------------------|----------|------------|--------|--------|
+| ubuntu | ubuntu-name | ubuntu-description | machine  |            |        |      0 |
+`,
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
+		formats := &outputsFormatConfig[*models.V1ImageResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
 		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(tt.want, tt.wantTable) {
+			for _, format := range outputFormats(formats) {
 				format := format
-				t.Run(format.Name(), func(t *testing.T) {
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 					var out bytes.Buffer
 					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
 						require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, tt.want), 0755))
 					})
 
 					cmd := newRootCmd(config)
-					os.Args = []string{binaryName, "image", "update", "-o", format.Name(), "-f", "/file.yaml"}
+					os.Args = append([]string{binaryName, "image", "update", "-f", "/file.yaml"}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
