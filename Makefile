@@ -10,6 +10,6 @@ all:: markdown
 release:: all
 
 markdown:
-	rm -rf docs; \
-	mkdir -p docs ; \
+	rm -rf docs
+	mkdir -p docs
 	bin/metalctl markdown

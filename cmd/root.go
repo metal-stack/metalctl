@@ -78,6 +78,9 @@ func newRootCmd(c *config) *cobra.Command {
 			return doc.GenMarkdownTree(rootCmd, "./docs")
 		},
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			recursiveAutoGenDisable(rootCmd)
+		},
 	}
 
 	rootCmd.PersistentFlags().StringP("config", "c", "", `alternative config file path, (default is ~/.metalctl/config.yaml).
@@ -237,4 +240,11 @@ func newLogger() (*zap.SugaredLogger, error) {
 	}
 
 	return l.Sugar(), nil
+}
+
+func recursiveAutoGenDisable(cmd *cobra.Command) {
+	cmd.DisableAutoGenTag = true
+	for _, child := range cmd.Commands() {
+		recursiveAutoGenDisable(child)
+	}
 }
