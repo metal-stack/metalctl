@@ -51,5 +51,5 @@ func (c *config) vpnAuthKeyCreate() error {
 		return err
 	}
 
-	return output.New().Print(resp.VPN.AuthKey)
+	return output.New().Print(resp.VPN)
 }
