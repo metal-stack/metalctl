@@ -9,6 +9,7 @@ import (
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide bool) ([]string, [][]string, error) {
@@ -39,7 +40,9 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 		rows = append(rows, []string{pointer.SafeDeref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
 	}
 
-	t.t.GetTable().SetAutoWrapText(false)
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }

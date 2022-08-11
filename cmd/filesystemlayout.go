@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
@@ -24,14 +23,17 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	defaultConfig := &defaultscmds.Config[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
+		BinaryName:        binaryName,
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w),
 		Singular:          "filesystemlayout",
 		Plural:            "filesystemlayouts",
 		Description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
 		Aliases:           []string{"fsl"},
 		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
-		ValidArgsFunc:     c.comp.FilesystemLayoutListCompletion,
+		ValidArgsFn:       c.comp.FilesystemLayoutListCompletion,
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
 	}
 
 	tryCmd := &cobra.Command{
@@ -66,7 +68,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
 	must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
-	return defaultscmds.New(defaultConfig).Build(tryCmd, matchCmd)
+	return genericcli.NewCmds(cmdsConfig, tryCmd, matchCmd)
 }
 
 func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {

@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -25,13 +24,16 @@ func newPartitionCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
+		BinaryName:        binaryName,
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w),
 		Singular:          "partition",
 		Plural:            "partitions",
 		Description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
-		ValidArgsFunc:     c.comp.PartitionListCompletion,
+		ValidArgsFn:       c.comp.PartitionListCompletion,
 		AvailableSortKeys: sorters.PartitionSortKeys(),
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -54,7 +56,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 		},
-	})
+	}
 
 	partitionCapacityCmd := &cobra.Command{
 		Use:   "capacity",
@@ -72,7 +74,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(sorters.PartitionCapacitySortKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
-	return cmds.Build(partitionCapacityCmd)
+	return genericcli.NewCmds(cmdsConfig, partitionCapacityCmd)
 }
 
 func (c partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {

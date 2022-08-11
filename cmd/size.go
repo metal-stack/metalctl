@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -24,13 +23,16 @@ func newSizeCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
+		BinaryName:        binaryName,
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w),
 		Singular:          "size",
 		Plural:            "sizes",
 		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
 		AvailableSortKeys: sorters.SizeSortKeys(),
-		ValidArgsFunc:     c.comp.SizeListCompletion,
+		ValidArgsFn:       c.comp.SizeListCompletion,
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -54,7 +56,7 @@ func newSizeCmd(c *config) *cobra.Command {
 			cmd.Flags().Int64P("max", "", 0, "min value of given size constraint type. [required]")
 			cmd.Flags().StringP("type", "", "", "type of constraints. [required]")
 		},
-	})
+	}
 
 	tryCmd := &cobra.Command{
 		Use:   "try",
@@ -69,7 +71,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	return cmds.Build(newSizeImageConstraintCmd(c), tryCmd)
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {

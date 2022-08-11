@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
 	"github.com/metal-stack/metalctl/cmd/sorters"
@@ -25,20 +24,23 @@ func newSwitchCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
+		BinaryName: binaryName,
 		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](w),
-		IncludeCmds: defaultscmds.IncludeCmds(
-			defaultscmds.ListCmd,
-			defaultscmds.DescribeCmd,
-			defaultscmds.UpdateCmd,
-			defaultscmds.DeleteCmd,
-			defaultscmds.EditCmd,
+		OnlyCmds: genericcli.OnlyCmds(
+			genericcli.ListCmd,
+			genericcli.DescribeCmd,
+			genericcli.UpdateCmd,
+			genericcli.DeleteCmd,
+			genericcli.EditCmd,
 		),
 		Singular:          "switch",
 		Plural:            "switches",
 		Description:       "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		AvailableSortKeys: sorters.SwitchSortKeys(),
-	})
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
+	}
 
 	switchDetailCmd := &cobra.Command{
 		Use:   "detail",
@@ -59,7 +61,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
 	must(viper.BindPFlags(switchDetailCmd.Flags()))
 
-	return cmds.Build(switchDetailCmd, switchReplaceCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {

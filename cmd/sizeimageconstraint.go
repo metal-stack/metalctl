@@ -8,7 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -23,15 +23,18 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
+		BinaryName:        binaryName,
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w),
 		Singular:          "imageconstraint",
 		Plural:            "imageconstraints",
 		Description:       "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
 		Aliases:           []string{"ic"},
 		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
-		ValidArgsFunc:     c.comp.SizeImageConstraintListCompletion,
-	})
+		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
+	}
 
 	tryCmd := &cobra.Command{
 		Use:   "try",
@@ -47,7 +50,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	must(tryCmd.MarkFlagRequired("size"))
 	must(tryCmd.MarkFlagRequired("image"))
 
-	return cmds.Build(tryCmd)
+	return genericcli.NewCmds(cmdsConfig, tryCmd)
 }
 
 func (c sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintResponse, error) {

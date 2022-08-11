@@ -7,7 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,13 +22,16 @@ func newImageCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
+		BinaryName:        binaryName,
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w),
 		Singular:          "image",
 		Plural:            "images",
 		Description:       "os images available to be installed on machines.",
 		AvailableSortKeys: sorters.ImageSortKeys(),
-		ValidArgsFunc:     c.comp.ImageListCompletion,
+		ValidArgsFn:       c.comp.ImageListCompletion,
+		DescribePrinter:   printers.DefaultToYAMLPrinter(),
+		ListPrinter:       printers.NewPrinterFromCLI(),
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -50,9 +53,9 @@ func newImageCmd(c *config) *cobra.Command {
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
 		},
-	})
+	}
 
-	return cmds.Build()
+	return genericcli.NewCmds(cmdsConfig)
 }
 
 func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {

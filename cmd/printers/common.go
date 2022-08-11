@@ -4,39 +4,32 @@ import (
 	"log"
 
 	"github.com/fatih/color"
-	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
 	"github.com/spf13/viper"
 )
 
-func NewPrinterFromCLI() genericcli.Printer {
-	var printer genericcli.Printer
-	var err error
+func NewPrinterFromCLI() printers.Printer {
+	var printer printers.Printer
 
 	switch format := viper.GetString("output-format"); format {
 	case "yaml":
-		printer = genericcli.NewYAMLPrinter()
+		printer = printers.NewYAMLPrinter()
 	case "json":
-		printer = genericcli.NewJSONPrinter()
+		printer = printers.NewJSONPrinter()
 	case "table", "wide", "markdown":
 		tp := tableprinters.New()
-		cfg := &genericcli.TablePrinterConfig{
+		cfg := &printers.TablePrinterConfig{
 			ToHeaderAndRows: tp.ToHeaderAndRows,
 			Wide:            format == "wide",
 			Markdown:        format == "markdown",
 			NoHeaders:       viper.GetBool("no-headers"),
 		}
-		tablePrinter, err := genericcli.NewTablePrinter(cfg)
-		if err != nil {
-			log.Fatalf("unable to initialize printer: %v", err)
-		}
+		tablePrinter := printers.NewTablePrinter(cfg)
 		tp.SetPrinter(tablePrinter)
 		printer = tablePrinter
 	case "template":
-		printer, err = genericcli.NewTemplatePrinter(viper.GetString("template"))
-		if err != nil {
-			log.Fatalf("unable to initialize printer: %v", err)
-		}
+		printer = printers.NewTemplatePrinter(viper.GetString("template"))
 	default:
 		log.Fatalf("unknown output format: %q", format)
 	}
@@ -53,9 +46,9 @@ func NewPrinterFromCLI() genericcli.Printer {
 	return printer
 }
 
-func DefaultToYAMLPrinter() genericcli.Printer {
+func DefaultToYAMLPrinter() printers.Printer {
 	if viper.IsSet("output-format") {
 		return NewPrinterFromCLI()
 	}
-	return genericcli.NewYAMLPrinter()
+	return printers.NewYAMLPrinter()
 }

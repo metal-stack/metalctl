@@ -6,7 +6,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -21,24 +21,23 @@ func newFirewallCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
+		BinaryName: binaryName,
 		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w),
-		IncludeCmds: defaultscmds.IncludeCmds(
-			defaultscmds.ListCmd,
-			defaultscmds.DescribeCmd,
-			defaultscmds.CreateCmd,
+		OnlyCmds: genericcli.OnlyCmds(
+			genericcli.ListCmd,
+			genericcli.DescribeCmd,
+			genericcli.CreateCmd,
 		),
-
-		Singular:    "firewall",
-		Plural:      "firewalls",
-		Description: "firewalls are used to establish network connectivity between metal-stack networks. firewalls are similar to machines but are managed by the provider. almost every command of the machine command subset works on firewalls, too.",
-		Aliases:     []string{"fw"},
-
+		Singular:             "firewall",
+		Plural:               "firewalls",
+		Description:          "firewalls are used to establish network connectivity between metal-stack networks. firewalls are similar to machines but are managed by the provider. almost every command of the machine command subset works on firewalls, too.",
+		Aliases:              []string{"fw"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
-
-		AvailableSortKeys: sorters.FirewallSortKeys(),
-		ValidArgsFunc:     c.comp.FirewallListCompletion,
-
+		AvailableSortKeys:    sorters.FirewallSortKeys(),
+		DescribePrinter:      printers.DefaultToYAMLPrinter(),
+		ListPrinter:          printers.NewPrinterFromCLI(),
+		ValidArgsFn:          c.comp.FirewallListCompletion,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
@@ -59,9 +58,9 @@ func newFirewallCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 		},
-	})
+	}
 
-	return cmds.Build()
+	return genericcli.NewCmds(cmdsConfig)
 }
 
 func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {

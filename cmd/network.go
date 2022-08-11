@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -26,13 +25,17 @@ func newNetworkCmd(c *config) *cobra.Command {
 		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}),
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
+		BinaryName:           binaryName,
 		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w),
 		Singular:             "network",
 		Plural:               "networks",
+		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		AvailableSortKeys:    sorters.NetworkSortKeys(),
-		ValidArgsFunc:        c.comp.NetworkListCompletion,
+		ValidArgsFn:          c.comp.NetworkListCompletion,
+		DescribePrinter:      printers.DefaultToYAMLPrinter(),
+		ListPrinter:          printers.NewPrinterFromCLI(),
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 			cmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
@@ -65,7 +68,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},
-	})
+	}
 
 	allocateCmd := &cobra.Command{
 		Use:   "allocate",
@@ -157,7 +160,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 	prefixCmd.AddCommand(prefixAddCmd)
 	prefixCmd.AddCommand(prefixRemoveCmd)
 
-	return cmds.Build(
+	return genericcli.NewCmds(
+		cmdsConfig,
 		newIPCmd(c),
 		allocateCmd,
 		freeCmd,

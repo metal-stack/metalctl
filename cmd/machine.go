@@ -19,7 +19,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/printers/tableprinters"
 	"github.com/metal-stack/metalctl/cmd/sorters"
@@ -71,18 +70,19 @@ func newMachineCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
-		GenericCLI: genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w),
-		Singular:   "machine",
-		Plural:     "machines",
-		Aliases:    []string{"ms"},
-
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
+		BinaryName:           binaryName,
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w),
+		Singular:             "machine",
+		Plural:               "machines",
+		Description:          "a machine is a bare metal server provisioned through metal-stack that is intended to run user workload.",
+		Aliases:              []string{"ms"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
-
-		AvailableSortKeys: sorters.MachineSortKeys(),
-		ValidArgsFunc:     c.comp.MachineListCompletion,
-
+		AvailableSortKeys:    sorters.MachineSortKeys(),
+		ValidArgsFn:          c.comp.MachineListCompletion,
+		DescribePrinter:      printers.DefaultToYAMLPrinter(),
+		ListPrinter:          printers.NewPrinterFromCLI(),
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "machine")
 			cmd.Aliases = []string{"allocate"}
@@ -134,7 +134,7 @@ func newMachineCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("add-tags", []string{}, "tags to be added to the machine [optional]")
 			cmd.Flags().StringSlice("remove-tags", []string{}, "tags to be removed from the machine [optional]")
 		},
-	})
+	}
 
 	machineConsolePasswordCmd := &cobra.Command{
 		Use:   "consolepassword <machine ID>",
@@ -438,7 +438,8 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIpmiEventsCmd.Flags().StringP("last", "n", "10", "show last <n> log entries.")
 	machineIpmiCmd.AddCommand(machineIpmiEventsCmd)
 
-	return cmds.Build(
+	return genericcli.NewCmds(
+		cmdsConfig,
 		machineConsolePasswordCmd,
 		machineConsoleCmd,
 		machineIpmiCmd,

@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
+	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]string, error) {
@@ -230,7 +231,9 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		rows = append(rows, []string{time.Time(i.Time).Format(time.RFC1123), pointer.SafeDeref(i.Event), msg})
 	}
 
-	t.t.GetTable().SetAutoWrapText(false)
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }
@@ -305,7 +308,9 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 		}
 	}
 
-	t.t.GetTable().SetAutoWrapText(false)
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }

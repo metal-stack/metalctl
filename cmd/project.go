@@ -6,7 +6,7 @@ import (
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
+	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -22,13 +22,16 @@ func newProjectCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
+		BinaryName:           binaryName,
 		GenericCLI:           genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](w),
 		Singular:             "project",
 		Plural:               "projects",
 		Description:          "a project groups multiple networks for a tenant.",
 		AvailableSortKeys:    sorters.ProjectSortKeys(),
-		ValidArgsFunc:        c.comp.ProjectListCompletion,
+		ValidArgsFn:          c.comp.ProjectListCompletion,
+		DescribePrinter:      printers.DefaultToYAMLPrinter(),
+		ListPrinter:          printers.NewPrinterFromCLI(),
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
@@ -47,9 +50,9 @@ func newProjectCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("tenant", "", "", "tenant of this project.")
 			must(viper.BindPFlags(cmd.Flags()))
 		},
-	})
+	}
 
-	return cmds.Build()
+	return genericcli.NewCmds(cmdsConfig)
 }
 
 func (c projectCmd) Get(id string) (*models.V1ProjectResponse, error) {

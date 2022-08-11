@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
 )
 
 type TablePrinter struct {
-	t *genericcli.TablePrinter
+	t *printers.TablePrinter
 }
 
 func New() *TablePrinter {
 	return &TablePrinter{}
 }
 
-func (t *TablePrinter) SetPrinter(printer *genericcli.TablePrinter) {
+func (t *TablePrinter) SetPrinter(printer *printers.TablePrinter) {
 	t.t = printer
 }
 

@@ -12,7 +12,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
-	"github.com/metal-stack/metalctl/cmd/defaultscmds"
 	"github.com/metal-stack/metalctl/cmd/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -34,10 +33,14 @@ func newIPCmd(c *config) *cobra.Command {
 		config: c,
 	}
 
-	cmds := defaultscmds.New(&defaultscmds.Config[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
+	cmdsConfig := &genericcli.CmdsConfig[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
+		BinaryName:           binaryName,
 		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w),
 		Singular:             "ip",
 		Plural:               "ips",
+		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",
+		DescribePrinter:      printers.DefaultToYAMLPrinter(),
+		ListPrinter:          printers.NewPrinterFromCLI(),
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
@@ -67,8 +70,8 @@ func newIPCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
 		},
 		AvailableSortKeys: sorters.IPSortKeys(),
-		ValidArgsFunc:     c.comp.IpListCompletion,
-	})
+		ValidArgsFn:       c.comp.IpListCompletion,
+	}
 
 	issuesCmd := &cobra.Command{
 		Use:   "issues",
@@ -79,7 +82,7 @@ func newIPCmd(c *config) *cobra.Command {
 		PreRun: bindPFlags,
 	}
 
-	return cmds.Build(issuesCmd)
+	return genericcli.NewCmds(cmdsConfig, issuesCmd)
 }
 
 func (c ipCmd) Get(id string) (*models.V1IPResponse, error) {
