@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
+	github.com/go-openapi/runtime v0.24.1
 	github.com/metal-stack/metal-go v0.18.6-0.20220811063346-2d5d50a16c66
 	github.com/metal-stack/metal-lib v0.10.1-0.20220809104615-84e6267b5546
 	github.com/metal-stack/updater v1.1.3
@@ -38,7 +39,6 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/loads v0.21.1 // indirect
-	github.com/go-openapi/runtime v0.24.1 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect
 	github.com/go-openapi/strfmt v0.21.2 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
