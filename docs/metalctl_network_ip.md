@@ -15,8 +15,8 @@ an ip address can be attached to a machine or firewall such that network traffic
 ### Options inherited from parent commands
 
 ```
-      --api-token string       api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
-      --api-url string         api server address. Can be specified with METALCTL_URL environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
