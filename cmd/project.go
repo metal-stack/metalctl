@@ -34,15 +34,17 @@ func newProjectCmd(c *config) *cobra.Command {
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
-			cmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
-			cmd.Flags().String("description", "", "description of the project. [required]")
+			cmd.Flags().String("name", "", "name of the project, max 10 characters.")
+			cmd.Flags().String("description", "", "description of the project.")
 			cmd.Flags().String("tenant", "", "create project for given tenant")
 			cmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
 			cmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
 			cmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 			cmd.Flags().Int32("machine-quota", 0, "machine quota")
 			cmd.Flags().Int32("ip-quota", 0, "ip quota")
-			must(cmd.MarkFlagRequired("name"))
+
+			cmd.MarkFlagsMutuallyExclusive("file", "name")
+			cmd.MarkFlagsRequiredTogether("name", "description")
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("name", "", "", "Name of the project.")

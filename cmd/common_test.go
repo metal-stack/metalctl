@@ -118,37 +118,7 @@ func (o *tableOutputFormat[R]) Args() []string {
 }
 
 func (o *tableOutputFormat[R]) Validate(t *testing.T, output []byte) {
-	trimAll := func(ss []string) []string {
-		var res []string
-		for _, s := range ss {
-			res = append(res, strings.TrimSpace(s))
-		}
-		return res
-	}
-
-	var (
-		trimmedWant = strings.TrimSpace(o.table)
-		trimmedGot  = strings.TrimSpace(string(output))
-
-		wantRows = trimAll(strings.Split(trimmedWant, "\n"))
-		gotRows  = trimAll(strings.Split(trimmedGot, "\n"))
-	)
-
-	t.Logf("got following table output:\n%s\n", trimmedGot)
-	t.Log(cmp.Diff(trimmedWant, trimmedGot))
-
-	require.Equal(t, len(wantRows), len(gotRows), "tables have different lengths")
-
-	for i := range wantRows {
-		wantFields := trimAll(strings.Split(wantRows[i], " "))
-		gotFields := trimAll(strings.Split(gotRows[i], " "))
-
-		require.Equal(t, len(wantFields), len(gotFields), "table fields have different lengths")
-
-		for i := range wantFields {
-			assert.Equal(t, wantFields[i], gotFields[i])
-		}
-	}
+	validateTableRows(t, o.table, string(output))
 }
 
 type templateOutputFormat[R any] struct {
@@ -161,6 +131,8 @@ func (o *templateOutputFormat[R]) Args() []string {
 }
 
 func (o *templateOutputFormat[R]) Validate(t *testing.T, output []byte) {
+	t.Logf("got following template output:\n%s\n", string(output))
+
 	if diff := cmp.Diff(strings.TrimSpace(o.templateOutput), strings.TrimSpace(string(output))); diff != "" {
 		t.Errorf("diff (+got -want):\n %s", diff)
 	}
@@ -175,6 +147,10 @@ func (o *markdownOutputFormat[R]) Args() []string {
 }
 
 func (o *markdownOutputFormat[R]) Validate(t *testing.T, output []byte) {
+	validateTableRows(t, o.table, string(output))
+}
+
+func validateTableRows(t *testing.T, want, got string) {
 	trimAll := func(ss []string) []string {
 		var res []string
 		for _, s := range ss {
@@ -184,8 +160,8 @@ func (o *markdownOutputFormat[R]) Validate(t *testing.T, output []byte) {
 	}
 
 	var (
-		trimmedWant = strings.TrimSpace(o.table)
-		trimmedGot  = strings.TrimSpace(string(output))
+		trimmedWant = strings.TrimSpace(want)
+		trimmedGot  = strings.TrimSpace(string(got))
 
 		wantRows = trimAll(strings.Split(trimmedWant, "\n"))
 		gotRows  = trimAll(strings.Split(trimmedGot, "\n"))

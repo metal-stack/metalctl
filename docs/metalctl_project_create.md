@@ -11,7 +11,7 @@ metalctl project create [flags]
 ```
       --annotation strings    add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
       --cluster-quota int32   cluster quota
-      --description string    description of the project. [required]
+      --description string    description of the project.
   -f, --file string           filename of the create or update request in yaml format, or - for stdin.
                               
                               Example:
@@ -26,7 +26,7 @@ metalctl project create [flags]
       --ip-quota int32        ip quota
       --label strings         add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar
       --machine-quota int32   machine quota
-      --name string           name of the project, max 10 characters. [required]
+      --name string           name of the project, max 10 characters.
       --tenant string         create project for given tenant
 ```
 
