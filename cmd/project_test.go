@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -759,6 +760,227 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 
 					cmd := newRootCmd(config)
 					os.Args = append([]string{binaryName, "project", "update", "-f", "/file.yaml"}, format.Args()...)
+
+					err := cmd.Execute()
+					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
+						t.Errorf("error diff (+got -want):\n %s", diff)
+					}
+
+					format.Validate(t, out.Bytes())
+
+					mock.AssertExpectations(t)
+				})
+			}
+		})
+	}
+}
+
+func Test_ProjectApplyFromFileCmd(t *testing.T) {
+	tests := []struct {
+		name         string
+		metalMocks   *client.MetalMockFns
+		want         []*models.V1ProjectResponse
+		wantTable    string
+		template     string
+		wantTemplate string
+		wantMarkdown string
+		wantErr      error
+	}{
+		{
+			name: "apply projects from file",
+			metalMocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
+						Meta: &models.V1Meta{
+							Apiversion: "v1",
+							Kind:       "Project",
+							ID:         "2",
+							Annotations: map[string]string{
+								"a": "b",
+							},
+							Labels: []string{"c"},
+						},
+						Name:        "project-2",
+						Description: "project 2",
+						Quotas: &models.V1QuotaSet{
+							Cluster: &models.V1Quota{Quota: 1},
+							Machine: &models.V1Quota{Quota: 2},
+							IP:      &models.V1Quota{Quota: 3},
+						},
+						TenantID: "metal-stack",
+					})), nil).Return(nil, &project.CreateProjectConflict{}).Once()
+					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID("2")), nil).Return(&project.FindProjectOK{
+						Payload: &models.V1ProjectResponse{
+							Meta: &models.V1Meta{
+								Version: 0,
+							},
+						},
+					}, nil)
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(&models.V1ProjectUpdateRequest{
+						Meta: &models.V1Meta{
+							Apiversion: "v1",
+							Kind:       "Project",
+							ID:         "2",
+							Annotations: map[string]string{
+								"a": "b",
+							},
+							Labels:  []string{"c"},
+							Version: 1,
+						},
+						Name:        "project-2",
+						Description: "project 2",
+						Quotas: &models.V1QuotaSet{
+							Cluster: &models.V1Quota{Quota: 1},
+							Machine: &models.V1Quota{Quota: 2},
+							IP:      &models.V1Quota{Quota: 3},
+						},
+						TenantID: "metal-stack",
+					})), nil).Return(&project.UpdateProjectOK{
+						Payload: &models.V1ProjectResponse{
+							Meta: &models.V1Meta{
+								Apiversion: "v1",
+								Kind:       "Project",
+								ID:         "2",
+								Annotations: map[string]string{
+									"a": "b",
+								},
+								Labels:  []string{"c"},
+								Version: 0, // otherwise does not work for apply file generation from want
+							},
+							Name:        "project-2",
+							Description: "project 2",
+							Quotas: &models.V1QuotaSet{
+								Cluster: &models.V1Quota{Quota: 1},
+								Machine: &models.V1Quota{Quota: 2},
+								IP:      &models.V1Quota{Quota: 3},
+							},
+							TenantID: "metal-stack",
+						},
+					}, nil)
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
+						Meta: &models.V1Meta{
+							Apiversion: "v1",
+							Kind:       "Project",
+							ID:         "1",
+							Annotations: map[string]string{
+								"a": "b",
+							},
+							Labels: []string{"c"},
+						},
+						Name:        "project-1",
+						Description: "project 1",
+						Quotas: &models.V1QuotaSet{
+							Cluster: &models.V1Quota{Quota: 1},
+							Machine: &models.V1Quota{Quota: 2},
+							IP:      &models.V1Quota{Quota: 3},
+						},
+						TenantID: "metal-stack",
+					})), nil).Return(&project.CreateProjectCreated{
+						Payload: &models.V1ProjectResponse{
+							Meta: &models.V1Meta{
+								Apiversion: "v1",
+								Kind:       "Project",
+								ID:         "1",
+								Annotations: map[string]string{
+									"a": "b",
+								},
+								Labels: []string{"c"},
+							},
+							Name:        "project-1",
+							Description: "project 1",
+							Quotas: &models.V1QuotaSet{
+								Cluster: &models.V1Quota{Quota: 1},
+								Machine: &models.V1Quota{Quota: 2},
+								IP:      &models.V1Quota{Quota: 3},
+							},
+							TenantID: "metal-stack",
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1ProjectResponse{
+				{
+					Meta: &models.V1Meta{
+						Apiversion: "v1",
+						Kind:       "Project",
+						ID:         "1",
+						Annotations: map[string]string{
+							"a": "b",
+						},
+						Labels: []string{"c"},
+					},
+					Name:        "project-1",
+					Description: "project 1",
+					Quotas: &models.V1QuotaSet{
+						Cluster: &models.V1Quota{Quota: 1},
+						Machine: &models.V1Quota{Quota: 2},
+						IP:      &models.V1Quota{Quota: 3},
+					},
+					TenantID: "metal-stack",
+				},
+				{
+					Meta: &models.V1Meta{
+						Apiversion: "v1",
+						Kind:       "Project",
+						ID:         "2",
+						Annotations: map[string]string{
+							"a": "b",
+						},
+						Labels: []string{"c"},
+					},
+					Name:        "project-2",
+					Description: "project 2",
+					Quotas: &models.V1QuotaSet{
+						Cluster: &models.V1Quota{Quota: 1},
+						Machine: &models.V1Quota{Quota: 2},
+						IP:      &models.V1Quota{Quota: 3},
+					},
+					TenantID: "metal-stack",
+				},
+			},
+			wantTable: `
+UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
+1     metal-stack   project-1   project 1     1/2/3                          c        a=b
+2     metal-stack   project-2   project 2     1/2/3                          c        a=b
+`,
+			template: "{{ .meta.id }} {{ .name }}",
+			wantTemplate: `
+1 project-1
+2 project-2
+`,
+			wantMarkdown: `
+| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
+|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
+|   1 | metal-stack | project-1 | project 1   | 1/2/3                        | c      | a=b         |
+|   2 | metal-stack | project-2 | project 2   | 1/2/3                        | c      | a=b         |
+`,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		formats := &outputsFormatConfig[[]*models.V1ProjectResponse]{
+			want:           tt.want,
+			table:          pointer.Pointer(tt.wantTable),
+			template:       pointer.Pointer(tt.template),
+			templateOutput: pointer.Pointer(tt.wantTemplate),
+			markdownTable:  pointer.Pointer(tt.wantMarkdown),
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			for _, format := range outputFormats(formats) {
+				format := format
+				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
+					var out bytes.Buffer
+					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
+						var parts []string
+						for _, elem := range tt.want {
+							parts = append(parts, string(mustMarshal(t, elem)))
+						}
+						content := strings.Join(parts, "\n---\n")
+						require.NoError(t, afero.WriteFile(fs, "/file.yaml", []byte(content), 0755))
+					})
+
+					cmd := newRootCmd(config)
+					os.Args = append([]string{binaryName, "project", "apply", "-f", "/file.yaml"}, format.Args()...)
 
 					err := cmd.Execute()
 					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {

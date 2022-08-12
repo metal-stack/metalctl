@@ -39,6 +39,8 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.ImageTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1PartitionResponse:
 		return t.PartitionTable(d, wide)
+	case *models.V1PartitionResponse:
+		return t.PartitionTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1PartitionCapacity:
 		return t.PartitionCapacityTable(d, wide)
 	case []*models.V1SwitchResponse:
