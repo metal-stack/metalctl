@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	yaml "github.com/goccy/go-yaml" // we do not use the standard yaml library from go because it does not support json tags
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -13,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
-	"gopkg.in/yaml.v3"
 )
 
 func newTestConfig(t *testing.T, out io.Writer, mocks *client.MetalMockFns, fsMocks func(fs afero.Fs)) (*config, *client.MetalMockClient) {
@@ -100,9 +100,16 @@ func (o *yamlOutputFormat[R]) Args() []string {
 }
 
 func (o *yamlOutputFormat[R]) Validate(t *testing.T, output []byte) {
-	var got R
-	err := yaml.Unmarshal(output, &got)
+	var intermediate any
+	err := yaml.Unmarshal(output, &intermediate)
 	require.NoError(t, err, string(output))
+
+	bytes, err := json.Marshal(intermediate)
+	require.NoError(t, err)
+
+	var got R
+	err = json.Unmarshal(bytes, &got)
+	require.NoError(t, err)
 
 	if diff := cmp.Diff(o.want, got); diff != "" {
 		t.Errorf("diff (+got -want):\n %s", diff)

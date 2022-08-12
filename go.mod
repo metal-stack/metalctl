@@ -6,9 +6,10 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/go-openapi/runtime v0.24.1
+	github.com/goccy/go-yaml v1.9.5
 	github.com/google/go-cmp v0.5.8
 	github.com/metal-stack/metal-go v0.19.0
-	github.com/metal-stack/metal-lib v0.10.1-0.20220811132448-a1c44a890672
+	github.com/metal-stack/metal-lib v0.10.1-0.20220812124646-a426c3ec7703
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -104,6 +105,7 @@ require (
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
