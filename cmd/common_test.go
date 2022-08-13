@@ -100,15 +100,8 @@ func (o *yamlOutputFormat[R]) Args() []string {
 }
 
 func (o *yamlOutputFormat[R]) Validate(t *testing.T, output []byte) {
-	var intermediate any
-	err := yaml.Unmarshal(output, &intermediate)
-	require.NoError(t, err, string(output))
-
-	bytes, err := json.Marshal(intermediate)
-	require.NoError(t, err)
-
 	var got R
-	err = json.Unmarshal(bytes, &got)
+	err := yaml.Unmarshal(output, &got)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(o.want, got); diff != "" {
