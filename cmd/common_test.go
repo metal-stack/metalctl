@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	yaml "github.com/goccy/go-yaml" // we do not use the standard yaml library from go because it does not support json tags
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	"gopkg.in/yaml.v3"
 )
 
 func newTestConfig(t *testing.T, out io.Writer, mocks *client.MetalMockFns, fsMocks func(fs afero.Fs)) (*config, *client.MetalMockClient) {
