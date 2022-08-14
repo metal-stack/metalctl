@@ -45,7 +45,7 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 		for _, cs := range d.Constraints {
 			c := cs.Constraint
 			switch *c.Type {
-			case "cores":
+			case "cores": // TODO: should be enums in spec
 				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", *c.Min, *c.Max, *cs.Log, *cs.Match)
 			case "memory":
 				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)

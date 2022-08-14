@@ -1,16 +1,14 @@
 package cmd
 
 import (
-	"bytes"
-	"fmt"
-	"os"
+	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
@@ -19,103 +17,163 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_ProjectListCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		filterArgs   []string
-		want         []*models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
+var (
+	project1 = &models.V1ProjectResponse{
+		Meta: &models.V1Meta{
+			Kind:       "Project",
+			Apiversion: "v1",
+			ID:         "1",
+			Annotations: map[string]string{
+				"a": "b",
+			},
+			Labels:  []string{"c"},
+			Version: 1,
+		},
+		Description: "project 1",
+		Name:        "project-1",
+		Quotas: &models.V1QuotaSet{
+			Cluster: &models.V1Quota{
+				Quota: 1,
+				Used:  1,
+			},
+			IP: &models.V1Quota{
+				Quota: 2,
+				Used:  2,
+			},
+			Machine: &models.V1Quota{
+				Quota: 3,
+				Used:  3,
+			},
+		},
+		TenantID: "metal-stack",
+	}
+	project2 = &models.V1ProjectResponse{
+		Meta: &models.V1Meta{
+			Kind:       "Project",
+			Apiversion: "v1",
+			ID:         "2",
+			Annotations: map[string]string{
+				"a": "b",
+			},
+			Labels:  []string{"c"},
+			Version: 1,
+		},
+		Description: "project 2",
+		Name:        "project-2",
+		Quotas: &models.V1QuotaSet{
+			Cluster: &models.V1Quota{},
+			IP:      &models.V1Quota{},
+			Machine: &models.V1Quota{},
+		},
+		TenantID: "metal-stack",
+	}
+	toProjectCreateRequestFromCLI = func(s *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
+		return &models.V1ProjectCreateRequest{
+			Meta: &models.V1Meta{
+				Apiversion:  s.Meta.Apiversion,
+				Kind:        s.Meta.Kind,
+				Annotations: s.Meta.Annotations,
+				Labels:      s.Meta.Labels,
+			},
+			Description: s.Description,
+			Name:        s.Name,
+			Quotas: &models.V1QuotaSet{
+				Cluster: &models.V1Quota{
+					Quota: s.Quotas.Cluster.Quota,
+				},
+				IP: &models.V1Quota{
+					Quota: s.Quotas.IP.Quota,
+				},
+				Machine: &models.V1Quota{
+					Quota: s.Quotas.Machine.Quota,
+				},
+			},
+			TenantID: s.TenantID,
+		}
+	}
+	toProjectCreateRequest = func(s *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
+		return &models.V1ProjectCreateRequest{
+			Meta: &models.V1Meta{
+				Apiversion:  s.Meta.Apiversion,
+				Kind:        s.Meta.Kind,
+				ID:          s.Meta.ID,
+				Annotations: s.Meta.Annotations,
+				Labels:      s.Meta.Labels,
+				Version:     s.Meta.Version,
+			},
+			Description: s.Description,
+			Name:        s.Name,
+			Quotas:      s.Quotas,
+			TenantID:    s.TenantID,
+		}
+	}
+	toProjectUpdateRequest = func(s *models.V1ProjectResponse) *models.V1ProjectUpdateRequest {
+		return &models.V1ProjectUpdateRequest{
+			Meta: &models.V1Meta{
+				Apiversion:  s.Meta.Apiversion,
+				Kind:        s.Meta.Kind,
+				ID:          s.Meta.ID,
+				Annotations: s.Meta.Annotations,
+				Labels:      s.Meta.Labels,
+				Version:     s.Meta.Version,
+			},
+			Description: s.Description,
+			Name:        s.Name,
+			Quotas:      s.Quotas,
+			TenantID:    s.TenantID,
+		}
+	}
+)
+
+func Test_ProjectCmd_MultiResult(t *testing.T) {
+	tests := []*test[[]*models.V1ProjectResponse]{
 		{
-			name: "list projects",
-			metalMocks: &client.MetalMockFns{
+			name: "list",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "list"}
+			},
+			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("FindProjects", testcommon.MatchIgnoreContext(t, project.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{})), nil).Return(&project.FindProjectsOK{
 						Payload: []*models.V1ProjectResponse{
-							{
-								Meta: &models.V1Meta{
-									ID: "2",
-									Annotations: map[string]string{
-										"a": "b",
-									},
-									Labels: []string{"c"},
-								},
-								Description: "project 2",
-								Name:        "project-2",
-								Quotas:      &models.V1QuotaSet{},
-								TenantID:    "metal-stack",
-							},
-							{
-								Meta: &models.V1Meta{
-									ID: "1",
-									Annotations: map[string]string{
-										"a": "b",
-									},
-									Labels: []string{"c"},
-								},
-								Description: "project 1",
-								Name:        "project-1",
-								Quotas:      &models.V1QuotaSet{},
-								TenantID:    "metal-stack",
-							},
+							project2,
+							project1,
 						},
 					}, nil)
 				},
 			},
 			want: []*models.V1ProjectResponse{
-				{
-					Meta: &models.V1Meta{
-						ID: "1",
-						Annotations: map[string]string{
-							"a": "b",
-						},
-						Labels: []string{"c"},
-					},
-					Description: "project 1",
-					Name:        "project-1",
-					Quotas:      &models.V1QuotaSet{},
-					TenantID:    "metal-stack",
-				},
-				{
-					Meta: &models.V1Meta{
-						ID: "2",
-						Annotations: map[string]string{
-							"a": "b",
-						},
-						Labels: []string{"c"},
-					},
-					Description: "project 2",
-					Name:        "project-2",
-					Quotas:      &models.V1QuotaSet{},
-					TenantID:    "metal-stack",
-				},
+				project1,
+				project2,
 			},
-			wantTable: `
+			wantTable: pointer.Pointer(`
+UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
+1     metal-stack   project-1   project 1     c        a=b
+2     metal-stack   project-2   project 2     c        a=b
+`),
+			wantWideTable: pointer.Pointer(`
 UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     ∞/∞/∞                          c        a=b
+1     metal-stack   project-1   project 1     1/3/2                          c        a=b
 2     metal-stack   project-2   project 2     ∞/∞/∞                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
+`),
+			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
 1 project-1
 2 project-2
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | ∞/∞/∞                        | c      | a=b         |
-|   2 | metal-stack | project-2 | project 2   | ∞/∞/∞                        | c      | a=b         |
-`,
+`),
+			wantMarkdown: pointer.Pointer(`
+| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+|-----|-------------|-----------|-------------|--------|-------------|
+|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
+|   2 | metal-stack | project-2 | project 2   | c      | a=b         |
+`),
 		},
 		{
-			name:       "list projects with filters",
-			filterArgs: []string{"--name", "project-1", "--tenant", "metal-stack", "--id", "1"},
-			metalMocks: &client.MetalMockFns{
+			name: "list with filters",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "list", "--name", "project-1", "--tenant", "metal-stack", "--id", want[0].Meta.ID}
+			},
+			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
 					mock.On("FindProjects", testcommon.MatchIgnoreContext(t, project.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
 						Name:     "project-1",
@@ -123,875 +181,182 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 						ID:       "1",
 					})), nil).Return(&project.FindProjectsOK{
 						Payload: []*models.V1ProjectResponse{
-							{
-								Meta: &models.V1Meta{
-									ID: "1",
-									Annotations: map[string]string{
-										"a": "b",
-									},
-									Labels: []string{"c"},
-								},
-								Description: "project 1",
-								Name:        "project-1",
-								Quotas:      &models.V1QuotaSet{},
-								TenantID:    "metal-stack",
-							},
+							project1,
 						},
 					}, nil)
 				},
 			},
 			want: []*models.V1ProjectResponse{
-				{
-					Meta: &models.V1Meta{
-						ID: "1",
-						Annotations: map[string]string{
-							"a": "b",
-						},
-						Labels: []string{"c"},
-					},
-					Description: "project 1",
-					Name:        "project-1",
-					Quotas:      &models.V1QuotaSet{},
-					TenantID:    "metal-stack",
-				},
+				project1,
 			},
-			wantTable: `
+			wantTable: pointer.Pointer(`
+UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
+1     metal-stack   project-1   project 1     c        a=b
+`),
+			wantWideTable: pointer.Pointer(`
 UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     ∞/∞/∞                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
+1     metal-stack   project-1   project 1     1/3/2                          c        a=b
+`),
+			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
 1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | ∞/∞/∞                        | c      | a=b         |
-`,
+`),
+			wantMarkdown: pointer.Pointer(`
+| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+|-----|-------------|-----------|-------------|--------|-------------|
+|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
+`),
 		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[[]*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "list"}, format.Args()...)
-					os.Args = append(os.Args, tt.filterArgs...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
-	}
-}
-
-func Test_ProjectDescribeCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         *models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
 		{
-			name: "list projects",
-			metalMocks: &client.MetalMockFns{
+			name: "apply",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "apply", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID("1")), nil).Return(&project.FindProjectOK{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								ID: "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Description: "project 1",
-							Name:        "project-1",
-							Quotas:      &models.V1QuotaSet{},
-							TenantID:    "metal-stack",
-						},
-					}, nil)
-				},
-			},
-			want: &models.V1ProjectResponse{
-				Meta: &models.V1Meta{
-					ID: "1",
-					Annotations: map[string]string{
-						"a": "b",
-					},
-					Labels: []string{"c"},
-				},
-				Description: "project 1",
-				Name:        "project-1",
-				Quotas:      &models.V1QuotaSet{},
-				TenantID:    "metal-stack",
-			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     ∞/∞/∞                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | ∞/∞/∞                        | c      | a=b         |
-`,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "describe", tt.want.Meta.ID}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
-	}
-}
-
-func Test_ProjectDeleteCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         *models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
-		{
-			name: "delete projects",
-			metalMocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("DeleteProject", testcommon.MatchIgnoreContext(t, project.NewDeleteProjectParams().WithID("1")), nil).Return(&project.DeleteProjectOK{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								ID: "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Description: "project 1",
-							Name:        "project-1",
-							Quotas:      &models.V1QuotaSet{},
-							TenantID:    "metal-stack",
-						},
-					}, nil)
-				},
-			},
-			want: &models.V1ProjectResponse{
-				Meta: &models.V1Meta{
-					ID: "1",
-					Annotations: map[string]string{
-						"a": "b",
-					},
-					Labels: []string{"c"},
-				},
-				Description: "project 1",
-				Name:        "project-1",
-				Quotas:      &models.V1QuotaSet{},
-				TenantID:    "metal-stack",
-			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     ∞/∞/∞                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | ∞/∞/∞                        | c      | a=b         |
-`,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "rm", tt.want.Meta.ID}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
-	}
-}
-
-func Test_ProjectCreateFromCLICmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         *models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
-		{
-			name: "create projects",
-			metalMocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
-						Description: "project 1",
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels: []string{"c"},
-						},
-						Name: "project-1",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(&project.CreateProjectCreated{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								ID: "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Description: "project 1",
-							Name:        "project-1",
-							Quotas: &models.V1QuotaSet{
-								Cluster: &models.V1Quota{Quota: 1},
-								Machine: &models.V1Quota{Quota: 2},
-								IP:      &models.V1Quota{Quota: 3},
-							},
-							TenantID: "metal-stack",
-						},
-					}, nil)
-				},
-			},
-			want: &models.V1ProjectResponse{
-				Meta: &models.V1Meta{
-					ID: "1",
-					Annotations: map[string]string{
-						"a": "b",
-					},
-					Labels: []string{"c"},
-				},
-				Description: "project 1",
-				Name:        "project-1",
-				Quotas: &models.V1QuotaSet{
-					Cluster: &models.V1Quota{Quota: 1},
-					Machine: &models.V1Quota{Quota: 2},
-					IP:      &models.V1Quota{Quota: 3},
-				},
-				TenantID: "metal-stack",
-			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/2/3                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | 1/2/3                        | c      | a=b         |
-`,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "create",
-						"--name", tt.want.Name,
-						"--description", tt.want.Description,
-						"--tenant", tt.want.TenantID,
-						"--label", "c",
-						"--annotation", "a=b",
-						"--cluster-quota", "1",
-						"--machine-quota", "2",
-						"--ip-quota", "3",
-					}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
-	}
-}
-
-func Test_ProjectCreateFromFileCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         *models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
-		{
-			name: "create projects",
-			metalMocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							ID:         "1",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels: []string{"c"},
-						},
-						Name:        "project-1",
-						Description: "project 1",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(&project.CreateProjectCreated{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								Apiversion: "v1",
-								Kind:       "Project",
-								ID:         "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Description: "project 1",
-							Name:        "project-1",
-							Quotas: &models.V1QuotaSet{
-								Cluster: &models.V1Quota{Quota: 1},
-								Machine: &models.V1Quota{Quota: 2},
-								IP:      &models.V1Quota{Quota: 3},
-							},
-							TenantID: "metal-stack",
-						},
-					}, nil)
-				},
-			},
-			want: &models.V1ProjectResponse{
-				Meta: &models.V1Meta{
-					Apiversion: "v1",
-					Kind:       "Project",
-					ID:         "1",
-					Annotations: map[string]string{
-						"a": "b",
-					},
-					Labels: []string{"c"},
-				},
-				Description: "project 1",
-				Name:        "project-1",
-				Quotas: &models.V1QuotaSet{
-					Cluster: &models.V1Quota{Quota: 1},
-					Machine: &models.V1Quota{Quota: 2},
-					IP:      &models.V1Quota{Quota: 3},
-				},
-				TenantID: "metal-stack",
-			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/2/3                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | 1/2/3                        | c      | a=b         |
-`,
-		},
-	}
-	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
-						require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, tt.want), 0755))
-					})
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "create", "-f", "/file.yaml"}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
-	}
-}
-
-func Test_ProjectUpdateFromFileCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         *models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
-		{
-			name: "update projects",
-			metalMocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID("1")), nil).Return(&project.FindProjectOK{
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project1))), nil).Return(nil, &project.CreateProjectConflict{}).Once()
+					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
 						Payload: &models.V1ProjectResponse{
 							Meta: &models.V1Meta{
 								Version: 0,
 							},
 						},
 					}, nil)
-					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(&models.V1ProjectUpdateRequest{
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							ID:         "1",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels:  []string{"c"},
-							Version: 1,
-						},
-						Name:        "project-1",
-						Description: "project 1",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(&project.UpdateProjectOK{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								Apiversion: "v1",
-								Kind:       "Project",
-								ID:         "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Description: "project 1",
-							Name:        "project-1",
-							Quotas: &models.V1QuotaSet{
-								Cluster: &models.V1Quota{Quota: 1},
-								Machine: &models.V1Quota{Quota: 2},
-								IP:      &models.V1Quota{Quota: 3},
-							},
-							TenantID: "metal-stack",
-						},
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(toProjectUpdateRequest(project1))), nil).Return(&project.UpdateProjectOK{
+						Payload: project1,
+					}, nil)
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project2))), nil).Return(&project.CreateProjectCreated{
+						Payload: project2,
 					}, nil)
 				},
 			},
-			want: &models.V1ProjectResponse{
-				Meta: &models.V1Meta{
-					Apiversion: "v1",
-					Kind:       "Project",
-					ID:         "1",
-					Annotations: map[string]string{
-						"a": "b",
-					},
-					Labels: []string{"c"},
-				},
-				Description: "project 1",
-				Name:        "project-1",
-				Quotas: &models.V1QuotaSet{
-					Cluster: &models.V1Quota{Quota: 1},
-					Machine: &models.V1Quota{Quota: 2},
-					IP:      &models.V1Quota{Quota: 3},
-				},
-				TenantID: "metal-stack",
+			want: []*models.V1ProjectResponse{
+				project1,
+				project2,
 			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/2/3                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | 1/2/3                        | c      | a=b         |
-`,
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
-						require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, tt.want), 0755))
-					})
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "update", "-f", "/file.yaml"}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
+		tt.testCmd(t)
 	}
 }
 
-func Test_ProjectApplyFromFileCmd(t *testing.T) {
-	tests := []struct {
-		name         string
-		metalMocks   *client.MetalMockFns
-		want         []*models.V1ProjectResponse
-		wantTable    string
-		template     string
-		wantTemplate string
-		wantMarkdown string
-		wantErr      error
-	}{
+func Test_ProjectCmd_SingleResult(t *testing.T) {
+	tests := []*test[*models.V1ProjectResponse]{
 		{
-			name: "apply projects from file",
-			metalMocks: &client.MetalMockFns{
+			name: "describe",
+			cmd: func(want *models.V1ProjectResponse) []string {
+				return []string{"project", "describe", want.Meta.ID}
+			},
+			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							ID:         "2",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels: []string{"c"},
-						},
-						Name:        "project-2",
-						Description: "project 2",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(nil, &project.CreateProjectConflict{}).Once()
-					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID("2")), nil).Return(&project.FindProjectOK{
+					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: project1,
+			wantTable: pointer.Pointer(`
+UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
+1     metal-stack   project-1   project 1     c        a=b
+`),
+			wantWideTable: pointer.Pointer(`
+UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
+1     metal-stack   project-1   project 1     1/3/2                          c        a=b
+`),
+			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+1 project-1
+`),
+			wantMarkdown: pointer.Pointer(`
+| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+|-----|-------------|-----------|-------------|--------|-------------|
+|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
+`),
+		},
+		{
+			name: "delete",
+			cmd: func(want *models.V1ProjectResponse) []string {
+				return []string{"project", "rm", want.Meta.ID}
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("DeleteProject", testcommon.MatchIgnoreContext(t, project.NewDeleteProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.DeleteProjectOK{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: project1,
+		},
+		{
+			name: "create",
+			cmd: func(want *models.V1ProjectResponse) []string {
+				return []string{"project", "create",
+					"--name", want.Name,
+					"--description", want.Description,
+					"--tenant", want.TenantID,
+					"--label", strings.Join(want.Meta.Labels, ","),
+					"--annotation", strings.Join(genericcli.MapToLabels(want.Meta.Annotations), ","),
+					"--cluster-quota", strconv.FormatInt(int64(want.Quotas.Cluster.Quota), 10),
+					"--machine-quota", strconv.FormatInt(int64(want.Quotas.Machine.Quota), 10),
+					"--ip-quota", strconv.FormatInt(int64(want.Quotas.IP.Quota), 10),
+				}
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequestFromCLI(project1))), nil).Return(&project.CreateProjectCreated{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: project1,
+		},
+		{
+			name: "create from file",
+			cmd: func(want *models.V1ProjectResponse) []string {
+				return []string{"project", "create", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project1))), nil).Return(&project.CreateProjectCreated{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: project1,
+		},
+		{
+			name: "update from file",
+			cmd: func(want *models.V1ProjectResponse) []string {
+				return []string{"project", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
 						Payload: &models.V1ProjectResponse{
 							Meta: &models.V1Meta{
 								Version: 0,
 							},
 						},
 					}, nil)
-					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(&models.V1ProjectUpdateRequest{
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							ID:         "2",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels:  []string{"c"},
-							Version: 1,
-						},
-						Name:        "project-2",
-						Description: "project 2",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(&project.UpdateProjectOK{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								Apiversion: "v1",
-								Kind:       "Project",
-								ID:         "2",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels:  []string{"c"},
-								Version: 0, // otherwise does not work for apply file generation from want
-							},
-							Name:        "project-2",
-							Description: "project 2",
-							Quotas: &models.V1QuotaSet{
-								Cluster: &models.V1Quota{Quota: 1},
-								Machine: &models.V1Quota{Quota: 2},
-								IP:      &models.V1Quota{Quota: 3},
-							},
-							TenantID: "metal-stack",
-						},
-					}, nil)
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(&models.V1ProjectCreateRequest{
-						Meta: &models.V1Meta{
-							Apiversion: "v1",
-							Kind:       "Project",
-							ID:         "1",
-							Annotations: map[string]string{
-								"a": "b",
-							},
-							Labels: []string{"c"},
-						},
-						Name:        "project-1",
-						Description: "project 1",
-						Quotas: &models.V1QuotaSet{
-							Cluster: &models.V1Quota{Quota: 1},
-							Machine: &models.V1Quota{Quota: 2},
-							IP:      &models.V1Quota{Quota: 3},
-						},
-						TenantID: "metal-stack",
-					})), nil).Return(&project.CreateProjectCreated{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								Apiversion: "v1",
-								Kind:       "Project",
-								ID:         "1",
-								Annotations: map[string]string{
-									"a": "b",
-								},
-								Labels: []string{"c"},
-							},
-							Name:        "project-1",
-							Description: "project 1",
-							Quotas: &models.V1QuotaSet{
-								Cluster: &models.V1Quota{Quota: 1},
-								Machine: &models.V1Quota{Quota: 2},
-								IP:      &models.V1Quota{Quota: 3},
-							},
-							TenantID: "metal-stack",
-						},
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(toProjectUpdateRequest(project1))), nil).Return(&project.UpdateProjectOK{
+						Payload: project1,
 					}, nil)
 				},
 			},
-			want: []*models.V1ProjectResponse{
-				{
-					Meta: &models.V1Meta{
-						Apiversion: "v1",
-						Kind:       "Project",
-						ID:         "1",
-						Annotations: map[string]string{
-							"a": "b",
-						},
-						Labels: []string{"c"},
-					},
-					Name:        "project-1",
-					Description: "project 1",
-					Quotas: &models.V1QuotaSet{
-						Cluster: &models.V1Quota{Quota: 1},
-						Machine: &models.V1Quota{Quota: 2},
-						IP:      &models.V1Quota{Quota: 3},
-					},
-					TenantID: "metal-stack",
-				},
-				{
-					Meta: &models.V1Meta{
-						Apiversion: "v1",
-						Kind:       "Project",
-						ID:         "2",
-						Annotations: map[string]string{
-							"a": "b",
-						},
-						Labels: []string{"c"},
-					},
-					Name:        "project-2",
-					Description: "project 2",
-					Quotas: &models.V1QuotaSet{
-						Cluster: &models.V1Quota{Quota: 1},
-						Machine: &models.V1Quota{Quota: 2},
-						IP:      &models.V1Quota{Quota: 3},
-					},
-					TenantID: "metal-stack",
-				},
-			},
-			wantTable: `
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/2/3                          c        a=b
-2     metal-stack   project-2   project 2     1/2/3                          c        a=b
-`,
-			template: "{{ .meta.id }} {{ .name }}",
-			wantTemplate: `
-1 project-1
-2 project-2
-`,
-			wantMarkdown: `
-| UID |   TENANT    |   NAME    | DESCRIPTION | QUOTAS CLUSTERS/MACHINES/IPS | LABELS | ANNOTATIONS |
-|-----|-------------|-----------|-------------|------------------------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | 1/2/3                        | c      | a=b         |
-|   2 | metal-stack | project-2 | project 2   | 1/2/3                        | c      | a=b         |
-`,
+			want: project1,
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-		formats := &outputsFormatConfig[[]*models.V1ProjectResponse]{
-			want:           tt.want,
-			table:          pointer.Pointer(tt.wantTable),
-			template:       pointer.Pointer(tt.template),
-			templateOutput: pointer.Pointer(tt.wantTemplate),
-			markdownTable:  pointer.Pointer(tt.wantMarkdown),
-		}
-		t.Run(tt.name, func(t *testing.T) {
-			for _, format := range outputFormats(formats) {
-				format := format
-				t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-					var out bytes.Buffer
-					config, mock := newTestConfig(t, &out, tt.metalMocks, func(fs afero.Fs) {
-						var parts []string
-						for _, elem := range tt.want {
-							parts = append(parts, string(mustMarshal(t, elem)))
-						}
-						content := strings.Join(parts, "\n---\n")
-						require.NoError(t, afero.WriteFile(fs, "/file.yaml", []byte(content), 0755))
-					})
-
-					cmd := newRootCmd(config)
-					os.Args = append([]string{binaryName, "project", "apply", "-f", "/file.yaml"}, format.Args()...)
-
-					err := cmd.Execute()
-					if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-						t.Errorf("error diff (+got -want):\n %s", diff)
-					}
-
-					format.Validate(t, out.Bytes())
-
-					mock.AssertExpectations(t)
-				})
-			}
-		})
+		tt.testCmd(t)
 	}
 }

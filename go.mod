@@ -6,6 +6,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/go-openapi/runtime v0.24.1
+	github.com/go-openapi/strfmt v0.21.2
 	github.com/google/go-cmp v0.5.8
 	github.com/metal-stack/metal-go v0.19.1-0.20220813093949-694466922d66
 	github.com/metal-stack/metal-lib v0.10.1-0.20220813094220-6f76894ab4a5
@@ -22,6 +23,8 @@ require (
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+replace github.com/metal-stack/metal-lib => ../metal-lib
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -46,7 +49,6 @@ require (
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/loads v0.21.1 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect
-	github.com/go-openapi/strfmt v0.21.2 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-openapi/validate v0.21.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect

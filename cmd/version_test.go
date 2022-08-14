@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"bytes"
-	"os"
 	"runtime"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/api/client/version"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
@@ -18,15 +15,13 @@ import (
 )
 
 func Test_VersionCmd(t *testing.T) {
-	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *api.Version
-		wantErr    error
-	}{
+	tests := []*test[*api.Version]{
 		{
-			name: "print version",
-			metalMocks: &client.MetalMockFns{
+			name: "version",
+			cmd: func(want *api.Version) []string {
+				return []string{"version"}
+			},
+			mocks: &client.MetalMockFns{
 				Version: func(mock *mock.Mock) {
 					mock.On("Info", testcommon.MatchIgnoreContext(t, version.NewInfoParams()), nil).Return(&version.InfoOK{
 						Payload: &models.RestVersion{
@@ -44,27 +39,7 @@ func Test_VersionCmd(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			var out bytes.Buffer
-			config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-			v.Version = "client v1.0.0"
-
-			cmd := newRootCmd(config)
-			os.Args = []string{binaryName, "version"}
-
-			err := cmd.Execute()
-			if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-				t.Errorf("error diff (+got -want):\n %s", diff)
-			}
-
-			f := yamlOutputFormat[*api.Version]{
-				want: tt.want,
-			}
-			f.Validate(t, out.Bytes())
-
-			mock.AssertExpectations(t)
-		})
+		v.Version = "client v1.0.0"
+		tt.testCmd(t)
 	}
 }

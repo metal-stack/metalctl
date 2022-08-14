@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"bytes"
-	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/api/client/health"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
@@ -16,20 +13,19 @@ import (
 )
 
 func Test_HealthCmd(t *testing.T) {
-	tests := []struct {
-		name       string
-		metalMocks *client.MetalMockFns
-		want       *rest.HealthResponse
-		wantErr    error
-	}{
+	tests := []*test[*rest.HealthResponse]{
 		{
-			name: "print health",
-			metalMocks: &client.MetalMockFns{
+			name: "health",
+			cmd: func(want *rest.HealthResponse) []string {
+				return []string{"health"}
+			},
+			mocks: &client.MetalMockFns{
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(&health.HealthOK{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(rest.HealthStatusHealthy)),
-							Message: pointer.Pointer("ok"),
+							Status:   pointer.Pointer(string(rest.HealthStatusHealthy)),
+							Message:  pointer.Pointer("ok"),
+							Services: make(map[string]models.RestHealthResult),
 						},
 					}, nil)
 				},
@@ -41,13 +37,17 @@ func Test_HealthCmd(t *testing.T) {
 			},
 		},
 		{
-			name: "print health also on error response",
-			metalMocks: &client.MetalMockFns{
+			name: "health on error response",
+			cmd: func(want *rest.HealthResponse) []string {
+				return []string{"health"}
+			},
+			mocks: &client.MetalMockFns{
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(nil, &health.HealthInternalServerError{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(rest.HealthStatusUnhealthy)),
-							Message: pointer.Pointer("error"),
+							Status:   pointer.Pointer(string(rest.HealthStatusUnhealthy)),
+							Message:  pointer.Pointer("error"),
+							Services: make(map[string]models.RestHealthResult),
 						},
 					})
 				},
@@ -60,25 +60,6 @@ func Test_HealthCmd(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			var out bytes.Buffer
-			config, mock := newTestConfig(t, &out, tt.metalMocks, nil)
-
-			cmd := newRootCmd(config)
-			os.Args = []string{binaryName, "health"}
-
-			err := cmd.Execute()
-			if diff := cmp.Diff(tt.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-				t.Errorf("error diff (+got -want):\n %s", diff)
-			}
-
-			f := yamlOutputFormat[*rest.HealthResponse]{
-				want: tt.want,
-			}
-			f.Validate(t, out.Bytes())
-
-			mock.AssertExpectations(t)
-		})
+		tt.testCmd(t)
 	}
 }

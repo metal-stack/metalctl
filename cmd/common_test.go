@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
-	"io"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,20 +19,58 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func newTestConfig(t *testing.T, out io.Writer, mocks *client.MetalMockFns, fsMocks func(fs afero.Fs)) (*config, *client.MetalMockClient) {
-	mock, c := client.NewMetalMockClient(mocks)
+type test[R any] struct {
+	name    string
+	mocks   *client.MetalMockFns
+	fsMocks func(fs afero.Fs, want R)
+	cmd     func(want R) []string
 
-	fs := afero.NewMemMapFs()
-	if fsMocks != nil {
-		fsMocks(fs)
+	wantErr       error
+	want          R       // for json and yaml
+	wantTable     *string // for table printer
+	wantWideTable *string // for wide table printer
+	template      *string // for template printer
+	wantTemplate  *string // for template printer
+	wantMarkdown  *string // for markdown printer
+}
+
+func (c *test[R]) testCmd(t *testing.T) {
+	require.NotEmpty(t, c.name, "test name must not be empty")
+	require.NotEmpty(t, c.cmd, "cmd must not be empty")
+
+	for _, format := range outputFormats(c) {
+		format := format
+		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
+			mock, client := client.NewMetalMockClient(c.mocks)
+
+			fs := afero.NewMemMapFs()
+			if c.fsMocks != nil {
+				c.fsMocks(fs, c.want)
+			}
+
+			var out bytes.Buffer
+
+			config := &config{
+				fs:     fs,
+				out:    &out,
+				client: client,
+				log:    zaptest.NewLogger(t).Sugar(),
+			}
+
+			cmd := newRootCmd(config)
+			os.Args = append([]string{binaryName}, c.cmd(c.want)...)
+			os.Args = append(os.Args, format.Args()...)
+
+			err := cmd.Execute()
+			if diff := cmp.Diff(c.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
+				t.Errorf("error diff (+got -want):\n %s", diff)
+			}
+
+			format.Validate(t, out.Bytes())
+
+			mock.AssertExpectations(t)
+		})
 	}
-
-	return &config{
-		fs:     fs,
-		out:    out,
-		client: c,
-		log:    zaptest.NewLogger(t).Sugar(),
-	}, mock
 }
 
 func mustMarshal(t *testing.T, d any) []byte {
@@ -38,31 +79,35 @@ func mustMarshal(t *testing.T, d any) []byte {
 	return b
 }
 
-type outputsFormatConfig[R any] struct {
-	want           R       // for json and yaml
-	table          *string // for table printer
-	template       *string // for template printer
-	templateOutput *string // for template printer
-	markdownTable  *string // for markdown printer
+func mustMarshalToMultiYAML[R any](t *testing.T, data []R) []byte {
+	var parts []string
+	for _, elem := range data {
+		parts = append(parts, string(mustMarshal(t, elem)))
+	}
+	return []byte(strings.Join(parts, "\n---\n"))
 }
 
-func outputFormats[R any](c *outputsFormatConfig[R]) []outputFormat[R] {
+func outputFormats[R any](c *test[R]) []outputFormat[R] {
 	var formats []outputFormat[R]
 
 	if !pointer.IsZero(c.want) {
 		formats = append(formats, &jsonOutputFormat[R]{want: c.want}, &yamlOutputFormat[R]{want: c.want})
 	}
 
-	if c.table != nil {
-		formats = append(formats, &tableOutputFormat[R]{table: *c.table})
+	if c.wantTable != nil {
+		formats = append(formats, &tableOutputFormat[R]{table: *c.wantTable})
 	}
 
-	if c.template != nil && c.templateOutput != nil {
-		formats = append(formats, &templateOutputFormat[R]{template: *c.template, templateOutput: *c.templateOutput})
+	if c.wantWideTable != nil {
+		formats = append(formats, &wideTableOutputFormat[R]{table: *c.wantWideTable})
 	}
 
-	if c.markdownTable != nil {
-		formats = append(formats, &markdownOutputFormat[R]{table: *c.markdownTable})
+	if c.template != nil && c.wantTemplate != nil {
+		formats = append(formats, &templateOutputFormat[R]{template: *c.template, templateOutput: *c.wantTemplate})
+	}
+
+	if c.wantMarkdown != nil {
+		formats = append(formats, &markdownOutputFormat[R]{table: *c.wantMarkdown})
 	}
 
 	return formats
@@ -86,7 +131,7 @@ func (o *jsonOutputFormat[R]) Validate(t *testing.T, output []byte) {
 	err := json.Unmarshal(output, &got)
 	require.NoError(t, err, string(output))
 
-	if diff := cmp.Diff(o.want, got); diff != "" {
+	if diff := cmp.Diff(o.want, got, testcommon.StrFmtDateComparer()); diff != "" {
 		t.Errorf("diff (+got -want):\n %s", diff)
 	}
 }
@@ -104,7 +149,7 @@ func (o *yamlOutputFormat[R]) Validate(t *testing.T, output []byte) {
 	err := yaml.Unmarshal(output, &got)
 	require.NoError(t, err)
 
-	if diff := cmp.Diff(o.want, got); diff != "" {
+	if diff := cmp.Diff(o.want, got, testcommon.StrFmtDateComparer()); diff != "" {
 		t.Errorf("diff (+got -want):\n %s", diff)
 	}
 }
@@ -121,6 +166,18 @@ func (o *tableOutputFormat[R]) Validate(t *testing.T, output []byte) {
 	validateTableRows(t, o.table, string(output))
 }
 
+type wideTableOutputFormat[R any] struct {
+	table string
+}
+
+func (o *wideTableOutputFormat[R]) Args() []string {
+	return []string{"-o", "wide"}
+}
+
+func (o *wideTableOutputFormat[R]) Validate(t *testing.T, output []byte) {
+	validateTableRows(t, o.table, string(output))
+}
+
 type templateOutputFormat[R any] struct {
 	template       string
 	templateOutput string
@@ -131,7 +188,7 @@ func (o *templateOutputFormat[R]) Args() []string {
 }
 
 func (o *templateOutputFormat[R]) Validate(t *testing.T, output []byte) {
-	t.Logf("got following template output:\n%s\n", string(output))
+	t.Logf("got following template output:\n\n%s\n\nconsider using this for test comparison if it looks correct.", string(output))
 
 	if diff := cmp.Diff(strings.TrimSpace(o.templateOutput), strings.TrimSpace(string(output))); diff != "" {
 		t.Errorf("diff (+got -want):\n %s", diff)
@@ -167,7 +224,8 @@ func validateTableRows(t *testing.T, want, got string) {
 		gotRows  = trimAll(strings.Split(trimmedGot, "\n"))
 	)
 
-	t.Logf("got following table output:\n%s\n", trimmedGot)
+	t.Logf("got following table output:\n\n%s\n\nconsider using this for test comparison if it looks correct.", trimmedGot)
+
 	t.Log(cmp.Diff(trimmedWant, trimmedGot))
 
 	require.Equal(t, len(wantRows), len(gotRows), "tables have different lengths")

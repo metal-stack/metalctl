@@ -10,9 +10,13 @@ import (
 
 func (t *TablePrinter) ProjectTable(data []*models.V1ProjectResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
-		rows   [][]string
+		rows [][]string
 	)
+
+	header := []string{"UID", "Tenant", "Name", "Description", "Labels", "Annotations"}
+	if wide {
+		header = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
+	}
 
 	for _, pr := range data {
 		quotas := "∞/∞/∞"
@@ -45,7 +49,11 @@ func (t *TablePrinter) ProjectTable(data []*models.V1ProjectResponse, wide bool)
 		}
 		annotations := strings.Join(as, "\n")
 
-		rows = append(rows, []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, quotas, labels, annotations})
+		if wide {
+			rows = append(rows, []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, quotas, labels, annotations})
+		} else {
+			rows = append(rows, []string{pr.Meta.ID, pr.TenantID, pr.Name, pr.Description, labels, annotations})
+		}
 	}
 
 	return header, rows, nil
