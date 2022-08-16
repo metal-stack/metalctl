@@ -154,7 +154,7 @@ func Test_ImageCmd_SingleResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("FindImage", testcommon.MatchIgnoreContext(t, image.NewFindImageParams().WithID("debian")), nil).Return(&image.FindImageOK{
+					mock.On("FindImage", testcommon.MatchIgnoreContext(t, image.NewFindImageParams().WithID(*image1.ID)), nil).Return(&image.FindImageOK{
 						Payload: image1,
 					}, nil)
 				},
@@ -185,7 +185,7 @@ debian debian-name
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("DeleteImage", testcommon.MatchIgnoreContext(t, image.NewDeleteImageParams().WithID("debian")), nil).Return(&image.DeleteImageOK{
+					mock.On("DeleteImage", testcommon.MatchIgnoreContext(t, image.NewDeleteImageParams().WithID(*image1.ID)), nil).Return(&image.DeleteImageOK{
 						Payload: image1,
 					}, nil)
 				},

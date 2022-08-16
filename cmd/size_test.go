@@ -190,7 +190,7 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("FindSize", testcommon.MatchIgnoreContext(t, size.NewFindSizeParams().WithID("1")), nil).Return(&size.FindSizeOK{
+					mock.On("FindSize", testcommon.MatchIgnoreContext(t, size.NewFindSizeParams().WithID(*size1.ID)), nil).Return(&size.FindSizeOK{
 						Payload: size1,
 					}, nil)
 				},

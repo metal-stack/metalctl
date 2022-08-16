@@ -26,11 +26,14 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 
 		fsls := fsl.Filesystems
 		sort.Slice(fsls, func(i, j int) bool { return depth(fsls[i].Path) < depth(fsls[j].Path) })
-		fss := bytes.NewBufferString("")
 
+		fss := bytes.NewBufferString("")
 		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
-		for _, fs := range fsls {
-			fmt.Fprintf(w, "%s\t  \t%s\n", fs.Path, *fs.Device)
+		for i, fs := range fsls {
+			fmt.Fprintf(w, "%s\t  \t%s", fs.Path, *fs.Device)
+			if i != len(fsls)-1 {
+				fmt.Fprintln(w)
+			}
 		}
 		err := w.Flush()
 		if err != nil {
