@@ -231,7 +231,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "create",
 			cmd: func(want *models.V1SizeResponse) []string {
-				return []string{"size", "create",
+				args := []string{"size", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
 					"--description", want.Description,
@@ -239,6 +239,8 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 					"--min", strconv.FormatInt(*want.Constraints[0].Min, 10),
 					"--type", *want.Constraints[0].Type,
 				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {

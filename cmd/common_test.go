@@ -8,11 +8,15 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/exp/slices"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
+	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/spf13/afero"
+	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -71,6 +75,19 @@ func (c *test[R]) testCmd(t *testing.T) {
 			mock.AssertExpectations(t)
 		})
 	}
+}
+
+func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
+	root := newRootCmd(&config{comp: &completion.Completion{}})
+	cmd, args, err := root.Find(args)
+	require.NoError(t, err)
+
+	cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
+		if slices.Contains(exclude, f.Name) {
+			return
+		}
+		assert.Contains(t, args, "--"+f.Name, "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+	})
 }
 
 func mustMarshal(t *testing.T, d any) []byte {

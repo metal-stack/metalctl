@@ -204,7 +204,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "create",
 			cmd: func(want *models.V1PartitionResponse) []string {
-				return []string{"partition", "create",
+				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
 					"--description", want.Description,
@@ -213,6 +213,8 @@ ID   NAME          DESCRIPTION
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
 				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
@@ -338,7 +340,9 @@ Total                5       3      1           4       2
 		{
 			name: "capacity with filters",
 			cmd: func(want []*models.V1PartitionCapacity) []string {
-				return []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
+				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
+				assertExhaustiveArgs(t, args, "order")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {

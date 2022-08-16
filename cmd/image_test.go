@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -196,13 +195,15 @@ debian debian-name
 		{
 			name: "create",
 			cmd: func(want *models.V1ImageResponse) []string {
-				return []string{"image", "create",
+				args := []string{"image", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
 					"--description", want.Description,
 					"--url", want.URL,
 					"--features", want.Features[0],
 				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
@@ -219,10 +220,7 @@ debian debian-name
 				return []string{"image", "create", "-f", "/file.yaml"}
 			},
 			fsMocks: func(fs afero.Fs, want *models.V1ImageResponse) {
-				strfmt.MarshalFormat = time.RFC3339
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-				bytes, _ := afero.ReadFile(fs, "/file.yaml")
-				fmt.Println(string(bytes))
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {

@@ -171,7 +171,9 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "list with filters",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "list", "--name", "project-1", "--tenant", "metal-stack", "--id", want[0].Meta.ID}
+				args := []string{"project", "list", "--name", "project-1", "--tenant", "metal-stack", "--id", want[0].Meta.ID}
+				assertExhaustiveArgs(t, args, "order")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
@@ -294,7 +296,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "create",
 			cmd: func(want *models.V1ProjectResponse) []string {
-				return []string{"project", "create",
+				args := []string{"project", "create",
 					"--name", want.Name,
 					"--description", want.Description,
 					"--tenant", want.TenantID,
@@ -304,6 +306,8 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 					"--machine-quota", strconv.FormatInt(int64(want.Quotas.Machine.Quota), 10),
 					"--ip-quota", strconv.FormatInt(int64(want.Quotas.IP.Quota), 10),
 				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
