@@ -165,18 +165,18 @@ func Test_NetworkCmd_MultiResult(t *testing.T) {
 			},
 			wantTable: pointer.Pointer(`
 ID          NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES       IPS
-nw1         network-1               partition-1   true    true     prefix     ●    ●
+nw1         network-1               partition-1   true    false    prefix     ●    ●
 └─╴child1   network-1   project-1   partition-1   true    false    prefix     ●    ●
 nw2         network-2   project-1   partition-1   false   false    prefix          ●
 `),
 			wantWideTable: pointer.Pointer(`
 ID          DESCRIPTION   NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES   USAGE              PRIVATESUPER   ANNOTATIONS
-nw1         network 1     network-1               partition-1   true    true     prefix     IPs:     300/100   true           a=b
+nw1         network 1     network-1               partition-1   true    false    prefix     IPs:     300/100   true           a=b
 																							Prefixes:400/200
 └─╴child1   child 1       network-1   project-1   partition-1   true    false    prefix     IPs:     300/100   false          e=f
 																							Prefixes:400/200
 nw2         network 2     network-2   project-1   partition-1   false   false    prefix     IPs:     200/400   false          c=d
-                                                                                                        Prefixes:100/300
+																							Prefixes:100/300
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -187,7 +187,7 @@ nw2 network-2
 			wantMarkdown: pointer.Pointer(`
 |    ID     |   NAME    |  PROJECT  |  PARTITION  |  NAT  | SHARED | PREFIXES |   | IPS |
 |-----------|-----------|-----------|-------------|-------|--------|----------|---|-----|
-| nw1       | network-1 |           | partition-1 | true  | true   | prefix   | ● |  ●  |
+| nw1       | network-1 |           | partition-1 | true  | false  | prefix   | ● |  ●  |
 | └─╴child1 | network-1 | project-1 | partition-1 | true  | false  | prefix   | ● |  ●  |
 | nw2       | network-2 | project-1 | partition-1 | false | false  | prefix   |   |  ●  |
 `),
