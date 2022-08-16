@@ -45,6 +45,8 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.PartitionCapacityTable(d, wide)
 	case []*models.V1SwitchResponse:
 		return t.SwitchTable(d, wide)
+	case *models.V1SwitchResponse:
+		return t.SwitchTable(pointer.WrapInSlice(d), wide)
 	case []*SwitchDetail:
 		return t.SwitchDetailTable(d, wide)
 	case *models.V1NetworkResponse:
