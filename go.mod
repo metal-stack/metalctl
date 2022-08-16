@@ -9,12 +9,13 @@ require (
 	github.com/go-openapi/strfmt v0.21.2
 	github.com/google/go-cmp v0.5.8
 	github.com/metal-stack/metal-go v0.19.1-0.20220813093949-694466922d66
-	github.com/metal-stack/metal-lib v0.10.1-0.20220813094220-6f76894ab4a5
+	github.com/metal-stack/metal-lib v0.10.1-0.20220816080707-a25663dab521
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/afero v1.8.2
 	github.com/spf13/cobra v1.5.0
+	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
 	go.uber.org/zap v1.21.0
@@ -23,8 +24,6 @@ require (
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
 	gopkg.in/yaml.v3 v3.0.1
 )
-
-replace github.com/metal-stack/metal-lib => ../metal-lib
 
 require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
@@ -95,7 +94,6 @@ require (
 	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
 	go.mongodb.org/mongo-driver v1.9.1 // indirect
