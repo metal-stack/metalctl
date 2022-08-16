@@ -720,7 +720,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -734,7 +734,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -748,7 +748,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -762,7 +762,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -911,7 +911,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -925,7 +925,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -939,7 +939,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id), nil)
+	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id).WithBody([]string{}), nil)
 	if err != nil {
 		return err
 	}
@@ -954,7 +954,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithDescription(description), nil)
+	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody([]string{}).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
@@ -969,7 +969,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithDescription(description), nil)
+	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody([]string{}).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
