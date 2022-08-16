@@ -20,8 +20,8 @@ import (
 
 // TODO: just having a single ip create endpoint in the metal-api would simplify things a lot... maybe just deprecate the specific one and add ip address field to regular allocate request
 type ipAllocateRequest struct {
-	SpecificIP string `json:"ipaddress"`
-	*models.V1IPAllocateRequest
+	SpecificIP                  string `json:"ipaddress" yaml:"ipaddress"`
+	*models.V1IPAllocateRequest `yaml:",inline"`
 }
 
 type ipCmd struct {
@@ -141,7 +141,7 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
-		var r *ip.AllocateIPDefault // FIXME: API should define to return conflict
+		var r *ip.AllocateSpecificIPDefault // FIXME: API should define to return conflict
 		if errors.As(err, &r) && r.Code() == http.StatusConflict {
 			return nil, genericcli.AlreadyExistsError()
 		}
