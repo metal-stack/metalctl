@@ -49,7 +49,6 @@ a machine is a bare metal server provisioned through metal-stack that is intende
 * [metalctl machine create](metalctl_machine_create.md)	 - creates the machine
 * [metalctl machine delete](metalctl_machine_delete.md)	 - deletes the machine
 * [metalctl machine describe](metalctl_machine_describe.md)	 - describes the machine
-* [metalctl machine edit](metalctl_machine_edit.md)	 - edit the machine through an editor and update
 * [metalctl machine identify](metalctl_machine_identify.md)	 - manage machine chassis identify LED power
 * [metalctl machine ipmi](metalctl_machine_ipmi.md)	 - display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.
 * [metalctl machine issues](metalctl_machine_issues.md)	 - display machines which are in a potential bad state

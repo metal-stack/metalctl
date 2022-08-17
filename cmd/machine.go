@@ -71,7 +71,15 @@ func newMachineCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
-		BinaryName:           binaryName,
+		BinaryName: binaryName,
+		OnlyCmds: genericcli.OnlyCmds(
+			genericcli.ListCmd,
+			genericcli.DescribeCmd,
+			genericcli.CreateCmd,
+			genericcli.UpdateCmd,
+			genericcli.DeleteCmd,
+			genericcli.ApplyCmd,
+		),
 		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.fs),
 		Singular:             "machine",
 		Plural:               "machines",
@@ -88,39 +96,39 @@ func newMachineCmd(c *config) *cobra.Command {
 			cmd.Aliases = []string{"allocate"}
 			cmd.Example = `machine create can be done in two different ways:
 
-			- default with automatic allocation:
+- default with automatic allocation:
 
-			metalctl machine create \
-				--hostname worker01 \
-				--name worker \
-				--image ubuntu-18.04 \ # query available with: metalctl image list
-				--size t1-small-x86 \  # query available with: metalctl size list
-				--partition test \     # query available with: metalctl partition list
-				--project cluster01 \
-				--sshpublickey "@~/.ssh/id_rsa.pub"
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--size t1-small-x86 \  # query available with: metalctl size list
+		--partition test \     # query available with: metalctl partition list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub"
 
-			- for metal administration with reserved machines:
+- for metal administration with reserved machines:
 
-			reserve a machine you want to allocate:
+	reserve a machine you want to allocate:
 
-			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
+	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
 
-			allocate this machine:
+	allocate this machine:
 
-			metalctl machine create \
-				--hostname worker01 \
-				--name worker \
-				--image ubuntu-18.04 \ # query available with: metalctl image list
-				--project cluster01 \
-				--sshpublickey "@~/.ssh/id_rsa.pub" \
-				--id 00000000-0000-0000-0000-0cc47ae54694
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub" \
+		--id 00000000-0000-0000-0000-0cc47ae54694
 
-			after you do not want to use this machine exclusive, remove the reservation:
+after you do not want to use this machine exclusive, remove the reservation:
 
-			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
+metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
 
-			Once created the machine installation can not be modified anymore.
-			`
+Once created the machine installation can not be modified anymore.
+`
 		},
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Long = `delete a machine and destroy all data stored on the local disks. Once destroyed it is back for usage by other projects. A destroyed machine can not restored anymore`

@@ -11,39 +11,39 @@ metalctl machine create [flags]
 ```
 machine create can be done in two different ways:
 
-			- default with automatic allocation:
+- default with automatic allocation:
 
-			metalctl machine create \
-				--hostname worker01 \
-				--name worker \
-				--image ubuntu-18.04 \ # query available with: metalctl image list
-				--size t1-small-x86 \  # query available with: metalctl size list
-				--partition test \     # query available with: metalctl partition list
-				--project cluster01 \
-				--sshpublickey "@~/.ssh/id_rsa.pub"
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--size t1-small-x86 \  # query available with: metalctl size list
+		--partition test \     # query available with: metalctl partition list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub"
 
-			- for metal administration with reserved machines:
+- for metal administration with reserved machines:
 
-			reserve a machine you want to allocate:
+	reserve a machine you want to allocate:
 
-			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
+	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
 
-			allocate this machine:
+	allocate this machine:
 
-			metalctl machine create \
-				--hostname worker01 \
-				--name worker \
-				--image ubuntu-18.04 \ # query available with: metalctl image list
-				--project cluster01 \
-				--sshpublickey "@~/.ssh/id_rsa.pub" \
-				--id 00000000-0000-0000-0000-0cc47ae54694
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub" \
+		--id 00000000-0000-0000-0000-0cc47ae54694
 
-			after you do not want to use this machine exclusive, remove the reservation:
+after you do not want to use this machine exclusive, remove the reservation:
 
-			metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
+metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
 
-			Once created the machine installation can not be modified anymore.
-			
+Once created the machine installation can not be modified anymore.
+
 ```
 
 ### Options
