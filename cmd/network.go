@@ -345,7 +345,7 @@ func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1Netwo
 }
 
 func (c networkChildCRUD) ToUpdate(r *models.V1NetworkResponse) (any, error) {
-	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+	return nil, fmt.Errorf("not implemented for child networks, use network update")
 }
 
 // non-generic command handling
