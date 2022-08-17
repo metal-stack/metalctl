@@ -27,7 +27,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		GenericCLI:           genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](w).WithFS(c.fs),
 		Singular:             "project",
 		Plural:               "projects",
-		Description:          "a project groups multiple networks for a tenant.",
+		Description:          "a project belongs to a tenant and groups together entities in metal-stack.",
 		AvailableSortKeys:    sorters.ProjectSortKeys(),
 		ValidArgsFn:          c.comp.ProjectListCompletion,
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },

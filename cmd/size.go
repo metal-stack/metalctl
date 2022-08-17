@@ -28,7 +28,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
 		Singular:          "size",
 		Plural:            "sizes",
-		Description:       "a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.",
+		Description:       "a size matches a machine in terms of cpu cores, ram and storage.",
 		AvailableSortKeys: sorters.SizeSortKeys(),
 		ValidArgsFn:       c.comp.SizeListCompletion,
 		DescribePrinter:   func() printers.Printer { return c.describePrinter },

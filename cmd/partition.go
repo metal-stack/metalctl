@@ -29,7 +29,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
 		Singular:          "partition",
 		Plural:            "partitions",
-		Description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
+		Description:       "a partition is a failure domain in the data center.",
 		ValidArgsFn:       c.comp.PartitionListCompletion,
 		AvailableSortKeys: sorters.PartitionSortKeys(),
 		DescribePrinter:   func() printers.Printer { return c.describePrinter },
