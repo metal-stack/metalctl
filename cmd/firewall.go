@@ -120,18 +120,19 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 	}
 
 	return &models.V1FirewallCreateRequest{
-		Description: mcr.Description,
-		Partitionid: mcr.Partitionid,
-		Hostname:    mcr.Hostname,
-		Imageid:     mcr.Imageid,
-		Name:        mcr.Name,
-		UUID:        mcr.UUID,
-		Projectid:   mcr.Projectid,
-		Sizeid:      mcr.Sizeid,
-		SSHPubKeys:  mcr.SSHPubKeys,
-		UserData:    mcr.UserData,
-		Tags:        mcr.Tags,
-		Networks:    mcr.Networks,
-		Ips:         mcr.Ips,
+		Description:        mcr.Description,
+		Filesystemlayoutid: mcr.Filesystemlayoutid,
+		Partitionid:        mcr.Partitionid,
+		Hostname:           mcr.Hostname,
+		Imageid:            mcr.Imageid,
+		Name:               mcr.Name,
+		UUID:               mcr.UUID,
+		Projectid:          mcr.Projectid,
+		Sizeid:             mcr.Sizeid,
+		SSHPubKeys:         mcr.SSHPubKeys,
+		UserData:           mcr.UserData,
+		Tags:               mcr.Tags,
+		Networks:           mcr.Networks,
+		Ips:                mcr.Ips,
 	}, nil
 }
