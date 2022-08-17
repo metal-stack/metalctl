@@ -177,13 +177,13 @@ func Test_FilesystemLayoutCmd_MultiResult(t *testing.T) {
 			wantTable: pointer.Pointer(`
 ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 1    fsl 1         /tmp       tmpfs       size1   os-image *
-					/boot/efi  /dev/sda1
+                   /boot/efi  /dev/sda1
 2    fsl 2         /tmp  tmpfs            size1   os-image *
 `),
 			wantWideTable: pointer.Pointer(`
 ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 1    fsl 1         /tmp       tmpfs       size1   os-image *
-					/boot/efi  /dev/sda1
+                   /boot/efi  /dev/sda1
 2    fsl 2         /tmp  tmpfs            size1   os-image *
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -252,7 +252,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			wantWideTable: pointer.Pointer(`
 ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 1    fsl 1         /tmp       tmpfs       size1   os-image *
-					/boot/efi  /dev/sda1
+                   /boot/efi  /dev/sda1
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
