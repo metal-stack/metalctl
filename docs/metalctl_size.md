@@ -4,7 +4,7 @@ manage size entities
 
 ### Synopsis
 
-a size is a distinct hardware equipment in terms of cpu cores, ram and storage of a machine.
+a size matches a machine in terms of cpu cores, ram and storage.
 
 ### Options
 

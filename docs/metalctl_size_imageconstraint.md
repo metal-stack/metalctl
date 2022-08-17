@@ -4,7 +4,7 @@ manage imageconstraint entities
 
 ### Synopsis
 
-If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.
+if a size has specific requirements regarding the images which must fulfill certain constraints, this can be configured here.
 
 ### Options
 

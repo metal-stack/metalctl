@@ -4,7 +4,7 @@ manage project entities
 
 ### Synopsis
 
-a project groups multiple networks for a tenant.
+a project belongs to a tenant and groups together entities in metal-stack.
 
 ### Options
 

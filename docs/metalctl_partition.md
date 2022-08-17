@@ -4,7 +4,7 @@ manage partition entities
 
 ### Synopsis
 
-a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.
+a partition is a failure domain in the data center.
 
 ### Options
 

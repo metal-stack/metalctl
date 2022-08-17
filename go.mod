@@ -7,22 +7,22 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
 	github.com/go-openapi/runtime v0.24.1
-	github.com/go-openapi/strfmt v0.21.2
+	github.com/go-openapi/strfmt v0.21.3
 	github.com/google/go-cmp v0.5.8
 	github.com/metal-stack/metal-go v0.19.1-0.20220816081221-d9ab8b98e532
 	github.com/metal-stack/metal-lib v0.10.1
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/spf13/afero v1.8.2
+	github.com/spf13/afero v1.9.2
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.8.0
-	go.uber.org/zap v1.21.0
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	golang.org/x/exp v0.0.0-20220713135740-79cabaa25d75
-	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467
+	go.uber.org/zap v1.22.0
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e
+	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -96,7 +96,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/subosito/gotenv v1.3.0 // indirect
-	go.mongodb.org/mongo-driver v1.10.0 // indirect
+	go.mongodb.org/mongo-driver v1.10.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/net v0.0.0-20220622184535-263ec571b305 // indirect

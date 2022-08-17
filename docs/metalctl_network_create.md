@@ -9,30 +9,30 @@ metalctl network create [flags]
 ### Options
 
 ```
-  -d, --description string            description of the network to create. [optional]
-      --destinationprefixes strings   destination prefixes in this network.
-  -f, --file string                   filename of the create or update request in yaml format, or - for stdin.
-                                      
-                                      Example:
-                                      $ metalctl network describe network-1 -o yaml > network.yaml
-                                      $ vi network.yaml
-                                      $ # either via stdin
-                                      $ cat network.yaml | metalctl network create -f -
-                                      $ # or via file
-                                      $ metalctl network create -f network.yaml
-                                      	
-  -h, --help                          help for create
-      --id string                     id of the network to create. [optional]
-      --labels strings                add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
-  -n, --name string                   name of the network to create. [optional]
-      --nat                           set nat flag of network, if set to true, traffic from this network will be natted.
-  -p, --partition string              partition where this network should exist.
-      --prefixes strings              prefixes in this network.
-      --privatesuper                  set private super flag of network, if set to true, this network is used to start machines there.
-      --project string                project of the network to create. [optional]
-      --underlay                      set underlay flag of network, if set to true, this is used to transport underlay network traffic
-      --vrf int                       vrf of this network
-      --vrfshared                     vrf shared allows multiple networks to share a vrf
+  -d, --description string             description of the network to create. [optional]
+      --destination-prefixes strings   destination prefixes in this network.
+  -f, --file string                    filename of the create or update request in yaml format, or - for stdin.
+                                       
+                                       Example:
+                                       $ metalctl network describe network-1 -o yaml > network.yaml
+                                       $ vi network.yaml
+                                       $ # either via stdin
+                                       $ cat network.yaml | metalctl network create -f -
+                                       $ # or via file
+                                       $ metalctl network create -f network.yaml
+                                       	
+  -h, --help                           help for create
+      --id string                      id of the network to create. [optional]
+      --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
+  -n, --name string                    name of the network to create. [optional]
+      --nat                            set nat flag of network, if set to true, traffic from this network will be natted.
+  -p, --partition string               partition where this network should exist.
+      --prefixes strings               prefixes in this network.
+      --privatesuper                   set private super flag of network, if set to true, this network is used to start machines there.
+      --project string                 project of the network to create. [optional]
+      --underlay                       set underlay flag of network, if set to true, this is used to transport underlay network traffic
+      --vrf int                        vrf of this network
+      --vrfshared                      vrf shared allows multiple networks to share a vrf
 ```
 
 ### Options inherited from parent commands
