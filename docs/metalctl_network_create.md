@@ -1,6 +1,6 @@
 ## metalctl network create
 
-create a network
+creates the network
 
 ```
 metalctl network create [flags]
@@ -9,25 +9,37 @@ metalctl network create [flags]
 ### Options
 
 ```
-      --annotation strings            add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
-  -d, --description string            description of the network to create. [optional]
-      --destinationprefixes strings   destination prefixes in this network.
-  -h, --help                          help for create
-      --id string                     id of the network to create. [optional]
-  -n, --name string                   name of the network to create. [optional]
-      --nat                           set nat flag of network, if set to true, traffic from this network will be natted.
-  -p, --partition string              partition where this network should exist.
-      --prefixes strings              prefixes in this network.
-      --primary                       set primary flag of network, if set to true, this network is used to start machines there.
-      --underlay                      set underlay flag of network, if set to true, this is used to transport underlay network traffic
-      --vrf int                       vrf of this network
-      --vrfshared                     vrf shared allows multiple networks to share a vrf
+  -d, --description string             description of the network to create. [optional]
+      --destination-prefixes strings   destination prefixes in this network.
+  -f, --file string                    filename of the create or update request in yaml format, or - for stdin.
+                                       
+                                       Example:
+                                       $ metalctl network describe network-1 -o yaml > network.yaml
+                                       $ vi network.yaml
+                                       $ # either via stdin
+                                       $ cat network.yaml | metalctl network create -f -
+                                       $ # or via file
+                                       $ metalctl network create -f network.yaml
+                                       	
+  -h, --help                           help for create
+      --id string                      id of the network to create. [optional]
+      --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
+  -n, --name string                    name of the network to create. [optional]
+      --nat                            set nat flag of network, if set to true, traffic from this network will be natted.
+  -p, --partition string               partition where this network should exist.
+      --prefixes strings               prefixes in this network.
+      --privatesuper                   set private super flag of network, if set to true, this network is used to start machines there.
+      --project string                 project of the network to create. [optional]
+      --underlay                       set underlay flag of network, if set to true, this is used to transport underlay network traffic
+      --vrf int                        vrf of this network
+      --vrfshared                      vrf shared allows multiple networks to share a vrf
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --apitoken string        api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
@@ -38,9 +50,8 @@ metalctl network create [flags]
                                
       --debug                  debug output
       --force-color            force colored output even without tty
-      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login.
+      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
       --no-headers             do not print headers of table output format (default print headers)
-      --order string           order by (comma separated) column(s), possible values: size|id|status|event|when|partition|project
   -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
       --template string        output template for template output-format, go template format.
                                For property names inspect the output of -o json or -o yaml for reference.
@@ -49,12 +60,10 @@ metalctl network create [flags]
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
                                
                                
-  -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
-* [metalctl network](metalctl_network.md)	 - manage networks
+* [metalctl network](metalctl_network.md)	 - manage network entities
 
-###### Auto generated by spf13/cobra on 25-Aug-2021

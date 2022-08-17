@@ -9,6 +9,7 @@ import (
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide bool) ([]string, [][]string, error) {
@@ -25,11 +26,14 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 
 		fsls := fsl.Filesystems
 		sort.Slice(fsls, func(i, j int) bool { return depth(fsls[i].Path) < depth(fsls[j].Path) })
-		fss := bytes.NewBufferString("")
 
+		fss := bytes.NewBufferString("")
 		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
-		for _, fs := range fsls {
-			fmt.Fprintf(w, "%s\t  \t%s\n", fs.Path, *fs.Device)
+		for i, fs := range fsls {
+			fmt.Fprintf(w, "%s\t  \t%s", fs.Path, *fs.Device)
+			if i != len(fsls)-1 {
+				fmt.Fprintln(w)
+			}
 		}
 		err := w.Flush()
 		if err != nil {
@@ -39,7 +43,9 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 		rows = append(rows, []string{pointer.SafeDeref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
 	}
 
-	t.t.GetTable().SetAutoWrapText(false)
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }

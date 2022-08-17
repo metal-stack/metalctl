@@ -23,7 +23,11 @@ func newLoginCmd(c *config) *cobra.Command {
 			var handler auth.TokenHandlerFunc
 			if viper.GetBool("print-only") {
 				// do not print to console
-				handler = printTokenHandler
+				handler = func(tokenInfo auth.TokenInfo) error {
+					fmt.Fprintln(c.out, tokenInfo.IDToken)
+					return nil
+				}
+
 			} else {
 				cs, err := api.GetContexts()
 				if err != nil {
@@ -56,17 +60,11 @@ func newLoginCmd(c *config) *cobra.Command {
 				Log:          c.log.Desugar(),
 			}
 
-			fmt.Println()
+			fmt.Fprintln(c.out)
 
 			return auth.OIDCFlow(config)
 		},
-		PreRun: bindPFlags,
 	}
 	loginCmd.Flags().Bool("print-only", false, "If true, the token is printed to stdout")
 	return loginCmd
-}
-
-func printTokenHandler(tokenInfo auth.TokenInfo) error {
-	fmt.Println(tokenInfo.IDToken)
-	return nil
 }

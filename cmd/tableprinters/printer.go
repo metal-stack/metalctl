@@ -4,20 +4,20 @@ import (
 	"fmt"
 
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
 )
 
 type TablePrinter struct {
-	t *genericcli.TablePrinter
+	t *printers.TablePrinter
 }
 
 func New() *TablePrinter {
 	return &TablePrinter{}
 }
 
-func (t *TablePrinter) SetPrinter(printer *genericcli.TablePrinter) {
+func (t *TablePrinter) SetPrinter(printer *printers.TablePrinter) {
 	t.t = printer
 }
 
@@ -35,12 +35,18 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.FirewallTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1ImageResponse:
 		return t.ImageTable(d, wide)
+	case *models.V1ImageResponse:
+		return t.ImageTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1PartitionResponse:
 		return t.PartitionTable(d, wide)
+	case *models.V1PartitionResponse:
+		return t.PartitionTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1PartitionCapacity:
 		return t.PartitionCapacityTable(d, wide)
 	case []*models.V1SwitchResponse:
 		return t.SwitchTable(d, wide)
+	case *models.V1SwitchResponse:
+		return t.SwitchTable(pointer.WrapInSlice(d), wide)
 	case []*SwitchDetail:
 		return t.SwitchDetailTable(d, wide)
 	case *models.V1NetworkResponse:

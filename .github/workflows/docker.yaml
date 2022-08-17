@@ -1,0 +1,77 @@
+---
+name: Docker Build Action
+on:
+  pull_request:
+    branches:
+      - master
+  release:
+    types:
+      - published
+  push:
+    branches:
+      - master
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  GCS_BUCKET: images.metal-pod.io
+
+jobs:
+  build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Log in to the container registry
+      uses: docker/login-action@v1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKER_REGISTRY_USER }}
+        password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - uses: google-github-actions/auth@v0
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0
+
+    - name: Ensure Go Version
+      uses: actions/setup-go@v3
+      with:
+        go-version: '1.19'
+        # go-version-file: 'go.mod'
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        args: --build-tags integration -p bugs -p unused --timeout=3m
+
+    - name: Make tag
+      run: |
+        [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TAG_NAME=${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
+        [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+        [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TAG_NAME=latest" >> $GITHUB_ENV || true
+
+    - name: Build
+      uses: fi-ts/action-docker-make@master
+      with:
+        username: ${{ secrets.DOCKER_REGISTRY_USER }}
+        password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+        args: >
+          --no-cache
+          --build-only metalctl
+          -x rule2,rule3
+          --summary
+
+    - name: Prepare upload
+      run: |
+        mkdir -p metalctl
+        sudo chown -R $(id -u):$(id -g) result
+        mv result/* metalctl
+
+    - name: Upload image tarballs to GCS
+      run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET

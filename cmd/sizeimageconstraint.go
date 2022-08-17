@@ -7,6 +7,7 @@ import (
 	sizemodel "github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -15,24 +16,25 @@ import (
 
 type sizeImageConstraintCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]
 }
 
 func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	w := sizeImageConstraintCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](sizeImageConstraintCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
-		gcli:              w.GenericCLI,
-		singular:          "imageconstraint",
-		plural:            "imageconstraints",
-		description:       "If a size has specific requirements regarding the images which must fullfil certain constraints, this can be configured here.",
-		aliases:           []string{"ic"},
-		availableSortKeys: sorters.SizeImageConstraintSortKeys(),
-		validArgsFunc:     c.comp.SizeImageConstraintListCompletion,
-	})
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
+		BinaryName:        binaryName,
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w).WithFS(c.fs),
+		Singular:          "imageconstraint",
+		Plural:            "imageconstraints",
+		Description:       "if a size has specific requirements regarding the images which must fulfill certain constraints, this can be configured here.",
+		Aliases:           []string{"ic"},
+		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
+		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
+	}
 
 	tryCmd := &cobra.Command{
 		Use:   "try",
@@ -40,7 +42,6 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.try()
 		},
-		PreRun: bindPFlags,
 	}
 
 	tryCmd.Flags().StringP("size", "", "", "size to check if allocaltion is possible")
@@ -48,14 +49,10 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	must(tryCmd.MarkFlagRequired("size"))
 	must(tryCmd.MarkFlagRequired("image"))
 
-	return cmds.buildRootCmd(tryCmd)
+	return genericcli.NewCmds(cmdsConfig, tryCmd)
 }
 
-type sizeImageConstraintCRUD struct {
-	*config
-}
-
-func (c sizeImageConstraintCRUD) Get(id string) (*models.V1SizeImageConstraintResponse, error) {
+func (c sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().FindSizeImageConstraint(sizemodel.NewFindSizeImageConstraintParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -64,7 +61,7 @@ func (c sizeImageConstraintCRUD) Get(id string) (*models.V1SizeImageConstraintRe
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCRUD) List() ([]*models.V1SizeImageConstraintResponse, error) {
+func (c sizeImageConstraintCmd) List() ([]*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().ListSizeImageConstraints(sizemodel.NewListSizeImageConstraintsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -78,7 +75,7 @@ func (c sizeImageConstraintCRUD) List() ([]*models.V1SizeImageConstraintResponse
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCRUD) Delete(id string) (*models.V1SizeImageConstraintResponse, error) {
+func (c sizeImageConstraintCmd) Delete(id string) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().DeleteSizeImageConstraint(sizemodel.NewDeleteSizeImageConstraintParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -87,7 +84,7 @@ func (c sizeImageConstraintCRUD) Delete(id string) (*models.V1SizeImageConstrain
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCRUD) Create(rq *models.V1SizeImageConstraintCreateRequest) (*models.V1SizeImageConstraintResponse, error) {
+func (c sizeImageConstraintCmd) Create(rq *models.V1SizeImageConstraintCreateRequest) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().CreateSizeImageConstraint(sizemodel.NewCreateSizeImageConstraintParams().WithBody(rq), nil)
 	if err != nil {
 		var r *sizemodel.CreateSizeImageConstraintConflict
@@ -100,13 +97,39 @@ func (c sizeImageConstraintCRUD) Create(rq *models.V1SizeImageConstraintCreateRe
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCRUD) Update(rq *models.V1SizeImageConstraintUpdateRequest) (*models.V1SizeImageConstraintResponse, error) {
+func (c sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateRequest) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().UpdateSizeImageConstraint(sizemodel.NewUpdateSizeImageConstraintParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return resp.Payload, nil
+}
+
+func (c sizeImageConstraintCmd) ToCreate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintCreateRequest, error) {
+	return sizeImageContraintResponseToCreate(r), nil
+}
+
+func (c sizeImageConstraintCmd) ToUpdate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintUpdateRequest, error) {
+	return sizeImageContraintResponseToUpdate(r), nil
+}
+
+func sizeImageContraintResponseToCreate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {
+	return &models.V1SizeImageConstraintCreateRequest{
+		Constraints: r.Constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
+}
+
+func sizeImageContraintResponseToUpdate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintUpdateRequest {
+	return &models.V1SizeImageConstraintUpdateRequest{
+		Constraints: r.Constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
 }
 
 // non-generic command handling
@@ -120,7 +143,7 @@ func (c *sizeImageConstraintCmd) try() error {
 		return err
 	}
 
-	fmt.Println("allocation is possible")
+	fmt.Fprintln(c.out, "allocation is possible")
 
 	return nil
 }

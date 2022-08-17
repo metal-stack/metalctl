@@ -6,6 +6,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
@@ -44,7 +45,7 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 		for _, cs := range d.Constraints {
 			c := cs.Constraint
 			switch *c.Type {
-			case "cores":
+			case "cores": // TODO: should be enums in spec
 				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", *c.Min, *c.Max, *cs.Log, *cs.Match)
 			case "memory":
 				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
@@ -57,8 +58,10 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 		rows = append(rows, []string{*d.Name, sizeMatch, cpu, memory, storage})
 	}
 
-	t.t.GetTable().SetAutoWrapText(false)
-	t.t.GetTable().SetColMinWidth(3, 40)
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+		table.SetColMinWidth(3, 40)
+	})
 
 	return header, rows, nil
 }

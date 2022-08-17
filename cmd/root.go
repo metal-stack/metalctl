@@ -2,27 +2,32 @@ package cmd
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
-	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 )
 
 type config struct {
-	driverURL string
-	comp      *completion.Completion
-	client    metalgo.Client
-	log       *zap.SugaredLogger
+	fs              afero.Fs
+	out             io.Writer
+	driverURL       string
+	comp            *completion.Completion
+	client          metalgo.Client
+	log             *zap.SugaredLogger
+	describePrinter printers.Printer
+	listPrinter     printers.Printer
 }
 
 const (
@@ -31,21 +36,20 @@ const (
 
 var (
 	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
-
-	// will bind all viper flags to subcommands and
-	// prevent overwrite of identical flag names from other commands
-	// see https://github.com/spf13/viper/issues/233#issuecomment-386791444
-	bindPFlags = func(cmd *cobra.Command, args []string) {
-		err := viper.BindPFlags(cmd.Flags())
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
+	// emptyBody is kind of hack because post with "nil" will result into 406 error from the api
+	emptyBody = []string{}
 )
 
 func Execute() {
-	cmd := newRootCmd()
-	err := cmd.Execute()
+	// the config will be provided with more values on cobra init
+	// cobra flags do not work so early in the game
+	c := &config{
+		fs:   afero.NewOsFs(),
+		out:  os.Stdout,
+		comp: &completion.Completion{},
+	}
+
+	err := newRootCmd(c).Execute()
 	if err != nil {
 		if viper.GetBool("debug") {
 			panic(err)
@@ -54,19 +58,19 @@ func Execute() {
 	}
 }
 
-func newRootCmd() *cobra.Command {
-	// the config will be provided with values on cobra init
-	// cobra flags do not work so early in the game
-	c := &config{
-		comp: &completion.Completion{},
-	}
-
+func newRootCmd(c *config) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          binaryName,
 		Aliases:      []string{"m"},
-		Short:        "a cli to manage metal-stack api",
-		Long:         "",
+		Short:        "a cli to manage entities in the metal-stack api",
 		SilenceUsage: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			must(viper.BindPFlags(cmd.Flags()))
+			must(viper.BindPFlags(cmd.PersistentFlags()))
+			// we cannot instantiate the config earlier because
+			// cobra flags do not work so early in the game
+			must(initConfigWithViperCtx(c))
+		},
 	}
 
 	markdownCmd := &cobra.Command{
@@ -74,6 +78,10 @@ func newRootCmd() *cobra.Command {
 		Short: "create markdown documentation",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doc.GenMarkdownTree(rootCmd, "./docs")
+		},
+		DisableAutoGenTag: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			recursiveAutoGenDisable(rootCmd)
 		},
 	}
 
@@ -85,8 +93,8 @@ apitoken: "alongtoken"
 ...
 
 `)
-	rootCmd.PersistentFlags().StringP("url", "u", "", "api server address. Can be specified with METALCTL_URL environment variable.")
-	rootCmd.PersistentFlags().String("apitoken", "", "api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.")
+	rootCmd.PersistentFlags().StringP("api-url", "", "", "api server address. Can be specified with METALCTL_API_URL environment variable.")
+	rootCmd.PersistentFlags().String("api-token", "", "api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
 
 	rootCmd.PersistentFlags().StringP("output-format", "o", "table", "output format (table|wide|markdown|json|yaml|template), wide is a table with more columns.")
@@ -105,9 +113,6 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
-	must(viper.BindPFlags(rootCmd.Flags()))
-	must(viper.BindPFlags(rootCmd.PersistentFlags()))
-
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
 	rootCmd.AddCommand(newFirewallCmd(c))
@@ -123,16 +128,13 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newVersionCmd(c))
 	rootCmd.AddCommand(newLoginCmd(c))
 	rootCmd.AddCommand(newLogoutCmd(c))
-	rootCmd.AddCommand(newWhoamiCmd())
+	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
 
 	rootCmd.AddCommand(newUpdateCmd())
 
 	cobra.OnInitialize(func() {
 		must(readConfigFile())
-		// we cannot instantiate the client earlier because
-		// cobra flags do not work so early in the game
-		must(initClient(c))
 	})
 
 	return rootCmd
@@ -174,15 +176,25 @@ func readConfigFile() error {
 	return nil
 }
 
-func initClient(c *config) error {
+func initConfigWithViperCtx(c *config) error {
 	ctx := api.MustDefaultContext()
 
-	logger, err := newLogger()
-	if err != nil {
-		return fmt.Errorf("error creating logger: %w", err)
+	c.listPrinter = newPrinterFromCLI(c.out)
+	c.describePrinter = defaultToYAMLPrinter(c.out)
+
+	if c.log == nil {
+		logger, err := newLogger()
+		if err != nil {
+			return fmt.Errorf("error creating logger: %w", err)
+		}
+		c.log = logger
 	}
 
-	driverURL := viper.GetString("url")
+	if c.client != nil {
+		return nil
+	}
+
+	driverURL := viper.GetString("api-url")
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}
@@ -210,7 +222,6 @@ func initClient(c *config) error {
 	c.comp.SetClient(client)
 	c.driverURL = driverURL
 	c.client = client
-	c.log = logger
 
 	return nil
 }
@@ -233,160 +244,9 @@ func newLogger() (*zap.SugaredLogger, error) {
 	return l.Sugar(), nil
 }
 
-type defaultCmdsConfig[C any, U any, R any] struct {
-	gcli *genericcli.GenericCLI[C, U, R]
-
-	singular, plural string
-	description      string
-	aliases          []string
-
-	createRequestFromCLI func() (C, error)
-	updateRequestFromCLI func(args []string) (U, error)
-
-	availableSortKeys []string
-
-	validArgsFunc func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
-}
-
-type defaultCmds struct {
-	rootCmd     *cobra.Command
-	listCmd     *cobra.Command
-	describeCmd *cobra.Command
-	createCmd   *cobra.Command
-	updateCmd   *cobra.Command
-	deleteCmd   *cobra.Command
-	applyCmd    *cobra.Command
-	editCmd     *cobra.Command
-}
-
-func (d *defaultCmds) buildRootCmd(additionalCmds ...*cobra.Command) *cobra.Command {
-	d.rootCmd.AddCommand(
-		d.listCmd,
-		d.describeCmd,
-		d.createCmd,
-		d.updateCmd,
-		d.deleteCmd,
-		d.applyCmd,
-		d.editCmd,
-	)
-	d.rootCmd.AddCommand(additionalCmds...)
-	return d.rootCmd
-}
-
-func newDefaultCmds[C any, U any, R any](c *defaultCmdsConfig[C, U, R]) *defaultCmds {
-	cmds := &defaultCmds{
-		rootCmd: &cobra.Command{
-			Use:     c.singular,
-			Short:   fmt.Sprintf("manage %s entities", c.singular),
-			Long:    c.description,
-			Aliases: c.aliases,
-		},
-		listCmd: &cobra.Command{
-			Use:     "list",
-			Aliases: []string{"ls"},
-			Short:   fmt.Sprintf("list all %s", c.plural),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ListAndPrint(newPrinterFromCLI())
-			},
-			PreRun: bindPFlags,
-		},
-		describeCmd: &cobra.Command{
-			Use:     "describe <id>",
-			Aliases: []string{"get"},
-			Short:   fmt.Sprintf("describes the %s", c.singular),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.DescribeAndPrint(args, defaultToYAMLPrinter())
-			},
-			ValidArgsFunction: c.validArgsFunc,
-		},
-		createCmd: &cobra.Command{
-			Use:   "create",
-			Short: fmt.Sprintf("creates the %s", c.singular),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				if c.createRequestFromCLI != nil && !viper.IsSet("file") {
-					rq, err := c.createRequestFromCLI()
-					if err != nil {
-						return err
-					}
-					return c.gcli.CreateAndPrint(rq, defaultToYAMLPrinter())
-				}
-				return c.gcli.CreateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
-			},
-			PreRun: bindPFlags,
-		},
-		updateCmd: &cobra.Command{
-			Use:   "update",
-			Short: fmt.Sprintf("updates the %s", c.singular),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				if c.updateRequestFromCLI != nil && !viper.IsSet("file") {
-					rq, err := c.updateRequestFromCLI(args)
-					if err != nil {
-						return err
-					}
-					return c.gcli.UpdateAndPrint(rq, defaultToYAMLPrinter())
-				}
-				return c.gcli.UpdateFromFileAndPrint(viper.GetString("file"), defaultToYAMLPrinter())
-			},
-			PreRun:            bindPFlags,
-			ValidArgsFunction: c.validArgsFunc,
-		},
-		deleteCmd: &cobra.Command{
-			Use:     "delete <id>",
-			Short:   fmt.Sprintf("deletes the %s", c.singular),
-			Aliases: []string{"destroy", "rm", "remove"},
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.DeleteAndPrint(args, defaultToYAMLPrinter())
-			},
-			PreRun:            bindPFlags,
-			ValidArgsFunction: c.validArgsFunc,
-		},
-		applyCmd: &cobra.Command{
-			Use:   "apply",
-			Short: fmt.Sprintf("applies one or more %s from a given file", c.plural),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.ApplyFromFileAndPrint(viper.GetString("file"), newPrinterFromCLI())
-			},
-			PreRun: bindPFlags,
-		},
-		editCmd: &cobra.Command{
-			Use:   "edit <id>",
-			Short: fmt.Sprintf("updates the %s through an editor", c.singular),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return c.gcli.EditAndPrint(args, defaultToYAMLPrinter())
-			},
-			PreRun:            bindPFlags,
-			ValidArgsFunction: c.validArgsFunc,
-		},
+func recursiveAutoGenDisable(cmd *cobra.Command) {
+	cmd.DisableAutoGenTag = true
+	for _, child := range cmd.Commands() {
+		recursiveAutoGenDisable(child)
 	}
-
-	helpText := func(command string) string {
-		return fmt.Sprintf(`filename of the create or update request in yaml format, or - for stdin.
-
-Example:
-# %[2]s %[1]s describe %[1]s-1 -o yaml > %[1]s.yaml
-# vi %[1]s.yaml
-## either via stdin
-# cat %[1]s.yaml | %[2]s %[1]s %[3]s -f -
-## or via file
-# %[2]s %[1]s %[3]s -f %[1]s.yaml
-	`, c.singular, binaryName, command)
-	}
-
-	cmds.applyCmd.Flags().StringP("file", "f", "", helpText("apply"))
-	must(cmds.applyCmd.MarkFlagRequired("file"))
-
-	if c.createRequestFromCLI != nil {
-		cmds.createCmd.Flags().StringP("file", "f", "", helpText("create"))
-	}
-
-	if c.updateRequestFromCLI != nil {
-		cmds.updateCmd.Flags().StringP("file", "f", "", helpText("update"))
-	}
-
-	if len(c.availableSortKeys) > 0 {
-		cmds.listCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(c.availableSortKeys, "|")))
-		must(cmds.listCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(c.availableSortKeys, cobra.ShellCompDirectiveNoFileComp)))
-	}
-
-	return cmds
 }

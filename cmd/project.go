@@ -6,6 +6,7 @@ import (
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -14,48 +15,48 @@ import (
 
 type projectCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]
 }
 
 func newProjectCmd(c *config) *cobra.Command {
 	w := projectCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](projectCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
-		gcli:                 w.GenericCLI,
-		singular:             "project",
-		plural:               "projects",
-		description:          "a project groups multiple networks for a tenant.",
-		availableSortKeys:    sorters.ProjectSortKeys(),
-		validArgsFunc:        c.comp.ProjectListCompletion,
-		createRequestFromCLI: w.createFromCLI,
-	})
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
+		BinaryName:           binaryName,
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse](w).WithFS(c.fs),
+		Singular:             "project",
+		Plural:               "projects",
+		Description:          "a project belongs to a tenant and groups together entities in metal-stack.",
+		AvailableSortKeys:    sorters.ProjectSortKeys(),
+		ValidArgsFn:          c.comp.ProjectListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		CreateRequestFromCLI: w.createFromCLI,
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("name", "", "name of the project, max 10 characters.")
+			cmd.Flags().String("description", "", "description of the project.")
+			cmd.Flags().String("tenant", "", "create project for given tenant")
+			cmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
+			cmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
+			cmd.Flags().Int32("cluster-quota", 0, "cluster quota")
+			cmd.Flags().Int32("machine-quota", 0, "machine quota")
+			cmd.Flags().Int32("ip-quota", 0, "ip quota")
 
-	cmds.createCmd.Flags().String("name", "", "name of the project, max 10 characters. [required]")
-	cmds.createCmd.Flags().String("description", "", "description of the project. [required]")
-	cmds.createCmd.Flags().String("tenant", "", "create project for given tenant")
-	cmds.createCmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
-	cmds.createCmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
-	cmds.createCmd.Flags().Int32("cluster-quota", 0, "cluster quota")
-	cmds.createCmd.Flags().Int32("machine-quota", 0, "machine quota")
-	cmds.createCmd.Flags().Int32("ip-quota", 0, "ip quota")
-	must(cmds.createCmd.MarkFlagRequired("name"))
+			cmd.MarkFlagsMutuallyExclusive("file", "name")
+			cmd.MarkFlagsRequiredTogether("name", "description")
+		},
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().StringP("name", "", "", "Name of the project.")
+			cmd.Flags().StringP("id", "", "", "ID of the project.")
+			cmd.Flags().StringP("tenant", "", "", "tenant of this project.")
+		},
+	}
 
-	cmds.listCmd.Flags().StringP("name", "", "", "Name of the project.")
-	cmds.listCmd.Flags().StringP("id", "", "", "ID of the project.")
-	cmds.listCmd.Flags().StringP("tenant", "", "", "tenant of this project.")
-	must(viper.BindPFlags(cmds.listCmd.Flags()))
-
-	return cmds.buildRootCmd()
+	return genericcli.NewCmds(cmdsConfig)
 }
 
-type projectCRUD struct {
-	*config
-}
-
-func (c projectCRUD) Get(id string) (*models.V1ProjectResponse, error) {
+func (c projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -64,7 +65,7 @@ func (c projectCRUD) Get(id string) (*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCRUD) List() ([]*models.V1ProjectResponse, error) {
+func (c projectCmd) List() ([]*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
 		ID:       viper.GetString("id"),
 		Name:     viper.GetString("name"),
@@ -82,7 +83,7 @@ func (c projectCRUD) List() ([]*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCRUD) Delete(id string) (*models.V1ProjectResponse, error) {
+func (c projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -91,7 +92,7 @@ func (c projectCRUD) Delete(id string) (*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCRUD) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
+func (c projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		var r *projectmodel.CreateProjectConflict
@@ -104,7 +105,7 @@ func (c projectCRUD) Create(rq *models.V1ProjectCreateRequest) (*models.V1Projec
 	return resp.Payload, nil
 }
 
-func (c projectCRUD) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
 	if err != nil {
 		return nil, err
@@ -119,6 +120,48 @@ func (c projectCRUD) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Projec
 	}
 
 	return updateResp.Payload, nil
+}
+
+func (c projectCmd) ToCreate(r *models.V1ProjectResponse) (*models.V1ProjectCreateRequest, error) {
+	return projectResponseToCreate(r), nil
+}
+
+func (c projectCmd) ToUpdate(r *models.V1ProjectResponse) (*models.V1ProjectUpdateRequest, error) {
+	return projectResponseToUpdate(r), nil
+}
+
+func projectResponseToCreate(r *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
+	return &models.V1ProjectCreateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
+}
+
+func projectResponseToUpdate(r *models.V1ProjectResponse) *models.V1ProjectUpdateRequest {
+	return &models.V1ProjectUpdateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
 }
 
 func (w *projectCmd) createFromCLI() (*models.V1ProjectCreateRequest, error) {

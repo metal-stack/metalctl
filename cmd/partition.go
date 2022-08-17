@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -16,23 +17,24 @@ import (
 
 type partitionCmd struct {
 	*config
-	*genericcli.GenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]
 }
 
 func newPartitionCmd(c *config) *cobra.Command {
 	w := partitionCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](partitionCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
-		gcli:              w.GenericCLI,
-		singular:          "partition",
-		plural:            "partitions",
-		description:       "a partition is a group of machines and network which is logically separated from other partitions. Machines have no direct network connections between partitions.",
-		validArgsFunc:     c.comp.PartitionListCompletion,
-		availableSortKeys: sorters.PartitionSortKeys(),
-		createRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
+	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
+		BinaryName:        binaryName,
+		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
+		Singular:          "partition",
+		Plural:            "partitions",
+		Description:       "a partition is a failure domain in the data center.",
+		ValidArgsFn:       c.comp.PartitionListCompletion,
+		AvailableSortKeys: sorters.PartitionSortKeys(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
 				Description:        viper.GetString("description"),
@@ -45,7 +47,16 @@ func newPartitionCmd(c *config) *cobra.Command {
 				},
 			}, nil
 		},
-	})
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
+			cmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
+			cmd.Flags().StringP("description", "d", "", "Description of the partition. [required]")
+			cmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [required]")
+			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [required]")
+			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
+			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
+		},
+	}
 
 	partitionCapacityCmd := &cobra.Command{
 		Use:   "capacity",
@@ -53,16 +64,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.partitionCapacity()
 		},
-		PreRun: bindPFlags,
 	}
-
-	cmds.createCmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
-	cmds.createCmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
-	cmds.createCmd.Flags().StringP("description", "d", "", "Description of the partition. [required]")
-	cmds.createCmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [required]")
-	cmds.createCmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [required]")
-	cmds.createCmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
-	cmds.createCmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
@@ -71,14 +73,10 @@ func newPartitionCmd(c *config) *cobra.Command {
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(sorters.PartitionCapacitySortKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
-	return cmds.buildRootCmd(partitionCapacityCmd)
+	return genericcli.NewCmds(cmdsConfig, partitionCapacityCmd)
 }
 
-type partitionCRUD struct {
-	*config
-}
-
-func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
+func (c partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -87,7 +85,7 @@ func (c partitionCRUD) Get(id string) (*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
+func (c partitionCmd) List() ([]*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -101,7 +99,7 @@ func (c partitionCRUD) List() ([]*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
+func (c partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -110,7 +108,7 @@ func (c partitionCRUD) Delete(id string) (*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
+func (c partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		var r *partition.CreatePartitionConflict
@@ -123,13 +121,50 @@ func (c partitionCRUD) Create(rq *models.V1PartitionCreateRequest) (*models.V1Pa
 	return resp.Payload, nil
 }
 
-func (c partitionCRUD) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
+func (c partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return resp.Payload, nil
+}
+
+func (c partitionCmd) ToCreate(r *models.V1PartitionResponse) (*models.V1PartitionCreateRequest, error) {
+	return partitionResponseToCreate(r), nil
+}
+
+func (c partitionCmd) ToUpdate(r *models.V1PartitionResponse) (*models.V1PartitionUpdateRequest, error) {
+	return partitionResponseToUpdate(r), nil
+}
+
+func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1PartitionCreateRequest {
+	return &models.V1PartitionCreateRequest{
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: r.Bootconfig.Commandline,
+			Imageurl:    r.Bootconfig.Imageurl,
+			Kernelurl:   r.Bootconfig.Kernelurl,
+		},
+		Description:                r.Description,
+		ID:                         r.ID,
+		Mgmtserviceaddress:         r.Mgmtserviceaddress,
+		Name:                       r.Name,
+		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
+	}
+}
+
+func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1PartitionUpdateRequest {
+	return &models.V1PartitionUpdateRequest{
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: r.Bootconfig.Commandline,
+			Imageurl:    r.Bootconfig.Imageurl,
+			Kernelurl:   r.Bootconfig.Kernelurl,
+		},
+		Description:        r.Description,
+		ID:                 r.ID,
+		Mgmtserviceaddress: r.Mgmtserviceaddress,
+		Name:               r.Name,
+	}
 }
 
 // non-generic command handling
@@ -148,5 +183,5 @@ func (c *partitionCmd) partitionCapacity() error {
 		return err
 	}
 
-	return newPrinterFromCLI().Print(resp.Payload)
+	return c.listPrinter.Print(resp.Payload)
 }

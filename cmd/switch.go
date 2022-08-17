@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -16,23 +17,30 @@ import (
 
 type switchCmd struct {
 	*config
-	*genericcli.GenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]
 }
 
 func newSwitchCmd(c *config) *cobra.Command {
 	w := switchCmd{
-		config:     c,
-		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](switchCRUD{config: c}),
+		config: c,
 	}
 
-	cmds := newDefaultCmds(&defaultCmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
-		gcli:        w.GenericCLI,
-		singular:    "switch",
-		plural:      "switches",
-		description: "switch are the leaf switches in the data center that are controlled by metal-stack.",
-
-		availableSortKeys: sorters.SwitchSortKeys(),
-	})
+	cmdsConfig := &genericcli.CmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
+		BinaryName: binaryName,
+		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](w).WithFS(c.fs),
+		OnlyCmds: genericcli.OnlyCmds(
+			genericcli.ListCmd,
+			genericcli.DescribeCmd,
+			genericcli.UpdateCmd,
+			genericcli.DeleteCmd,
+			genericcli.EditCmd,
+		),
+		Singular:          "switch",
+		Plural:            "switches",
+		Description:       "switch are the leaf switches in the data center that are controlled by metal-stack.",
+		AvailableSortKeys: sorters.SwitchSortKeys(),
+		DescribePrinter:   func() printers.Printer { return c.describePrinter },
+		ListPrinter:       func() printers.Printer { return c.listPrinter },
+	}
 
 	switchDetailCmd := &cobra.Command{
 		Use:   "detail",
@@ -47,31 +55,14 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchReplace(args)
 		},
-		PreRun: bindPFlags,
 	}
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-	must(viper.BindPFlags(switchDetailCmd.Flags()))
 
-	cmds.rootCmd.AddCommand(
-		cmds.listCmd,
-		cmds.describeCmd,
-		cmds.updateCmd,
-		cmds.deleteCmd,
-		cmds.editCmd,
-	)
-
-	cmds.rootCmd.AddCommand(switchDetailCmd)
-	cmds.rootCmd.AddCommand(switchReplaceCmd)
-
-	return cmds.rootCmd
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
 }
 
-type switchCRUD struct {
-	*config
-}
-
-func (c switchCRUD) Get(id string) (*models.V1SwitchResponse, error) {
+func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -80,7 +71,7 @@ func (c switchCRUD) Get(id string) (*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
+func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
 	if err != nil {
 		return nil, err
@@ -94,7 +85,7 @@ func (c switchCRUD) List() ([]*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCRUD) Delete(id string) (*models.V1SwitchResponse, error) {
+func (c switchCmd) Delete(id string) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -103,17 +94,35 @@ func (c switchCRUD) Delete(id string) (*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCRUD) Create(rq any) (*models.V1SwitchResponse, error) {
+func (c switchCmd) Create(rq any) (*models.V1SwitchResponse, error) {
 	return nil, fmt.Errorf("switch entity does not support create operation")
 }
 
-func (c switchCRUD) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
+func (c switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().UpdateSwitch(switch_operations.NewUpdateSwitchParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return resp.Payload, nil
+}
+
+func (c switchCmd) ToCreate(r *models.V1SwitchResponse) (any, error) {
+	return nil, fmt.Errorf("switch entity does not support create operation")
+}
+
+func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateRequest, error) {
+	return switchResponseToUpdate(r), nil
+}
+
+func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
+	return &models.V1SwitchUpdateRequest{
+		Description: r.Description,
+		ID:          r.ID,
+		Mode:        r.Mode,
+		Name:        r.Name,
+		RackID:      r.RackID,
+	}
 }
 
 // non-generic command handling
@@ -143,7 +152,7 @@ func (c *switchCmd) switchDetail() error {
 		return nil
 	}
 
-	return newPrinterFromCLI().Print(result)
+	return c.listPrinter.Print(result)
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -152,7 +161,7 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	resp, err := c.Interface().Get(id)
+	resp, err := c.Get(id)
 	if err != nil {
 		return err
 	}
@@ -168,5 +177,5 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
-	return defaultToYAMLPrinter().Print(uresp)
+	return c.describePrinter.Print(uresp)
 }

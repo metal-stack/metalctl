@@ -1,10 +1,6 @@
 ## metalctl machine create
 
-create a machine
-
-### Synopsis
-
-create a new machine with the given operating system, the size and a project.
+creates the machine
 
 ```
 metalctl machine create [flags]
@@ -17,30 +13,30 @@ machine create can be done in two different ways:
 
 - default with automatic allocation:
 
-metalctl machine create \
-	--hostname worker01 \
-	--name worker \
-	--image ubuntu-18.04 \ # query available with: metalctl image list
-	--size t1-small-x86 \  # query available with: metalctl size list
-	--partition test \     # query available with: metalctl partition list
-	--project cluster01 \
-	--sshpublickey "@~/.ssh/id_rsa.pub"
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--size t1-small-x86 \  # query available with: metalctl size list
+		--partition test \     # query available with: metalctl partition list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub"
 
 - for metal administration with reserved machines:
 
-reserve a machine you want to allocate:
+	reserve a machine you want to allocate:
 
-metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
+	metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --description "blocked for maintenance"
 
-allocate this machine:
+	allocate this machine:
 
-metalctl machine create \
-	--hostname worker01 \
-	--name worker \
-	--image ubuntu-18.04 \ # query available with: metalctl image list
-	--project cluster01 \
-	--sshpublickey "@~/.ssh/id_rsa.pub" \
-	--id 00000000-0000-0000-0000-0cc47ae54694
+	metalctl machine create \
+		--hostname worker01 \
+		--name worker \
+		--image ubuntu-18.04 \ # query available with: metalctl image list
+		--project cluster01 \
+		--sshpublickey "@~/.ssh/id_rsa.pub" \
+		--id 00000000-0000-0000-0000-0cc47ae54694
 
 after you do not want to use this machine exclusive, remove the reservation:
 
@@ -48,13 +44,22 @@ metalctl machine reserve 00000000-0000-0000-0000-0cc47ae54694 --remove
 
 Once created the machine installation can not be modified anymore.
 
-
 ```
 
 ### Options
 
 ```
   -d, --description string        Description of the machine to create. [optional]
+  -f, --file string               filename of the create or update request in yaml format, or - for stdin.
+                                  
+                                  Example:
+                                  $ metalctl machine describe machine-1 -o yaml > machine.yaml
+                                  $ vi machine.yaml
+                                  $ # either via stdin
+                                  $ cat machine.yaml | metalctl machine create -f -
+                                  $ # or via file
+                                  $ metalctl machine create -f machine.yaml
+                                  	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
   -h, --help                      help for create
   -H, --hostname string           Hostname of the machine. [required]
@@ -83,7 +88,8 @@ Once created the machine installation can not be modified anymore.
 ### Options inherited from parent commands
 
 ```
-      --apitoken string        api token to authenticate. Can be specified with METALCTL_APITOKEN environment variable.
+      --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
+      --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                
@@ -94,9 +100,8 @@ Once created the machine installation can not be modified anymore.
                                
       --debug                  debug output
       --force-color            force colored output even without tty
-      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login.
+      --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
       --no-headers             do not print headers of table output format (default print headers)
-      --order string           order by (comma separated) column(s), possible values: size|id|status|event|when|partition|project
   -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
       --template string        output template for template output-format, go template format.
                                For property names inspect the output of -o json or -o yaml for reference.
@@ -105,12 +110,10 @@ Once created the machine installation can not be modified anymore.
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
                                
                                
-  -u, --url string             api server address. Can be specified with METALCTL_URL environment variable.
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
-* [metalctl machine](metalctl_machine.md)	 - manage machines
+* [metalctl machine](metalctl_machine.md)	 - manage machine entities
 
-###### Auto generated by spf13/cobra on 25-Aug-2021

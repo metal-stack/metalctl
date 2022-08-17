@@ -12,9 +12,13 @@ import (
 
 func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
-		rows   [][]string
+		rows [][]string
 	)
+
+	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status"}
+	if wide {
+		header = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
+	}
 
 	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	for _, image := range data {
@@ -34,7 +38,11 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 			usedBy = strings.Join(image.Usedby, "\n")
 		}
 
-		rows = append(rows, []string{id, name, description, features, expiration, status, usedBy})
+		if wide {
+			rows = append(rows, []string{id, name, description, features, expiration, status, usedBy})
+		} else {
+			rows = append(rows, []string{id, name, description, features, expiration, status})
+		}
 	}
 
 	return header, rows, nil

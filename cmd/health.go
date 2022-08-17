@@ -24,9 +24,8 @@ func newHealthCmd(c *config) *cobra.Command {
 				}
 			}
 
-			return defaultToYAMLPrinter().Print(resp.Payload)
+			return c.describePrinter.Print(resp.Payload)
 		},
-		PreRun: bindPFlags,
 	}
 
 	return healthCmd
