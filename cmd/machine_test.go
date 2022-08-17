@@ -259,7 +259,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 				)
 				for _, s := range want.Allocation.Networks {
 					ips = append(ips, s.Ips...)
-					networks = append(networks, *s.Networkid)
+					networks = append(networks, *s.Networkid+":noauto")
 				}
 
 				args := []string{"machine", "create",

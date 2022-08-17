@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -281,7 +282,7 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 				)
 				for _, s := range want.Allocation.Networks {
 					ips = append(ips, s.Ips...)
-					networks = append(networks, *s.Networkid)
+					networks = append(networks, *s.Networkid+":noauto")
 				}
 
 				args := []string{"firewall", "create",
@@ -300,6 +301,8 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
+
+				fmt.Println(args)
 				assertExhaustiveArgs(t, args, "file")
 				return args
 			},

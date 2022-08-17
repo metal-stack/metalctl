@@ -30,24 +30,19 @@ func parseNetworks(values []string) ([]*models.V1MachineAllocationNetwork, error
 }
 
 func splitNetwork(value string) (string, bool, error) {
-	splitNets := strings.SplitN(value, ":", 2)
-	id := splitNets[0]
-	if len(splitNets) > 1 {
-		mode := strings.ToLower(splitNets[1])
-		switch mode {
-		// case NETWORK:auto
-		case "auto":
-			return id, true, nil
-		// case NETWORK:noauto
-		case "noauto":
-			return id, false, nil
-		// case NETWORK:<illegal value>
-		default:
-			return "", false, fmt.Errorf("illegal mode: %s", mode)
-		}
+	id, mode, found := strings.Cut(value, ":")
+	if !found {
+		return id, true, nil
 	}
-	// case: NETWORK, defaults to NETWORK:auto
-	return id, true, nil
+
+	switch strings.ToLower(mode) {
+	case "auto":
+		return id, true, nil
+	case "noauto":
+		return id, false, nil
+	default:
+		return "", false, fmt.Errorf("illegal mode: %s", mode)
+	}
 }
 
 const cloudContext = "cloudctl"

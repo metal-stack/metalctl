@@ -589,7 +589,7 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
 		networks = append(networks, &models.V1MachineAllocationNetwork{
-			Autoacquire: pointer.Pointer(true),
+			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
 	}
