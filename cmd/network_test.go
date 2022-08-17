@@ -233,7 +233,7 @@ nw1 network-1
 					"--partition", want.Partitionid,
 					"--project", want.Projectid,
 					"--prefixes", strings.Join(want.Prefixes, ","),
-					"--destinationprefixes", strings.Join(want.Destinationprefixes, ","),
+					"--destination-prefixes", strings.Join(want.Destinationprefixes, ","),
 					"--privatesuper", strconv.FormatBool(*want.Privatesuper),
 					"--nat", strconv.FormatBool(*want.Nat),
 					"--underlay", strconv.FormatBool(*want.Underlay),

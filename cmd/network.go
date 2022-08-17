@@ -44,7 +44,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("project", "", "", "project of the network to create. [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
 			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
-			cmd.Flags().StringSlice("destinationprefixes", []string{}, "destination prefixes in this network.")
+			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes in this network.")
 			cmd.Flags().BoolP("privatesuper", "", false, "set private super flag of network, if set to true, this network is used to start machines there.")
 			cmd.Flags().BoolP("nat", "", false, "set nat flag of network, if set to true, traffic from this network will be natted.")
 			cmd.Flags().BoolP("underlay", "", false, "set underlay flag of network, if set to true, this is used to transport underlay network traffic")
@@ -283,7 +283,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 		Partitionid:         viper.GetString("partition"),
 		Projectid:           viper.GetString("project"),
 		Prefixes:            viper.GetStringSlice("prefixes"),
-		Destinationprefixes: viper.GetStringSlice("destinationprefixes"),
+		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Privatesuper:        pointer.Pointer(viper.GetBool("privatesuper")),
 		Nat:                 pointer.Pointer(viper.GetBool("nat")),
 		Underlay:            pointer.Pointer(viper.GetBool("underlay")),
