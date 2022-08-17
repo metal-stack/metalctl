@@ -161,9 +161,6 @@ func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error
 }
 
 func (c ipCmd) ToCreate(r *models.V1IPResponse) (*ipAllocateRequest, error) {
-	if r.Ipaddress == nil {
-		return nil, fmt.Errorf("ip address must be set")
-	}
 	return ipResponseToCreate(r), nil
 }
 
@@ -172,8 +169,12 @@ func (c ipCmd) ToUpdate(r *models.V1IPResponse) (*models.V1IPUpdateRequest, erro
 }
 
 func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
+	var ip string
+	if r.Ipaddress != nil {
+		ip = *r.Ipaddress
+	}
 	return &ipAllocateRequest{
-		SpecificIP: *r.Ipaddress,
+		SpecificIP: ip,
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
 			Description: r.Description,
 			Name:        r.Name,
