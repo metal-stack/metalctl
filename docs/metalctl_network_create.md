@@ -23,7 +23,7 @@ metalctl network create [flags]
                                       	
   -h, --help                          help for create
       --id string                     id of the network to create. [optional]
-      --labels strings                add initial labels, must be in the form of key=value, use it like: --tags "key1=value1,key2=value2".
+      --labels strings                add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
   -n, --name string                   name of the network to create. [optional]
       --nat                           set nat flag of network, if set to true, traffic from this network will be natted.
   -p, --partition string              partition where this network should exist.
