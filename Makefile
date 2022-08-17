@@ -9,7 +9,17 @@ all:: markdown
 
 release:: all
 
+.PHONY: markdown
 markdown:
 	rm -rf docs
 	mkdir -p docs
 	bin/metalctl markdown
+
+.PHONY: build
+build:
+	$(GO) build \
+		-tags netgo \
+		-ldflags \
+		"$(LINKMODE)" \
+		-o bin/$(BINARY) \
+		$(MAINMODULE)

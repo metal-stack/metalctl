@@ -9,7 +9,6 @@ metalctl network create [flags]
 ### Options
 
 ```
-      --annotation strings            add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
   -d, --description string            description of the network to create. [optional]
       --destinationprefixes strings   destination prefixes in this network.
   -f, --file string                   filename of the create or update request in yaml format, or - for stdin.
@@ -24,11 +23,12 @@ metalctl network create [flags]
                                       	
   -h, --help                          help for create
       --id string                     id of the network to create. [optional]
+      --labels strings                add initial labels, must be in the form of key=value, use it like: --tags "key1=value1,key2=value2".
   -n, --name string                   name of the network to create. [optional]
       --nat                           set nat flag of network, if set to true, traffic from this network will be natted.
   -p, --partition string              partition where this network should exist.
       --prefixes strings              prefixes in this network.
-      --primary                       set primary flag of network, if set to true, this network is used to start machines there.
+      --privatesuper                  set private super flag of network, if set to true, this network is used to start machines there.
       --project string                project of the network to create. [optional]
       --underlay                      set underlay flag of network, if set to true, this is used to transport underlay network traffic
       --vrf int                       vrf of this network

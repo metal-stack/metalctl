@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	switchNow = time.Now()
-	switch1   = &models.V1SwitchResponse{
+	switch1 = &models.V1SwitchResponse{
 		Connections: []*models.V1SwitchConnection{
 			{
 				MachineID: "machine-1",
@@ -38,12 +37,12 @@ var (
 		LastSync: &models.V1SwitchSync{
 			Duration: pointer.Pointer(int64(1 * time.Second)),
 			Error:    "",
-			Time:     pointer.Pointer(strfmt.DateTime(switchNow)),
+			Time:     pointer.Pointer(strfmt.DateTime(testTime)),
 		},
 		LastSyncError: &models.V1SwitchSync{
 			Duration: pointer.Pointer(int64(2 * time.Second)),
 			Error:    "error",
-			Time:     pointer.Pointer(strfmt.DateTime(switchNow.Add(-5 * time.Minute))),
+			Time:     pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Minute))),
 		},
 		Mode: "operational",
 		Name: "switch-1",
@@ -81,12 +80,12 @@ var (
 		LastSync: &models.V1SwitchSync{
 			Duration: pointer.Pointer(int64(1 * time.Second)),
 			Error:    "",
-			Time:     pointer.Pointer(strfmt.DateTime(switchNow)),
+			Time:     pointer.Pointer(strfmt.DateTime(testTime)),
 		},
 		LastSyncError: &models.V1SwitchSync{
 			Duration: pointer.Pointer(int64(2 * time.Second)),
 			Error:    "error",
-			Time:     pointer.Pointer(strfmt.DateTime(switchNow.Add(-5 * time.Minute))),
+			Time:     pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Minute))),
 		},
 		Mode: "operational",
 		Name: "switch-2",
@@ -141,11 +140,11 @@ ID   PARTITION   RACK     STATUS
 1    1           rack-1    ●
 2    1           rack-1    ●
 `),
-			// 			wantWideTable: pointer.Pointer(`
-			// ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-			// 1    1           rack-1   operational   0s          1s              5m ago: error
-			// 2    1           rack-1   operational   0s          1s              5m ago: error
-			// `), TODO: does not work reliably due to humanize duration sometimes having seconds appended
+			wantWideTable: pointer.Pointer(`
+ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+1    1           rack-1   operational   0s          1s              5m ago: error
+2    1           rack-1   operational   0s          1s              5m ago: error
+`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 switch-1

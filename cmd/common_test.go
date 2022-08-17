@@ -7,9 +7,11 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/exp/slices"
 
+	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -22,6 +24,12 @@ import (
 	"go.uber.org/zap/zaptest"
 	"gopkg.in/yaml.v3"
 )
+
+var testTime = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
+
+func init() {
+	_ = monkey.Patch(time.Now, func() time.Time { return testTime })
+}
 
 type test[R any] struct {
 	name    string
@@ -42,38 +50,54 @@ func (c *test[R]) testCmd(t *testing.T) {
 	require.NotEmpty(t, c.name, "test name must not be empty")
 	require.NotEmpty(t, c.cmd, "cmd must not be empty")
 
+	if c.wantErr != nil {
+		mock, _, config := c.newMockConfig(t)
+
+		cmd := newRootCmd(config)
+		os.Args = append([]string{binaryName}, c.cmd(c.want)...)
+
+		err := cmd.Execute()
+		if diff := cmp.Diff(c.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
+			t.Errorf("error diff (+got -want):\n %s", diff)
+		}
+
+		mock.AssertExpectations(t)
+	}
+
 	for _, format := range outputFormats(c) {
 		format := format
 		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-			mock, client := client.NewMetalMockClient(c.mocks)
-
-			fs := afero.NewMemMapFs()
-			if c.fsMocks != nil {
-				c.fsMocks(fs, c.want)
-			}
-
-			var out bytes.Buffer
-
-			config := &config{
-				fs:     fs,
-				out:    &out,
-				client: client,
-				log:    zaptest.NewLogger(t).Sugar(),
-			}
+			mock, out, config := c.newMockConfig(t)
 
 			cmd := newRootCmd(config)
 			os.Args = append([]string{binaryName}, c.cmd(c.want)...)
 			os.Args = append(os.Args, format.Args()...)
 
 			err := cmd.Execute()
-			if diff := cmp.Diff(c.wantErr, err, testcommon.ErrorStringComparer()); diff != "" {
-				t.Errorf("error diff (+got -want):\n %s", diff)
-			}
+			assert.NoError(t, err)
 
 			format.Validate(t, out.Bytes())
 
 			mock.AssertExpectations(t)
 		})
+	}
+}
+
+func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.Buffer, *config) {
+	mock, client := client.NewMetalMockClient(c.mocks)
+
+	fs := afero.NewMemMapFs()
+	if c.fsMocks != nil {
+		c.fsMocks(fs, c.want)
+	}
+
+	var out bytes.Buffer
+
+	return mock, &out, &config{
+		fs:     fs,
+		out:    &out,
+		client: client,
+		log:    zaptest.NewLogger(t).Sugar(),
 	}
 }
 
@@ -91,7 +115,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 }
 
 func mustMarshal(t *testing.T, d any) []byte {
-	b, err := json.Marshal(d)
+	b, err := json.MarshalIndent(d, "", "    ")
 	require.NoError(t, err)
 	return b
 }

@@ -464,10 +464,6 @@ NETWORK specifies the name or id of an existing network.
 MODE cane be omitted or one of:
 	auto	IP address is automatically acquired from the given network
 	noauto	IP address for the given network must be provided via --ips`)
-		err := cmd.MarkFlagRequired("networks")
-		if err != nil {
-			log.Fatal(err.Error())
-		}
 	case "firewall":
 		cmd.Flags().StringSlice("ips", []string{},
 			`Sets the firewall's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
@@ -480,17 +476,13 @@ NETWORK specifies the id of an existing network.
 MODE can be omitted or one of:
 	auto	IP address is automatically acquired from the given network
 	noauto	No automatic IP address acquisition`)
-		err := cmd.MarkFlagRequired("networks")
-		if err != nil {
-			log.Fatal(err.Error())
-		}
 	default:
 		log.Fatal(fmt.Errorf("illegal name: %s. Must be one of (machine, firewall)", name))
 	}
 
-	must(cmd.MarkFlagRequired("hostname"))
-	must(cmd.MarkFlagRequired("image"))
-	must(cmd.MarkFlagRequired("project"))
+	cmd.MarkFlagsMutuallyExclusive("file", "project")
+	cmd.MarkFlagsRequiredTogether("project", "networks", "hostname", "image")
+	cmd.MarkFlagsRequiredTogether("size", "partition")
 
 	// Completion for arguments
 	must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
@@ -563,6 +555,10 @@ func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+	if viper.GetString("file") != "" {
+		return nil, fmt.Errorf("creating machines through file is currently not supported")
+	}
+
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -572,6 +568,10 @@ func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Machi
 }
 
 func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+	if viper.GetString("file") != "" {
+		return nil, fmt.Errorf("updating machines through file is currently not supported")
+	}
+
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err

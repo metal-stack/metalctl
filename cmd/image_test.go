@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	imageExpiration = pointer.Pointer(strfmt.DateTime(time.Now().Add(3*24*time.Hour + 1*time.Second)))
+	imageExpiration = pointer.Pointer(strfmt.DateTime(testTime.Add(3 * 24 * time.Hour)))
 	image1          = &models.V1ImageResponse{
 		Classification: "supported",
 		Description:    "debian-description",
