@@ -555,10 +555,6 @@ func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
-	if viper.GetString("file") != "" {
-		return nil, fmt.Errorf("creating machines through file is currently not supported")
-	}
-
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -568,10 +564,6 @@ func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Machi
 }
 
 func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
-	if viper.GetString("file") != "" {
-		return nil, fmt.Errorf("updating machines through file is currently not supported")
-	}
-
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -720,7 +712,7 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -734,7 +726,7 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -748,7 +740,7 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -762,7 +754,7 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -911,7 +903,7 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -925,7 +917,7 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -939,7 +931,7 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id).WithBody([]string{}), nil)
+	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
@@ -954,7 +946,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody([]string{}).WithDescription(description), nil)
+	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
@@ -969,7 +961,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody([]string{}).WithDescription(description), nil)
+	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}

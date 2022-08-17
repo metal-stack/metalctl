@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -151,7 +150,7 @@ var (
 		},
 		Tags: []string{"b"},
 	}
-	toMachineCreateRequestFromCLI = func(s *models.V1MachineResponse) *models.V1MachineAllocateRequest {
+	toMachineCreateRequest = func(s *models.V1MachineResponse) *models.V1MachineAllocateRequest {
 		var (
 			ips        []string
 			networks   []*models.V1MachineAllocationNetwork
@@ -166,7 +165,7 @@ var (
 		}
 
 		return &models.V1MachineAllocateRequest{
-			Description:        s.Description,
+			Description:        allocation.Description,
 			Filesystemlayoutid: pointer.SafeDeref(pointer.SafeDeref(allocation.Filesystemlayout).ID),
 			Hostname:           pointer.SafeDeref(allocation.Hostname),
 			Imageid:            pointer.SafeDeref(allocation.Image).ID,
@@ -180,6 +179,16 @@ var (
 			Tags:               s.Tags,
 			UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 			UUID:               pointer.SafeDeref(s.ID),
+		}
+	}
+	toMachineCreateRequestFromCLI = func(s *models.V1MachineResponse) *models.V1MachineAllocateRequest {
+		return toMachineCreateRequest(s)
+	}
+	toMachineUpdateRequest = func(s *models.V1MachineResponse) *models.V1MachineUpdateRequest {
+		return &models.V1MachineUpdateRequest{
+			Description: &s.Allocation.Description,
+			ID:          s.ID,
+			Tags:        s.Tags,
 		}
 	}
 )
@@ -298,7 +307,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 				args := []string{"machine", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
-					"--description", want.Description,
+					"--description", want.Allocation.Description,
 					"--filesystemlayout", *want.Allocation.Filesystemlayout.ID,
 					"--hostname", *want.Allocation.Hostname,
 					"--image", *want.Allocation.Image.ID,
@@ -324,14 +333,46 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 			want: machine1,
 		},
 		{
+			name: "update",
+			cmd: func(want *models.V1MachineResponse) []string {
+				args := []string{"machine", "update", *want.ID,
+					"--description", want.Allocation.Description,
+					"--add-tags", strings.Join(want.Tags, ","),
+					"--remove-tags", "z",
+				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					machineToUpdate := machine1
+					machineToUpdate.Tags = []string{"z"}
+					mock.On("FindMachine", testcommon.MatchIgnoreContext(t, machine.NewFindMachineParams().WithID(*machine1.ID), testcommon.StrFmtDateComparer()), nil).Return(&machine.FindMachineOK{
+						Payload: machineToUpdate,
+					}, nil)
+					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(toMachineUpdateRequest(machine1)), testcommon.StrFmtDateComparer()), nil).Return(&machine.UpdateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: machine1,
+		},
+		{
 			name: "create from file",
 			cmd: func(want *models.V1MachineResponse) []string {
 				return []string{"machine", "create", "-f", "/file.yaml"}
 			},
 			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, toMachineCreateRequest(want)), 0755))
 			},
-			wantErr: fmt.Errorf("error creating entity: %w", fmt.Errorf("creating machines through file is currently not supported")),
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("AllocateMachine", testcommon.MatchIgnoreContext(t, machine.NewAllocateMachineParams().WithBody(toMachineCreateRequest(machine1)), testcommon.StrFmtDateComparer()), nil).Return(&machine.AllocateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: machine1,
 		},
 		{
 			name: "update from file",
@@ -339,9 +380,16 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 				return []string{"machine", "update", "-f", "/file.yaml"}
 			},
 			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, toMachineUpdateRequest(want)), 0755))
 			},
-			wantErr: fmt.Errorf("error updating entity: %w", fmt.Errorf("updating machines through file is currently not supported")),
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(toMachineUpdateRequest(machine1)), testcommon.StrFmtDateComparer()), nil).Return(&machine.UpdateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: machine1,
 		},
 	}
 	for _, tt := range tests {

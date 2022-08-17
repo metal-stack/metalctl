@@ -36,6 +36,8 @@ const (
 
 var (
 	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
+	// emptyBody is kind of hack because post with "nil" will result into 406 error from the api
+	emptyBody = []string{}
 )
 
 func Execute() {

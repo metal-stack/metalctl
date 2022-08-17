@@ -43,7 +43,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("partition", "p", "", "partition where this network should exist.")
 			cmd.Flags().StringP("project", "", "", "project of the network to create. [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
-			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --tags \"key1=value1,key2=value2\".")
+			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringSlice("destinationprefixes", []string{}, "destination prefixes in this network.")
 			cmd.Flags().BoolP("privatesuper", "", false, "set private super flag of network, if set to true, this network is used to start machines there.")
 			cmd.Flags().BoolP("nat", "", false, "set nat flag of network, if set to true, traffic from this network will be natted.")
