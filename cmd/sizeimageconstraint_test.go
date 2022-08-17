@@ -35,22 +35,6 @@ var (
 		ID:          pointer.Pointer("2"),
 		Name:        "sic-2",
 	}
-	toSizeImageConstraintCreateRequest = func(s *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {
-		return &models.V1SizeImageConstraintCreateRequest{
-			Constraints: s.Constraints,
-			Description: s.Description,
-			ID:          s.ID,
-			Name:        s.Name,
-		}
-	}
-	toSizeImageConstraintUpdateRequest = func(s *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintUpdateRequest {
-		return &models.V1SizeImageConstraintUpdateRequest{
-			Constraints: s.Constraints,
-			Description: s.Description,
-			ID:          s.ID,
-			Name:        s.Name,
-		}
-	}
 )
 
 func Test_SizeImageConstraintCmd_MultiResult(t *testing.T) {
@@ -106,11 +90,11 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				SizeImageConstraint: func(mock *mock.Mock) {
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(toSizeImageConstraintCreateRequest(sic1)), testcommon.StrFmtDateComparer()), nil).Return(nil, &sizeimageconstraint.CreateSizeImageConstraintConflict{}).Once()
-					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(toSizeImageConstraintUpdateRequest(sic1)), testcommon.StrFmtDateComparer()), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(nil, &sizeimageconstraint.CreateSizeImageConstraintConflict{}).Once()
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(toSizeImageConstraintCreateRequest(sic2)), testcommon.StrFmtDateComparer()), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic2))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic2,
 					}, nil)
 				},
@@ -183,7 +167,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				SizeImageConstraint: func(mock *mock.Mock) {
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(toSizeImageConstraintCreateRequest(sic1)), testcommon.StrFmtDateComparer()), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic1,
 					}, nil)
 				},
@@ -200,7 +184,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				SizeImageConstraint: func(mock *mock.Mock) {
-					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(toSizeImageConstraintUpdateRequest(sic1)), testcommon.StrFmtDateComparer()), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
 				},

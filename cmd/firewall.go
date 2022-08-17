@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -111,6 +113,46 @@ func (c firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1Firew
 
 func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
+}
+
+func (c firewallCmd) ToCreate(r *models.V1FirewallResponse) (*models.V1FirewallCreateRequest, error) {
+	return firewallResponseToCreate(r), nil
+}
+
+func (c firewallCmd) ToUpdate(r *models.V1FirewallResponse) (any, error) {
+	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
+}
+
+func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
+	var (
+		ips        []string
+		networks   []*models.V1MachineAllocationNetwork
+		allocation = pointer.SafeDeref(r.Allocation)
+	)
+	for _, s := range allocation.Networks {
+		ips = append(ips, s.Ips...)
+		networks = append(networks, &models.V1MachineAllocationNetwork{
+			Autoacquire: pointer.Pointer(true),
+			Networkid:   s.Networkid,
+		})
+	}
+
+	return &models.V1FirewallCreateRequest{
+		Description:        allocation.Description,
+		Filesystemlayoutid: pointer.SafeDeref(pointer.SafeDeref(allocation.Filesystemlayout).ID),
+		Hostname:           pointer.SafeDeref(allocation.Hostname),
+		Imageid:            pointer.SafeDeref(allocation.Image).ID,
+		Ips:                ips,
+		Name:               r.Name,
+		Networks:           networks,
+		Partitionid:        r.Partition.ID,
+		Projectid:          allocation.Project,
+		Sizeid:             r.Size.ID,
+		SSHPubKeys:         allocation.SSHPubKeys,
+		Tags:               r.Tags,
+		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
+		UUID:               pointer.SafeDeref(r.ID),
+	}
 }
 
 func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, error) {

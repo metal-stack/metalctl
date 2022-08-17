@@ -37,41 +37,6 @@ var (
 		Tags:           []string{"b"},
 		Type:           pointer.Pointer(models.V1IPAllocateRequestTypeStatic),
 	}
-	toIPCreateRequestFromCLI = func(s *models.V1IPResponse) *ipAllocateRequest {
-		return &ipAllocateRequest{
-			SpecificIP: *s.Ipaddress,
-			V1IPAllocateRequest: &models.V1IPAllocateRequest{
-				Description: s.Description,
-				Name:        s.Name,
-				Networkid:   s.Networkid,
-				Projectid:   s.Projectid,
-				Tags:        s.Tags,
-				Type:        s.Type,
-			},
-		}
-	}
-	toIPCreateRequest = func(s *models.V1IPResponse) *ipAllocateRequest {
-		return &ipAllocateRequest{
-			SpecificIP: *s.Ipaddress,
-			V1IPAllocateRequest: &models.V1IPAllocateRequest{
-				Description: s.Description,
-				Name:        s.Name,
-				Networkid:   s.Networkid,
-				Projectid:   s.Projectid,
-				Tags:        s.Tags,
-				Type:        s.Type,
-			},
-		}
-	}
-	toIPUpdateRequest = func(s *models.V1IPResponse) *models.V1IPUpdateRequest {
-		return &models.V1IPUpdateRequest{
-			Description: s.Description,
-			Ipaddress:   s.Ipaddress,
-			Name:        s.Name,
-			Tags:        s.Tags,
-			Type:        s.Type,
-		}
-	}
 )
 
 func Test_IPCmd_MultiResult(t *testing.T) {
@@ -129,11 +94,11 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(toIPCreateRequest(ip1).V1IPAllocateRequest).WithIP(toIPCreateRequest(ip1).SpecificIP), testcommon.StrFmtDateComparer()), nil).Return(nil, ip.NewAllocateSpecificIPDefault(http.StatusConflict)).Once()
-					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(toIPUpdateRequest(ip1)), testcommon.StrFmtDateComparer()), nil).Return(&ip.UpdateIPOK{
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(nil, ip.NewAllocateSpecificIPDefault(http.StatusConflict)).Once()
+					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
 						Payload: ip1,
 					}, nil)
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(toIPCreateRequest(ip2).V1IPAllocateRequest).WithIP(toIPCreateRequest(ip2).SpecificIP), testcommon.StrFmtDateComparer()), nil).Return(&ip.AllocateSpecificIPCreated{
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip2).V1IPAllocateRequest).WithIP(*ip2.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
 						Payload: ip2,
 					}, nil)
 				},
@@ -213,7 +178,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(toIPCreateRequestFromCLI(ip1).V1IPAllocateRequest).WithIP(toIPCreateRequestFromCLI(ip1).SpecificIP), testcommon.StrFmtDateComparer()), nil).Return(&ip.AllocateSpecificIPCreated{
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
 						Payload: ip1,
 					}, nil)
 				},
@@ -230,7 +195,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(toIPCreateRequestFromCLI(ip1).V1IPAllocateRequest).WithIP(toIPCreateRequestFromCLI(ip1).SpecificIP), testcommon.StrFmtDateComparer()), nil).Return(&ip.AllocateSpecificIPCreated{
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
 						Payload: ip1,
 					}, nil)
 				},
@@ -247,7 +212,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(toIPUpdateRequest(ip1)), testcommon.StrFmtDateComparer()), nil).Return(&ip.UpdateIPOK{
+					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
 						Payload: ip1,
 					}, nil)
 				},

@@ -130,6 +130,43 @@ func (c partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1Par
 	return resp.Payload, nil
 }
 
+func (c partitionCmd) ToCreate(r *models.V1PartitionResponse) (*models.V1PartitionCreateRequest, error) {
+	return partitionResponseToCreate(r), nil
+}
+
+func (c partitionCmd) ToUpdate(r *models.V1PartitionResponse) (*models.V1PartitionUpdateRequest, error) {
+	return partitionResponseToUpdate(r), nil
+}
+
+func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1PartitionCreateRequest {
+	return &models.V1PartitionCreateRequest{
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: r.Bootconfig.Commandline,
+			Imageurl:    r.Bootconfig.Imageurl,
+			Kernelurl:   r.Bootconfig.Kernelurl,
+		},
+		Description:                r.Description,
+		ID:                         r.ID,
+		Mgmtserviceaddress:         r.Mgmtserviceaddress,
+		Name:                       r.Name,
+		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
+	}
+}
+
+func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1PartitionUpdateRequest {
+	return &models.V1PartitionUpdateRequest{
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: r.Bootconfig.Commandline,
+			Imageurl:    r.Bootconfig.Imageurl,
+			Kernelurl:   r.Bootconfig.Kernelurl,
+		},
+		Description:        r.Description,
+		ID:                 r.ID,
+		Mgmtserviceaddress: r.Mgmtserviceaddress,
+		Name:               r.Name,
+	}
+}
+
 // non-generic command handling
 
 func (c *partitionCmd) partitionCapacity() error {

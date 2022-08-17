@@ -107,6 +107,24 @@ func (c switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchRes
 	return resp.Payload, nil
 }
 
+func (c switchCmd) ToCreate(r *models.V1SwitchResponse) (any, error) {
+	return nil, fmt.Errorf("switch entity does not support create operation")
+}
+
+func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateRequest, error) {
+	return switchResponseToUpdate(r), nil
+}
+
+func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
+	return &models.V1SwitchUpdateRequest{
+		Description: r.Description,
+		ID:          r.ID,
+		Mode:        r.Mode,
+		Name:        r.Name,
+		RackID:      r.RackID,
+	}
+}
+
 // non-generic command handling
 
 func (c *switchCmd) switchDetail() error {

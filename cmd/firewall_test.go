@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/base64"
 	"strings"
 	"testing"
 	"time"
@@ -186,40 +185,6 @@ var (
 		},
 		Tags: []string{"b"},
 	}
-	toFirewallCreateRequest = func(s *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
-		var (
-			ips        []string
-			networks   []*models.V1MachineAllocationNetwork
-			allocation = pointer.SafeDeref(s.Allocation)
-		)
-		for _, s := range allocation.Networks {
-			ips = append(ips, s.Ips...)
-			networks = append(networks, &models.V1MachineAllocationNetwork{
-				Autoacquire: pointer.Pointer(true),
-				Networkid:   s.Networkid,
-			})
-		}
-
-		return &models.V1FirewallCreateRequest{
-			Description:        allocation.Description,
-			Filesystemlayoutid: pointer.SafeDeref(pointer.SafeDeref(allocation.Filesystemlayout).ID),
-			Hostname:           pointer.SafeDeref(allocation.Hostname),
-			Imageid:            pointer.SafeDeref(allocation.Image).ID,
-			Ips:                ips,
-			Name:               s.Name,
-			Networks:           networks,
-			Partitionid:        s.Partition.ID,
-			Projectid:          allocation.Project,
-			Sizeid:             s.Size.ID,
-			SSHPubKeys:         allocation.SSHPubKeys,
-			Tags:               s.Tags,
-			UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
-			UUID:               pointer.SafeDeref(s.ID),
-		}
-	}
-	toFirewallCreateRequestFromCLI = func(s *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
-		return toFirewallCreateRequest(s)
-	}
 )
 
 func Test_FirewallCmd_MultiResult(t *testing.T) {
@@ -340,7 +305,7 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 			},
 			mocks: &client.MetalMockFns{
 				Firewall: func(mock *mock.Mock) {
-					mock.On("AllocateFirewall", testcommon.MatchIgnoreContext(t, firewall.NewAllocateFirewallParams().WithBody(toFirewallCreateRequestFromCLI(firewall1))), nil).Return(&firewall.AllocateFirewallOK{
+					mock.On("AllocateFirewall", testcommon.MatchIgnoreContext(t, firewall.NewAllocateFirewallParams().WithBody(firewallResponseToCreate(firewall1))), nil).Return(&firewall.AllocateFirewallOK{
 						Payload: firewall1,
 					}, nil)
 				},

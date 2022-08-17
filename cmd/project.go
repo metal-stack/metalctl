@@ -122,6 +122,48 @@ func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Project
 	return updateResp.Payload, nil
 }
 
+func (c projectCmd) ToCreate(r *models.V1ProjectResponse) (*models.V1ProjectCreateRequest, error) {
+	return projectResponseToCreate(r), nil
+}
+
+func (c projectCmd) ToUpdate(r *models.V1ProjectResponse) (*models.V1ProjectUpdateRequest, error) {
+	return projectResponseToUpdate(r), nil
+}
+
+func projectResponseToCreate(r *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
+	return &models.V1ProjectCreateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
+}
+
+func projectResponseToUpdate(r *models.V1ProjectResponse) *models.V1ProjectUpdateRequest {
+	return &models.V1ProjectUpdateRequest{
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
+		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
+		TenantID:    r.TenantID,
+	}
+}
+
 func (w *projectCmd) createFromCLI() (*models.V1ProjectCreateRequest, error) {
 	var (
 		clusterQuota, machineQuota, ipQuota *models.V1Quota

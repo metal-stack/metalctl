@@ -67,62 +67,6 @@ var (
 		},
 		TenantID: "metal-stack",
 	}
-	toProjectCreateRequestFromCLI = func(s *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
-		return &models.V1ProjectCreateRequest{
-			Meta: &models.V1Meta{
-				Apiversion:  s.Meta.Apiversion,
-				Kind:        s.Meta.Kind,
-				Annotations: s.Meta.Annotations,
-				Labels:      s.Meta.Labels,
-			},
-			Description: s.Description,
-			Name:        s.Name,
-			Quotas: &models.V1QuotaSet{
-				Cluster: &models.V1Quota{
-					Quota: s.Quotas.Cluster.Quota,
-				},
-				IP: &models.V1Quota{
-					Quota: s.Quotas.IP.Quota,
-				},
-				Machine: &models.V1Quota{
-					Quota: s.Quotas.Machine.Quota,
-				},
-			},
-			TenantID: s.TenantID,
-		}
-	}
-	toProjectCreateRequest = func(s *models.V1ProjectResponse) *models.V1ProjectCreateRequest {
-		return &models.V1ProjectCreateRequest{
-			Meta: &models.V1Meta{
-				Apiversion:  s.Meta.Apiversion,
-				Kind:        s.Meta.Kind,
-				ID:          s.Meta.ID,
-				Annotations: s.Meta.Annotations,
-				Labels:      s.Meta.Labels,
-				Version:     s.Meta.Version,
-			},
-			Description: s.Description,
-			Name:        s.Name,
-			Quotas:      s.Quotas,
-			TenantID:    s.TenantID,
-		}
-	}
-	toProjectUpdateRequest = func(s *models.V1ProjectResponse) *models.V1ProjectUpdateRequest {
-		return &models.V1ProjectUpdateRequest{
-			Meta: &models.V1Meta{
-				Apiversion:  s.Meta.Apiversion,
-				Kind:        s.Meta.Kind,
-				ID:          s.Meta.ID,
-				Annotations: s.Meta.Annotations,
-				Labels:      s.Meta.Labels,
-				Version:     s.Meta.Version,
-			},
-			Description: s.Description,
-			Name:        s.Name,
-			Quotas:      s.Quotas,
-			TenantID:    s.TenantID,
-		}
-	}
 )
 
 func Test_ProjectCmd_MultiResult(t *testing.T) {
@@ -219,7 +163,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 			},
 			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project1))), nil).Return(nil, &project.CreateProjectConflict{}).Once()
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(project1))), nil).Return(nil, &project.CreateProjectConflict{}).Once()
 					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
 						Payload: &models.V1ProjectResponse{
 							Meta: &models.V1Meta{
@@ -227,10 +171,10 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 							},
 						},
 					}, nil)
-					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(toProjectUpdateRequest(project1))), nil).Return(&project.UpdateProjectOK{
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(projectResponseToUpdate(project1))), nil).Return(&project.UpdateProjectOK{
 						Payload: project1,
 					}, nil)
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project2))), nil).Return(&project.CreateProjectCreated{
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(project2))), nil).Return(&project.CreateProjectCreated{
 						Payload: project2,
 					}, nil)
 				},
@@ -311,7 +255,13 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 			},
 			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequestFromCLI(project1))), nil).Return(&project.CreateProjectCreated{
+					p := project1
+					p.Meta.ID = ""
+					p.Meta.Version = 0
+					p.Quotas.Cluster.Used = 0
+					p.Quotas.IP.Used = 0
+					p.Quotas.Machine.Used = 0
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(p))), nil).Return(&project.CreateProjectCreated{
 						Payload: project1,
 					}, nil)
 				},
@@ -328,7 +278,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 			},
 			mocks: &client.MetalMockFns{
 				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(toProjectCreateRequest(project1))), nil).Return(&project.CreateProjectCreated{
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(project1))), nil).Return(&project.CreateProjectCreated{
 						Payload: project1,
 					}, nil)
 				},
@@ -352,8 +302,10 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 							},
 						},
 					}, nil)
-					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(toProjectUpdateRequest(project1))), nil).Return(&project.UpdateProjectOK{
-						Payload: project1,
+					p := project1
+					p.Meta.Version = 1
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(projectResponseToUpdate(p))), nil).Return(&project.UpdateProjectOK{
+						Payload: p,
 					}, nil)
 				},
 			},

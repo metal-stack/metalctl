@@ -39,46 +39,6 @@ var (
 		Name:                       "partition-2",
 		Privatenetworkprefixlength: 24,
 	}
-	toPartitionCreateRequestFromCLI = func(s *models.V1PartitionResponse) *models.V1PartitionCreateRequest {
-		return &models.V1PartitionCreateRequest{
-			Bootconfig: &models.V1PartitionBootConfiguration{
-				Commandline: s.Bootconfig.Commandline,
-				Imageurl:    s.Bootconfig.Imageurl,
-				Kernelurl:   s.Bootconfig.Kernelurl,
-			},
-			Description:        s.Description,
-			ID:                 s.ID,
-			Mgmtserviceaddress: s.Mgmtserviceaddress,
-			Name:               s.Name,
-		}
-	}
-	toPartitionCreateRequest = func(s *models.V1PartitionResponse) *models.V1PartitionCreateRequest {
-		return &models.V1PartitionCreateRequest{
-			Bootconfig: &models.V1PartitionBootConfiguration{
-				Commandline: s.Bootconfig.Commandline,
-				Imageurl:    s.Bootconfig.Imageurl,
-				Kernelurl:   s.Bootconfig.Kernelurl,
-			},
-			Description:                s.Description,
-			ID:                         s.ID,
-			Mgmtserviceaddress:         s.Mgmtserviceaddress,
-			Name:                       s.Name,
-			Privatenetworkprefixlength: s.Privatenetworkprefixlength,
-		}
-	}
-	toPartitionUpdateRequest = func(s *models.V1PartitionResponse) *models.V1PartitionUpdateRequest {
-		return &models.V1PartitionUpdateRequest{
-			Bootconfig: &models.V1PartitionBootConfiguration{
-				Commandline: s.Bootconfig.Commandline,
-				Imageurl:    s.Bootconfig.Imageurl,
-				Kernelurl:   s.Bootconfig.Kernelurl,
-			},
-			Description:        s.Description,
-			ID:                 s.ID,
-			Mgmtserviceaddress: s.Mgmtserviceaddress,
-			Name:               s.Name,
-		}
-	}
 )
 
 func Test_PartitionCmd_MultiResult(t *testing.T) {
@@ -134,11 +94,11 @@ ID   NAME          DESCRIPTION
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
-					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(toPartitionCreateRequest(partition1))), nil).Return(nil, &partition.CreatePartitionConflict{}).Once()
-					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(toPartitionUpdateRequest(partition1))), nil).Return(&partition.UpdatePartitionOK{
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(nil, &partition.CreatePartitionConflict{}).Once()
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(partition1))), nil).Return(&partition.UpdatePartitionOK{
 						Payload: partition1,
 					}, nil)
-					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(toPartitionCreateRequest(partition2))), nil).Return(&partition.CreatePartitionCreated{
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition2))), nil).Return(&partition.CreatePartitionCreated{
 						Payload: partition2,
 					}, nil)
 				},
@@ -218,7 +178,9 @@ ID   NAME          DESCRIPTION
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
-					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(toPartitionCreateRequestFromCLI(partition1))), nil).Return(&partition.CreatePartitionCreated{
+					p := partition1
+					p.Privatenetworkprefixlength = 0
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(p))), nil).Return(&partition.CreatePartitionCreated{
 						Payload: partition1,
 					}, nil)
 				},
@@ -235,7 +197,7 @@ ID   NAME          DESCRIPTION
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
-					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(toPartitionCreateRequest(partition1))), nil).Return(&partition.CreatePartitionCreated{
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(&partition.CreatePartitionCreated{
 						Payload: partition1,
 					}, nil)
 				},
@@ -252,7 +214,7 @@ ID   NAME          DESCRIPTION
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
-					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(toPartitionUpdateRequest(partition1))), nil).Return(&partition.UpdatePartitionOK{
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(partition1))), nil).Return(&partition.UpdatePartitionOK{
 						Payload: partition1,
 					}, nil)
 				},

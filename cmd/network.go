@@ -231,6 +231,45 @@ func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
+func (c networkCmd) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkCreateRequest, error) {
+	return networkResponseToCreate(r), nil
+}
+
+func (c networkCmd) ToUpdate(r *models.V1NetworkResponse) (*models.V1NetworkUpdateRequest, error) {
+	return networkResponseToUpdate(r), nil
+}
+
+func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
+	return &models.V1NetworkCreateRequest{
+		Description:         r.Description,
+		Destinationprefixes: r.Destinationprefixes,
+		ID:                  r.ID,
+		Labels:              r.Labels,
+		Name:                r.Name,
+		Nat:                 r.Nat,
+		Parentnetworkid:     r.Parentnetworkid,
+		Partitionid:         r.Partitionid,
+		Prefixes:            r.Prefixes,
+		Privatesuper:        r.Privatesuper,
+		Projectid:           r.Projectid,
+		Shared:              r.Shared,
+		Underlay:            r.Underlay,
+		Vrf:                 r.Vrf,
+		Vrfshared:           r.Vrfshared,
+	}
+}
+
+func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdateRequest {
+	return &models.V1NetworkUpdateRequest{
+		Description: r.Description,
+		ID:          r.ID,
+		Labels:      r.Labels,
+		Name:        r.Name,
+		Prefixes:    r.Prefixes,
+		Shared:      r.Shared,
+	}
+}
+
 func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, error) {
 	lbs, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
 	if err != nil {
@@ -289,6 +328,23 @@ func (c networkChildCRUD) Create(rq *models.V1NetworkAllocateRequest) (*models.V
 }
 
 func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
+	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+}
+
+func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkAllocateRequest, error) {
+	return &models.V1NetworkAllocateRequest{
+		Description:         r.Description,
+		Destinationprefixes: r.Destinationprefixes,
+		Labels:              r.Labels,
+		Name:                r.Name,
+		Nat:                 pointer.SafeDeref(r.Nat),
+		Partitionid:         r.Partitionid,
+		Projectid:           r.Projectid,
+		Shared:              false,
+	}, nil
+}
+
+func (c networkChildCRUD) ToUpdate(r *models.V1NetworkResponse) (any, error) {
 	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
 }
 

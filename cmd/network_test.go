@@ -87,54 +87,6 @@ var (
 		Vrf:       60,
 		Vrfshared: true,
 	}
-	toNetworkCreateRequestFromCLI = func(s *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
-		return &models.V1NetworkCreateRequest{
-			Description:         s.Description,
-			Destinationprefixes: s.Destinationprefixes,
-			ID:                  s.ID,
-			Labels:              s.Labels,
-			Name:                s.Name,
-			Nat:                 s.Nat,
-			Parentnetworkid:     s.Parentnetworkid,
-			Partitionid:         s.Partitionid,
-			Prefixes:            s.Prefixes,
-			Privatesuper:        s.Privatesuper,
-			Projectid:           s.Projectid,
-			Shared:              s.Shared,
-			Underlay:            s.Underlay,
-			Vrf:                 s.Vrf,
-			Vrfshared:           s.Vrfshared,
-		}
-	}
-	toNetworkCreateRequest = func(s *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
-		return &models.V1NetworkCreateRequest{
-			Description:         s.Description,
-			Destinationprefixes: s.Destinationprefixes,
-			ID:                  s.ID,
-			Labels:              s.Labels,
-			Name:                s.Name,
-			Nat:                 s.Nat,
-			Parentnetworkid:     s.Parentnetworkid,
-			Partitionid:         s.Partitionid,
-			Prefixes:            s.Prefixes,
-			Privatesuper:        s.Privatesuper,
-			Projectid:           s.Projectid,
-			Shared:              s.Shared,
-			Underlay:            s.Underlay,
-			Vrf:                 s.Vrf,
-			Vrfshared:           s.Vrfshared,
-		}
-	}
-	toNetworkUpdateRequest = func(s *models.V1NetworkResponse) *models.V1NetworkUpdateRequest {
-		return &models.V1NetworkUpdateRequest{
-			Description: s.Description,
-			ID:          s.ID,
-			Labels:      s.Labels,
-			Name:        s.Name,
-			Prefixes:    s.Prefixes,
-			Shared:      s.Shared,
-		}
-	}
 )
 
 func Test_NetworkCmd_MultiResult(t *testing.T) {
@@ -202,11 +154,11 @@ nw2 network-2
 			},
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(toNetworkCreateRequest(network1)), testcommon.StrFmtDateComparer()), nil).Return(nil, &network.CreateNetworkConflict{}).Once()
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(toNetworkUpdateRequest(network1)), testcommon.StrFmtDateComparer()), nil).Return(&network.UpdateNetworkOK{
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(nil, &network.CreateNetworkConflict{}).Once()
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(toNetworkCreateRequest(network2)), testcommon.StrFmtDateComparer()), nil).Return(&network.CreateNetworkCreated{
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network2))), nil).Return(&network.CreateNetworkCreated{
 						Payload: network2,
 					}, nil)
 				},
@@ -293,7 +245,7 @@ nw1 network-1
 			},
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(toNetworkCreateRequestFromCLI(network1)), testcommon.StrFmtDateComparer()), nil).Return(&network.CreateNetworkCreated{
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
 						Payload: network1,
 					}, nil)
 				},
@@ -310,7 +262,7 @@ nw1 network-1
 			},
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(toNetworkCreateRequest(network1)), testcommon.StrFmtDateComparer()), nil).Return(&network.CreateNetworkCreated{
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
 						Payload: network1,
 					}, nil)
 				},
@@ -327,7 +279,7 @@ nw1 network-1
 			},
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(toNetworkUpdateRequest(network1)), testcommon.StrFmtDateComparer()), nil).Return(&network.UpdateNetworkOK{
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 				},

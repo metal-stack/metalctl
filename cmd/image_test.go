@@ -38,38 +38,6 @@ var (
 		URL:            "ubuntu-url",
 		Usedby:         []string{"123"},
 	}
-	toImageCreateRequestFromCLI = func(s *models.V1ImageResponse) *models.V1ImageCreateRequest {
-		return &models.V1ImageCreateRequest{
-			Description: s.Description,
-			Features:    s.Features,
-			ID:          s.ID,
-			Name:        s.Name,
-			URL:         &s.URL,
-		}
-	}
-	toImageCreateRequest = func(s *models.V1ImageResponse) *models.V1ImageCreateRequest {
-		return &models.V1ImageCreateRequest{
-			Classification: s.Classification,
-			Description:    s.Description,
-			ExpirationDate: pointer.SafeDeref(s.ExpirationDate),
-			Features:       s.Features,
-			ID:             s.ID,
-			Name:           s.Name,
-			URL:            &s.URL,
-		}
-	}
-	toImageUpdateRequest = func(s *models.V1ImageResponse) *models.V1ImageUpdateRequest {
-		return &models.V1ImageUpdateRequest{
-			Classification: s.Classification,
-			Description:    s.Description,
-			ExpirationDate: s.ExpirationDate,
-			Features:       s.Features,
-			ID:             s.ID,
-			Name:           s.Name,
-			URL:            s.URL,
-			Usedby:         s.Usedby, // TODO this field should not be in here
-		}
-	}
 )
 
 func Test_ImageCmd_MultiResult(t *testing.T) {
@@ -125,11 +93,11 @@ ubuntu ubuntu-name
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(toImageCreateRequest(image1)), testcommon.StrFmtDateComparer()), nil).Return(nil, &image.CreateImageConflict{}).Once()
-					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(toImageUpdateRequest(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.UpdateImageOK{
+					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(image1)), testcommon.StrFmtDateComparer()), nil).Return(nil, &image.CreateImageConflict{}).Once()
+					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(imageResponseToUpdate(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.UpdateImageOK{
 						Payload: image1,
 					}, nil)
-					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(toImageCreateRequest(image2)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
+					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(image2)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
 						Payload: image2,
 					}, nil)
 				},
@@ -207,7 +175,10 @@ debian debian-name
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(toImageCreateRequestFromCLI(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
+					i := image1
+					i.Classification = ""
+					i.ExpirationDate = &strfmt.DateTime{}
+					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(i))), nil).Return(&image.CreateImageCreated{
 						Payload: image1,
 					}, nil)
 				},
@@ -224,7 +195,7 @@ debian debian-name
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(toImageCreateRequest(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
+					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
 						Payload: image1,
 					}, nil)
 				},
@@ -241,7 +212,7 @@ debian debian-name
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(toImageUpdateRequest(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.UpdateImageOK{
+					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(imageResponseToUpdate(image1))), nil).Return(&image.UpdateImageOK{
 						Payload: image1,
 					}, nil)
 				},

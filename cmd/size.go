@@ -127,6 +127,48 @@ func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
+func (c sizeCmd) ToCreate(r *models.V1SizeResponse) (*models.V1SizeCreateRequest, error) {
+	return sizeResponseToCreate(r), nil
+}
+
+func (c sizeCmd) ToUpdate(r *models.V1SizeResponse) (*models.V1SizeUpdateRequest, error) {
+	return sizeResponseToUpdate(r), nil
+}
+
+func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest {
+	var constraints []*models.V1SizeConstraint
+	for i := range r.Constraints {
+		constraints = append(constraints, &models.V1SizeConstraint{
+			Max:  r.Constraints[i].Max,
+			Min:  r.Constraints[i].Min,
+			Type: r.Constraints[i].Type,
+		})
+	}
+	return &models.V1SizeCreateRequest{
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
+}
+
+func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest {
+	var constraints []*models.V1SizeConstraint
+	for i := range r.Constraints {
+		constraints = append(constraints, &models.V1SizeConstraint{
+			Max:  r.Constraints[i].Max,
+			Min:  r.Constraints[i].Min,
+			Type: r.Constraints[i].Type,
+		})
+	}
+	return &models.V1SizeUpdateRequest{
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
+}
+
 // non-generic command handling
 
 func (c *sizeCmd) try() error {

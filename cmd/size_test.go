@@ -60,52 +60,6 @@ var (
 		ID:          pointer.Pointer("2"),
 		Name:        "size-2",
 	}
-	toSizeCreateRequestFromCLI = func(s *models.V1SizeResponse) *models.V1SizeCreateRequest {
-		return &models.V1SizeCreateRequest{
-			Constraints: []*models.V1SizeConstraint{
-				{
-					Max:  s.Constraints[0].Max,
-					Min:  s.Constraints[0].Min,
-					Type: s.Constraints[0].Type,
-				},
-			},
-			Description: s.Description,
-			ID:          s.ID,
-			Name:        s.Name,
-		}
-	}
-	toSizeCreateRequest = func(s *models.V1SizeResponse) *models.V1SizeCreateRequest {
-		var constraints []*models.V1SizeConstraint
-		for i := range s.Constraints {
-			constraints = append(constraints, &models.V1SizeConstraint{
-				Max:  s.Constraints[i].Max,
-				Min:  s.Constraints[i].Min,
-				Type: s.Constraints[i].Type,
-			})
-		}
-		return &models.V1SizeCreateRequest{
-			Constraints: constraints,
-			Description: s.Description,
-			ID:          s.ID,
-			Name:        s.Name,
-		}
-	}
-	toSizeUpdateRequest = func(s *models.V1SizeResponse) *models.V1SizeUpdateRequest {
-		var constraints []*models.V1SizeConstraint
-		for i := range s.Constraints {
-			constraints = append(constraints, &models.V1SizeConstraint{
-				Max:  s.Constraints[i].Max,
-				Min:  s.Constraints[i].Min,
-				Type: s.Constraints[i].Type,
-			})
-		}
-		return &models.V1SizeUpdateRequest{
-			Constraints: constraints,
-			Description: s.Description,
-			ID:          s.ID,
-			Name:        s.Name,
-		}
-	}
 )
 
 func Test_SizeCmd_MultiResult(t *testing.T) {
@@ -161,11 +115,11 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(toSizeCreateRequest(size1))), nil).Return(nil, &size.CreateSizeConflict{}).Once()
-					mock.On("UpdateSize", testcommon.MatchIgnoreContext(t, size.NewUpdateSizeParams().WithBody(toSizeUpdateRequest(size1))), nil).Return(&size.UpdateSizeOK{
+					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size1))), nil).Return(nil, &size.CreateSizeConflict{}).Once()
+					mock.On("UpdateSize", testcommon.MatchIgnoreContext(t, size.NewUpdateSizeParams().WithBody(sizeResponseToUpdate(size1))), nil).Return(&size.UpdateSizeOK{
 						Payload: size1,
 					}, nil)
-					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(toSizeCreateRequest(size2))), nil).Return(&size.CreateSizeCreated{
+					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size2))), nil).Return(&size.CreateSizeCreated{
 						Payload: size2,
 					}, nil)
 				},
@@ -244,7 +198,15 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(toSizeCreateRequestFromCLI(size1))), nil).Return(&size.CreateSizeCreated{
+					s := size1
+					s.Constraints = []*models.V1SizeConstraint{
+						{
+							Max:  size1.Constraints[0].Max,
+							Min:  size1.Constraints[0].Min,
+							Type: size1.Constraints[0].Type,
+						},
+					}
+					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size1))), nil).Return(&size.CreateSizeCreated{
 						Payload: size1,
 					}, nil)
 				},
@@ -261,7 +223,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(toSizeCreateRequest(size1))), nil).Return(&size.CreateSizeCreated{
+					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size1))), nil).Return(&size.CreateSizeCreated{
 						Payload: size1,
 					}, nil)
 				},
@@ -278,7 +240,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("UpdateSize", testcommon.MatchIgnoreContext(t, size.NewUpdateSizeParams().WithBody(toSizeUpdateRequest(size1))), nil).Return(&size.UpdateSizeOK{
+					mock.On("UpdateSize", testcommon.MatchIgnoreContext(t, size.NewUpdateSizeParams().WithBody(sizeResponseToUpdate(size1))), nil).Return(&size.UpdateSizeOK{
 						Payload: size1,
 					}, nil)
 				},

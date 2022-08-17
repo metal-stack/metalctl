@@ -71,15 +71,7 @@ func newMachineCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
-		BinaryName: binaryName,
-		OnlyCmds: genericcli.OnlyCmds(
-			genericcli.ListCmd,
-			genericcli.DescribeCmd,
-			genericcli.CreateCmd,
-			genericcli.UpdateCmd,
-			genericcli.DeleteCmd,
-			genericcli.ApplyCmd,
-		),
+		BinaryName:           binaryName,
 		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.fs),
 		Singular:             "machine",
 		Plural:               "machines",
@@ -578,6 +570,54 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	}
 
 	return resp.Payload, nil
+}
+
+func (c machineCmd) ToCreate(r *models.V1MachineResponse) (*models.V1MachineAllocateRequest, error) {
+	return machineResponseToCreate(r), nil
+}
+
+func (c machineCmd) ToUpdate(r *models.V1MachineResponse) (*models.V1MachineUpdateRequest, error) {
+	return machineResponseToUpdate(r), nil
+}
+
+func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAllocateRequest {
+	var (
+		ips        []string
+		networks   []*models.V1MachineAllocationNetwork
+		allocation = pointer.SafeDeref(r.Allocation)
+	)
+	for _, s := range allocation.Networks {
+		ips = append(ips, s.Ips...)
+		networks = append(networks, &models.V1MachineAllocationNetwork{
+			Autoacquire: pointer.Pointer(true),
+			Networkid:   s.Networkid,
+		})
+	}
+
+	return &models.V1MachineAllocateRequest{
+		Description:        allocation.Description,
+		Filesystemlayoutid: pointer.SafeDeref(pointer.SafeDeref(allocation.Filesystemlayout).ID),
+		Hostname:           pointer.SafeDeref(allocation.Hostname),
+		Imageid:            pointer.SafeDeref(allocation.Image).ID,
+		Ips:                ips,
+		Name:               r.Name,
+		Networks:           networks,
+		Partitionid:        pointer.SafeDeref(r.Partition).ID,
+		Projectid:          allocation.Project,
+		Sizeid:             pointer.SafeDeref(r.Size).ID,
+		SSHPubKeys:         allocation.SSHPubKeys,
+		Tags:               r.Tags,
+		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
+		UUID:               pointer.SafeDeref(r.ID),
+	}
+}
+
+func machineResponseToUpdate(r *models.V1MachineResponse) *models.V1MachineUpdateRequest {
+	return &models.V1MachineUpdateRequest{
+		Description: pointer.PointerOrNil(pointer.SafeDeref(r.Allocation).Description),
+		ID:          r.ID,
+		Tags:        r.Tags,
+	}
 }
 
 func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, error) {

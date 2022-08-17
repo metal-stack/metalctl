@@ -123,6 +123,42 @@ func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
+func (c fslCmd) ToCreate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutCreateRequest, error) {
+	return filesystemLayoutResponseToCreate(r), nil
+}
+
+func (c fslCmd) ToUpdate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutUpdateRequest, error) {
+	return filesystemLayoutResponseToUpdate(r), nil
+}
+
+func filesystemLayoutResponseToCreate(r *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutCreateRequest {
+	return &models.V1FilesystemLayoutCreateRequest{
+		Constraints:    r.Constraints,
+		Description:    r.Description,
+		Disks:          r.Disks,
+		Filesystems:    r.Filesystems,
+		ID:             r.ID,
+		Logicalvolumes: r.Logicalvolumes,
+		Name:           r.Name,
+		Raid:           r.Raid,
+		Volumegroups:   r.Volumegroups,
+	}
+}
+
+func filesystemLayoutResponseToUpdate(r *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutUpdateRequest {
+	return &models.V1FilesystemLayoutUpdateRequest{
+		Constraints:    r.Constraints,
+		Description:    r.Description,
+		Disks:          r.Disks,
+		Filesystems:    r.Filesystems,
+		ID:             r.ID,
+		Logicalvolumes: r.Logicalvolumes,
+		Name:           r.Name,
+		Raid:           r.Raid,
+		Volumegroups:   r.Volumegroups,
+	}
+}
+
 // non-generic command handling
 
 func (c *fslCmd) filesystemTry() error {

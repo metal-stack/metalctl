@@ -106,6 +106,32 @@ func (c sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateReq
 	return resp.Payload, nil
 }
 
+func (c sizeImageConstraintCmd) ToCreate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintCreateRequest, error) {
+	return sizeImageContraintResponseToCreate(r), nil
+}
+
+func (c sizeImageConstraintCmd) ToUpdate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintUpdateRequest, error) {
+	return sizeImageContraintResponseToUpdate(r), nil
+}
+
+func sizeImageContraintResponseToCreate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {
+	return &models.V1SizeImageConstraintCreateRequest{
+		Constraints: r.Constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
+}
+
+func sizeImageContraintResponseToUpdate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintUpdateRequest {
+	return &models.V1SizeImageConstraintUpdateRequest{
+		Constraints: r.Constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+	}
+}
+
 // non-generic command handling
 
 func (c *sizeImageConstraintCmd) try() error {

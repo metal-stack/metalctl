@@ -103,15 +103,6 @@ var (
 		Partition: partition1,
 		RackID:    pointer.Pointer("rack-1"),
 	}
-	toSwitchUpdateRequest = func(s *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
-		return &models.V1SwitchUpdateRequest{
-			Description: s.Description,
-			ID:          s.ID,
-			Mode:        s.Mode,
-			Name:        s.Name,
-			RackID:      s.RackID,
-		}
-	}
 )
 
 func Test_SwitchCmd_MultiResult(t *testing.T) {
@@ -182,10 +173,10 @@ func Test_SwitchCmd_SingleResult(t *testing.T) {
 ID   PARTITION   RACK     STATUS
 1    1           rack-1    ●
 		`),
-			// 			wantWideTable: pointer.Pointer(`
-			// ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-			// 1    1           rack-1   operational   0s          1s              5m ago: error
-			// 		`), TODO: does not work reliably due to humanize duration sometimes having seconds appended
+			wantWideTable: pointer.Pointer(`
+ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+1    1           rack-1   operational   0s          1s              5m ago: error
+					`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 switch-1
@@ -220,7 +211,7 @@ ID   PARTITION   RACK     STATUS
 			},
 			mocks: &client.MetalMockFns{
 				Switch: func(mock *mock.Mock) {
-					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(toSwitchUpdateRequest(switch1)), testcommon.StrFmtDateComparer()), nil).Return(&switch_operations.UpdateSwitchOK{
+					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},

@@ -160,6 +160,41 @@ func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error
 	return resp.Payload, nil
 }
 
+func (c ipCmd) ToCreate(r *models.V1IPResponse) (*ipAllocateRequest, error) {
+	if r.Ipaddress == nil {
+		return nil, fmt.Errorf("ip address must be set")
+	}
+	return ipResponseToCreate(r), nil
+}
+
+func (c ipCmd) ToUpdate(r *models.V1IPResponse) (*models.V1IPUpdateRequest, error) {
+	return ipResponseToUpdate(r), nil
+}
+
+func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
+	return &ipAllocateRequest{
+		SpecificIP: *r.Ipaddress,
+		V1IPAllocateRequest: &models.V1IPAllocateRequest{
+			Description: r.Description,
+			Name:        r.Name,
+			Networkid:   r.Networkid,
+			Projectid:   r.Projectid,
+			Tags:        r.Tags,
+			Type:        r.Type,
+		},
+	}
+}
+
+func ipResponseToUpdate(r *models.V1IPResponse) *models.V1IPUpdateRequest {
+	return &models.V1IPUpdateRequest{
+		Description: r.Description,
+		Ipaddress:   r.Ipaddress,
+		Name:        r.Name,
+		Tags:        r.Tags,
+		Type:        r.Type,
+	}
+}
+
 func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 	return &ipAllocateRequest{
 		SpecificIP: viper.GetString("ipaddress"),

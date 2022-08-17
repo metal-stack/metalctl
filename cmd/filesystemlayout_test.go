@@ -125,32 +125,6 @@ var (
 			},
 		},
 	}
-	toFilesystemLayoutCreateRequest = func(s *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutCreateRequest {
-		return &models.V1FilesystemLayoutCreateRequest{
-			Constraints:    s.Constraints,
-			Description:    s.Description,
-			Disks:          s.Disks,
-			Filesystems:    s.Filesystems,
-			ID:             s.ID,
-			Logicalvolumes: s.Logicalvolumes,
-			Name:           s.Name,
-			Raid:           s.Raid,
-			Volumegroups:   s.Volumegroups,
-		}
-	}
-	toFilesystemLayoutUpdateRequest = func(s *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutUpdateRequest {
-		return &models.V1FilesystemLayoutUpdateRequest{
-			Constraints:    s.Constraints,
-			Description:    s.Description,
-			Disks:          s.Disks,
-			Filesystems:    s.Filesystems,
-			ID:             s.ID,
-			Logicalvolumes: s.Logicalvolumes,
-			Name:           s.Name,
-			Raid:           s.Raid,
-			Volumegroups:   s.Volumegroups,
-		}
-	}
 )
 
 func Test_FilesystemLayoutCmd_MultiResult(t *testing.T) {
@@ -209,11 +183,11 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			},
 			mocks: &client.MetalMockFns{
 				Filesystemlayout: func(mock *mock.Mock) {
-					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(toFilesystemLayoutCreateRequest(fsl1)), testcommon.StrFmtDateComparer()), nil).Return(nil, &fsmodel.CreateFilesystemLayoutConflict{}).Once()
-					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(toFilesystemLayoutUpdateRequest(fsl1)), testcommon.StrFmtDateComparer()), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
+					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToCreate(fsl1))), nil).Return(nil, &fsmodel.CreateFilesystemLayoutConflict{}).Once()
+					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToUpdate(fsl1))), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
 						Payload: fsl1,
 					}, nil)
-					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(toFilesystemLayoutCreateRequest(fsl2)), testcommon.StrFmtDateComparer()), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
+					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToCreate(fsl2))), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
 						Payload: fsl2,
 					}, nil)
 				},
@@ -289,7 +263,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			},
 			mocks: &client.MetalMockFns{
 				Filesystemlayout: func(mock *mock.Mock) {
-					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(toFilesystemLayoutCreateRequest(fsl1)), testcommon.StrFmtDateComparer()), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
+					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToCreate(fsl1))), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
 						Payload: fsl1,
 					}, nil)
 				},
@@ -306,7 +280,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			},
 			mocks: &client.MetalMockFns{
 				Filesystemlayout: func(mock *mock.Mock) {
-					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(toFilesystemLayoutUpdateRequest(fsl1)), testcommon.StrFmtDateComparer()), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
+					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToUpdate(fsl1))), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
 						Payload: fsl1,
 					}, nil)
 				},

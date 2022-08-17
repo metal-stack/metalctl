@@ -112,3 +112,36 @@ func (c imageCmd) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageRespon
 
 	return resp.Payload, nil
 }
+
+func (c imageCmd) ToCreate(r *models.V1ImageResponse) (*models.V1ImageCreateRequest, error) {
+	return imageResponseToCreate(r), nil
+}
+
+func (c imageCmd) ToUpdate(r *models.V1ImageResponse) (*models.V1ImageUpdateRequest, error) {
+	return imageResponseToUpdate(r), nil
+}
+
+func imageResponseToCreate(r *models.V1ImageResponse) *models.V1ImageCreateRequest {
+	return &models.V1ImageCreateRequest{
+		Classification: r.Classification,
+		Description:    r.Description,
+		ExpirationDate: pointer.SafeDeref(r.ExpirationDate),
+		Features:       r.Features,
+		ID:             r.ID,
+		Name:           r.Name,
+		URL:            &r.URL,
+	}
+}
+
+func imageResponseToUpdate(r *models.V1ImageResponse) *models.V1ImageUpdateRequest {
+	return &models.V1ImageUpdateRequest{
+		Classification: r.Classification,
+		Description:    r.Description,
+		ExpirationDate: r.ExpirationDate,
+		Features:       r.Features,
+		ID:             r.ID,
+		Name:           r.Name,
+		URL:            r.URL,
+		Usedby:         r.Usedby, // TODO this field should not be in here
+	}
+}
