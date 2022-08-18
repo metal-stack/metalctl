@@ -75,7 +75,7 @@ jobs:
       run: |
         mkdir -p metalctl/${TARGET_BINARY_LOCATION}
         sudo chown -R $(id -u):$(id -g) result
-        mv result/* metalctl/${TARGET_BINARY_LOCATION}/
+        cp result/* metalctl/${TARGET_BINARY_LOCATION}/
 
     - name: Upload image tarballs to GCS
       run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
