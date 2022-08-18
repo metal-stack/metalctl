@@ -56,6 +56,10 @@ jobs:
         [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
         [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TAG_NAME=latest" >> $GITHUB_ENV || true
 
+        [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TARGET_BINARY_LOCATION=pull-requests/${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
+        [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TARGET_BINARY_LOCATION=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+        [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TARGET_BINARY_LOCATION=latest" >> $GITHUB_ENV || true
+
     - name: Build
       uses: fi-ts/action-docker-make@master
       with:
@@ -69,9 +73,17 @@ jobs:
 
     - name: Prepare upload
       run: |
-        mkdir -p metalctl
+        mkdir -p metalctl/${TARGET_BINARY_LOCATION}
         sudo chown -R $(id -u):$(id -g) result
-        mv result/* metalctl
+        mv result/* metalctl/${TARGET_BINARY_LOCATION}/
 
     - name: Upload image tarballs to GCS
       run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+
+    - name: Upload Release Asset
+      uses: softprops/action-gh-release@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        files: |
+          result/metalctl-*
+      if: ${{ github.event_name == 'release' }}
