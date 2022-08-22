@@ -1172,9 +1172,16 @@ func (c *machineCmd) machineConsole(args []string) error {
 			password = ipmipassword
 		}
 
-		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", "<hidden>", "sol", "activate"}
+		err = os.Setenv("IPMITOOL_PASSWORD", password)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = os.Unsetenv("IPMITOOL_PASSWORD")
+		}()
+
+		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-E", "sol", "activate"}
 		fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
-		args[9] = password
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -1484,8 +1491,15 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 	if ipmipassword != "" {
 		password = ipmipassword
 	}
+	err = os.Setenv("IPMITOOL_PASSWORD", password)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = os.Unsetenv("IPMITOOL_PASSWORD")
+	}()
 
-	cmdArgs := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-P", password, "sel", "list", "last", viper.GetString("last")}
+	cmdArgs := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-E", "sel", "list", "last", viper.GetString("last")}
 	cmd := exec.Command(path, cmdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
