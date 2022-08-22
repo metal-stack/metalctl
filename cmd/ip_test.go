@@ -94,7 +94,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(nil, ip.NewAllocateSpecificIPDefault(http.StatusConflict)).Once()
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(nil, ip.NewAllocateSpecificIPDefault(http.StatusUnprocessableEntity)).Once()
 					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
 						Payload: ip1,
 					}, nil)
