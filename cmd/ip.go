@@ -69,6 +69,9 @@ func newIPCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
 			must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
 		},
+		DeleteCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Aliases = append(cmd.Aliases, "free")
+		},
 		AvailableSortKeys: sorters.IPSortKeys(),
 		ValidArgsFn:       c.comp.IpListCompletion,
 	}
