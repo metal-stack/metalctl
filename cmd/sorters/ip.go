@@ -1,6 +1,8 @@
 package sorters
 
 import (
+	"net/netip"
+
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/multisort"
 	p "github.com/metal-stack/metal-lib/pkg/pointer"
@@ -8,7 +10,11 @@ import (
 
 var ipSorter = multisort.New(multisort.FieldMap[*models.V1IPResponse]{
 	"ipaddress": func(a, b *models.V1IPResponse, descending bool) multisort.CompareResult {
-		return multisort.Compare(p.SafeDeref(a.Ipaddress), p.SafeDeref(b.Ipaddress), descending)
+		aIP, _ := netip.ParseAddr(p.SafeDeref(a.Ipaddress))
+		bIP, _ := netip.ParseAddr(p.SafeDeref(b.Ipaddress))
+		return multisort.WithCompareFunc(func() int {
+			return aIP.Compare(bIP)
+		}, descending)
 	},
 	"id": func(a, b *models.V1IPResponse, descending bool) multisort.CompareResult {
 		return multisort.Compare(p.SafeDeref(a.Allocationuuid), p.SafeDeref(b.Allocationuuid), descending)
