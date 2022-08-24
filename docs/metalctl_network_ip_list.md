@@ -14,9 +14,9 @@ metalctl network ip list [flags]
       --machineid string   machineid to filter [optional]
       --name string        name to filter [optional]
       --network string     network to filter [optional]
-      --order strings      order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|ipaddress|name|network|type
       --prefix string      prefix to filter [optional]
       --project string     project to filter [optional]
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|ipaddress|name|network|type
       --tags strings       tags to filter [optional]
       --type string        type to filter [optional]
 ```

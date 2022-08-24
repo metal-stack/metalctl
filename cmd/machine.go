@@ -79,7 +79,7 @@ func newMachineCmd(c *config) *cobra.Command {
 		Aliases:              []string{"ms"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
-		AvailableSortKeys:    sorters.MachineSortKeys(),
+		Sorter:               sorters.MachineSorter(),
 		ValidArgsFn:          c.comp.MachineListCompletion,
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
@@ -506,11 +506,6 @@ func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 
 func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.MachineSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -1240,7 +1235,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	err = sorters.MachineIPMISort(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
 	if err != nil {
 		return err
 	}
@@ -1254,7 +1249,7 @@ func (c *machineCmd) machineIssues() error {
 		return err
 	}
 
-	err = sorters.MachineIPMISort(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
 	if err != nil {
 		return err
 	}

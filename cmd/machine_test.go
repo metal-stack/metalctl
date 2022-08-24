@@ -165,36 +165,36 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 						Tags:             []string{},
 					})), nil).Return(&machine.FindMachinesOK{
 						Payload: []*models.V1MachineResponse{
-							machine2,
 							machine1,
+							machine2,
 						},
 					}, nil)
 				},
 			},
 			want: []*models.V1MachineResponse{
-				machine1,
 				machine2,
+				machine1,
 			},
 			wantTable: pointer.Pointer(`
 ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
 2       Waiting       1m                                            1                    1
+1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
 `),
 			wantWideTable: pointer.Pointer(`
 ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
 2    Waiting       1m                                                                                         1                    1                                  b
+1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
-1 machine-1
 2 machine-2
+1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
 | ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |
 |----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |
 |  2 |  | Waiting     | 1m   |     |                    |           |    1 |             |         1 |
+|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |
 `),
 		},
 	}

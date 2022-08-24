@@ -32,7 +32,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Plural:               "networks",
 		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",
 		CreateRequestFromCLI: w.createRequestFromCLI,
-		AvailableSortKeys:    sorters.NetworkSortKeys(),
+		Sorter:               sorters.NetworkSorter(),
 		ValidArgsFn:          c.comp.NetworkListCompletion,
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
@@ -188,11 +188,6 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Parentnetworkid:     viper.GetString("parent"),
 	}), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.NetworkSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

@@ -24,16 +24,16 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
-		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w).WithFS(c.fs),
-		Singular:          "imageconstraint",
-		Plural:            "imageconstraints",
-		Description:       "if a size has specific requirements regarding the images which must fulfill certain constraints, this can be configured here.",
-		Aliases:           []string{"ic"},
-		AvailableSortKeys: sorters.SizeImageConstraintSortKeys(),
-		ValidArgsFn:       c.comp.SizeImageConstraintListCompletion,
-		DescribePrinter:   func() printers.Printer { return c.describePrinter },
-		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w).WithFS(c.fs),
+		Singular:        "imageconstraint",
+		Plural:          "imageconstraints",
+		Description:     "if a size has specific requirements regarding the images which must fulfill certain constraints, this can be configured here.",
+		Aliases:         []string{"ic"},
+		Sorter:          sorters.SizeImageConstraintSorter(),
+		ValidArgsFn:     c.comp.SizeImageConstraintListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 	}
 
 	tryCmd := &cobra.Command{
@@ -63,11 +63,6 @@ func (c sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintRes
 
 func (c sizeImageConstraintCmd) List() ([]*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().ListSizeImageConstraints(sizemodel.NewListSizeImageConstraintsParams(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.SizeImageConstraintSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

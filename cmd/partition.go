@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/partition"
@@ -25,15 +26,15 @@ func newPartitionCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
-		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
-		Singular:          "partition",
-		Plural:            "partitions",
-		Description:       "a partition is a failure domain in the data center.",
-		ValidArgsFn:       c.comp.PartitionListCompletion,
-		AvailableSortKeys: sorters.PartitionSortKeys(),
-		DescribePrinter:   func() printers.Printer { return c.describePrinter },
-		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
+		Singular:        "partition",
+		Plural:          "partitions",
+		Description:     "a partition is a failure domain in the data center.",
+		ValidArgsFn:     c.comp.PartitionListCompletion,
+		Sorter:          sorters.PartitionSorter(),
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
 			return &models.V1PartitionCreateRequest{
 				ID:                 pointer.Pointer(viper.GetString("id")),
@@ -68,10 +69,10 @@ func newPartitionCmd(c *config) *cobra.Command {
 
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
-	partitionCapacityCmd.Flags().StringSlice("order", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(sorters.PartitionCapacitySortKeys(), "|")))
+	partitionCapacityCmd.Flags().StringSlice("sort-by", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(sorters.PartitionCapacitySorter().AvailableKeys(), "|")))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
 	must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(partitionCapacityCmd.RegisterFlagCompletionFunc("order", cobra.FixedCompletions(sorters.PartitionCapacitySortKeys(), cobra.ShellCompDirectiveNoFileComp)))
+	must(partitionCapacityCmd.RegisterFlagCompletionFunc("sort-by", cobra.FixedCompletions(sorters.PartitionCapacitySorter().AvailableKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
 	return genericcli.NewCmds(cmdsConfig, partitionCapacityCmd)
 }
@@ -87,11 +88,6 @@ func (c partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
 
 func (c partitionCmd) List() ([]*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.PartitionSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -178,9 +174,16 @@ func (c *partitionCmd) partitionCapacity() error {
 		return err
 	}
 
-	err = sorters.PartitionCapacitySort(resp.Payload)
+	err = sorters.PartitionCapacitySorter().SortBy(resp.Payload)
 	if err != nil {
 		return err
+	}
+
+	for _, pc := range resp.Payload {
+		pc := pc
+		sort.SliceStable(pc.Servers, func(i, j int) bool {
+			return pointer.SafeDeref(pointer.SafeDeref(pc.Servers[i]).Size) < pointer.SafeDeref(pointer.SafeDeref(pc.Servers[j]).Size)
+		})
 	}
 
 	return c.listPrinter.Print(resp.Payload)

@@ -24,15 +24,15 @@ func newSizeCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
-		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
-		Singular:          "size",
-		Plural:            "sizes",
-		Description:       "a size matches a machine in terms of cpu cores, ram and storage.",
-		AvailableSortKeys: sorters.SizeSortKeys(),
-		ValidArgsFn:       c.comp.SizeListCompletion,
-		DescribePrinter:   func() printers.Printer { return c.describePrinter },
-		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
+		Singular:        "size",
+		Plural:          "sizes",
+		Description:     "a size matches a machine in terms of cpu cores, ram and storage.",
+		Sorter:          sorters.SizeSorter(),
+		ValidArgsFn:     c.comp.SizeListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -84,11 +84,6 @@ func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 
 func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.SizeSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

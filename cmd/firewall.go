@@ -36,7 +36,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Description:          "firewalls are used to establish network connectivity between metal-stack networks. firewalls are similar to machines but are managed by the provider. almost every command of the machine command subset works on firewalls, too.",
 		Aliases:              []string{"fw"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
-		AvailableSortKeys:    sorters.FirewallSortKeys(),
+		Sorter:               sorters.FirewallSorter(),
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		ValidArgsFn:          c.comp.FirewallListCompletion,
@@ -86,11 +86,6 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 		NicsMacAddresses:   viper.GetStringSlice("mac"),
 		Tags:               viper.GetStringSlice("tags"),
 	}), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.FirewallSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

@@ -23,15 +23,15 @@ func newImageCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
-		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.fs),
-		Singular:          "image",
-		Plural:            "images",
-		Description:       "os images available to be installed on machines.",
-		AvailableSortKeys: sorters.ImageSortKeys(),
-		ValidArgsFn:       c.comp.ImageListCompletion,
-		DescribePrinter:   func() printers.Printer { return c.describePrinter },
-		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.fs),
+		Singular:        "image",
+		Plural:          "images",
+		Description:     "os images available to be installed on machines.",
+		Sorter:          sorters.ImageSorter(),
+		ValidArgsFn:     c.comp.ImageListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -70,11 +70,6 @@ func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
 
 func (c imageCmd) List() ([]*models.V1ImageResponse, error) {
 	resp, err := c.client.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.ImageSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

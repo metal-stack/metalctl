@@ -72,8 +72,8 @@ func newIPCmd(c *config) *cobra.Command {
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Aliases = append(cmd.Aliases, "free")
 		},
-		AvailableSortKeys: sorters.IPSortKeys(),
-		ValidArgsFn:       c.comp.IpListCompletion,
+		Sorter:      sorters.IPSorter(),
+		ValidArgsFn: c.comp.IpListCompletion,
 	}
 
 	issuesCmd := &cobra.Command{
@@ -107,11 +107,6 @@ func (c ipCmd) List() ([]*models.V1IPResponse, error) {
 		Networkprefix: viper.GetString("prefix"),
 		Tags:          viper.GetStringSlice("tags"),
 	}), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.IPSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}
