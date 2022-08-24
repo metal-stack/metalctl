@@ -303,7 +303,7 @@ Total                5       3      1           4       2
 			name: "capacity with filters",
 			cmd: func(want []*models.V1PartitionCapacity) []string {
 				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
-				assertExhaustiveArgs(t, args, "order")
+				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
 			mocks: &client.MetalMockFns{

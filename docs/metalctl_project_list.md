@@ -9,11 +9,11 @@ metalctl project list [flags]
 ### Options
 
 ```
-  -h, --help            help for list
-      --id string       ID of the project.
-      --name string     Name of the project.
-      --order strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name|tenant
-      --tenant string   tenant of this project.
+  -h, --help              help for list
+      --id string         ID of the project.
+      --name string       Name of the project.
+      --sort-by strings   sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name|tenant
+      --tenant string     tenant of this project.
 ```
 
 ### Options inherited from parent commands

@@ -116,7 +116,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 			name: "list with filters",
 			cmd: func(want []*models.V1ProjectResponse) []string {
 				args := []string{"project", "list", "--name", "project-1", "--tenant", "metal-stack", "--id", want[0].Meta.ID}
-				assertExhaustiveArgs(t, args, "order")
+				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
 			mocks: &client.MetalMockFns{

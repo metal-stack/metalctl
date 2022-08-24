@@ -24,16 +24,16 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
-		BinaryName:        binaryName,
-		GenericCLI:        genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w).WithFS(c.fs),
-		Singular:          "filesystemlayout",
-		Plural:            "filesystemlayouts",
-		Description:       "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
-		Aliases:           []string{"fsl"},
-		AvailableSortKeys: sorters.FilesystemLayoutSortKeys(),
-		ValidArgsFn:       c.comp.FilesystemLayoutListCompletion,
-		DescribePrinter:   func() printers.Printer { return c.describePrinter },
-		ListPrinter:       func() printers.Printer { return c.listPrinter },
+		BinaryName:      binaryName,
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w).WithFS(c.fs),
+		Singular:        "filesystemlayout",
+		Plural:          "filesystemlayouts",
+		Description:     "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",
+		Aliases:         []string{"fsl"},
+		Sorter:          sorters.FilesystemLayoutSorter(),
+		ValidArgsFn:     c.comp.FilesystemLayoutListCompletion,
+		DescribePrinter: func() printers.Printer { return c.describePrinter },
+		ListPrinter:     func() printers.Printer { return c.listPrinter },
 	}
 
 	tryCmd := &cobra.Command{
@@ -80,11 +80,6 @@ func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 
 func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.FilesystemLayoutSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

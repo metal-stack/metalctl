@@ -9,9 +9,9 @@ metalctl image list [flags]
 ### Options
 
 ```
-  -h, --help            help for list
-      --order strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: classification|description|expiration|id|name
-      --show-usage      show from how many allocated machines every image is used
+  -h, --help              help for list
+      --show-usage        show from how many allocated machines every image is used
+      --sort-by strings   sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: classification|description|expiration|id|name
 ```
 
 ### Options inherited from parent commands

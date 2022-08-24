@@ -28,7 +28,7 @@ func newProjectCmd(c *config) *cobra.Command {
 		Singular:             "project",
 		Plural:               "projects",
 		Description:          "a project belongs to a tenant and groups together entities in metal-stack.",
-		AvailableSortKeys:    sorters.ProjectSortKeys(),
+		Sorter:               sorters.ProjectSorter(),
 		ValidArgsFn:          c.comp.ProjectListCompletion,
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
@@ -71,11 +71,6 @@ func (c projectCmd) List() ([]*models.V1ProjectResponse, error) {
 		Name:     viper.GetString("name"),
 		TenantID: viper.GetString("tenant"),
 	}), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sorters.ProjectSort(resp.Payload)
 	if err != nil {
 		return nil, err
 	}

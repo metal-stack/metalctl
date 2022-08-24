@@ -9,10 +9,10 @@ metalctl partition capacity [flags]
 ### Options
 
 ```
-  -h, --help            help for capacity
-      --id string       filter on partition id. [optional]
-      --order strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
-      --size string     filter on size id. [optional]
+  -h, --help              help for capacity
+      --id string         filter on partition id. [optional]
+      --size string       filter on size id. [optional]
+      --sort-by strings   order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
 ```
 
 ### Options inherited from parent commands
