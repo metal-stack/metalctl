@@ -1,15 +1,16 @@
-## metalctl network
+## metalctl network destinationprefix add
 
-manage network entities
+add a destination prefix to a network
 
-### Synopsis
-
-networks can be attached to a machine or firewall such that they can communicate with each other.
+```
+metalctl network destinationprefix add <networkid> [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for network
+      --destinationprefix string   destination prefix to add.
+  -h, --help                       help for add
 ```
 
 ### Options inherited from parent commands
@@ -42,17 +43,5 @@ networks can be attached to a machine or firewall such that they can communicate
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl network allocate](metalctl_network_allocate.md)	 - allocate a network
-* [metalctl network apply](metalctl_network_apply.md)	 - applies one or more networks from a given file
-* [metalctl network create](metalctl_network_create.md)	 - creates the network
-* [metalctl network delete](metalctl_network_delete.md)	 - deletes the network
-* [metalctl network describe](metalctl_network_describe.md)	 - describes the network
 * [metalctl network destinationprefix](metalctl_network_destinationprefix.md)	 - destination prefix management of a network
-* [metalctl network edit](metalctl_network_edit.md)	 - edit the network through an editor and update
-* [metalctl network free](metalctl_network_free.md)	 - free a network
-* [metalctl network ip](metalctl_network_ip.md)	 - manage ip entities
-* [metalctl network list](metalctl_network_list.md)	 - list all networks
-* [metalctl network prefix](metalctl_network_prefix.md)	 - prefix management of a network
-* [metalctl network update](metalctl_network_update.md)	 - updates the network
 

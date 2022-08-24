@@ -137,6 +137,29 @@ func newNetworkCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
+	destinationPrefixCmd := &cobra.Command{
+		Use:   "destinationprefix",
+		Short: "destination prefix management of a network",
+	}
+
+	destinationPrefixAddCmd := &cobra.Command{
+		Use:   "add <networkid>",
+		Short: "add a destination prefix to a network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.networkDestinationPrefixAdd(args)
+		},
+		ValidArgsFunction: c.comp.NetworkListCompletion,
+	}
+
+	destinationPrefixRemoveCmd := &cobra.Command{
+		Use:   "remove <networkid>",
+		Short: "remove a destination prefix from a network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.networkDestinationPrefixRemove(args)
+		},
+		ValidArgsFunction: c.comp.NetworkListCompletion,
+	}
+
 	allocateCmd.Flags().StringP("name", "n", "", "name of the network to create. [required]")
 	allocateCmd.Flags().StringP("partition", "", "", "partition where this network should exist. [required]")
 	allocateCmd.Flags().StringP("project", "", "", "partition where this network should exist. [required]")
@@ -156,12 +179,18 @@ func newNetworkCmd(c *config) *cobra.Command {
 	prefixCmd.AddCommand(prefixAddCmd)
 	prefixCmd.AddCommand(prefixRemoveCmd)
 
+	destinationPrefixAddCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to add.")
+	destinationPrefixRemoveCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to remove.")
+	destinationPrefixCmd.AddCommand(destinationPrefixAddCmd)
+	destinationPrefixCmd.AddCommand(destinationPrefixRemoveCmd)
+
 	return genericcli.NewCmds(
 		cmdsConfig,
 		newIPCmd(c),
 		allocateCmd,
 		freeCmd,
 		prefixCmd,
+		destinationPrefixCmd,
 	)
 }
 
@@ -399,6 +428,68 @@ func (c *networkCmd) networkPrefixRemove(args []string) error {
 	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
 		ID:       net.ID,
 		Prefixes: newPrefixes,
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.describePrinter.Print(resp.Payload)
+}
+
+func (c *networkCmd) networkDestinationPrefixAdd(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	net, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	net.Destinationprefixes = append(net.Destinationprefixes, viper.GetString("destinationprefix"))
+
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
+		ID:                  net.ID,
+		Destinationprefixes: net.Destinationprefixes,
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.describePrinter.Print(resp.Payload)
+}
+
+func (c *networkCmd) networkDestinationPrefixRemove(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	net, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	destinationprefix := viper.GetString("destinationprefix")
+
+	var newDestinationPrefixes []string
+	found := false
+	for _, p := range net.Destinationprefixes {
+		if p == destinationprefix {
+			found = true
+			continue
+		}
+		newDestinationPrefixes = append(newDestinationPrefixes, p)
+	}
+
+	if !found {
+		return fmt.Errorf("network does not have given destination prefix: %s", destinationprefix)
+	}
+
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
+		ID:                  net.ID,
+		Destinationprefixes: newDestinationPrefixes,
 	}), nil)
 	if err != nil {
 		return err
