@@ -65,10 +65,12 @@ func newRootCmd(c *config) *cobra.Command {
 		Short:        "a cli to manage entities in the metal-stack api",
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			viper.SetFs(c.fs)
 			must(viper.BindPFlags(cmd.Flags()))
 			must(viper.BindPFlags(cmd.PersistentFlags()))
 			// we cannot instantiate the config earlier because
 			// cobra flags do not work so early in the game
+			must(readConfigFile())
 			must(initConfigWithViperCtx(c))
 		},
 	}
@@ -130,12 +132,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newLogoutCmd(c))
 	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
-
 	rootCmd.AddCommand(newUpdateCmd())
-
-	cobra.OnInitialize(func() {
-		must(readConfigFile())
-	})
 
 	return rootCmd
 }
@@ -202,7 +199,7 @@ func initConfigWithViperCtx(c *config) error {
 	if hmacKey == "" && ctx.HMAC != nil {
 		hmacKey = *ctx.HMAC
 	}
-	apiToken := viper.GetString("apitoken")
+	apiToken := viper.GetString("api-token")
 
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
