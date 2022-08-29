@@ -9,7 +9,7 @@ import (
 	"golang.org/x/term"
 )
 
-// SSHClient opens a interactive ssh session to the host on port with user, authenticated by the key.
+// SSHClient opens an interactive ssh session to the host on port with user, authenticated by the key.
 func SSHClient(user, keyfile, host string, port int) error {
 	publicKeyAuthMethod, err := publicKey(keyfile)
 	if err != nil {

@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/metal-stack/metal-go/api/client/machine"
+	"github.com/metal-stack/metal-go/api/client/vpn"
 	"os"
 	"os/signal"
 	"syscall"
@@ -205,20 +208,20 @@ func (c *config) firewallSSH(args []string) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to retrieve firewall details: %w", err)
 	}
-	projectId := *machineGetResp.Payload.Allocation.Project
-	fmt.Println(projectId)
+	projectID := *machineGetResp.Payload.Allocation.Project
 
-	// TODO: get VPN info
+	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithPid(projectID), nil)
+	if err != nil {
+		return fmt.Errorf("failed to get VPN auth key: %w", err)
+	}
 
 	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
 	if err != nil {
 		return fmt.Errorf("failed to initialize Docker client: %w", err)
 	}
-	ctx := context.Background()
 
 	// Deploy tailscaled
-	// docker run -d --name=tailscaled -v /var/lib:/var/lib -v /dev/net/tun:/dev/net/tun
-	// --network=host --privileged tailscale/tailscale tailscaled
+	ctx := context.Background()
 	containerConfig := &container.Config{
 		Image: "tailscale/tailscale",
 		Cmd:   []string{"tailscaled"},
@@ -261,7 +264,7 @@ func (c *config) firewallSSH(args []string) (err error) {
 
 	// Exec tailscale up
 	execConfig := types.ExecConfig{
-		Cmd: []string{"tailscale", "up", "--auth-key=", "--login-server="},
+		Cmd: []string{"tailscale", "up", "--auth-key=" + *authKeyResp.Payload.AuthKey, "--login-server=" + *authKeyResp.Payload.Address},
 	}
 	execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
 	if err != nil {
@@ -275,11 +278,79 @@ func (c *config) firewallSSH(args []string) (err error) {
 		)
 	}
 
-	// ssh
+	// Connect to the firewall via SSH
+	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *machineGetResp.Payload.Allocation.Hostname)
+	if err != nil {
+		return fmt.Errorf("failed to get Firewall VPN address")
+	}
+
+	err = SSHClient("metal", viper.GetString("identity"), firewallVPNAddr, 22)
+	if err != nil {
+		return fmt.Errorf("machine console error:%w", err)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	<-sigs
 
 	return nil
+}
+
+// TailscaleStatus and TailscalePeerStatus structs are used to parse VPN IP for the machine
+type TailscaleStatus struct {
+	Peer map[string]*TailscalePeerStatus
+}
+
+type TailscalePeerStatus struct {
+	HostName     string
+	TailscaleIPs []string
+}
+
+func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
+	// Wait until Peers info is filled
+	for {
+		execConfig := types.ExecConfig{
+			Cmd:          []string{"tailscale", "status", "--json"},
+			AttachStdout: true,
+		}
+		execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+		if err != nil {
+			return "", fmt.Errorf("failed to create tailscale status exec: %w", err)
+		}
+		resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
+		if err != nil {
+			return "", fmt.Errorf("failed to attach to tailscale status exec: %w", err)
+		}
+
+		var data string
+		s := bufio.NewScanner(resp.Reader)
+		for s.Scan() {
+			data += s.Text()
+		}
+
+		// Skipping noise at the beginning
+		var i int
+		for _, c := range data {
+			if c == '{' {
+				break
+			}
+			i++
+		}
+		ts := &TailscaleStatus{}
+		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
+			return "", fmt.Errorf("failed to parse tailscale status: %w", err)
+		}
+
+		if ts.Peer != nil {
+			for _, p := range ts.Peer {
+				if p.HostName == fwName {
+					return p.TailscaleIPs[0], nil
+				}
+			}
+
+			return "", fmt.Errorf("failed to find IP for specified firewall")
+		}
+	}
+
+	return
 }
