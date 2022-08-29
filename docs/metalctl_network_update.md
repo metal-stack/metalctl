@@ -9,17 +9,22 @@ metalctl network update [flags]
 ### Options
 
 ```
-  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
-                      
-                      Example:
-                      $ metalctl network describe network-1 -o yaml > network.yaml
-                      $ vi network.yaml
-                      $ # either via stdin
-                      $ cat network.yaml | metalctl network update -f -
-                      $ # or via file
-                      $ metalctl network update -f network.yaml
-                      	
-  -h, --help          help for update
+      --add-destinationprefixes strings      destination prefixes to be added to the network [optional]
+      --add-prefixes strings                 prefixes to be added to the network [optional]
+      --description string                   the description of the network [optional]
+  -f, --file string                          filename of the create or update request in yaml format, or - for stdin.
+                                             
+                                             Example:
+                                             $ metalctl network describe network-1 -o yaml > network.yaml
+                                             $ vi network.yaml
+                                             $ # either via stdin
+                                             $ cat network.yaml | metalctl network update -f -
+                                             $ # or via file
+                                             $ metalctl network update -f network.yaml
+                                             	
+  -h, --help                                 help for update
+      --remove-destinationprefixes strings   destination prefixes to be removed from the network [optional]
+      --remove-prefixes strings              prefixes to be removed from the network [optional]
 ```
 
 ### Options inherited from parent commands

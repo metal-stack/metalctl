@@ -253,6 +253,35 @@ nw1 network-1
 			want: network1,
 		},
 		{
+			name: "update",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *want.ID,
+					"--description", want.Description,
+					"--add-prefixes", "prefix",
+					"--remove-prefixes", "z",
+					"--add-destinationprefixes", "dest",
+					"--remove-destinationprefixes", "z",
+				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					networkToUpdate := network1
+					networkToUpdate.Prefixes = []string{"z"}
+					networkToUpdate.Destinationprefixes = []string{"z"}
+					// networkToUpdate.Description = "Old description"
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: networkToUpdate,
+					}, nil)
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: network1,
+		},
+		{
 			name: "create from file",
 			cmd: func(want *models.V1NetworkResponse) []string {
 				return []string{"network", "create", "-f", "/file.yaml"}

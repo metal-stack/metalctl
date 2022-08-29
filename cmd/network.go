@@ -12,6 +12,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slices"
 )
 
 type networkCmd struct {
@@ -32,6 +33,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Plural:               "networks",
 		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",
 		CreateRequestFromCLI: w.createRequestFromCLI,
+		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		Sorter:               sorters.NetworkSorter(),
 		ValidArgsFn:          c.comp.NetworkListCompletion,
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
@@ -67,6 +69,13 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
 			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+		},
+		UpdateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("description", "", "the description of the network [optional]")
+			cmd.Flags().StringSlice("add-prefixes", []string{}, "prefixes to be added to the network [optional]")
+			cmd.Flags().StringSlice("remove-prefixes", []string{}, "prefixes to be removed from the network [optional]")
+			cmd.Flags().StringSlice("add-destinationprefixes", []string{}, "destination prefixes to be added to the network [optional]")
+			cmd.Flags().StringSlice("remove-destinationprefixes", []string{}, "destination prefixes to be removed from the network [optional]")
 		},
 	}
 
@@ -370,6 +379,88 @@ func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1Netwo
 
 func (c networkChildCRUD) ToUpdate(r *models.V1NetworkResponse) (any, error) {
 	return nil, fmt.Errorf("not implemented for child networks, use network update")
+}
+
+func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdateRequest, error) {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
+	c.log.Infow("network command updateRequestFromCLI", "current network", resp)
+
+	addPrefixes := viper.GetStringSlice("add-prefixes")
+	removePrefixes := viper.GetStringSlice("remove-prefixes")
+	addDestinationprefixes := viper.GetStringSlice("add-destinationprefixes")
+	removeDestinationprefixes := viper.GetStringSlice("remove-destinationprefixes")
+
+	c.log.Infow("network command updateRequestFromCLI, update requests:",
+		"add-prefixes", addPrefixes,
+		"remove-prefixes", removePrefixes,
+		"add-destinationprefixes", addDestinationprefixes,
+		"remove-destinationprefixes", removeDestinationprefixes,
+	)
+
+	for _, removePrefix := range removePrefixes {
+		if !slices.Contains(resp.Prefixes, removePrefix) {
+			return nil, fmt.Errorf("cannot remove prefix because it is currently not present: %s", removePrefix)
+		}
+	}
+
+	for _, addPrefix := range addPrefixes {
+		if slices.Contains(resp.Prefixes, addPrefix) {
+			return nil, fmt.Errorf("cannot add prefix because it is already present: %s", addPrefix)
+		}
+	}
+
+	newPrefixes := addPrefixes
+	for _, p := range resp.Prefixes {
+		if slices.Contains(removePrefixes, p) {
+			continue
+		}
+		newPrefixes = append(newPrefixes, p)
+	}
+
+	for _, removeDestinationprefix := range removeDestinationprefixes {
+		if !slices.Contains(resp.Destinationprefixes, removeDestinationprefix) {
+			return nil, fmt.Errorf("cannot remove destination prefix because it is currently not present: %s", removeDestinationprefix)
+		}
+	}
+
+	for _, addDestinationprefix := range addDestinationprefixes {
+		if slices.Contains(resp.Destinationprefixes, addDestinationprefix) {
+			return nil, fmt.Errorf("cannot add destination prefix because it is already present: %s", addDestinationprefix)
+		}
+	}
+
+	newDestinationprefixes := addDestinationprefixes
+	for _, d := range resp.Destinationprefixes {
+		if slices.Contains(removeDestinationprefixes, d) {
+			continue
+		}
+		newDestinationprefixes = append(newDestinationprefixes, d)
+	}
+
+	c.log.Infow("network command updateRequestFromCLI", "network update request",
+		&models.V1NetworkUpdateRequest{
+			ID:                  pointer.Pointer(id),
+			Description:         viper.GetString("description"),
+			Prefixes:            newPrefixes,
+			Destinationprefixes: newDestinationprefixes,
+		},
+	)
+
+	return &models.V1NetworkUpdateRequest{
+		ID:                  pointer.Pointer(id),
+		Description:         viper.GetString("description"),
+		Prefixes:            newPrefixes,
+		Destinationprefixes: newDestinationprefixes,
+	}, nil
 }
 
 // non-generic command handling
