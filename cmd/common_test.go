@@ -128,6 +128,15 @@ func mustMarshalToMultiYAML[R any](t *testing.T, data []R) []byte {
 	return []byte(strings.Join(parts, "\n---\n"))
 }
 
+func mustJsonDeepCopy[O any](t *testing.T, object O) O {
+	raw, err := json.Marshal(&object)
+	require.NoError(t, err)
+	var copy O
+	err = json.Unmarshal(raw, &copy)
+	require.NoError(t, err)
+	return copy
+}
+
 func outputFormats[R any](c *test[R]) []outputFormat[R] {
 	var formats []outputFormat[R]
 
