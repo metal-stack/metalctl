@@ -22,7 +22,7 @@ func SSHClient(user, keyfile, host string, port int) error {
 		},
 		//nolint:gosec
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         2 * time.Second,
+		Timeout:         10 * time.Second,
 	}
 
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
