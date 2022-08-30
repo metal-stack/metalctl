@@ -34,7 +34,7 @@ var defaultCtx = Context{
 
 func GetContexts() (*Contexts, error) {
 	var ctxs Contexts
-	cfgFile := viper.GetViper().ConfigFileUsed()
+	cfgFile := viper.ConfigFileUsed()
 	c, err := os.ReadFile(cfgFile)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read config, please create a config.yaml in either: /etc/metalctl/, $HOME/.metalctl/ or in the current directory, see metalctl ctx -h for examples")
@@ -48,7 +48,7 @@ func WriteContexts(ctxs *Contexts) error {
 	if err != nil {
 		return err
 	}
-	cfgFile := viper.GetViper().ConfigFileUsed()
+	cfgFile := viper.ConfigFileUsed()
 	err = os.WriteFile(cfgFile, c, 0600)
 	if err != nil {
 		return err

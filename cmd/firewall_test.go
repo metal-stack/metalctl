@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -301,8 +300,6 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-
-				fmt.Println(args)
 				assertExhaustiveArgs(t, args, "file")
 				return args
 			},

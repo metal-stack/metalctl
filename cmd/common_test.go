@@ -37,6 +37,8 @@ type test[R any] struct {
 	fsMocks func(fs afero.Fs, want R)
 	cmd     func(want R) []string
 
+	disableMockClient bool // can switch off mock client creation
+
 	wantErr       error
 	want          R       // for json and yaml
 	wantTable     *string // for table printer
@@ -91,14 +93,22 @@ func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.B
 		c.fsMocks(fs, c.want)
 	}
 
-	var out bytes.Buffer
+	var (
+		out    bytes.Buffer
+		config = &config{
+			fs:     fs,
+			client: client,
+			out:    &out,
+			log:    zaptest.NewLogger(t).Sugar(),
+			comp:   &completion.Completion{},
+		}
+	)
 
-	return mock, &out, &config{
-		fs:     fs,
-		out:    &out,
-		client: client,
-		log:    zaptest.NewLogger(t).Sugar(),
+	if c.disableMockClient {
+		config.client = nil
 	}
+
+	return mock, &out, config
 }
 
 func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
