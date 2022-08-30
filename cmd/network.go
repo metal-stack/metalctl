@@ -12,7 +12,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"golang.org/x/exp/slices"
+	"k8s.io/kube-openapi/pkg/util/sets"
 )
 
 type networkCmd struct {
@@ -123,52 +123,6 @@ func newNetworkCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
 
-	prefixCmd := &cobra.Command{
-		Use:   "prefix",
-		Short: "prefix management of a network",
-	}
-
-	prefixAddCmd := &cobra.Command{
-		Use:   "add <networkid>",
-		Short: "add a prefix to a network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkPrefixAdd(args)
-		},
-		ValidArgsFunction: c.comp.NetworkListCompletion,
-	}
-
-	prefixRemoveCmd := &cobra.Command{
-		Use:   "remove <networkid>",
-		Short: "remove a prefix from a network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkPrefixRemove(args)
-		},
-		ValidArgsFunction: c.comp.NetworkListCompletion,
-	}
-
-	destinationPrefixCmd := &cobra.Command{
-		Use:   "destinationprefix",
-		Short: "destination prefix management of a network",
-	}
-
-	destinationPrefixAddCmd := &cobra.Command{
-		Use:   "add <networkid>",
-		Short: "add a destination prefix to a network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkDestinationPrefixAdd(args)
-		},
-		ValidArgsFunction: c.comp.NetworkListCompletion,
-	}
-
-	destinationPrefixRemoveCmd := &cobra.Command{
-		Use:   "remove <networkid>",
-		Short: "remove a destination prefix from a network",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.networkDestinationPrefixRemove(args)
-		},
-		ValidArgsFunction: c.comp.NetworkListCompletion,
-	}
-
 	allocateCmd.Flags().StringP("name", "n", "", "name of the network to create. [required]")
 	allocateCmd.Flags().StringP("partition", "", "", "partition where this network should exist. [required]")
 	allocateCmd.Flags().StringP("project", "", "", "partition where this network should exist. [required]")
@@ -183,23 +137,11 @@ func newNetworkCmd(c *config) *cobra.Command {
 	must(allocateCmd.MarkFlagRequired("project"))
 	must(allocateCmd.MarkFlagRequired("partition"))
 
-	prefixAddCmd.Flags().StringP("prefix", "", "", "prefix to add.")
-	prefixRemoveCmd.Flags().StringP("prefix", "", "", "prefix to remove.")
-	prefixCmd.AddCommand(prefixAddCmd)
-	prefixCmd.AddCommand(prefixRemoveCmd)
-
-	destinationPrefixAddCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to add.")
-	destinationPrefixRemoveCmd.Flags().StringP("destinationprefix", "", "", "destination prefix to remove.")
-	destinationPrefixCmd.AddCommand(destinationPrefixAddCmd)
-	destinationPrefixCmd.AddCommand(destinationPrefixRemoveCmd)
-
 	return genericcli.NewCmds(
 		cmdsConfig,
 		newIPCmd(c),
 		allocateCmd,
 		freeCmd,
-		prefixCmd,
-		destinationPrefixCmd,
 	)
 }
 
@@ -294,12 +236,13 @@ func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreat
 
 func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdateRequest {
 	return &models.V1NetworkUpdateRequest{
-		Description: r.Description,
-		ID:          r.ID,
-		Labels:      r.Labels,
-		Name:        r.Name,
-		Prefixes:    r.Prefixes,
-		Shared:      r.Shared,
+		Description:         r.Description,
+		Destinationprefixes: r.Destinationprefixes,
+		ID:                  r.ID,
+		Labels:              r.Labels,
+		Name:                r.Name,
+		Prefixes:            r.Prefixes,
+		Shared:              r.Shared,
 	}
 }
 
@@ -392,199 +335,57 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		return nil, err
 	}
 
-	c.log.Infow("network command updateRequestFromCLI", "current network", resp)
-
-	addPrefixes := viper.GetStringSlice("add-prefixes")
-	removePrefixes := viper.GetStringSlice("remove-prefixes")
-	addDestinationprefixes := viper.GetStringSlice("add-destinationprefixes")
-	removeDestinationprefixes := viper.GetStringSlice("remove-destinationprefixes")
-
-	c.log.Infow("network command updateRequestFromCLI, update requests:",
-		"add-prefixes", addPrefixes,
-		"remove-prefixes", removePrefixes,
-		"add-destinationprefixes", addDestinationprefixes,
-		"remove-destinationprefixes", removeDestinationprefixes,
+	var (
+		ur = &models.V1NetworkUpdateRequest{
+			ID: pointer.Pointer(id),
+		}
+		addPrefixes                = sets.NewString(viper.GetStringSlice("add-prefixes")...)
+		removePrefixes             = sets.NewString(viper.GetStringSlice("remove-prefixes")...)
+		addDestinationprefixes     = sets.NewString(viper.GetStringSlice("add-destinationprefixes")...)
+		removeDestinationprefixes  = sets.NewString(viper.GetStringSlice("remove-destinationprefixes")...)
+		currentPrefixes            = sets.NewString(resp.Prefixes...)
+		currentDestinationprefixes = sets.NewString(resp.Destinationprefixes...)
 	)
 
-	for _, removePrefix := range removePrefixes {
-		if !slices.Contains(resp.Prefixes, removePrefix) {
-			return nil, fmt.Errorf("cannot remove prefix because it is currently not present: %s", removePrefix)
+	if viper.IsSet("description") {
+		ur.Description = viper.GetString("description")
+	}
+
+	newPrefixes := sets.NewString(currentPrefixes.List()...)
+	if viper.IsSet("remove-prefixes") {
+		diff := removePrefixes.Difference(currentPrefixes)
+		if diff.Len() > 0 {
+			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", diff.List())
 		}
+		newPrefixes = newPrefixes.Difference(removePrefixes)
 	}
-
-	for _, addPrefix := range addPrefixes {
-		if slices.Contains(resp.Prefixes, addPrefix) {
-			return nil, fmt.Errorf("cannot add prefix because it is already present: %s", addPrefix)
+	if viper.IsSet("add-prefixes") {
+		if currentPrefixes.HasAny(addPrefixes.List()...) {
+			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", addPrefixes.Intersection(currentPrefixes).List())
 		}
+		newPrefixes = newPrefixes.Union(addPrefixes)
+	}
+	if !newPrefixes.Equal(currentPrefixes) {
+		ur.Prefixes = newPrefixes.List()
 	}
 
-	newPrefixes := addPrefixes
-	for _, p := range resp.Prefixes {
-		if slices.Contains(removePrefixes, p) {
-			continue
+	newDestinationprefixes := sets.NewString(currentDestinationprefixes.List()...)
+	if viper.IsSet("remove-destinationprefixes") {
+		diff := removeDestinationprefixes.Difference(currentDestinationprefixes)
+		if diff.Len() > 0 {
+			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", diff.List())
 		}
-		newPrefixes = append(newPrefixes, p)
+		newDestinationprefixes = newDestinationprefixes.Difference(removeDestinationprefixes)
 	}
-
-	for _, removeDestinationprefix := range removeDestinationprefixes {
-		if !slices.Contains(resp.Destinationprefixes, removeDestinationprefix) {
-			return nil, fmt.Errorf("cannot remove destination prefix because it is currently not present: %s", removeDestinationprefix)
+	if viper.IsSet("add-destinationprefixes") {
+		if currentDestinationprefixes.HasAny(addDestinationprefixes.List()...) {
+			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", addDestinationprefixes.Intersection(currentDestinationprefixes).List())
 		}
+		newDestinationprefixes = newDestinationprefixes.Union(addDestinationprefixes)
+	}
+	if !newDestinationprefixes.Equal(currentDestinationprefixes) {
+		ur.Destinationprefixes = newDestinationprefixes.List()
 	}
 
-	for _, addDestinationprefix := range addDestinationprefixes {
-		if slices.Contains(resp.Destinationprefixes, addDestinationprefix) {
-			return nil, fmt.Errorf("cannot add destination prefix because it is already present: %s", addDestinationprefix)
-		}
-	}
-
-	newDestinationprefixes := addDestinationprefixes
-	for _, d := range resp.Destinationprefixes {
-		if slices.Contains(removeDestinationprefixes, d) {
-			continue
-		}
-		newDestinationprefixes = append(newDestinationprefixes, d)
-	}
-
-	c.log.Infow("network command updateRequestFromCLI", "network update request",
-		&models.V1NetworkUpdateRequest{
-			ID:                  pointer.Pointer(id),
-			Description:         viper.GetString("description"),
-			Prefixes:            newPrefixes,
-			Destinationprefixes: newDestinationprefixes,
-		},
-	)
-
-	return &models.V1NetworkUpdateRequest{
-		ID:                  pointer.Pointer(id),
-		Description:         viper.GetString("description"),
-		Prefixes:            newPrefixes,
-		Destinationprefixes: newDestinationprefixes,
-	}, nil
-}
-
-// non-generic command handling
-
-func (c *networkCmd) networkPrefixAdd(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	net, err := c.Get(id)
-	if err != nil {
-		return err
-	}
-
-	net.Prefixes = append(net.Prefixes, viper.GetString("prefix"))
-
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-		ID:       net.ID,
-		Prefixes: net.Prefixes,
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.describePrinter.Print(resp.Payload)
-}
-
-func (c *networkCmd) networkPrefixRemove(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	net, err := c.Get(id)
-	if err != nil {
-		return err
-	}
-
-	prefix := viper.GetString("prefix")
-
-	var newPrefixes []string
-	found := false
-	for _, p := range net.Prefixes {
-		if p == prefix {
-			found = true
-			continue
-		}
-		newPrefixes = append(newPrefixes, p)
-	}
-
-	if !found {
-		return fmt.Errorf("network does not have given prefix: %s", prefix)
-	}
-
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-		ID:       net.ID,
-		Prefixes: newPrefixes,
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.describePrinter.Print(resp.Payload)
-}
-
-func (c *networkCmd) networkDestinationPrefixAdd(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	net, err := c.Get(id)
-	if err != nil {
-		return err
-	}
-
-	net.Destinationprefixes = append(net.Destinationprefixes, viper.GetString("destinationprefix"))
-
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-		ID:                  net.ID,
-		Destinationprefixes: net.Destinationprefixes,
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.describePrinter.Print(resp.Payload)
-}
-
-func (c *networkCmd) networkDestinationPrefixRemove(args []string) error {
-	id, err := genericcli.GetExactlyOneArg(args)
-	if err != nil {
-		return err
-	}
-
-	net, err := c.Get(id)
-	if err != nil {
-		return err
-	}
-
-	destinationprefix := viper.GetString("destinationprefix")
-
-	var newDestinationPrefixes []string
-	found := false
-	for _, p := range net.Destinationprefixes {
-		if p == destinationprefix {
-			found = true
-			continue
-		}
-		newDestinationPrefixes = append(newDestinationPrefixes, p)
-	}
-
-	if !found {
-		return fmt.Errorf("network does not have given destination prefix: %s", destinationprefix)
-	}
-
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-		ID:                  net.ID,
-		Destinationprefixes: newDestinationPrefixes,
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.describePrinter.Print(resp.Payload)
+	return ur, nil
 }

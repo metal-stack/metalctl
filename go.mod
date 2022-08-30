@@ -24,6 +24,7 @@ require (
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea
 )
 
 require (
