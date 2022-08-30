@@ -52,6 +52,5 @@ networks can be attached to a machine or firewall such that they can communicate
 * [metalctl network free](metalctl_network_free.md)	 - free a network
 * [metalctl network ip](metalctl_network_ip.md)	 - manage ip entities
 * [metalctl network list](metalctl_network_list.md)	 - list all networks
-* [metalctl network prefix](metalctl_network_prefix.md)	 - prefix management of a network
 * [metalctl network update](metalctl_network_update.md)	 - updates the network
 

@@ -9,7 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.24.1
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/google/go-cmp v0.5.8
-	github.com/metal-stack/metal-go v0.19.1-0.20220816081221-d9ab8b98e532
+	github.com/metal-stack/metal-go v0.19.2
 	github.com/metal-stack/metal-lib v0.11.0
 	github.com/metal-stack/updater v1.1.3
 	github.com/metal-stack/v v1.0.3
@@ -24,6 +24,7 @@ require (
 	golang.org/x/exp v0.0.0-20220823124025-807a23277127
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035
 	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea
 )
 
 require (

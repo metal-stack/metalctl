@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -253,6 +254,41 @@ nw1 network-1
 			want: network1,
 		},
 		{
+			name: "update",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *want.ID,
+					"--description", want.Description,
+					"--add-prefixes", "prefix",
+					"--remove-prefixes", "a,b",
+					"--add-destinationprefixes", "dest",
+					"--remove-destinationprefixes", "y,z",
+				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					networkToUpdate := mustJsonDeepCopy(t, network1)
+					networkToUpdate.Prefixes = []string{"a", "b"}
+					networkToUpdate.Destinationprefixes = []string{"y", "z"}
+					networkToUpdate.Description = "Old description"
+
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: networkToUpdate,
+					}, nil)
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
+						ID:                  network1.ID,
+						Description:         network1.Description,
+						Destinationprefixes: network1.Destinationprefixes,
+						Prefixes:            network1.Prefixes,
+					})), nil).Return(&network.UpdateNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: network1,
+		},
+		{
 			name: "create from file",
 			cmd: func(want *models.V1NetworkResponse) []string {
 				return []string{"network", "create", "-f", "/file.yaml"}
@@ -285,6 +321,74 @@ nw1 network-1
 				},
 			},
 			want: network1,
+		},
+		{
+			name: "cannot remove unpresent prefix",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *network1.ID,
+					"--remove-prefixes", "x,y,z",
+				}
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			wantErr: fmt.Errorf("cannot remove prefixes because they are currently not present: [x y z]"),
+		},
+		{
+			name: "cannot add prefix that is already present",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *network1.ID,
+					"--add-prefixes", strings.Join(network1.Prefixes, ","),
+				}
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			wantErr: fmt.Errorf("cannot add prefixes because they are already present: %s", network1.Prefixes),
+		},
+		{
+			name: "cannot remove unpresent destination prefix",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *network1.ID,
+					"--remove-destinationprefixes", "x,y,z",
+				}
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			wantErr: fmt.Errorf("cannot remove destination prefixes because they are currently not present: [x y z]"),
+		},
+		{
+			name: "cannot add destination prefix that is already present",
+			cmd: func(want *models.V1NetworkResponse) []string {
+				args := []string{"network", "update", *network1.ID,
+					"--add-destinationprefixes", strings.Join(network1.Destinationprefixes, ","),
+				}
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("FindNetwork", testcommon.MatchIgnoreContext(t, network.NewFindNetworkParams().WithID(*network1.ID)), nil).Return(&network.FindNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			wantErr: fmt.Errorf("cannot add destination prefixes because they are already present: %s", network1.Destinationprefixes),
 		},
 	}
 	for _, tt := range tests {
