@@ -351,6 +351,4 @@ func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Clien
 			return "", fmt.Errorf("failed to find IP for specified firewall")
 		}
 	}
-
-	return
 }
