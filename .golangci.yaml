@@ -4,7 +4,7 @@ linters-settings:
     # If this list is empty, all structs are tested.
     # Default: []
     include:
-      - '.*\.V1.*UpdateRequest'
+      - '.*\..*UpdateRequest'
     # List of regular expressions to exclude struct packages and names from check.
     # Default: []
     exclude: []
