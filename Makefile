@@ -5,9 +5,16 @@ COMMONDIR := $(or ${COMMONDIR},../builder)
 include $(COMMONDIR)/Makefile.inc
 
 .PHONY: all
-all:: markdown
+all:: markdown lint-structs
 
 release:: all
+
+.PHONY: lint-structs
+lint-structs:
+	@golangci-lint run --enable exhaustruct ./cmd --tests=false || \
+		echo "certain structs in metalctl should always be initialized completely! \
+		 \notherwise fields would be missing in the edit command or – depending on the metal-api implementation – it could empty existing fields \
+		 \n(this was probably caused by new fields in metal-go)"
 
 .PHONY: markdown
 markdown:

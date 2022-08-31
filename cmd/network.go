@@ -56,11 +56,11 @@ func newNetworkCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
-			cmd.Flags().StringP("id", "", "", "ID to filter [optional]")
-			cmd.Flags().StringP("name", "", "", "name to filter [optional]")
-			cmd.Flags().StringP("partition", "", "", "partition to filter [optional]")
-			cmd.Flags().StringP("project", "", "", "project to filter [optional]")
-			cmd.Flags().StringP("parent", "", "", "parent network to filter [optional]")
+			cmd.Flags().String("id", "", "ID to filter [optional]")
+			cmd.Flags().String("name", "", "name to filter [optional]")
+			cmd.Flags().String("partition", "", "partition to filter [optional]")
+			cmd.Flags().String("project", "", "project to filter [optional]")
+			cmd.Flags().String("parent", "", "parent network to filter [optional]")
 			cmd.Flags().BoolP("nat", "", false, "nat to filter [optional]")
 			cmd.Flags().BoolP("privatesuper", "", false, "privatesuper to filter [optional]")
 			cmd.Flags().BoolP("underlay", "", false, "underlay to filter [optional]")
@@ -71,11 +71,14 @@ func newNetworkCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("name", "", "the name of the network [optional]")
 			cmd.Flags().String("description", "", "the description of the network [optional]")
 			cmd.Flags().StringSlice("add-prefixes", []string{}, "prefixes to be added to the network [optional]")
 			cmd.Flags().StringSlice("remove-prefixes", []string{}, "prefixes to be removed from the network [optional]")
 			cmd.Flags().StringSlice("add-destinationprefixes", []string{}, "destination prefixes to be added to the network [optional]")
 			cmd.Flags().StringSlice("remove-destinationprefixes", []string{}, "destination prefixes to be removed from the network [optional]")
+			cmd.Flags().StringSlice("labels", []string{}, "the labels of the network, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\". [optional]")
+			cmd.Flags().Bool("shared", false, "marks a network as shared or not [optional]")
 		},
 	}
 
@@ -335,9 +338,28 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		return nil, err
 	}
 
+	var labels map[string]string
+	if viper.IsSet("labels") {
+		labels, err = genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	shared := resp.Shared
+	if viper.IsSet("shared") {
+		shared = viper.GetBool("shared")
+	}
+
 	var (
 		ur = &models.V1NetworkUpdateRequest{
-			ID: pointer.Pointer(id),
+			Description:         viper.GetString("description"),
+			Destinationprefixes: nil,
+			ID:                  pointer.Pointer(id),
+			Labels:              labels,
+			Name:                viper.GetString("name"),
+			Prefixes:            nil,
+			Shared:              shared,
 		}
 		addPrefixes                = sets.NewString(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.NewString(viper.GetStringSlice("remove-prefixes")...)
@@ -346,10 +368,6 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		currentPrefixes            = sets.NewString(resp.Prefixes...)
 		currentDestinationprefixes = sets.NewString(resp.Destinationprefixes...)
 	)
-
-	if viper.IsSet("description") {
-		ur.Description = viper.GetString("description")
-	}
 
 	newPrefixes := sets.NewString(currentPrefixes.List()...)
 	if viper.IsSet("remove-prefixes") {

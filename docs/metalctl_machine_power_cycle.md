@@ -1,6 +1,6 @@
 ## metalctl machine power cycle
 
-power cycle a machine
+power cycle a machine (graceful shutdown)
 
 ### Synopsis
 

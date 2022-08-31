@@ -112,6 +112,15 @@ func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.B
 }
 
 func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
+	assertContainsPrefix := func(ss []string, prefix string) error {
+		for _, s := range ss {
+			if strings.HasPrefix(s, prefix) {
+				return nil
+			}
+		}
+		return fmt.Errorf("not exhaustive: does not contain " + prefix)
+	}
+
 	root := newRootCmd(&config{comp: &completion.Completion{}})
 	cmd, args, err := root.Find(args)
 	require.NoError(t, err)
@@ -120,7 +129,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		if slices.Contains(exclude, f.Name) {
 			return
 		}
-		assert.Contains(t, args, "--"+f.Name, "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+		assert.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
 	})
 }
 

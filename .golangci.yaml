@@ -1,0 +1,10 @@
+linters-settings:
+  exhaustruct:
+    # List of regular expressions to match struct packages and names.
+    # If this list is empty, all structs are tested.
+    # Default: []
+    include:
+      - '.*\..*UpdateRequest'
+    # List of regular expressions to exclude struct packages and names from check.
+    # Default: []
+    exclude: []
