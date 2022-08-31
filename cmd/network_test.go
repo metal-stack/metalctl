@@ -262,6 +262,9 @@ nw1 network-1
 					"--remove-prefixes", "a,b",
 					"--add-destinationprefixes", "dest",
 					"--remove-destinationprefixes", "y,z",
+					fmt.Sprintf("--shared=%t", want.Shared),
+					"--labels", "a=b",
+					"--name", want.Name,
 				}
 				assertExhaustiveArgs(t, args, "file")
 				return args
@@ -278,9 +281,12 @@ nw1 network-1
 					}, nil)
 					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
 						ID:                  network1.ID,
+						Name:                network1.Name,
 						Description:         network1.Description,
 						Destinationprefixes: network1.Destinationprefixes,
 						Prefixes:            network1.Prefixes,
+						Labels:              network1.Labels,
+						Shared:              network1.Shared,
 					})), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)

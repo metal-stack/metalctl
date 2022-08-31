@@ -23,8 +23,11 @@ metalctl network update [flags]
                                              $ metalctl network update -f network.yaml
                                              	
   -h, --help                                 help for update
+      --labels strings                       the labels of the network, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2". [optional]
+      --name string                          the name of the network [optional]
       --remove-destinationprefixes strings   destination prefixes to be removed from the network [optional]
       --remove-prefixes strings              prefixes to be removed from the network [optional]
+      --shared                               marks a network as shared or not [optional]
 ```
 
 ### Options inherited from parent commands

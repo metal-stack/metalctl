@@ -184,7 +184,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 
 	machinePowerCycleCmd := &cobra.Command{
 		Use:   "cycle <machine ID>",
-		Short: "power cycle a machine",
+		Short: "power cycle a machine (graceful shutdown)",
 		Long:  "(soft) cycle the machine power.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerCycle(args)

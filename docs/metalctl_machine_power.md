@@ -40,7 +40,7 @@ manage machine power
 
 * [metalctl machine](metalctl_machine.md)	 - manage machine entities
 * [metalctl machine power bios](metalctl_machine_power_bios.md)	 - boot a machine into BIOS
-* [metalctl machine power cycle](metalctl_machine_power_cycle.md)	 - power cycle a machine
+* [metalctl machine power cycle](metalctl_machine_power_cycle.md)	 - power cycle a machine (graceful shutdown)
 * [metalctl machine power disk](metalctl_machine_power_disk.md)	 - boot a machine from disk
 * [metalctl machine power off](metalctl_machine_power_off.md)	 - power off a machine
 * [metalctl machine power on](metalctl_machine_power_on.md)	 - power on a machine
