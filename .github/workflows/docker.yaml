@@ -51,8 +51,9 @@ jobs:
         args: --build-tags integration -p bugs -p unused --timeout=3m
 
     - name: Lint Structs
-      run: |
-        make lint-structs
+      uses: golangci/golangci-lint-action@v3
+      with:
+        args: --enable exhaustruct ./cmd --tests=false --timeout=3m
 
     - name: Make tag
       run: |
