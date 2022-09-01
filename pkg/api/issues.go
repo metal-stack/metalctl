@@ -12,12 +12,12 @@ import (
 
 const (
 	// IssueSeverityMinor is an issue that needs is informational and should be checked from time to time.
-	IssueSeverityMinor IssueSeverity = iota
+	IssueSeverityMinor IssueSeverity = "minor"
 	// IssueSeverityMajor is an issue where resources are wasted and for that may be good workarounds.
 	// This should be resolved as soon as possible.
-	IssueSeverityMajor IssueSeverity = iota
+	IssueSeverityMajor IssueSeverity = "major"
 	// IssueSeverityCritical is an issue that can lead to disfunction of the system and need to be handled as quickly as possible.
-	IssueSeverityCritical IssueSeverity = iota
+	IssueSeverityCritical IssueSeverity = "critical"
 
 	IssueTypeNoPartition            IssueType = "no-partition"
 	IssueTypeLivelinessDead         IssueType = "liveliness-dead"
@@ -33,7 +33,7 @@ const (
 )
 
 type (
-	IssueSeverity int
+	IssueSeverity string
 	IssueType     string
 
 	// Issue formulates an issue of a machine
@@ -123,6 +123,37 @@ func AllIssueTypes() []IssueType {
 	}
 }
 
+func AllSevereties() []IssueSeverity {
+	return []IssueSeverity{
+		IssueSeverityMinor,
+		IssueSeverityMajor,
+		IssueSeverityCritical,
+	}
+}
+
+func SeverityFromString(input string) (IssueSeverity, error) {
+	switch IssueSeverity(input) {
+	case IssueSeverityCritical:
+		return IssueSeverityCritical, nil
+	case IssueSeverityMajor:
+		return IssueSeverityMajor, nil
+	case IssueSeverityMinor:
+		return IssueSeverityMinor, nil
+	default:
+		return "", fmt.Errorf("unknown issue severity: %s", input)
+	}
+}
+
+func (s IssueSeverity) LowerThan(o IssueSeverity) bool {
+	smap := map[IssueSeverity]int{
+		IssueSeverityCritical: 10,
+		IssueSeverityMajor:    5,
+		IssueSeverityMinor:    0,
+	}
+
+	return smap[s] < smap[o]
+}
+
 func AllIssues() Issues {
 	var (
 		c   = &IssueConfig{}
@@ -148,19 +179,6 @@ func toIssue(i issue) Issue {
 		Description: i.Spec().Description,
 		RefURL:      i.Spec().RefURL,
 		Details:     i.Details(),
-	}
-}
-
-func SeverityFromString(s string) (IssueSeverity, error) {
-	switch strings.ToLower(s) {
-	case "critical":
-		return IssueSeverityCritical, nil
-	case "major":
-		return IssueSeverityMajor, nil
-	case "minor":
-		return IssueSeverityMinor, nil
-	default:
-		return IssueSeverity(0), fmt.Errorf("unknown severity: %s", s)
 	}
 }
 
@@ -215,7 +233,7 @@ func (c *IssueConfig) includeIssue(t IssueType) bool {
 		return false
 	}
 
-	if issue.Spec().Severity < c.Severity {
+	if issue.Spec().Severity.LowerThan(c.Severity) {
 		return false
 	}
 
