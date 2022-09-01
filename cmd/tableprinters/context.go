@@ -1,8 +1,6 @@
 package tableprinters
 
-import (
-	"github.com/metal-stack/metalctl/pkg/api"
-)
+import "github.com/metal-stack/metalctl/pkg/api"
 
 func (t *TablePrinter) ContextTable(data *api.Contexts, wide bool) ([]string, [][]string, error) {
 	var (

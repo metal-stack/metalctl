@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	LastErrorEventRelevant = 7 * 24 * time.Hour
-
 	dot = "●"
 	nbr = " "
 )
