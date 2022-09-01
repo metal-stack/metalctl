@@ -24,7 +24,7 @@ metalctl machine issues [<machine ID>] [flags]
 ### Options
 
 ```
-      --failed-event-threshold duration   issue severity to include [optional] (default 168h0m0s)
+      --failed-event-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
   -h, --help                              help for issues
       --hostname string                   allocation hostname to filter [optional]
       --id string                         ID to filter [optional]
