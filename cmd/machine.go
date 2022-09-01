@@ -359,7 +359,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", cobra.FixedCompletions([]string{"critical", "major", "minor"}, cobra.ShellCompDirectiveNoFileComp)))
-	machineIssuesCmd.Flags().Duration("failed-event-threshold", api.DefaultLastErrorThreshold(), "issue severity to include [optional]")
+	machineIssuesCmd.Flags().Duration("failed-event-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string

@@ -47,29 +47,13 @@ type (
 	// Issues is a list of issues
 	Issues []Issue
 
+	// IssueConfig contains configuration parameters for finding machine issues
 	IssueConfig struct {
 		Machines           []*models.V1MachineIPMIResponse
 		Severity           IssueSeverity
 		Only               []IssueType
 		Omit               []IssueType
 		LastErrorThreshold time.Duration
-	}
-
-	issue interface {
-		// Evaluates whether a given machine has the this issue.
-		// the second argument "ms" is a list of all the other machines, which can be necessary to determine a machine issue.
-		Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool
-		// Spec returns the issue spec of this issue.
-		Spec() *issueSpec
-		// Details returns additional information on the issue after the evaluation.
-		Details() string
-	}
-
-	issueSpec struct {
-		Type        IssueType
-		Severity    IssueSeverity
-		Description string
-		RefURL      string
 	}
 
 	IssueNoPartition            struct{}
@@ -98,6 +82,23 @@ type (
 	}
 	// MachineIssues is map of a machine response to a list of machine issues
 	MachineIssues []*MachineWithIssues
+
+	issue interface {
+		// Evaluates whether a given machine has the this issue.
+		// the second argument "ms" is a list of all the other machines, which can be necessary to determine a machine issue.
+		Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool
+		// Spec returns the issue spec of this issue.
+		Spec() *issueSpec
+		// Details returns additional information on the issue after the evaluation.
+		Details() string
+	}
+
+	issueSpec struct {
+		Type        IssueType
+		Severity    IssueSeverity
+		Description string
+		RefURL      string
+	}
 
 	machineIssueMap map[*models.V1MachineIPMIResponse]Issues
 )
@@ -129,7 +130,7 @@ func AllIssues() Issues {
 	)
 
 	for _, t := range AllIssueTypes() {
-		i, err := c.NewIssueFromType(t)
+		i, err := c.newIssueFromType(t)
 		if err != nil {
 			continue
 		}
@@ -163,7 +164,80 @@ func SeverityFromString(s string) (IssueSeverity, error) {
 	}
 }
 
-func (c *IssueConfig) NewIssueFromType(t IssueType) (issue, error) {
+func (mis MachineIssues) Get(id string) *MachineWithIssues {
+	for _, m := range mis {
+		m := m
+
+		if m.Machine == nil || m.Machine.ID == nil {
+			continue
+		}
+
+		if *m.Machine.ID == id {
+			return m
+		}
+	}
+
+	return nil
+}
+
+func FindIssues(c *IssueConfig) (MachineIssues, error) {
+	res := machineIssueMap{}
+
+	for _, t := range AllIssueTypes() {
+		if !c.includeIssue(t) {
+			continue
+		}
+
+		for _, m := range c.Machines {
+			m := m
+
+			i, err := c.newIssueFromType(t)
+			if err != nil {
+				return nil, err
+			}
+
+			if m.ID == nil {
+				continue
+			}
+
+			if i.Evaluate(m, c.Machines) {
+				res.add(m, toIssue(i))
+			}
+		}
+	}
+
+	return res.toList(), nil
+}
+
+func (c *IssueConfig) includeIssue(t IssueType) bool {
+	issue, err := c.newIssueFromType(t)
+	if err != nil {
+		return false
+	}
+
+	if issue.Spec().Severity < c.Severity {
+		return false
+	}
+
+	for _, o := range c.Omit {
+		if t == o {
+			return false
+		}
+	}
+
+	if len(c.Only) > 0 {
+		for _, o := range c.Only {
+			if t == o {
+				return true
+			}
+		}
+		return false
+	}
+
+	return true
+}
+
+func (c *IssueConfig) newIssueFromType(t IssueType) (issue, error) {
 	switch t {
 	case IssueTypeNoPartition:
 		return &IssueNoPartition{}, nil
@@ -192,79 +266,6 @@ func (c *IssueConfig) NewIssueFromType(t IssueType) (issue, error) {
 	}
 }
 
-func (mis MachineIssues) Get(id string) *MachineWithIssues {
-	for _, m := range mis {
-		m := m
-
-		if m.Machine == nil || m.Machine.ID == nil {
-			continue
-		}
-
-		if *m.Machine.ID == id {
-			return m
-		}
-	}
-
-	return nil
-}
-
-func FindIssues(c *IssueConfig) (MachineIssues, error) {
-	res := machineIssueMap{}
-
-	for _, t := range AllIssueTypes() {
-		if !c.includeIssue(t) {
-			continue
-		}
-
-		for _, m := range c.Machines {
-			m := m
-
-			i, err := c.NewIssueFromType(t)
-			if err != nil {
-				return nil, err
-			}
-
-			if m.ID == nil {
-				continue
-			}
-
-			if i.Evaluate(m, c.Machines) {
-				res.add(m, toIssue(i))
-			}
-		}
-	}
-
-	return res.toList(), nil
-}
-
-func (c *IssueConfig) includeIssue(t IssueType) bool {
-	issue, err := c.NewIssueFromType(t)
-	if err != nil {
-		return false
-	}
-
-	if issue.Spec().Severity < c.Severity {
-		return false
-	}
-
-	for _, o := range c.Omit {
-		if t == o {
-			return false
-		}
-	}
-
-	if len(c.Only) > 0 {
-		for _, o := range c.Only {
-			if t == o {
-				return true
-			}
-		}
-		return false
-	}
-
-	return true
-}
-
 func (mim machineIssueMap) add(m *models.V1MachineIPMIResponse, issue Issue) {
 	issues, ok := mim[m]
 	if !ok {
@@ -291,14 +292,6 @@ func (mim machineIssueMap) toList() MachineIssues {
 	return res
 }
 
-func (i *IssueNoPartition) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return m.Partition == nil
-}
-
-func (i *IssueNoPartition) Details() string {
-	return ""
-}
-
 func (i *IssueNoPartition) Spec() *issueSpec {
 	return &issueSpec{
 		Type:        IssueTypeNoPartition,
@@ -308,8 +301,12 @@ func (i *IssueNoPartition) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueLivelinessDead) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return m.Liveliness != nil && *m.Liveliness == "Dead"
+func (i *IssueNoPartition) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return m.Partition == nil
+}
+
+func (i *IssueNoPartition) Details() string {
+	return ""
 }
 
 func (i *IssueLivelinessDead) Spec() *issueSpec {
@@ -321,12 +318,12 @@ func (i *IssueLivelinessDead) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueLivelinessDead) Details() string {
-	return ""
+func (i *IssueLivelinessDead) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return m.Liveliness != nil && *m.Liveliness == "Dead"
 }
 
-func (i *IssueLivelinessUnknown) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return m.Liveliness != nil && *m.Liveliness == "Unknown"
+func (i *IssueLivelinessDead) Details() string {
+	return ""
 }
 
 func (i *IssueLivelinessUnknown) Spec() *issueSpec {
@@ -338,10 +335,21 @@ func (i *IssueLivelinessUnknown) Spec() *issueSpec {
 	}
 }
 
+func (i *IssueLivelinessUnknown) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return m.Liveliness != nil && *m.Liveliness == "Unknown"
+}
+
 func (i *IssueLivelinessUnknown) Details() string {
 	return ""
 }
 
+func (i *IssueLivelinessNotAvailable) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeLivelinessNotAvailable,
+		Severity:    IssueSeverityMinor,
+		Description: "the machine liveliness is not available",
+	}
+}
 func (i *IssueLivelinessNotAvailable) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
 	if m.Liveliness == nil {
 		return true
@@ -356,20 +364,8 @@ func (i *IssueLivelinessNotAvailable) Evaluate(m *models.V1MachineIPMIResponse, 
 	return !allowed[*m.Liveliness]
 }
 
-func (i *IssueLivelinessNotAvailable) Spec() *issueSpec {
-	return &issueSpec{
-		Type:        IssueTypeLivelinessNotAvailable,
-		Severity:    IssueSeverityMinor,
-		Description: "the machine liveliness is not available",
-	}
-}
-
 func (i *IssueLivelinessNotAvailable) Details() string {
 	return ""
-}
-
-func (i *IssueFailedMachineReclaim) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim)
 }
 
 func (i *IssueFailedMachineReclaim) Spec() *issueSpec {
@@ -381,8 +377,21 @@ func (i *IssueFailedMachineReclaim) Spec() *issueSpec {
 	}
 }
 
+func (i *IssueFailedMachineReclaim) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim)
+}
+
 func (i *IssueFailedMachineReclaim) Details() string {
 	return ""
+}
+
+func (i *IssueCrashLoop) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeCrashLoop,
+		Severity:    IssueSeverityMajor,
+		Description: fmt.Sprintf("machine is in a provisioning crash loop (%s)", Loop),
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#crashloop",
+	}
 }
 
 func (i *IssueCrashLoop) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
@@ -396,17 +405,17 @@ func (i *IssueCrashLoop) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.
 	return false
 }
 
-func (i *IssueCrashLoop) Spec() *issueSpec {
-	return &issueSpec{
-		Type:        IssueTypeCrashLoop,
-		Severity:    IssueSeverityMajor,
-		Description: fmt.Sprintf("machine is in a provisioning crash loop (%s)", Loop),
-		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#crashloop",
-	}
-}
-
 func (i *IssueCrashLoop) Details() string {
 	return ""
+}
+
+func (i *IssueLastEventError) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeLastEventError,
+		Severity:    IssueSeverityMinor,
+		Description: "the machine had an error during the provisioning lifecycle",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#last-event-error",
+	}
 }
 
 func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
@@ -424,21 +433,8 @@ func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, ms []*mo
 	return false
 }
 
-func (i *IssueLastEventError) Spec() *issueSpec {
-	return &issueSpec{
-		Type:        IssueTypeLastEventError,
-		Severity:    IssueSeverityMinor,
-		Description: "the machine had an error during the provisioning lifecycle",
-		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#last-event-error",
-	}
-}
-
 func (i *IssueLastEventError) Details() string {
 	return i.details
-}
-
-func (i *IssueBMCWithoutMAC) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return m.Ipmi != nil && (m.Ipmi.Mac == nil || *m.Ipmi.Mac == "")
 }
 
 func (i *IssueBMCWithoutMAC) Spec() *issueSpec {
@@ -450,12 +446,12 @@ func (i *IssueBMCWithoutMAC) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueBMCWithoutMAC) Details() string {
-	return ""
+func (i *IssueBMCWithoutMAC) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return m.Ipmi != nil && (m.Ipmi.Mac == nil || *m.Ipmi.Mac == "")
 }
 
-func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
-	return m.Ipmi != nil && (m.Ipmi.Address == nil || *m.Ipmi.Address == "")
+func (i *IssueBMCWithoutMAC) Details() string {
+	return ""
 }
 
 func (i *IssueBMCWithoutIP) Spec() *issueSpec {
@@ -467,8 +463,21 @@ func (i *IssueBMCWithoutIP) Spec() *issueSpec {
 	}
 }
 
+func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+	return m.Ipmi != nil && (m.Ipmi.Address == nil || *m.Ipmi.Address == "")
+}
+
 func (i *IssueBMCWithoutIP) Details() string {
 	return ""
+}
+
+func (i *IssueASNUniqueness) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeASNUniqueness,
+		Severity:    IssueSeverityMinor,
+		Description: "The ASN is not unique (only impact on firewalls)",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#asn-not-unique",
+	}
 }
 
 func (i *IssueASNUniqueness) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
@@ -552,17 +561,16 @@ func (i *IssueASNUniqueness) Evaluate(m *models.V1MachineIPMIResponse, ms []*mod
 	return true
 }
 
-func (i *IssueASNUniqueness) Spec() *issueSpec {
-	return &issueSpec{
-		Type:        IssueTypeASNUniqueness,
-		Severity:    IssueSeverityMinor,
-		Description: "The ASN is not unique (only impact on firewalls)",
-		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#asn-not-unique",
-	}
-}
-
 func (i *IssueASNUniqueness) Details() string {
 	return i.details
+}
+
+func (i *IssueNonDistinctBMCIP) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeNonDistinctBMCIP,
+		Description: "BMC IP address is not distinct",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#bmc-no-distinct-ip",
+	}
 }
 
 func (i *IssueNonDistinctBMCIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
@@ -597,14 +605,6 @@ func (i *IssueNonDistinctBMCIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*
 	i.details = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", bmcIP, overlaps)
 
 	return true
-}
-
-func (i *IssueNonDistinctBMCIP) Spec() *issueSpec {
-	return &issueSpec{
-		Type:        IssueTypeNonDistinctBMCIP,
-		Description: "BMC IP address is not distinct",
-		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#bmc-no-distinct-ip",
-	}
 }
 
 func (i *IssueNonDistinctBMCIP) Details() string {
