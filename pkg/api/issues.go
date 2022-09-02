@@ -84,7 +84,7 @@ type (
 	MachineIssues []*MachineWithIssues
 
 	issue interface {
-		// Evaluates whether a given machine has the this issue.
+		// Evaluate decides whether a given machine has the machine issue.
 		// the second argument contains additional information that may be required for the issue evaluation
 		Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool
 		// Spec returns the issue spec of this issue.
