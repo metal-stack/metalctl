@@ -75,10 +75,6 @@ type (
 		details string
 	}
 
-	IssueNotEvaluableError struct {
-		err error
-	}
-
 	// MachineWithIssues summarizes a machine with issues
 	MachineWithIssues struct {
 		Machine *models.V1MachineIPMIResponse
