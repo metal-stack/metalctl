@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	// IssueSeverityMinor is an issue that needs is informational and should be checked from time to time.
+	// IssueSeverityMinor is an issue that should be checked from time to time but has no bad effects for the user.
 	IssueSeverityMinor IssueSeverity = "minor"
-	// IssueSeverityMajor is an issue where resources are wasted and for that may be good workarounds.
-	// This should be resolved as soon as possible.
+	// IssueSeverityMajor is an issue where user experience is affected or provider resources are wasted.
+	// overall functionality is still maintained though. major issues should be resolved as soon as possible.
 	IssueSeverityMajor IssueSeverity = "major"
 	// IssueSeverityCritical is an issue that can lead to disfunction of the system and need to be handled as quickly as possible.
 	IssueSeverityCritical IssueSeverity = "critical"
