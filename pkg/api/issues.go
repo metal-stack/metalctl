@@ -75,6 +75,10 @@ type (
 		details string
 	}
 
+	IssueNotEvaluableError struct {
+		err error
+	}
+
 	// MachineWithIssues summarizes a machine with issues
 	MachineWithIssues struct {
 		Machine *models.V1MachineIPMIResponse
@@ -85,8 +89,8 @@ type (
 
 	issue interface {
 		// Evaluates whether a given machine has the this issue.
-		// the second argument "ms" is a list of all the other machines, which can be necessary to determine a machine issue.
-		Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool
+		// the second argument contains additional information that may be required for the issue evaluation
+		Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool
 		// Spec returns the issue spec of this issue.
 		Spec() *issueSpec
 		// Details returns additional information on the issue after the evaluation.
@@ -218,7 +222,7 @@ func FindIssues(c *IssueConfig) (MachineIssues, error) {
 				continue
 			}
 
-			if i.Evaluate(m, c.Machines) {
+			if i.Evaluate(m, c) {
 				res.add(m, toIssue(i))
 			}
 		}
@@ -319,7 +323,7 @@ func (i *IssueNoPartition) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueNoPartition) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueNoPartition) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return m.Partition == nil
 }
 
@@ -336,7 +340,7 @@ func (i *IssueLivelinessDead) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueLivelinessDead) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueLivelinessDead) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return m.Liveliness != nil && *m.Liveliness == "Dead"
 }
 
@@ -353,7 +357,7 @@ func (i *IssueLivelinessUnknown) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueLivelinessUnknown) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueLivelinessUnknown) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return m.Liveliness != nil && *m.Liveliness == "Unknown"
 }
 
@@ -368,7 +372,7 @@ func (i *IssueLivelinessNotAvailable) Spec() *issueSpec {
 		Description: "the machine liveliness is not available",
 	}
 }
-func (i *IssueLivelinessNotAvailable) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueLivelinessNotAvailable) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	if m.Liveliness == nil {
 		return true
 	}
@@ -395,7 +399,7 @@ func (i *IssueFailedMachineReclaim) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueFailedMachineReclaim) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueFailedMachineReclaim) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim)
 }
 
@@ -412,7 +416,7 @@ func (i *IssueCrashLoop) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueCrashLoop) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueCrashLoop) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	if pointer.SafeDeref(pointer.SafeDeref(m.Events).CrashLoop) {
 		if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
 			// Machine which are waiting are not considered to have issues
@@ -436,7 +440,7 @@ func (i *IssueLastEventError) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	if i.lastEventThreshold == 0 {
 		return false
 	}
@@ -464,7 +468,7 @@ func (i *IssueBMCWithoutMAC) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueBMCWithoutMAC) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueBMCWithoutMAC) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return m.Ipmi != nil && (m.Ipmi.Mac == nil || *m.Ipmi.Mac == "")
 }
 
@@ -481,7 +485,7 @@ func (i *IssueBMCWithoutIP) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	return m.Ipmi != nil && (m.Ipmi.Address == nil || *m.Ipmi.Address == "")
 }
 
@@ -498,7 +502,7 @@ func (i *IssueASNUniqueness) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueASNUniqueness) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueASNUniqueness) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	var (
 		machineASNs  = map[int64][]*models.V1MachineIPMIResponse{}
 		overlaps     []string
@@ -519,7 +523,7 @@ func (i *IssueASNUniqueness) Evaluate(m *models.V1MachineIPMIResponse, ms []*mod
 		machineASNs[*n.Asn] = nil
 	}
 
-	for _, machineFromAll := range ms {
+	for _, machineFromAll := range c.Machines {
 		if pointer.SafeDeref(machineFromAll.ID) == pointer.SafeDeref(m.ID) {
 			continue
 		}
@@ -591,7 +595,7 @@ func (i *IssueNonDistinctBMCIP) Spec() *issueSpec {
 	}
 }
 
-func (i *IssueNonDistinctBMCIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*models.V1MachineIPMIResponse) bool {
+func (i *IssueNonDistinctBMCIP) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	if m.Ipmi == nil || m.Ipmi.Address == nil {
 		return false
 	}
@@ -601,7 +605,7 @@ func (i *IssueNonDistinctBMCIP) Evaluate(m *models.V1MachineIPMIResponse, ms []*
 		overlaps []string
 	)
 
-	for _, machineFromAll := range ms {
+	for _, machineFromAll := range c.Machines {
 		if pointer.SafeDeref(machineFromAll.ID) == pointer.SafeDeref(m.ID) {
 			continue
 		}

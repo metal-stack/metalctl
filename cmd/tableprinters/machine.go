@@ -71,7 +71,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		emojis, _ := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, 1*time.Hour)
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
 
 		if wide {
 			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
@@ -83,7 +83,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 	return header, rows, nil
 }
 
-func getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState, lastErrorThreshold time.Duration) (string, string) {
+func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState) (string, string) {
 	var (
 		emojis []string
 		wide   []string
@@ -122,7 +122,7 @@ func getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentPr
 			wide = append(wide, "FailedReclaim")
 		}
 
-		if events.LastErrorEvent != nil && time.Since(time.Time(events.LastErrorEvent.Time)) < lastErrorThreshold {
+		if events.LastErrorEvent != nil && time.Since(time.Time(events.LastErrorEvent.Time)) < t.lastEventErrorThreshold {
 			emojis = append(emojis, api.Exclamation)
 			wide = append(wide, "LastEventErrors")
 		}
@@ -182,7 +182,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			biosVersion = pointer.SafeDeref(bios.Version)
 		}
 
-		emojis, wideEmojis := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, 1*time.Hour)
+		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
 
 		if wide {
 			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition})
@@ -290,7 +290,7 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		emojis, _ := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, api.DefaultLastErrorThreshold())
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
 
 		for _, issue := range machineWithIssues.Issues {
 			text := fmt.Sprintf("%s (%s)", issue.Description, issue.Type)

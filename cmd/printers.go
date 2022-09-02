@@ -28,6 +28,7 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 		}
 		tablePrinter := printers.NewTablePrinter(cfg).WithOut(out)
 		tp.SetPrinter(tablePrinter)
+		tp.SetLastEventErrorThreshold(viper.GetDuration("last-event-error-threshold"))
 		printer = tablePrinter
 	case "template":
 		printer = printers.NewTemplatePrinter(viper.GetString("template")).WithOut(out)

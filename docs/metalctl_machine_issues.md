@@ -24,20 +24,20 @@ metalctl machine issues [<machine ID>] [flags]
 ### Options
 
 ```
-      --failed-event-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
-  -h, --help                              help for issues
-      --hostname string                   allocation hostname to filter [optional]
-      --id string                         ID to filter [optional]
-      --image string                      allocation image to filter [optional]
-      --mac string                        mac to filter [optional]
-      --name string                       allocation name to filter [optional]
-      --omit strings                      issue types to omit [optional]
-      --only strings                      issue types to include [optional]
-      --partition string                  partition to filter [optional]
-      --project string                    allocation project to filter [optional]
-      --severity string                   issue severity to include [optional]
-      --size string                       size to filter [optional]
-      --tags strings                      tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
+  -h, --help                                  help for issues
+      --hostname string                       allocation hostname to filter [optional]
+      --id string                             ID to filter [optional]
+      --image string                          allocation image to filter [optional]
+      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
+      --mac string                            mac to filter [optional]
+      --name string                           allocation name to filter [optional]
+      --omit strings                          issue types to omit [optional]
+      --only strings                          issue types to include [optional]
+      --partition string                      partition to filter [optional]
+      --project string                        allocation project to filter [optional]
+      --severity string                       issue severity to include [optional]
+      --size string                           size to filter [optional]
+      --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 
 ### Options inherited from parent commands

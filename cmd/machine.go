@@ -36,7 +36,7 @@ type machineCmd struct {
 	*config
 }
 
-func (c *machineCmd) listCmdFlags(cmd *cobra.Command) {
+func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDefault time.Duration) {
 	listFlagCompletions := []struct {
 		flagName string
 		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
@@ -57,10 +57,13 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
 	cmd.Flags().String("mac", "", "mac to filter [optional]")
 	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+
 	for _, c := range listFlagCompletions {
 		c := c
 		must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
+
 	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
 }
 
@@ -126,7 +129,7 @@ Once created the machine installation can not be modified anymore.
 			cmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
-			w.listCmdFlags(cmd)
+			w.listCmdFlags(cmd, 1*time.Hour)
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("description", "", "the description of the machine [optional]")
@@ -352,8 +355,8 @@ In case the machine did not register properly a direct ipmi console access is av
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	w.listCmdFlags(machineIpmiCmd)
-	w.listCmdFlags(machineIssuesCmd)
+	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
+	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
 
 	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
@@ -364,7 +367,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		severities = append(severities, string(s))
 	}
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", cobra.FixedCompletions(severities, cobra.ShellCompDirectiveNoFileComp)))
-	machineIssuesCmd.Flags().Duration("failed-event-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
@@ -380,6 +382,8 @@ In case the machine did not register properly a direct ipmi console access is av
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	}))
+
+	machineLogsCmd.Flags().Duration("last-event-error-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
@@ -1116,7 +1120,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 
 	if pointer.SafeDeref(resp.Events).LastErrorEvent != nil {
 		timeSince := time.Since(time.Time(resp.Events.LastErrorEvent.Time))
-		if timeSince > api.DefaultLastErrorThreshold() {
+		if timeSince > viper.GetDuration("last-event-error-threshold") {
 			return nil
 		}
 
@@ -1288,7 +1292,7 @@ func (c *machineCmd) machineIssues(args []string) error {
 		Severity:           severity,
 		Only:               only,
 		Omit:               omit,
-		LastErrorThreshold: viper.GetDuration("failed-event-threshold"),
+		LastErrorThreshold: viper.GetDuration("last-event-error-threshold"),
 	})
 	if err != nil {
 		return err
