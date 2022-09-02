@@ -63,8 +63,7 @@ type (
 	IssueFailedMachineReclaim   struct{}
 	IssueCrashLoop              struct{}
 	IssueLastEventError         struct {
-		lastEventThreshold time.Duration
-		details            string
+		details string
 	}
 	IssueBMCWithoutMAC struct{}
 	IssueBMCWithoutIP  struct{}
@@ -155,13 +154,10 @@ func (s IssueSeverity) LowerThan(o IssueSeverity) bool {
 }
 
 func AllIssues() Issues {
-	var (
-		c   = &IssueConfig{}
-		res Issues
-	)
+	var res Issues
 
 	for _, t := range AllIssueTypes() {
-		i, err := c.newIssueFromType(t)
+		i, err := newIssueFromType(t)
 		if err != nil {
 			continue
 		}
@@ -209,7 +205,7 @@ func FindIssues(c *IssueConfig) (MachineIssues, error) {
 		for _, m := range c.Machines {
 			m := m
 
-			i, err := c.newIssueFromType(t)
+			i, err := newIssueFromType(t)
 			if err != nil {
 				return nil, err
 			}
@@ -228,7 +224,7 @@ func FindIssues(c *IssueConfig) (MachineIssues, error) {
 }
 
 func (c *IssueConfig) includeIssue(t IssueType) bool {
-	issue, err := c.newIssueFromType(t)
+	issue, err := newIssueFromType(t)
 	if err != nil {
 		return false
 	}
@@ -255,7 +251,7 @@ func (c *IssueConfig) includeIssue(t IssueType) bool {
 	return true
 }
 
-func (c *IssueConfig) newIssueFromType(t IssueType) (issue, error) {
+func newIssueFromType(t IssueType) (issue, error) {
 	switch t {
 	case IssueTypeNoPartition:
 		return &IssueNoPartition{}, nil
@@ -270,7 +266,7 @@ func (c *IssueConfig) newIssueFromType(t IssueType) (issue, error) {
 	case IssueTypeCrashLoop:
 		return &IssueCrashLoop{}, nil
 	case IssueTypeLastEventError:
-		return &IssueLastEventError{lastEventThreshold: c.LastErrorThreshold}, nil
+		return &IssueLastEventError{}, nil
 	case IssueTypeBMCWithoutMAC:
 		return &IssueBMCWithoutMAC{}, nil
 	case IssueTypeBMCWithoutIP:
@@ -437,13 +433,13 @@ func (i *IssueLastEventError) Spec() *issueSpec {
 }
 
 func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
-	if i.lastEventThreshold == 0 {
+	if c.LastErrorThreshold == 0 {
 		return false
 	}
 
 	if pointer.SafeDeref(m.Events).LastErrorEvent != nil {
 		timeSince := time.Since(time.Time(m.Events.LastErrorEvent.Time))
-		if timeSince < i.lastEventThreshold {
+		if timeSince < c.LastErrorThreshold {
 			i.details = fmt.Sprintf("occurred %s ago", timeSince.String())
 			return true
 		}

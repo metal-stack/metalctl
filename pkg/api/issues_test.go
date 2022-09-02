@@ -206,7 +206,7 @@ func TestFindIssues(t *testing.T) {
 				{
 					Machine: lastEventErrorMachine,
 					Issues: Issues{
-						toIssue(&IssueLastEventError{lastEventThreshold: 10 * time.Minute, details: "occurred 5m0s ago"}),
+						toIssue(&IssueLastEventError{details: "occurred 5m0s ago"}),
 					},
 				},
 			},
