@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
@@ -10,7 +11,8 @@ import (
 )
 
 type TablePrinter struct {
-	t *printers.TablePrinter
+	t                       *printers.TablePrinter
+	lastEventErrorThreshold time.Duration
 }
 
 func New() *TablePrinter {
@@ -19,6 +21,10 @@ func New() *TablePrinter {
 
 func (t *TablePrinter) SetPrinter(printer *printers.TablePrinter) {
 	t.t = printer
+}
+
+func (t *TablePrinter) SetLastEventErrorThreshold(threshold time.Duration) {
+	t.lastEventErrorThreshold = threshold
 }
 
 func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {

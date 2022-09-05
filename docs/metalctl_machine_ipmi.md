@@ -24,16 +24,17 @@ metalctl machine ipmi [<machine ID>] [flags]
 ### Options
 
 ```
-  -h, --help               help for ipmi
-      --hostname string    allocation hostname to filter [optional]
-      --id string          ID to filter [optional]
-      --image string       allocation image to filter [optional]
-      --mac string         mac to filter [optional]
-      --name string        allocation name to filter [optional]
-      --partition string   partition to filter [optional]
-      --project string     allocation project to filter [optional]
-      --size string        size to filter [optional]
-      --tags strings       tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
+  -h, --help                                  help for ipmi
+      --hostname string                       allocation hostname to filter [optional]
+      --id string                             ID to filter [optional]
+      --image string                          allocation image to filter [optional]
+      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 1h0m0s)
+      --mac string                            mac to filter [optional]
+      --name string                           allocation name to filter [optional]
+      --partition string                      partition to filter [optional]
+      --project string                        allocation project to filter [optional]
+      --size string                           size to filter [optional]
+      --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 
 ### Options inherited from parent commands

@@ -71,7 +71,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		emojis, _ := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
 
 		if wide {
 			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
@@ -83,7 +83,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 	return header, rows, nil
 }
 
-func getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState) (string, string) {
+func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState) (string, string) {
 	var (
 		emojis []string
 		wide   []string
@@ -122,7 +122,7 @@ func getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentPr
 			wide = append(wide, "FailedReclaim")
 		}
 
-		if events.LastErrorEvent != nil && time.Since(time.Time(events.LastErrorEvent.Time)) < LastErrorEventRelevant {
+		if events.LastErrorEvent != nil && time.Since(time.Time(events.LastErrorEvent.Time)) < t.lastEventErrorThreshold {
 			emojis = append(emojis, api.Exclamation)
 			wide = append(wide, "LastEventErrors")
 		}
@@ -182,7 +182,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			biosVersion = pointer.SafeDeref(bios.Version)
 		}
 
-		emojis, wideEmojis := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
 
 		if wide {
 			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition})
@@ -245,7 +245,7 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 
 	header := []string{"ID", "Power", "Allocated", "", "Lock Reason", "Last Event", "When", "Issues"}
 	if wide {
-		header = []string{"ID", "Name", "Partition", "Project", "Power", "State", "Lock Reason", "Last Event", "When", "Issues"}
+		header = []string{"ID", "Name", "Partition", "Project", "Power", "State", "Lock Reason", "Last Event", "When", "Issues", "Ref URL", "Details"}
 	}
 
 	for _, machineWithIssues := range data {
@@ -290,21 +290,18 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		var issues []string
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+
 		for _, issue := range machineWithIssues.Issues {
-			text := fmt.Sprintf("- %s (%s)", issue.Description, issue.ShortName)
-			if wide && issue.RefURL != "" {
-				text += " (" + issue.RefURL + ")"
+			text := fmt.Sprintf("%s (%s)", issue.Description, issue.Type)
+			ref := issue.RefURL
+			details := issue.Details
+
+			if wide {
+				rows = append(rows, []string{pointer.SafeDeref(machine.ID), widename, partition, project, powerText, lockText, lockDescWide, lastEvent, when, text, ref, details})
+			} else {
+				rows = append(rows, []string{pointer.SafeDeref(machine.ID), power, allocated, emojis, lockDesc, lastEvent, when, text})
 			}
-			issues = append(issues, text)
-		}
-
-		emojis, _ := getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
-
-		if wide {
-			rows = append(rows, []string{pointer.SafeDeref(machine.ID), widename, partition, project, powerText, lockText, lockDescWide, lastEvent, when, strings.Join(issues, "\n")})
-		} else {
-			rows = append(rows, []string{pointer.SafeDeref(machine.ID), power, allocated, emojis, lockDesc, lastEvent, when, strings.Join(issues, "\n")})
 		}
 	}
 

@@ -9,7 +9,8 @@ metalctl machine logs <machine ID> [flags]
 ### Options
 
 ```
-  -h, --help   help for logs
+  -h, --help                                  help for logs
+      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
 ```
 
 ### Options inherited from parent commands

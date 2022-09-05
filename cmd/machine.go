@@ -21,7 +21,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
-	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,7 +36,7 @@ type machineCmd struct {
 	*config
 }
 
-func (c *machineCmd) listCmdFlags(cmd *cobra.Command) {
+func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDefault time.Duration) {
 	listFlagCompletions := []struct {
 		flagName string
 		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
@@ -58,10 +57,13 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command) {
 	cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
 	cmd.Flags().String("mac", "", "mac to filter [optional]")
 	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+
 	for _, c := range listFlagCompletions {
 		c := c
 		must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
+
 	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
 }
 
@@ -127,7 +129,7 @@ Once created the machine installation can not be modified anymore.
 			cmd.Flags().Bool("remove-from-database", false, "remove given machine from the database, is only required for maintenance reasons [optional] (admin only).")
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
-			w.listCmdFlags(cmd)
+			w.listCmdFlags(cmd, 1*time.Hour)
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("description", "", "the description of the machine [optional]")
@@ -323,14 +325,16 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 	machineIssuesCmd := &cobra.Command{
-		Use:   "issues",
+		Use:   "issues [<machine ID>]",
 		Short: `display machines which are in a potential bad state`,
 		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.machineIssues()
+			return w.machineIssues(args)
 		},
+		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 	machineLogsCmd := &cobra.Command{
 		Use:     "logs <machine ID>",
@@ -351,26 +355,35 @@ In case the machine did not register properly a direct ipmi console access is av
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
 
-	w.listCmdFlags(machineIpmiCmd)
-	w.listCmdFlags(machineIssuesCmd)
+	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
+	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
 
-	machineIssuesCmd.Flags().StringSliceP("only", "", []string{}, "issue types to include [optional]")
-	machineIssuesCmd.Flags().StringSliceP("omit", "", []string{}, "issue types to omit [optional]")
+	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
+	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
+	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
+
+	var severities []string
+	for _, s := range api.AllSevereties() {
+		severities = append(severities, string(s))
+	}
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", cobra.FixedCompletions(severities, cobra.ShellCompDirectiveNoFileComp)))
 
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
-		for _, i := range api.AllIssues {
-			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
+		for _, i := range api.AllIssues() {
+			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	}))
 	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		var shortNames []string
-		for _, i := range api.AllIssues {
-			shortNames = append(shortNames, i.ShortName+"\t"+i.Description)
+		for _, i := range api.AllIssues() {
+			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
 		}
 		return shortNames, cobra.ShellCompDirectiveNoFileComp
 	}))
+
+	machineLogsCmd.Flags().Duration("last-event-error-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
@@ -1107,7 +1120,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 
 	if pointer.SafeDeref(resp.Events).LastErrorEvent != nil {
 		timeSince := time.Since(time.Time(resp.Events.LastErrorEvent.Time))
-		if timeSince > tableprinters.LastErrorEventRelevant {
+		if timeSince > viper.GetDuration("last-event-error-threshold") {
 			return nil
 		}
 
@@ -1213,7 +1226,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 }
 
 func (c *machineCmd) machineIpmi(args []string) error {
-	if len(args) == 1 {
+	if len(args) > 0 {
 		id, err := genericcli.GetExactlyOneArg(args)
 		if err != nil {
 			return err
@@ -1243,7 +1256,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 	return c.listPrinter.Print(resp.Payload)
 }
 
-func (c *machineCmd) machineIssues() error {
+func (c *machineCmd) machineIssues(args []string) error {
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
@@ -1255,192 +1268,52 @@ func (c *machineCmd) machineIssues() error {
 	}
 
 	var (
-		only = viper.GetStringSlice("only")
-		omit = viper.GetStringSlice("omit")
-
-		res      = api.MachineIssues{}
-		asnMap   = map[int64][]*models.V1MachineIPMIResponse{}
-		bmcIPMap = map[string][]*models.V1MachineIPMIResponse{}
-
-		includeThisIssue = func(issue api.Issue) bool {
-			for _, o := range omit {
-				if issue.ShortName == o {
-					return false
-				}
-			}
-
-			if len(only) > 0 {
-				for _, o := range only {
-					if issue.ShortName == o {
-						return true
-					}
-				}
-				return false
-			}
-
-			return true
-		}
-
-		addIssue = func(m *models.V1MachineIPMIResponse, issue api.Issue) {
-			if m == nil {
-				return
-			}
-
-			if !includeThisIssue(issue) {
-				return
-			}
-
-			var mWithIssues *api.MachineWithIssues
-			for _, machine := range res {
-				machine := machine
-				if pointer.SafeDeref(m.ID) == pointer.SafeDeref(machine.Machine.ID) {
-					mWithIssues = &machine
-					break
-				}
-			}
-			if mWithIssues == nil {
-				mWithIssues = &api.MachineWithIssues{
-					Machine: *m,
-				}
-				res = append(res, *mWithIssues)
-			}
-
-			mWithIssues.Issues = append(mWithIssues.Issues, issue)
-		}
+		severity = api.IssueSeverityMinor
+		only     []api.IssueType
+		omit     []api.IssueType
 	)
 
-	for _, m := range resp.Payload {
-		if m == nil {
-			continue
-		}
+	for _, o := range viper.GetStringSlice("only") {
+		only = append(only, api.IssueType(o))
+	}
+	for _, o := range viper.GetStringSlice("omit") {
+		omit = append(omit, api.IssueType(o))
+	}
 
-		if m.Partition == nil {
-			addIssue(m, api.IssueNoPartition)
-		}
-
-		if m.Liveliness != nil {
-			switch *m.Liveliness {
-			case "Alive":
-			case "Dead":
-				addIssue(m, api.IssueLivelinessDead)
-			case "Unknown":
-				addIssue(m, api.IssueLivelinessUnknown)
-
-			default:
-				addIssue(m, api.IssueLivelinessNotAvailable)
-			}
-		} else {
-			addIssue(m, api.IssueLivelinessNotAvailable)
-		}
-
-		if pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim) {
-			addIssue(m, api.IssueFailedMachineReclaim)
-		}
-
-		if pointer.SafeDeref(pointer.SafeDeref(m.Events).CrashLoop) {
-			if m.Events != nil && len(m.Events.Log) > 0 && *m.Events.Log[0].Event == "Waiting" {
-				// Machine which are waiting are not considered to have issues
-			} else {
-				addIssue(m, api.IssueCrashLoop)
-			}
-		}
-
-		if pointer.SafeDeref(m.Events).LastErrorEvent != nil {
-			timeSince := time.Since(time.Time(m.Events.LastErrorEvent.Time))
-			if timeSince < tableprinters.LastErrorEventRelevant {
-				issue := api.IssueLastEventError
-				issue.Description = fmt.Sprintf("%s (%s ago)", issue.Description, timeSince.String())
-				addIssue(m, issue)
-			}
-		}
-
-		if m.Ipmi != nil {
-			if m.Ipmi.Mac == nil || *m.Ipmi.Mac == "" {
-				addIssue(m, api.IssueBMCWithoutMAC)
-			}
-
-			if m.Ipmi.Address == nil || *m.Ipmi.Address == "" {
-				addIssue(m, api.IssueBMCWithoutIP)
-			} else {
-				entries := bmcIPMap[*m.Ipmi.Address]
-				entries = append(entries, m)
-				bmcIPMap[*m.Ipmi.Address] = entries
-			}
-		}
-
-		if m.Allocation != nil && m.Allocation.Role != nil && *m.Allocation.Role == models.V1MachineAllocationRoleFirewall {
-			// collecting ASN overlaps
-			for _, n := range m.Allocation.Networks {
-				if n.Asn == nil {
-					continue
-				}
-
-				machines, ok := asnMap[*n.Asn]
-				if !ok {
-					machines = []*models.V1MachineIPMIResponse{}
-				}
-
-				alreadyContained := false
-				for _, mm := range machines {
-					if *mm.ID == *m.ID {
-						alreadyContained = true
-						break
-					}
-				}
-
-				if alreadyContained {
-					continue
-				}
-
-				machines = append(machines, m)
-				asnMap[*n.Asn] = machines
-			}
+	if viper.IsSet("severity") {
+		severity, err = api.SeverityFromString(viper.GetString("severity"))
+		if err != nil {
+			return err
 		}
 	}
 
-	for asn, ms := range asnMap {
-		if len(ms) < 2 {
-			continue
-		}
-
-		for _, m := range ms {
-			var sharedIDs []string
-			for _, mm := range ms {
-				if *m.ID == *mm.ID {
-					continue
-				}
-				sharedIDs = append(sharedIDs, *mm.ID)
-			}
-
-			issue := api.IssueASNUniqueness
-			issue.Description = fmt.Sprintf("ASN (%d) not unique, shared with %s", asn, sharedIDs)
-
-			addIssue(m, issue)
-		}
+	issues, err := api.FindIssues(&api.IssueConfig{
+		Machines:           resp.Payload,
+		Severity:           severity,
+		Only:               only,
+		Omit:               omit,
+		LastErrorThreshold: viper.GetDuration("last-event-error-threshold"),
+	})
+	if err != nil {
+		return err
 	}
 
-	for ip, ms := range bmcIPMap {
-		if len(ms) < 2 {
-			continue
+	if len(args) > 0 {
+		id, err := genericcli.GetExactlyOneArg(args)
+		if err != nil {
+			return err
 		}
 
-		for _, m := range ms {
-			var sharedIDs []string
-			for _, mm := range ms {
-				if *m.ID == *mm.ID {
-					continue
-				}
-				sharedIDs = append(sharedIDs, *mm.ID)
-			}
-
-			issue := api.IssueNonDistinctBMCIP
-			issue.Description = fmt.Sprintf("BMC IP (%s) not unique, shared with %s", ip, sharedIDs)
-
-			addIssue(m, issue)
+		mWithIssues := issues.Get(id)
+		if mWithIssues == nil {
+			fmt.Fprintf(c.out, "machine with id %q has no issues\n", id)
+			return nil
 		}
+
+		return c.describePrinter.Print(mWithIssues.Issues)
 	}
 
-	return c.listPrinter.Print(res)
+	return c.listPrinter.Print(issues)
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {
