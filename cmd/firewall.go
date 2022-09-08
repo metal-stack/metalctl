@@ -208,9 +208,11 @@ func (c *config) firewallSSH(args []string) (err error) {
 	if err != nil {
 		return fmt.Errorf("failed to retrieve firewall details: %w", err)
 	}
-	projectID := *machineGetResp.Payload.Allocation.Project
+	projectID := machineGetResp.Payload.Allocation.Project
 
-	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithPid(projectID), nil)
+	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
+		Pid: projectID,
+	}), nil)
 	if err != nil {
 		return fmt.Errorf("failed to get VPN auth key: %w", err)
 	}

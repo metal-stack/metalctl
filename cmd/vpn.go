@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/metal-stack/metal-go/api/client/vpn"
+	"github.com/metal-stack/metal-go/api/models"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +45,10 @@ func (c *config) vpnAuthKeyCreate() error {
 	}
 
 	resp, err := c.client.VPN().GetVPNAuthKey(
-		vpn.NewGetVPNAuthKeyParams().WithPid(vpnOptsInstance.ProjectID), nil,
+		vpn.NewGetVPNAuthKeyParams().WithBody(
+			&models.V1VPNRequest{
+				Pid: &vpnOptsInstance.ProjectID,
+			}), nil,
 	)
 	if err != nil {
 		return err

@@ -386,8 +386,8 @@ github.com/mattn/go-runewidth v0.0.13 h1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4
 github.com/mattn/go-runewidth v0.0.13/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
 github.com/metal-stack/masterdata-api v0.8.13 h1:zEMTH9FULE6swz3sCmrIlxlALOjLBUBQBCHO8yjIU6I=
 github.com/metal-stack/masterdata-api v0.8.13/go.mod h1:nbh4UB3fuiqUvZF+72HVwPtR8A6LGH5CIj0x6+1HRdE=
-github.com/metal-stack/metal-go v0.19.3-0.20220829212026-5934d1fad55f h1:CsnThWDb6zFxLpibc5NVQSC7tPkGVbiqnpE82yosc2A=
-github.com/metal-stack/metal-go v0.19.3-0.20220829212026-5934d1fad55f/go.mod h1:2JU77TT7PrN9PUwCBYreYEOeziCrYvwfzQ4DLFyKSMM=
+github.com/metal-stack/metal-go v0.19.4-0.20220908140519-eacd4f6866f9 h1:Zjr+RfrV40/+bpFoyeCojJzY0GUXbsLb0TZYMyZJedM=
+github.com/metal-stack/metal-go v0.19.4-0.20220908140519-eacd4f6866f9/go.mod h1:2JU77TT7PrN9PUwCBYreYEOeziCrYvwfzQ4DLFyKSMM=
 github.com/metal-stack/metal-lib v0.11.0 h1:kA0eCIc2Emu5dDNvHg4FaGvWOuErJe8nZz2kTH9zvFA=
 github.com/metal-stack/metal-lib v0.11.0/go.mod h1:Ge1ypz6aOf2ab98kr8GYMXD8eZ7VfKFUfUE3p/8Sm3g=
 github.com/metal-stack/security v0.6.5 h1:SqiMZ8B0v8bJostDUsOuXhzhSf95tlWYLER0kBp5n5k=
