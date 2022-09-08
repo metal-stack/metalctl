@@ -6,16 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/metal-stack/metal-go/api/client/machine"
-	"github.com/metal-stack/metal-go/api/client/vpn"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/metal-stack/metal-go/api/client/firewall"
+	"github.com/metal-stack/metal-go/api/client/machine"
+	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
@@ -23,6 +19,14 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
+const (
+	tailscaleImage = "tailscale/tailscale:v1.31"
 )
 
 type firewallCmd struct {
@@ -224,8 +228,12 @@ func (c *config) firewallSSH(args []string) (err error) {
 
 	// Deploy tailscaled
 	ctx := context.Background()
+	if err := pullImageIfNotExists(ctx, cli, tailscaleImage); err != nil {
+		return fmt.Errorf("failed to pull tailscale image: %w", err)
+	}
+
 	containerConfig := &container.Config{
-		Image: "tailscale/tailscale",
+		Image: tailscaleImage,
 		Cmd:   []string{"tailscaled"},
 	}
 	hostConfig := &container.HostConfig{
@@ -239,7 +247,7 @@ func (c *config) firewallSSH(args []string) (err error) {
 	containerName := "tailscaled"
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
 	if err != nil {
-		return c.describePrinter.Print(err)
+		return err
 	}
 
 	tailscaledContainerID := resp.ID
@@ -248,19 +256,19 @@ func (c *config) firewallSSH(args []string) (err error) {
 			if err != nil {
 				e = fmt.Errorf("%s: %w", e, err)
 			}
-			err = c.describePrinter.Print(e)
+			err = e
 		}
 	}()
 
 	if err = cli.ContainerStart(ctx, tailscaledContainerID, types.ContainerStartOptions{}); err != nil {
-		return c.describePrinter.Print(err)
+		return err
 	}
 	defer func() {
 		if e := cli.ContainerStop(ctx, tailscaledContainerID, nil); e != nil {
 			if err != nil {
 				e = fmt.Errorf("%s: %w", e, err)
 			}
-			err = c.describePrinter.Print(e)
+			err = e
 		}
 	}()
 
@@ -270,14 +278,10 @@ func (c *config) firewallSSH(args []string) (err error) {
 	}
 	execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
 	if err != nil {
-		return c.describePrinter.Print(
-			fmt.Errorf("failed to create tailscaled exec: %w", err),
-		)
+		return fmt.Errorf("failed to create tailscaled exec: %w", err)
 	}
 	if err := cli.ContainerExecStart(ctx, execResp.ID, types.ExecStartCheck{}); err != nil {
-		return c.describePrinter.Print(
-			fmt.Errorf("failed to start tailscaled exec: %w", err),
-		)
+		return fmt.Errorf("failed to start tailscaled exec: %w", err)
 	}
 
 	// Connect to the firewall via SSH
@@ -306,6 +310,32 @@ type TailscaleStatus struct {
 type TailscalePeerStatus struct {
 	HostName     string
 	TailscaleIPs []string
+}
+
+func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag string) error {
+	images, err := cli.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list images: %w", err)
+	}
+
+	for _, i := range images {
+		for _, t := range i.RepoTags {
+			if t == tag {
+				return nil
+			}
+		}
+	}
+
+	reader, err := cli.ImagePull(ctx, tag, types.ImagePullOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to pull image: %w", err)
+	}
+
+	if _, err := io.Copy(os.Stdout, reader); err != nil {
+		return fmt.Errorf("failed to load image: %w", err)
+	}
+
+	return nil
 }
 
 func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
