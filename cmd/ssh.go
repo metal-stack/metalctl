@@ -3,6 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	osuser "os/user"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -11,6 +14,11 @@ import (
 
 // SSHClient opens an interactive ssh session to the host on port with user, authenticated by the key.
 func SSHClient(user, keyfile, host string, port int) error {
+	keyfile, err := expandFilepath(keyfile)
+	if err != nil {
+		return err
+	}
+
 	publicKeyAuthMethod, err := publicKey(keyfile)
 	if err != nil {
 		return err
@@ -98,4 +106,17 @@ func publicKey(path string) (ssh.AuthMethod, error) {
 		return nil, err
 	}
 	return ssh.PublicKeys(signer), nil
+}
+
+func expandFilepath(path string) (string, error) {
+	if strings.HasPrefix(path, "~/") {
+		currentUser, err := osuser.Current()
+		if err != nil {
+			return "", fmt.Errorf("unable to determine current user for expanding keyfile path: %w", err)
+		}
+		homeDir := currentUser.HomeDir
+		path = filepath.Join(homeDir, path[2:])
+	}
+
+	return path, nil
 }
