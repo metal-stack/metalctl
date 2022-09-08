@@ -46,4 +46,5 @@ firewalls are used to establish network connectivity between metal-stack network
 * [metalctl firewall create](metalctl_firewall_create.md)	 - creates the firewall
 * [metalctl firewall describe](metalctl_firewall_describe.md)	 - describes the firewall
 * [metalctl firewall list](metalctl_firewall_list.md)	 - list all firewalls
+* [metalctl firewall ssh](metalctl_firewall_ssh.md)	 - SSH to a firewall
 
