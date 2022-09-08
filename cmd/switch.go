@@ -53,7 +53,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 	}
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
-		Short: "Put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.",
+		Short: "put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.",
 		Long: `Put a leaf switch into replace mode in preparation for physical replacement
 
 Operational steps to replace a switch:
