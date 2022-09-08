@@ -1,6 +1,6 @@
 ## metalctl switch replace
 
-Put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
+put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
 
 ### Synopsis
 
