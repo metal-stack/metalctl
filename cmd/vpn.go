@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/spf13/cobra"
