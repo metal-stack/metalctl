@@ -101,6 +101,19 @@ func searchSSHKey() (string, error) {
 }
 
 func readFromFile(filePath string) (string, error) {
+	filePath, err := expandFilepath(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", fmt.Errorf("unable to read from given file %s error:%w", filePath, err)
+	}
+	return strings.TrimSpace(string(content)), nil
+}
+
+func expandFilepath(filePath string) (string, error) {
 	currentUser, err := user.Current()
 	if err != nil {
 		return "", fmt.Errorf("unable to determine current user for expanding userdata path:%w", err)
@@ -113,9 +126,5 @@ func readFromFile(filePath string) (string, error) {
 		filePath = filepath.Join(homeDir, filePath[2:])
 	}
 
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return "", fmt.Errorf("unable to read from given file %s error:%w", filePath, err)
-	}
-	return strings.TrimSpace(string(content)), nil
+	return filePath, nil
 }
