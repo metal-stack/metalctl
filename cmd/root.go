@@ -211,7 +211,7 @@ func initConfigWithViperCtx(c *config) error {
 		}
 	}
 
-	client, _, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	client, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
 		return err
 	}
