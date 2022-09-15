@@ -249,7 +249,6 @@ func (c *config) firewallSSH(args []string) (err error) {
 	}
 	hostConfig := &container.HostConfig{
 		Binds: []string{
-			"/var/lib:/var/lib",
 			"/dev/net/tun:/dev/net/tun",
 		},
 		NetworkMode: container.NetworkMode("host"),
