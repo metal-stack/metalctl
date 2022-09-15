@@ -223,8 +223,10 @@ func (c *config) firewallSSH(args []string) (err error) {
 	}
 	projectID := machineGetResp.Payload.Allocation.Project
 
+	isEphemeral := true
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
-		Pid: projectID,
+		Pid:       projectID,
+		Ephemeral: &isEphemeral,
 	}), nil)
 	if err != nil {
 		return fmt.Errorf("failed to get VPN auth key: %w", err)

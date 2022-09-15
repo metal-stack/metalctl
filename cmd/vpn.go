@@ -45,10 +45,12 @@ func (c *config) vpnAuthKeyCreate() error {
 		return fmt.Errorf("Project ID should be specified")
 	}
 
+	isEphemeral := true
 	resp, err := c.client.VPN().GetVPNAuthKey(
 		vpn.NewGetVPNAuthKeyParams().WithBody(
 			&models.V1VPNRequest{
-				Pid: &vpnOptsInstance.ProjectID,
+				Pid:       &vpnOptsInstance.ProjectID,
+				Ephemeral: &isEphemeral,
 			}), nil,
 	)
 	if err != nil {

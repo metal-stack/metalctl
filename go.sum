@@ -388,8 +388,8 @@ github.com/mattn/go-runewidth v0.0.9/go.mod h1:H031xJmbD/WCDINGzjvQ9THkh0rPKHF+m
 github.com/mattn/go-runewidth v0.0.12/go.mod h1:RAqKPSqVFrSLVXbA8x7dzmKdmGzieGRCM46jaSJTDAk=
 github.com/mattn/go-runewidth v0.0.13 h1:lTGmDsbAYt5DmK6OnoV7EuIF1wEIFAcxld6ypU4OSgU=
 github.com/mattn/go-runewidth v0.0.13/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
-github.com/metal-stack/metal-go v0.21.0 h1:95Ir3+6KvMhPC6sSr5uyVovjAvSQgx+OnW67aBjXo1M=
-github.com/metal-stack/metal-go v0.21.0/go.mod h1:PLeXd33yiv4RgCm2hx+flstm445DBnrQGSDw9pmMsSw=
+github.com/metal-stack/metal-go v0.21.2-0.20220915111059-5bd3e236fb7b h1:w8SdMs64KGhrjARKdiq1LYuwLiwqYQAYNykS9KkfWrY=
+github.com/metal-stack/metal-go v0.21.2-0.20220915111059-5bd3e236fb7b/go.mod h1:PLeXd33yiv4RgCm2hx+flstm445DBnrQGSDw9pmMsSw=
 github.com/metal-stack/metal-lib v0.11.1 h1:ucM86T0X0Y4bRR/fggNIuyZV1oTh+K2FbfhsgHBhge8=
 github.com/metal-stack/metal-lib v0.11.1/go.mod h1:Ge1ypz6aOf2ab98kr8GYMXD8eZ7VfKFUfUE3p/8Sm3g=
 github.com/metal-stack/security v0.6.5 h1:SqiMZ8B0v8bJostDUsOuXhzhSf95tlWYLER0kBp5n5k=
