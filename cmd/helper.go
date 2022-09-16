@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/auth"
@@ -127,4 +129,17 @@ func expandFilepath(filePath string) (string, error) {
 	}
 
 	return filePath, nil
+}
+
+func portOpen(ip string, port string, timeout time.Duration) bool {
+	address := net.JoinHostPort(ip, port)
+	conn, err := net.DialTimeout("tcp", address, timeout)
+	if err != nil {
+		return false
+	}
+	if conn != nil {
+		_ = conn.Close()
+		return true
+	}
+	return false
 }

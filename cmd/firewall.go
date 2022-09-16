@@ -25,6 +25,7 @@ import (
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
 const (
@@ -86,6 +87,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return c.firewallSSH(args)
 		},
+		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
 
@@ -201,9 +203,50 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 	}, nil
 }
 
-// for test
-// args = [firewall id, identity, control plane address, auth key]
 func (c *config) firewallSSH(args []string) (err error) {
+	if len(args) < 1 {
+		return fmt.Errorf("machine ID is expected as an argument")
+	}
+	firewallID := args[0]
+	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(firewallID), nil)
+	if err != nil {
+		return fmt.Errorf("failed to find firewall: %w", err)
+	}
+
+	if resp.Payload.Vpn != nil && resp.Payload.Vpn.Connected != nil && *resp.Payload.Vpn.Connected {
+		return c.firewallSSHViaVPN(args)
+	}
+
+	// Try to connect to firewall via SSH
+	if err := c.firewallPureSSH(resp.Payload.Allocation); err != nil {
+		return fmt.Errorf("failed to connect to firewall via SSH: %w", err)
+	}
+
+	return nil
+}
+
+func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err error) {
+	networks := fwAllocation.Networks
+	for _, nw := range networks {
+		if *nw.Underlay || *nw.Private {
+			continue
+		}
+		for _, ip := range nw.Ips {
+			if portOpen(ip, "22", time.Second) {
+				err = SSHClient("metal", viper.GetString("identity"), ip, 22)
+				if err != nil {
+					return fmt.Errorf("machine console error:%w", err)
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("no ip with a open ssh port found")
+}
+
+func (c *config) firewallSSHViaVPN(args []string) (err error) {
 	if runtime.GOOS != "linux" {
 		return fmt.Errorf("firewall ssh command isn't supported by your OS(only Linux support at the moment")
 	}
