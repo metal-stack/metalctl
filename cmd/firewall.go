@@ -22,9 +22,7 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"os"
-	"os/signal"
 	"runtime"
-	"syscall"
 	"time"
 )
 
@@ -214,7 +212,7 @@ func (c *config) firewallSSH(args []string) (err error) {
 	}
 
 	if resp.Payload.Vpn != nil && resp.Payload.Vpn.Connected != nil && *resp.Payload.Vpn.Connected {
-		return c.firewallSSHViaVPN(args)
+		return c.firewallSSHViaVPN(firewallID)
 	}
 
 	// Try to connect to firewall via SSH
@@ -246,18 +244,13 @@ func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err 
 	return fmt.Errorf("no ip with a open ssh port found")
 }
 
-func (c *config) firewallSSHViaVPN(args []string) (err error) {
+func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	if runtime.GOOS != "linux" {
 		return fmt.Errorf("firewall ssh command isn't supported by your OS(only Linux support at the moment")
 	}
 	if _, err := os.Stat("/dev/net/tun"); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("/dev/net/tun file is missing, tun module needs to be loaded")
 	}
-
-	if len(args) < 1 {
-		return fmt.Errorf("machine ID is expected as an argument")
-	}
-	firewallID := args[0]
 
 	// Get firewall's project
 	machineGetResp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(firewallID), nil)
@@ -338,7 +331,7 @@ func (c *config) firewallSSHViaVPN(args []string) (err error) {
 	}
 
 	// Connect to the firewall via SSH
-	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *machineGetResp.Payload.Allocation.Hostname)
+	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *machineGetResp.Payload.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get Firewall VPN address")
 	}
@@ -347,10 +340,6 @@ func (c *config) firewallSSHViaVPN(args []string) (err error) {
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
-
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	<-sigs
 
 	return nil
 }
