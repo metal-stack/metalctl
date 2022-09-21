@@ -27,7 +27,8 @@ import (
 )
 
 const (
-	tailscaleImage = "tailscale/tailscale:v1.31"
+	tailscaleImage        = "tailscale/tailscale:v1.31"
+	taiscaleStatusRetries = 50
 )
 
 type firewallCmd struct {
@@ -327,7 +328,7 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	// Connect to the firewall via SSH
 	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *machineGetResp.Payload.ID)
 	if err != nil {
-		return fmt.Errorf("failed to get Firewall VPN address")
+		return fmt.Errorf("failed to get Firewall VPN address: %w", err)
 	}
 
 	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, ":1055")
@@ -376,7 +377,7 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 
 func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
 	// Wait until Peers info is filled
-	for {
+	for i := 0; i < taiscaleStatusRetries; i++ {
 		execConfig := types.ExecConfig{
 			Cmd:          []string{"tailscale", "status", "--json"},
 			AttachStdout: true,
@@ -406,7 +407,7 @@ func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Clien
 		}
 		ts := &TailscaleStatus{}
 		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
-			return "", fmt.Errorf("failed to parse tailscale status: %w", err)
+			continue
 		}
 
 		if ts.Peer != nil {
@@ -415,8 +416,8 @@ func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Clien
 					return p.TailscaleIPs[0], nil
 				}
 			}
-
-			return "", fmt.Errorf("failed to find IP for specified firewall")
 		}
 	}
+
+	return "", fmt.Errorf("failed to find IP for specified firewall")
 }
