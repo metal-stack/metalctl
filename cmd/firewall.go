@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -23,6 +22,7 @@ import (
 	"io"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -248,9 +248,6 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	if runtime.GOOS != "linux" {
 		return fmt.Errorf("firewall ssh command isn't supported by your OS(only Linux support at the moment")
 	}
-	if _, err := os.Stat("/dev/net/tun"); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("/dev/net/tun file is missing, tun module needs to be loaded")
-	}
 
 	// Get firewall's project
 	machineGetResp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(firewallID), nil)
@@ -281,12 +278,9 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 
 	containerConfig := &container.Config{
 		Image: tailscaleImage,
-		Cmd:   []string{"tailscaled"},
+		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--socks5-server=:1055"},
 	}
 	hostConfig := &container.HostConfig{
-		Binds: []string{
-			"/dev/net/tun:/dev/net/tun",
-		},
 		NetworkMode: container.NetworkMode("host"),
 		Privileged:  true,
 	}
@@ -336,7 +330,7 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 		return fmt.Errorf("failed to get Firewall VPN address")
 	}
 
-	err = SSHClient("metal", viper.GetString("identity"), firewallVPNAddr, 22)
+	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, ":1055")
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
@@ -417,7 +411,7 @@ func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Clien
 
 		if ts.Peer != nil {
 			for _, p := range ts.Peer {
-				if p.HostName == fwName {
+				if strings.HasPrefix(p.HostName, fwName) {
 					return p.TailscaleIPs[0], nil
 				}
 			}

@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"golang.org/x/net/proxy"
+	"net"
 	"os"
 	"time"
 
@@ -9,33 +11,67 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+	proxyConnectionAttempts = 10
+)
+
 // SSHClient opens an interactive ssh session to the host on port with user, authenticated by the key.
 func SSHClient(user, keyfile, host string, port int) error {
-	keyfile, err := expandFilepath(keyfile)
+	sshConfig, err := getSSHConfig(user, keyfile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create SSH config: %w", err)
 	}
 
-	publicKeyAuthMethod, err := publicKey(keyfile)
-	if err != nil {
-		return err
-	}
-	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			publicKeyAuthMethod,
-		},
-		//nolint:gosec
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         10 * time.Second,
-	}
-
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), sshConfig)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
+	return createSSHSession(client)
+}
+
+func SSHClientOverSOCKS5(user, keyfile, host string, port int, proxyAddr string) error {
+	sshConfig, err := getSSHConfig(user, keyfile)
+	if err != nil {
+		return fmt.Errorf("failed to create SSH config: %w", err)
+	}
+
+	client, err := getProxiedSSHClient(fmt.Sprintf("%s:%d", host, port), proxyAddr, sshConfig)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	return createSSHSession(client)
+}
+
+func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
+	dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a proxy dialer: %w", err)
+	}
+
+	var conn net.Conn
+	for i := 0; i < proxyConnectionAttempts; i++ {
+		conn, err = dialer.Dial("tcp", sshServerAddress)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to proxy at address %s: %w", proxyAddr, err)
+	}
+
+	c, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ssh connection: %w", err)
+	}
+
+	return ssh.NewClient(c, chans, reqs), nil
+}
+
+func createSSHSession(client *ssh.Client) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return err
@@ -91,6 +127,28 @@ func SSHClient(user, keyfile, host string, port int) error {
 	// You should now be connected via SSH with a fully-interactive terminal
 	// This call blocks until the user exits the session (e.g. via CTRL + D)
 	return session.Wait()
+}
+
+func getSSHConfig(user, keyfile string) (*ssh.ClientConfig, error) {
+	keyfile, err := expandFilepath(keyfile)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKeyAuthMethod, err := publicKey(keyfile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			publicKeyAuthMethod,
+		},
+		//nolint:gosec
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}, nil
 }
 
 func publicKey(path string) (ssh.AuthMethod, error) {
