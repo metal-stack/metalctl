@@ -21,7 +21,6 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -246,10 +245,6 @@ func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err 
 }
 
 func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
-	if runtime.GOOS != "linux" {
-		return fmt.Errorf("firewall ssh command isn't supported by your OS(only Linux support at the moment")
-	}
-
 	// Get firewall's project
 	machineGetResp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(firewallID), nil)
 	if err != nil {
@@ -257,10 +252,9 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	}
 	projectID := machineGetResp.Payload.Allocation.Project
 
-	isEphemeral := true
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
-		Ephemeral: &isEphemeral,
+		Ephemeral: pointer.Pointer(true),
 	}), nil)
 	if err != nil {
 		return fmt.Errorf("failed to get VPN auth key: %w", err)
@@ -283,7 +277,6 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	}
 	hostConfig := &container.HostConfig{
 		NetworkMode: container.NetworkMode("host"),
-		Privileged:  true,
 	}
 	containerName := "tailscaled"
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
