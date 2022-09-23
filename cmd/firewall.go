@@ -1,10 +1,16 @@
 package cmd
 
 import (
+	"bufio"
+	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
-
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	dockerclient "github.com/docker/docker/client"
 	"github.com/metal-stack/metal-go/api/client/firewall"
+	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
@@ -12,6 +18,15 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io"
+	"os"
+	"strings"
+	"time"
+)
+
+const (
+	tailscaleImage        = "tailscale/tailscale:v1.31"
+	taiscaleStatusRetries = 50
 )
 
 type firewallCmd struct {
@@ -62,7 +77,19 @@ func newFirewallCmd(c *config) *cobra.Command {
 		},
 	}
 
-	return genericcli.NewCmds(cmdsConfig)
+	firewallSSHCmd := &cobra.Command{
+		Use:   "ssh <firewall ID>",
+		Short: "SSH to a firewall",
+		Long:  `SSH to a firewall via VPN.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.firewallSSH(args)
+		},
+		ValidArgsFunction: c.comp.FirewallListCompletion,
+	}
+	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
+	firewallSSHCmd.Flags().IntP("proxy-port", "p", 1055, "specify SOCKS5 proxy port: -p 1055")
+
+	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
 func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
@@ -172,4 +199,206 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
 	}, nil
+}
+
+func (c *firewallCmd) firewallSSH(args []string) (err error) {
+	firewallID, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	firewall, err := c.Get(firewallID)
+	if err != nil {
+		return fmt.Errorf("failed to find firewall: %w", err)
+	}
+
+	if firewall.Vpn != nil && firewall.Vpn.Connected != nil && *firewall.Vpn.Connected {
+		return c.firewallSSHViaVPN(firewall)
+	}
+
+	// Try to connect to firewall via SSH
+	if err := c.firewallPureSSH(firewall.Allocation); err != nil {
+		return fmt.Errorf("failed to connect to firewall via SSH: %w", err)
+	}
+
+	return nil
+}
+
+func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err error) {
+	networks := fwAllocation.Networks
+	for _, nw := range networks {
+		if *nw.Underlay || *nw.Private {
+			continue
+		}
+		for _, ip := range nw.Ips {
+			if portOpen(ip, "22", time.Second) {
+				err = SSHClient("metal", viper.GetString("identity"), ip, 22)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("no ip with a open ssh port found")
+}
+
+func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
+	projectID := firewall.Allocation.Project
+
+	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
+		Pid:       projectID,
+		Ephemeral: pointer.Pointer(true),
+	}), nil)
+	if err != nil {
+		return fmt.Errorf("failed to get VPN auth key: %w", err)
+	}
+
+	cli, err := dockerclient.NewClientWithOpts(dockerclient.FromEnv)
+	if err != nil {
+		return fmt.Errorf("failed to initialize Docker client: %w", err)
+	}
+
+	// Deploy tailscaled
+	ctx := context.Background()
+	if err := pullImageIfNotExists(ctx, cli, tailscaleImage); err != nil {
+		return fmt.Errorf("failed to pull tailscale image: %w", err)
+	}
+
+	containerConfig := &container.Config{
+		Image: tailscaleImage,
+		Cmd:   []string{"tailscaled", "--tun=userspace-networking", fmt.Sprintf("--socks5-server=:%d", viper.GetInt("proxy-port"))},
+	}
+	hostConfig := &container.HostConfig{
+		NetworkMode: container.NetworkMode("host"),
+		AutoRemove:  true,
+	}
+	containerName := "tailscaled"
+	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
+	if err != nil {
+		return err
+	}
+
+	tailscaledContainerID := resp.ID
+	if err = cli.ContainerStart(ctx, tailscaledContainerID, types.ContainerStartOptions{}); err != nil {
+		return err
+	}
+	defer func() {
+		if e := cli.ContainerStop(ctx, tailscaledContainerID, nil); e != nil {
+			if err != nil {
+				e = fmt.Errorf("%s: %w", e, err)
+			}
+			err = e
+		}
+	}()
+
+	// Exec tailscale up
+	execConfig := types.ExecConfig{
+		Cmd: []string{"tailscale", "up", "--auth-key=" + *authKeyResp.Payload.AuthKey, "--login-server=" + *authKeyResp.Payload.Address},
+	}
+	execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create tailscaled exec: %w", err)
+	}
+	if err := cli.ContainerExecStart(ctx, execResp.ID, types.ExecStartCheck{}); err != nil {
+		return fmt.Errorf("failed to start tailscaled exec: %w", err)
+	}
+
+	// Connect to the firewall via SSH
+	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *firewall.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get Firewall VPN address: %w", err)
+	}
+
+	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, fmt.Sprintf(":%d", viper.GetInt("proxy-port")))
+	if err != nil {
+		return fmt.Errorf("machine console error:%w", err)
+	}
+
+	return nil
+}
+
+// TailscaleStatus and TailscalePeerStatus structs are used to parse VPN IP for the machine
+type TailscaleStatus struct {
+	Peer map[string]*TailscalePeerStatus
+}
+
+type TailscalePeerStatus struct {
+	HostName     string
+	TailscaleIPs []string
+}
+
+func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag string) error {
+	images, err := cli.ImageList(ctx, types.ImageListOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to list images: %w", err)
+	}
+
+	for _, i := range images {
+		for _, t := range i.RepoTags {
+			if t == tag {
+				return nil
+			}
+		}
+	}
+
+	reader, err := cli.ImagePull(ctx, tag, types.ImagePullOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to pull image: %w", err)
+	}
+
+	if _, err := io.Copy(os.Stdout, reader); err != nil {
+		return fmt.Errorf("failed to load image: %w", err)
+	}
+
+	return nil
+}
+
+func (c *firewallCmd) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
+	// Wait until Peers info is filled
+	for i := 0; i < taiscaleStatusRetries; i++ {
+		execConfig := types.ExecConfig{
+			Cmd:          []string{"tailscale", "status", "--json"},
+			AttachStdout: true,
+		}
+		execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+		if err != nil {
+			return "", fmt.Errorf("failed to create tailscale status exec: %w", err)
+		}
+		resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
+		if err != nil {
+			return "", fmt.Errorf("failed to attach to tailscale status exec: %w", err)
+		}
+
+		var data string
+		s := bufio.NewScanner(resp.Reader)
+		for s.Scan() {
+			data += s.Text()
+		}
+
+		// Skipping noise at the beginning
+		var i int
+		for _, c := range data {
+			if c == '{' {
+				break
+			}
+			i++
+		}
+		ts := &TailscaleStatus{}
+		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
+			continue
+		}
+
+		if ts.Peer != nil {
+			for _, p := range ts.Peer {
+				if strings.HasPrefix(p.HostName, fwName) {
+					return p.TailscaleIPs[0], nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("failed to find IP for specified firewall")
 }
