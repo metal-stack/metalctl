@@ -10,7 +10,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/metal-stack/metal-go/api/client/firewall"
-	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -83,11 +82,12 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Short: "SSH to a firewall",
 		Long:  `SSH to a firewall via VPN.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firewallSSH(args)
+			return w.firewallSSH(args)
 		},
 		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
+	firewallSSHCmd.Flags().IntP("proxy-port", "p", 1055, "specify SOCKS5 proxy port: -p 1055")
 
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
@@ -201,29 +201,30 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 	}, nil
 }
 
-func (c *config) firewallSSH(args []string) (err error) {
-	if len(args) < 1 {
-		return fmt.Errorf("machine ID is expected as an argument")
+func (c *firewallCmd) firewallSSH(args []string) (err error) {
+	firewallID, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
 	}
-	firewallID := args[0]
-	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(firewallID), nil)
+
+	firewall, err := c.Get(firewallID)
 	if err != nil {
 		return fmt.Errorf("failed to find firewall: %w", err)
 	}
 
-	if resp.Payload.Vpn != nil && resp.Payload.Vpn.Connected != nil && *resp.Payload.Vpn.Connected {
-		return c.firewallSSHViaVPN(firewallID)
+	if firewall.Vpn != nil && firewall.Vpn.Connected != nil && *firewall.Vpn.Connected {
+		return c.firewallSSHViaVPN(firewall)
 	}
 
 	// Try to connect to firewall via SSH
-	if err := c.firewallPureSSH(resp.Payload.Allocation); err != nil {
+	if err := c.firewallPureSSH(firewall.Allocation); err != nil {
 		return fmt.Errorf("failed to connect to firewall via SSH: %w", err)
 	}
 
 	return nil
 }
 
-func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err error) {
+func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err error) {
 	networks := fwAllocation.Networks
 	for _, nw := range networks {
 		if *nw.Underlay || *nw.Private {
@@ -233,7 +234,7 @@ func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err 
 			if portOpen(ip, "22", time.Second) {
 				err = SSHClient("metal", viper.GetString("identity"), ip, 22)
 				if err != nil {
-					return fmt.Errorf("machine console error:%w", err)
+					return err
 				}
 
 				return nil
@@ -244,13 +245,8 @@ func (c *config) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err 
 	return fmt.Errorf("no ip with a open ssh port found")
 }
 
-func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
-	// Get firewall's project
-	machineGetResp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(firewallID), nil)
-	if err != nil {
-		return fmt.Errorf("failed to retrieve firewall details: %w", err)
-	}
-	projectID := machineGetResp.Payload.Allocation.Project
+func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
+	projectID := firewall.Allocation.Project
 
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
@@ -273,10 +269,11 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 
 	containerConfig := &container.Config{
 		Image: tailscaleImage,
-		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--socks5-server=:1055"},
+		Cmd:   []string{"tailscaled", "--tun=userspace-networking", fmt.Sprintf("--socks5-server=:%d", viper.GetInt("proxy-port"))},
 	}
 	hostConfig := &container.HostConfig{
 		NetworkMode: container.NetworkMode("host"),
+		AutoRemove:  true,
 	}
 	containerName := "tailscaled"
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
@@ -285,15 +282,6 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	}
 
 	tailscaledContainerID := resp.ID
-	defer func() {
-		if e := cli.ContainerRemove(ctx, tailscaledContainerID, types.ContainerRemoveOptions{}); e != nil {
-			if err != nil {
-				e = fmt.Errorf("%s: %w", e, err)
-			}
-			err = e
-		}
-	}()
-
 	if err = cli.ContainerStart(ctx, tailscaledContainerID, types.ContainerStartOptions{}); err != nil {
 		return err
 	}
@@ -319,12 +307,12 @@ func (c *config) firewallSSHViaVPN(firewallID string) (err error) {
 	}
 
 	// Connect to the firewall via SSH
-	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *machineGetResp.Payload.ID)
+	firewallVPNAddr, err := c.getFirewallVPNAddr(ctx, cli, containerName, *firewall.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get Firewall VPN address: %w", err)
 	}
 
-	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, ":1055")
+	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, fmt.Sprintf(":%d", viper.GetInt("proxy-port")))
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
@@ -368,7 +356,7 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 	return nil
 }
 
-func (c *config) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
+func (c *firewallCmd) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
 	// Wait until Peers info is filled
 	for i := 0; i < taiscaleStatusRetries; i++ {
 		execConfig := types.ExecConfig{

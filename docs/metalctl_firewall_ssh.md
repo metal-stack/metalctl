@@ -15,6 +15,7 @@ metalctl firewall ssh <firewall ID> [flags]
 ```
   -h, --help              help for ssh
   -i, --identity string   specify identity file to SSH to the firewall like: -i path/to/id_rsa (default "~/.ssh/id_rsa")
+  -p, --proxy-port int    specify SOCKS5 proxy port: -p 1055 (default 1055)
 ```
 
 ### Options inherited from parent commands
