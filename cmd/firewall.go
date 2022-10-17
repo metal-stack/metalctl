@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	tailscaleImage        = "tailscale/tailscale:v1.31"
+	tailscaleImage        = "tailscale/tailscale:v1.32"
 	taiscaleStatusRetries = 50
 )
 
@@ -269,7 +269,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 
 	containerConfig := &container.Config{
 		Image: tailscaleImage,
-		Cmd:   []string{"tailscaled", "--tun=userspace-networking", fmt.Sprintf("--socks5-server=:%d", viper.GetInt("proxy-port"))},
+		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--no-logs-no-support", fmt.Sprintf("--socks5-server=:%d", viper.GetInt("proxy-port"))},
 	}
 	hostConfig := &container.HostConfig{
 		NetworkMode: container.NetworkMode("host"),
