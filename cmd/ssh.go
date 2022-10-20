@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"golang.org/x/net/proxy"
 	"net"
 	"os"
 	"time"
+
+	"golang.org/x/net/proxy"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
