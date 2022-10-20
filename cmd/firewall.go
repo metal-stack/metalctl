@@ -6,6 +6,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/netip"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
@@ -18,10 +24,6 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
-	"os"
-	"strings"
-	"time"
 )
 
 const (
@@ -247,6 +249,7 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 
 func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
 	projectID := firewall.Allocation.Project
+	socksProxyPort := viper.GetInt("proxy-port")
 
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
@@ -269,7 +272,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 
 	containerConfig := &container.Config{
 		Image: tailscaleImage,
-		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--no-logs-no-support", fmt.Sprintf("--socks5-server=:%d", viper.GetInt("proxy-port"))},
+		Cmd:   []string{"tailscaled", "--tun=userspace-networking", "--no-logs-no-support", fmt.Sprintf("--socks5-server=:%d", socksProxyPort)},
 	}
 	hostConfig := &container.HostConfig{
 		NetworkMode: container.NetworkMode("host"),
@@ -311,8 +314,16 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	if err != nil {
 		return fmt.Errorf("failed to get Firewall VPN address: %w", err)
 	}
+	ip, err := netip.ParseAddr(firewallVPNAddr)
+	if err != nil {
+		return fmt.Errorf("unable to parse firewall vpn address %w", err)
+	}
+	addr := ip.String()
+	if ip.Is6() {
+		addr = fmt.Sprintf("[%s]", ip)
+	}
 
-	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), firewallVPNAddr, 22, fmt.Sprintf(":%d", viper.GetInt("proxy-port")))
+	err = SSHClientOverSOCKS5("metal", viper.GetString("identity"), addr, 22, fmt.Sprintf(":%d", socksProxyPort))
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
