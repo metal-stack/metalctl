@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/netip"
-	"os"
 	"strings"
 	"time"
 
@@ -89,7 +89,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
-	firewallSSHCmd.Flags().IntP("proxy-port", "p", 1055, "specify SOCKS5 proxy port: -p 1055")
+	firewallSSHCmd.Flags().IntP("proxy-port", "p", 0, "specify SOCKS5 proxy port: -p 1055, random port is used if unset")
 
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
@@ -249,8 +249,18 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 
 func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
 	projectID := firewall.Allocation.Project
-	socksProxyPort := viper.GetInt("proxy-port")
+	var socksProxyPort int
+	if viper.IsSet("proxy-port") {
+		socksProxyPort = viper.GetInt("proxy-port")
+	} else {
+		freeport, err := getFreePort()
+		if err != nil {
+			return err
+		}
+		socksProxyPort = freeport
+	}
 
+	fmt.Fprintf(c.out, "accessing firewall through vpn ")
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
 		Ephemeral: pointer.Pointer(true),
@@ -278,7 +288,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 		NetworkMode: container.NetworkMode("host"),
 		AutoRemove:  true,
 	}
-	containerName := "tailscaled"
+	containerName := "tailscaled-" + *firewall.ID
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
 	if err != nil {
 		return err
@@ -359,8 +369,9 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 	if err != nil {
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
+	defer reader.Close()
 
-	if _, err := io.Copy(os.Stdout, reader); err != nil {
+	if _, err := io.Copy(io.Discard, reader); err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
 	}
 
@@ -412,4 +423,16 @@ func (c *firewallCmd) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.
 	}
 
 	return "", fmt.Errorf("failed to find IP for specified firewall")
+}
+
+func getFreePort() (port int, err error) {
+	var a *net.TCPAddr
+	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
+		}
+	}
+	return
 }

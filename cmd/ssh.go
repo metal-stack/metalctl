@@ -55,8 +55,10 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 
 	var conn net.Conn
 	for i := 0; i < proxyConnectionAttempts; i++ {
+		fmt.Printf(".")
 		conn, err = dialer.Dial("tcp", sshServerAddress)
 		if err == nil {
+			fmt.Printf("\n")
 			break
 		}
 	}
