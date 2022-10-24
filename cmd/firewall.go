@@ -214,7 +214,7 @@ func (c *firewallCmd) firewallSSH(args []string) (err error) {
 		return fmt.Errorf("failed to find firewall: %w", err)
 	}
 
-	if firewall.Vpn != nil && firewall.Vpn.Connected != nil && *firewall.Vpn.Connected {
+	if firewall.Allocation != nil && firewall.Allocation.Vpn != nil && firewall.Allocation.Vpn.Connected != nil && *firewall.Allocation.Vpn.Connected {
 		return c.firewallSSHViaVPN(firewall)
 	}
 

@@ -8,6 +8,7 @@ const (
 	Lock        = "🔒"
 	Question    = "❓"
 	Skull       = "💀"
+	VPN         = "🛡️"
 )
 
 func EmojiHelpText() string {
