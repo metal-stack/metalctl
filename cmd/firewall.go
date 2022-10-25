@@ -89,8 +89,6 @@ func newFirewallCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
-	firewallSSHCmd.Flags().IntP("proxy-port", "p", 0, "specify SOCKS5 proxy port: -p 1055, random port is used if unset")
-
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
@@ -249,17 +247,10 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 
 func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
 	projectID := firewall.Allocation.Project
-	var socksProxyPort int
-	if viper.IsSet("proxy-port") {
-		socksProxyPort = viper.GetInt("proxy-port")
-	} else {
-		freeport, err := getFreePort()
-		if err != nil {
-			return err
-		}
-		socksProxyPort = freeport
+	socksProxyPort, err := getFreePort()
+	if err != nil {
+		return err
 	}
-
 	fmt.Fprintf(c.out, "accessing firewall through vpn ")
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
