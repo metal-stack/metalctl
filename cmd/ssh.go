@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 	"golang.org/x/net/proxy"
 
 	"golang.org/x/crypto/ssh"

@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	bou.ke/monkey v1.0.2
-	github.com/avast/retry-go v3.0.0+incompatible
+	github.com/avast/retry-go/v4 v4.3.0
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
