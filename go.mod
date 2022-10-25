@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	bou.ke/monkey v1.0.2
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/fatih/color v1.13.0
@@ -16,13 +17,13 @@ require (
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/afero v1.9.2
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	go.uber.org/zap v1.23.0
 	golang.org/x/crypto v0.1.0
-	golang.org/x/exp v0.0.0-20221019170559-20944726eadf
+	golang.org/x/exp v0.0.0-20221023144134-a1e5550cf13e
 	golang.org/x/net v0.1.0
 	golang.org/x/term v0.1.0
 	gopkg.in/yaml.v3 v3.0.1

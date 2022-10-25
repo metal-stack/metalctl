@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
@@ -27,8 +28,7 @@ import (
 )
 
 const (
-	tailscaleImage        = "tailscale/tailscale:v1.32"
-	taiscaleStatusRetries = 50
+	tailscaleImage = "tailscale/tailscale:v1.32"
 )
 
 type firewallCmd struct {
@@ -380,49 +380,54 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 
 func (c *firewallCmd) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
 	// Wait until Peers info is filled
-	for i := 0; i < taiscaleStatusRetries; i++ {
-		execConfig := types.ExecConfig{
-			Cmd:          []string{"tailscale", "status", "--json"},
-			AttachStdout: true,
-		}
-		execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
-		if err != nil {
-			return "", fmt.Errorf("failed to create tailscale status exec: %w", err)
-		}
-		resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
-		if err != nil {
-			return "", fmt.Errorf("failed to attach to tailscale status exec: %w", err)
-		}
-
-		var data string
-		s := bufio.NewScanner(resp.Reader)
-		for s.Scan() {
-			data += s.Text()
-		}
-
-		// Skipping noise at the beginning
-		var i int
-		for _, c := range data {
-			if c == '{' {
-				break
+	execConfig := types.ExecConfig{
+		Cmd:          []string{"tailscale", "status", "--json"},
+		AttachStdout: true,
+	}
+	err = retry.Do(
+		func() error {
+			execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+			if err != nil {
+				return fmt.Errorf("failed to create tailscale status exec: %w", err)
 			}
-			i++
-		}
-		ts := &TailscaleStatus{}
-		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
-			continue
-		}
+			resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
+			if err != nil {
+				return fmt.Errorf("failed to attach to tailscale status exec: %w", err)
+			}
 
-		if ts.Peer != nil {
-			for _, p := range ts.Peer {
-				if strings.HasPrefix(p.HostName, fwName) {
-					return p.TailscaleIPs[0], nil
+			var data string
+			s := bufio.NewScanner(resp.Reader)
+			for s.Scan() {
+				data += s.Text()
+			}
+
+			// Skipping noise at the beginning
+			var i int
+			for _, c := range data {
+				if c == '{' {
+					break
+				}
+				i++
+			}
+			ts := &TailscaleStatus{}
+			if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
+				return err
+			}
+
+			if ts.Peer != nil {
+				for _, p := range ts.Peer {
+					if strings.HasPrefix(p.HostName, fwName) {
+						addr = p.TailscaleIPs[0]
+						return nil
+					}
 				}
 			}
-		}
-	}
+			return fmt.Errorf("failed to find IP for specified firewall")
+		},
+		retry.Attempts(50),
+	)
 
-	return "", fmt.Errorf("failed to find IP for specified firewall")
+	return addr, err
 }
 
 func getFreePort() (port int, err error) {
