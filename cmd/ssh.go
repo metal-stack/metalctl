@@ -6,14 +6,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"golang.org/x/net/proxy"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/term"
-)
-
-const (
-	proxyConnectionAttempts = 10
 )
 
 // SSHClient opens an interactive ssh session to the host on port with user, authenticated by the key.
@@ -54,12 +51,18 @@ func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.Clie
 	}
 
 	var conn net.Conn
-	for i := 0; i < proxyConnectionAttempts; i++ {
-		conn, err = dialer.Dial("tcp", sshServerAddress)
-		if err == nil {
-			break
-		}
-	}
+	err = retry.Do(
+		func() error {
+			fmt.Printf(".")
+			conn, err = dialer.Dial("tcp", sshServerAddress)
+			if err == nil {
+				fmt.Printf("\n")
+				return nil
+			}
+			return err
+		},
+		retry.Attempts(50),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to proxy at address %s: %w", proxyAddr, err)
 	}

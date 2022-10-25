@@ -7,11 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/netip"
-	"os"
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	dockerclient "github.com/docker/docker/client"
@@ -27,8 +28,7 @@ import (
 )
 
 const (
-	tailscaleImage        = "tailscale/tailscale:v1.32"
-	taiscaleStatusRetries = 50
+	tailscaleImage = "tailscale/tailscale:v1.32"
 )
 
 type firewallCmd struct {
@@ -89,8 +89,6 @@ func newFirewallCmd(c *config) *cobra.Command {
 		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
-	firewallSSHCmd.Flags().IntP("proxy-port", "p", 1055, "specify SOCKS5 proxy port: -p 1055")
-
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
@@ -214,7 +212,7 @@ func (c *firewallCmd) firewallSSH(args []string) (err error) {
 		return fmt.Errorf("failed to find firewall: %w", err)
 	}
 
-	if firewall.Vpn != nil && firewall.Vpn.Connected != nil && *firewall.Vpn.Connected {
+	if firewall.Allocation != nil && firewall.Allocation.Vpn != nil && firewall.Allocation.Vpn.Connected != nil && *firewall.Allocation.Vpn.Connected {
 		return c.firewallSSHViaVPN(firewall)
 	}
 
@@ -249,8 +247,11 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 
 func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
 	projectID := firewall.Allocation.Project
-	socksProxyPort := viper.GetInt("proxy-port")
-
+	socksProxyPort, err := getFreePort()
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(c.out, "accessing firewall through vpn ")
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
 		Ephemeral: pointer.Pointer(true),
@@ -278,7 +279,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 		NetworkMode: container.NetworkMode("host"),
 		AutoRemove:  true,
 	}
-	containerName := "tailscaled"
+	containerName := "tailscaled-" + *firewall.ID
 	resp, err := cli.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, containerName)
 	if err != nil {
 		return err
@@ -359,8 +360,9 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 	if err != nil {
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
+	defer reader.Close()
 
-	if _, err := io.Copy(os.Stdout, reader); err != nil {
+	if _, err := io.Copy(io.Discard, reader); err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
 	}
 
@@ -369,47 +371,64 @@ func pullImageIfNotExists(ctx context.Context, cli *dockerclient.Client, tag str
 
 func (c *firewallCmd) getFirewallVPNAddr(ctx context.Context, cli *dockerclient.Client, containerName, fwName string) (addr string, err error) {
 	// Wait until Peers info is filled
-	for i := 0; i < taiscaleStatusRetries; i++ {
-		execConfig := types.ExecConfig{
-			Cmd:          []string{"tailscale", "status", "--json"},
-			AttachStdout: true,
-		}
-		execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
-		if err != nil {
-			return "", fmt.Errorf("failed to create tailscale status exec: %w", err)
-		}
-		resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
-		if err != nil {
-			return "", fmt.Errorf("failed to attach to tailscale status exec: %w", err)
-		}
-
-		var data string
-		s := bufio.NewScanner(resp.Reader)
-		for s.Scan() {
-			data += s.Text()
-		}
-
-		// Skipping noise at the beginning
-		var i int
-		for _, c := range data {
-			if c == '{' {
-				break
+	execConfig := types.ExecConfig{
+		Cmd:          []string{"tailscale", "status", "--json"},
+		AttachStdout: true,
+	}
+	err = retry.Do(
+		func() error {
+			execResp, err := cli.ContainerExecCreate(ctx, containerName, execConfig)
+			if err != nil {
+				return fmt.Errorf("failed to create tailscale status exec: %w", err)
 			}
-			i++
-		}
-		ts := &TailscaleStatus{}
-		if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
-			continue
-		}
+			resp, err := cli.ContainerExecAttach(ctx, execResp.ID, types.ExecStartCheck{})
+			if err != nil {
+				return fmt.Errorf("failed to attach to tailscale status exec: %w", err)
+			}
 
-		if ts.Peer != nil {
-			for _, p := range ts.Peer {
-				if strings.HasPrefix(p.HostName, fwName) {
-					return p.TailscaleIPs[0], nil
+			var data string
+			s := bufio.NewScanner(resp.Reader)
+			for s.Scan() {
+				data += s.Text()
+			}
+
+			// Skipping noise at the beginning
+			var i int
+			for _, c := range data {
+				if c == '{' {
+					break
+				}
+				i++
+			}
+			ts := &TailscaleStatus{}
+			if err := json.Unmarshal([]byte(data[i:]), ts); err != nil {
+				return err
+			}
+
+			if ts.Peer != nil {
+				for _, p := range ts.Peer {
+					if strings.HasPrefix(p.HostName, fwName) {
+						addr = p.TailscaleIPs[0]
+						return nil
+					}
 				}
 			}
+			return fmt.Errorf("failed to find IP for specified firewall")
+		},
+		retry.Attempts(50),
+	)
+
+	return addr, err
+}
+
+func getFreePort() (port int, err error) {
+	var a *net.TCPAddr
+	if a, err = net.ResolveTCPAddr("tcp", "localhost:0"); err == nil {
+		var l *net.TCPListener
+		if l, err = net.ListenTCP("tcp", a); err == nil {
+			defer l.Close()
+			return l.Addr().(*net.TCPAddr).Port, nil
 		}
 	}
-
-	return "", fmt.Errorf("failed to find IP for specified firewall")
+	return
 }
