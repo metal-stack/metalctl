@@ -59,7 +59,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 Operational steps to replace a switch:
 
 - Put the switch that needs to be replaced in replace mode with this command
-- Replace the switch MAC address in the metal-deployment
+- Replace the switch MAC address in the metal-stack deployment configuration
 - Make sure that interfaces on the new switch do not get connected to the PXE-bridge immediately by setting the interfaces dictionary of the respective leaf switch to [] in the metal-deployment repository
 - Deploy the management servers so that the dhcp servers will serve the right address and DHCP options to the new switch
 - Replace the switch physically. Be careful to ensure that the cabling mirrors the remaining leaf exactly because the new switch information will be cloned from the remaining switch! Also make sure to have console access to the switch so you can start and monitor the install process
