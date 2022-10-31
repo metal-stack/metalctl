@@ -22,6 +22,7 @@ metalctl vpn key \
 ### Options
 
 ```
+      --ephemeral        create an ephemeral key (default true)
   -h, --help             help for key
       --project string   project ID for which auth key should be created
 ```
