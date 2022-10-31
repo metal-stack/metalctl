@@ -1,18 +1,12 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-type vpnOpts struct {
-	ProjectID string
-}
-
-var vpnOptsInstance = &vpnOpts{}
 
 func newVPNCmd(c *config) *cobra.Command {
 	vpnCmd := &cobra.Command{
@@ -33,7 +27,9 @@ metalctl vpn key \
 		},
 	}
 
-	vpnKeyCmd.Flags().StringVar(&vpnOptsInstance.ProjectID, "project", "", "project ID for which auth key should be created")
+	vpnKeyCmd.Flags().String("project", "", "project ID for which auth key should be created")
+	vpnKeyCmd.Flags().Bool("ephemeral", true, "create an ephemeral key")
+	must(vpnKeyCmd.MarkFlagRequired("project"))
 	must(vpnKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	vpnCmd.AddCommand(vpnKeyCmd)
 
@@ -41,16 +37,12 @@ metalctl vpn key \
 }
 
 func (c *config) vpnAuthKeyCreate() error {
-	if vpnOptsInstance.ProjectID == "" {
-		return fmt.Errorf("Project ID should be specified")
-	}
 
-	isEphemeral := true
 	resp, err := c.client.VPN().GetVPNAuthKey(
 		vpn.NewGetVPNAuthKeyParams().WithBody(
 			&models.V1VPNRequest{
-				Pid:       &vpnOptsInstance.ProjectID,
-				Ephemeral: &isEphemeral,
+				Pid:       pointer.Pointer(viper.GetString("project")),
+				Ephemeral: pointer.PointerOrNil(viper.GetBool("ephemeral")),
 			}), nil,
 	)
 	if err != nil {
