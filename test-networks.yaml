@@ -1,0 +1,68 @@
+changed: "2022-08-31T12:44:14.800Z"
+created: "2022-08-31T12:39:01.000Z"
+description: bla
+destinationprefixes:
+- 0.0.0.0/0
+id: gerrit-test
+labels:
+  a: b
+name: bla
+nat: false
+prefixes:
+- 192.168.1.0/24
+privatesuper: false
+shared: true
+underlay: false
+usage:
+  available_ips: 512
+  available_prefixes: 128
+  used_ips: 4
+  used_prefixes: 0
+---
+changed: "2022-08-31T12:44:14.800Z"
+created: "2022-08-31T12:39:01.000Z"
+description: bla
+destinationprefixes:
+- 0.0.0.0/0
+id: gerrit-test-2
+labels:
+  a: b
+name: bla
+nat: false
+prefixes:
+- 192.168.2.0/24
+privatesuper: false
+shared: true
+underlay: false
+---
+changed: "2022-08-31T12:44:14.800Z"
+created: "2022-08-31T12:39:01.000Z"
+description: bla
+destinationprefixes:
+- 0.0.0.0/0
+id: gerrit-test-3
+labels:
+  a: b
+name: bla
+nat: false
+prefixes:
+- 192.168.3.0/24
+privatesuper: false
+shared: true
+underlay: false
+---
+changed: "2022-08-31T12:44:14.800Z"
+created: "2022-08-31T12:39:01.000Z"
+description: bla
+destinationprefixes:
+- 0.0.0.0/0
+id: gerrit-test-4
+labels:
+  a: b
+name: bla
+nat: false
+prefixes:
+- 192.168.4.0/24
+privatesuper: false
+shared: true
+underlay: false

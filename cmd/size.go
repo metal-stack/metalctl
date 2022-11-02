@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/dustin/go-humanize"
 	"github.com/metal-stack/metal-go/api/client/size"
@@ -122,12 +123,11 @@ func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) ToCreate(r *models.V1SizeResponse) (*models.V1SizeCreateRequest, error) {
-	return sizeResponseToCreate(r), nil
-}
-
-func (c sizeCmd) ToUpdate(r *models.V1SizeResponse) (*models.V1SizeUpdateRequest, error) {
-	return sizeResponseToUpdate(r), nil
+func (c sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, sizeResponseToCreate(r), sizeResponseToUpdate(r), nil
 }
 
 func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest {

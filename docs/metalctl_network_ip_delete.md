@@ -9,7 +9,18 @@ metalctl network ip delete <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+      --bulk-output   prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
+                      
+                      Example:
+                      $ metalctl ip describe ip-1 -o yaml > ip.yaml
+                      $ vi ip.yaml
+                      $ # either via stdin
+                      $ cat ip.yaml | metalctl ip delete -f -
+                      $ # or via file
+                      $ metalctl ip delete -f ip.yaml
+                      	
+  -h, --help          help for delete
 ```
 
 ### Options inherited from parent commands

@@ -9,7 +9,18 @@ metalctl network delete <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+      --bulk-output   prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
+                      
+                      Example:
+                      $ metalctl network describe network-1 -o yaml > network.yaml
+                      $ vi network.yaml
+                      $ # either via stdin
+                      $ cat network.yaml | metalctl network delete -f -
+                      $ # or via file
+                      $ metalctl network delete -f network.yaml
+                      	
+  -h, --help          help for delete
 ```
 
 ### Options inherited from parent commands

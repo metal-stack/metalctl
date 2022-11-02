@@ -126,12 +126,11 @@ func (c partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1Par
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) ToCreate(r *models.V1PartitionResponse) (*models.V1PartitionCreateRequest, error) {
-	return partitionResponseToCreate(r), nil
-}
-
-func (c partitionCmd) ToUpdate(r *models.V1PartitionResponse) (*models.V1PartitionUpdateRequest, error) {
-	return partitionResponseToUpdate(r), nil
+func (c partitionCmd) Convert(r *models.V1PartitionResponse) (string, *models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, partitionResponseToCreate(r), partitionResponseToUpdate(r), nil
 }
 
 func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1PartitionCreateRequest {

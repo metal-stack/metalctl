@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	projectmodel "github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/models"
@@ -117,12 +118,11 @@ func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Project
 	return updateResp.Payload, nil
 }
 
-func (c projectCmd) ToCreate(r *models.V1ProjectResponse) (*models.V1ProjectCreateRequest, error) {
-	return projectResponseToCreate(r), nil
-}
-
-func (c projectCmd) ToUpdate(r *models.V1ProjectResponse) (*models.V1ProjectUpdateRequest, error) {
-	return projectResponseToUpdate(r), nil
+func (c projectCmd) Convert(r *models.V1ProjectResponse) (string, *models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, error) {
+	if r.Meta == nil {
+		return "", nil, nil, fmt.Errorf("meta is nil")
+	}
+	return r.Meta.ID, projectResponseToCreate(r), projectResponseToUpdate(r), nil
 }
 
 func projectResponseToCreate(r *models.V1ProjectResponse) *models.V1ProjectCreateRequest {

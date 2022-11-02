@@ -156,7 +156,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "apply",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "apply", "-f", "/file.yaml"}
+				return []string{"project", "apply", "--bulk-output", "-f", "/file.yaml"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -182,6 +182,72 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 			want: []*models.V1ProjectResponse{
 				project1,
 				project2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "create", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(project1))), nil).Return(&project.CreateProjectCreated{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: []*models.V1ProjectResponse{
+				project1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
+						Payload: &models.V1ProjectResponse{
+							Meta: &models.V1Meta{
+								Version: 0,
+							},
+						},
+					}, nil)
+					p := project1
+					p.Meta.Version = 1
+					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(projectResponseToUpdate(p))), nil).Return(&project.UpdateProjectOK{
+						Payload: p,
+					}, nil)
+				},
+			},
+			want: []*models.V1ProjectResponse{
+				project1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1ProjectResponse) []string {
+				return []string{"project", "delete", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Project: func(mock *mock.Mock) {
+					mock.On("DeleteProject", testcommon.MatchIgnoreContext(t, project.NewDeleteProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.DeleteProjectOK{
+						Payload: project1,
+					}, nil)
+				},
+			},
+			want: []*models.V1ProjectResponse{
+				project1,
 			},
 		},
 	}
@@ -250,7 +316,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 					"--machine-quota", strconv.FormatInt(int64(want.Quotas.Machine.Quota), 10),
 					"--ip-quota", strconv.FormatInt(int64(want.Quotas.IP.Quota), 10),
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, "file", "bulk-output")
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -263,49 +329,6 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 					p.Quotas.Machine.Used = 0
 					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(p))), nil).Return(&project.CreateProjectCreated{
 						Payload: project1,
-					}, nil)
-				},
-			},
-			want: project1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1ProjectResponse) []string {
-				return []string{"project", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1ProjectResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("CreateProject", testcommon.MatchIgnoreContext(t, project.NewCreateProjectParams().WithBody(projectResponseToCreate(project1))), nil).Return(&project.CreateProjectCreated{
-						Payload: project1,
-					}, nil)
-				},
-			},
-			want: project1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1ProjectResponse) []string {
-				return []string{"project", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1ProjectResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Project: func(mock *mock.Mock) {
-					mock.On("FindProject", testcommon.MatchIgnoreContext(t, project.NewFindProjectParams().WithID(project1.Meta.ID)), nil).Return(&project.FindProjectOK{
-						Payload: &models.V1ProjectResponse{
-							Meta: &models.V1Meta{
-								Version: 0,
-							},
-						},
-					}, nil)
-					p := project1
-					p.Meta.Version = 1
-					mock.On("UpdateProject", testcommon.MatchIgnoreContext(t, project.NewUpdateProjectParams().WithBody(projectResponseToUpdate(p))), nil).Return(&project.UpdateProjectOK{
-						Payload: p,
 					}, nil)
 				},
 			},

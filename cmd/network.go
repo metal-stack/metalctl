@@ -121,7 +121,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.childCLI.DeleteAndPrint(args, c.describePrinter)
+			id, err := genericcli.GetExactlyOneArg(args)
+			if err != nil {
+				return err
+			}
+
+			return w.childCLI.DeleteAndPrint(id, c.describePrinter)
 		},
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
@@ -209,12 +214,11 @@ func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkCreateRequest, error) {
-	return networkResponseToCreate(r), nil
-}
-
-func (c networkCmd) ToUpdate(r *models.V1NetworkResponse) (*models.V1NetworkUpdateRequest, error) {
-	return networkResponseToUpdate(r), nil
+func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, networkResponseToCreate(r), networkResponseToUpdate(r), nil
 }
 
 func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
@@ -310,8 +314,11 @@ func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
 	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
 }
 
-func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkAllocateRequest, error) {
-	return &models.V1NetworkAllocateRequest{
+func (c networkChildCRUD) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkAllocateRequest, any, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, &models.V1NetworkAllocateRequest{
 		Description:         r.Description,
 		Destinationprefixes: r.Destinationprefixes,
 		Labels:              r.Labels,
@@ -320,11 +327,7 @@ func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1Netwo
 		Partitionid:         r.Partitionid,
 		Projectid:           r.Projectid,
 		Shared:              false,
-	}, nil
-}
-
-func (c networkChildCRUD) ToUpdate(r *models.V1NetworkResponse) (any, error) {
-	return nil, fmt.Errorf("not implemented for child networks, use network update")
+	}, nil, nil
 }
 
 func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdateRequest, error) {

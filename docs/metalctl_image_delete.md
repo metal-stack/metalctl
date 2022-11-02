@@ -9,7 +9,18 @@ metalctl image delete <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+      --bulk-output   prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
+                      
+                      Example:
+                      $ metalctl image describe image-1 -o yaml > image.yaml
+                      $ vi image.yaml
+                      $ # either via stdin
+                      $ cat image.yaml | metalctl image delete -f -
+                      $ # or via file
+                      $ metalctl image delete -f image.yaml
+                      	
+  -h, --help          help for delete
 ```
 
 ### Options inherited from parent commands

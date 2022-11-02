@@ -9,6 +9,7 @@ metalctl network create [flags]
 ### Options
 
 ```
+      --bulk-output                    when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
   -d, --description string             description of the network to create. [optional]
       --destination-prefixes strings   destination prefixes in this network.
   -f, --file string                    filename of the create or update request in yaml format, or - for stdin.

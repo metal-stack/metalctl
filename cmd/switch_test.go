@@ -148,6 +148,44 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 |  2 |         1 | rack-1 |  ●     |
 `),
 		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1SwitchResponse) []string {
+				return []string{"switch", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Switch: func(mock *mock.Mock) {
+					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SwitchResponse{
+				switch1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1SwitchResponse) []string {
+				return []string{"switch", "delete", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Switch: func(mock *mock.Mock) {
+					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SwitchResponse{
+				switch1,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt.testCmd(t)
@@ -195,23 +233,6 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 			mocks: &client.MetalMockFns{
 				Switch: func(mock *mock.Mock) {
 					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
-						Payload: switch1,
-					}, nil)
-				},
-			},
-			want: switch1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1SwitchResponse) []string {
-				return []string{"switch", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1SwitchResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
-					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},

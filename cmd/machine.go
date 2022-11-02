@@ -580,12 +580,11 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) ToCreate(r *models.V1MachineResponse) (*models.V1MachineAllocateRequest, error) {
-	return machineResponseToCreate(r), nil
-}
-
-func (c machineCmd) ToUpdate(r *models.V1MachineResponse) (*models.V1MachineUpdateRequest, error) {
-	return machineResponseToUpdate(r), nil
+func (c machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.ID, machineResponseToCreate(r), machineResponseToUpdate(r), nil
 }
 
 func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAllocateRequest {

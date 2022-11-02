@@ -111,12 +111,11 @@ func (c switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchRes
 	return resp.Payload, nil
 }
 
-func (c switchCmd) ToCreate(r *models.V1SwitchResponse) (any, error) {
-	return nil, fmt.Errorf("switch entity does not support create operation")
-}
-
-func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateRequest, error) {
-	return switchResponseToUpdate(r), nil
+func (c switchCmd) Convert(r *models.V1SwitchResponse) (string, any, *models.V1SwitchUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, nil, switchResponseToUpdate(r), nil
 }
 
 func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {

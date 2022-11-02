@@ -49,6 +49,7 @@ Once created the machine installation can not be modified anymore.
 ### Options
 
 ```
+      --bulk-output               when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
   -d, --description string        Description of the machine to create. [optional]
   -f, --file string               filename of the create or update request in yaml format, or - for stdin.
                                   

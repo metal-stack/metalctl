@@ -9,7 +9,18 @@ metalctl partition delete <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+      --bulk-output   prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
+                      
+                      Example:
+                      $ metalctl partition describe partition-1 -o yaml > partition.yaml
+                      $ vi partition.yaml
+                      $ # either via stdin
+                      $ cat partition.yaml | metalctl partition delete -f -
+                      $ # or via file
+                      $ metalctl partition delete -f partition.yaml
+                      	
+  -h, --help          help for delete
 ```
 
 ### Options inherited from parent commands

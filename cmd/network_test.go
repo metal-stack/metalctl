@@ -148,7 +148,7 @@ nw2 network-2
 		{
 			name: "apply",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "apply", "-f", "/file.yaml"}
+				return []string{"network", "apply", "--bulk-output", "-f", "/file.yaml"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -167,6 +167,63 @@ nw2 network-2
 			want: []*models.V1NetworkResponse{
 				network1,
 				network2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return []string{"network", "create", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return []string{"network", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return []string{"network", "delete", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("DeleteNetwork", testcommon.MatchIgnoreContext(t, network.NewDeleteNetworkParams().WithID(*network1.ID)), nil).Return(&network.DeleteNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
 			},
 		},
 	}
@@ -241,7 +298,7 @@ nw1 network-1
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, "file", "bulk-output")
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -266,7 +323,7 @@ nw1 network-1
 					"--labels", "a=b",
 					"--name", want.Name,
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, "file", "bulk-output")
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -288,40 +345,6 @@ nw1 network-1
 						Labels:              network1.Labels,
 						Shared:              network1.Shared,
 					})), nil).Return(&network.UpdateNetworkOK{
-						Payload: network1,
-					}, nil)
-				},
-			},
-			want: network1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1NetworkResponse) []string {
-				return []string{"network", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1NetworkResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Network: func(mock *mock.Mock) {
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
-						Payload: network1,
-					}, nil)
-				},
-			},
-			want: network1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1NetworkResponse) []string {
-				return []string{"network", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1NetworkResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Network: func(mock *mock.Mock) {
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 				},

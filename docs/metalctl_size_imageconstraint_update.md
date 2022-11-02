@@ -9,6 +9,7 @@ metalctl size imageconstraint update [flags]
 ### Options
 
 ```
+      --bulk-output   when updating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during update, which causes single entities to be printed sequentially.
   -f, --file string   filename of the create or update request in yaml format, or - for stdin.
                       
                       Example:

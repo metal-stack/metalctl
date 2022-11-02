@@ -11,6 +11,7 @@ metalctl network update [flags]
 ```
       --add-destinationprefixes strings      destination prefixes to be added to the network [optional]
       --add-prefixes strings                 prefixes to be added to the network [optional]
+      --bulk-output                          when updating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during update, which causes single entities to be printed sequentially.
       --description string                   the description of the network [optional]
   -f, --file string                          filename of the create or update request in yaml format, or - for stdin.
                                              

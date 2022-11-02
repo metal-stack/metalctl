@@ -158,12 +158,11 @@ func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error
 	return resp.Payload, nil
 }
 
-func (c ipCmd) ToCreate(r *models.V1IPResponse) (*ipAllocateRequest, error) {
-	return ipResponseToCreate(r), nil
-}
-
-func (c ipCmd) ToUpdate(r *models.V1IPResponse) (*models.V1IPUpdateRequest, error) {
-	return ipResponseToUpdate(r), nil
+func (c ipCmd) Convert(r *models.V1IPResponse) (string, *ipAllocateRequest, *models.V1IPUpdateRequest, error) {
+	if r.Ipaddress == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.Ipaddress, ipResponseToCreate(r), ipResponseToUpdate(r), nil
 }
 
 func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {

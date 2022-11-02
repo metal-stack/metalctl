@@ -10,6 +10,7 @@ metalctl machine update [flags]
 
 ```
       --add-tags strings      tags to be added to the machine [optional]
+      --bulk-output           when updating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during update, which causes single entities to be printed sequentially.
       --description string    the description of the machine [optional]
   -f, --file string           filename of the create or update request in yaml format, or - for stdin.
                               
