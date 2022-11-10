@@ -1,8 +1,36 @@
-## metalctl
+## metalctl tenant create
 
-a cli to manage entities in the metal-stack api
+creates the tenant
+
+```
+metalctl tenant create [flags]
+```
 
 ### Options
+
+```
+      --annotation strings    add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
+      --cluster-quota int32   cluster quota
+      --description string    description of the tenant.
+  -f, --file string           filename of the create or update request in yaml format, or - for stdin.
+                              
+                              Example:
+                              $ metalctl tenant describe tenant-1 -o yaml > tenant.yaml
+                              $ vi tenant.yaml
+                              $ # either via stdin
+                              $ cat tenant.yaml | metalctl tenant create -f -
+                              $ # or via file
+                              $ metalctl tenant create -f tenant.yaml
+                              	
+  -h, --help                  help for create
+      --ip-quota int32        ip quota
+      --label strings         add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar
+      --machine-quota int32   machine quota
+      --name string           name of the tenant, max 10 characters.
+      --tenant string         create tenant for given tenant
+```
+
+### Options inherited from parent commands
 
 ```
       --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
@@ -17,7 +45,6 @@ a cli to manage entities in the metal-stack api
                                
       --debug                  debug output
       --force-color            force colored output even without tty
-  -h, --help                   help for metalctl
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
       --no-headers             do not print headers of table output format (default print headers)
   -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
@@ -33,25 +60,5 @@ a cli to manage entities in the metal-stack api
 
 ### SEE ALSO
 
-* [metalctl completion](metalctl_completion.md)	 - Generate the autocompletion script for the specified shell
-* [metalctl context](metalctl_context.md)	 - manage metalctl context
-* [metalctl filesystemlayout](metalctl_filesystemlayout.md)	 - manage filesystemlayout entities
-* [metalctl firewall](metalctl_firewall.md)	 - manage firewall entities
-* [metalctl firmware](metalctl_firmware.md)	 - manage firmwares
-* [metalctl health](metalctl_health.md)	 - shows the server health
-* [metalctl image](metalctl_image.md)	 - manage image entities
-* [metalctl login](metalctl_login.md)	 - login user and receive token
-* [metalctl logout](metalctl_logout.md)	 - logout user from OIDC SSO session
-* [metalctl machine](metalctl_machine.md)	 - manage machine entities
-* [metalctl markdown](metalctl_markdown.md)	 - create markdown documentation
-* [metalctl network](metalctl_network.md)	 - manage network entities
-* [metalctl partition](metalctl_partition.md)	 - manage partition entities
-* [metalctl project](metalctl_project.md)	 - manage project entities
-* [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
 * [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
-* [metalctl update](metalctl_update.md)	 - update the program
-* [metalctl version](metalctl_version.md)	 - print the client and server version information
-* [metalctl vpn](metalctl_vpn.md)	 - access VPN
-* [metalctl whoami](metalctl_whoami.md)	 - shows current user
 
