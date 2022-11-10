@@ -67,6 +67,10 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.ProjectTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1ProjectResponse:
 		return t.ProjectTable(d, wide)
+	case *models.V1TenantResponse:
+		return t.TenantTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1TenantResponse:
+		return t.TenantTable(d, wide)
 	case []*models.V1MachineIPMIResponse:
 		return t.MachineIPMITable(d, wide)
 	case *models.V1MachineIPMIResponse:
