@@ -105,13 +105,13 @@ func (c tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantRes
 }
 
 func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantResponse, error) {
-	resp, err := c.client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(rq.Tenant.Meta.ID), nil)
+	resp, err := c.client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(rq.Meta.ID), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
-	rq.Tenant.Meta.Version = resp.Payload.Meta.Version + 1
+	rq.Meta.Version = resp.Payload.Meta.Version + 1
 
 	updateResp, err := c.client.Tenant().UpdateTenant(tenantmodel.NewUpdateTenantParams().WithBody(rq), nil)
 	if err != nil {
@@ -131,37 +131,35 @@ func (c tenantCmd) ToUpdate(r *models.V1TenantResponse) (*models.V1TenantUpdateR
 
 func tenantResponseToCreate(r *models.V1TenantResponse) *models.V1TenantCreateRequest {
 	return &models.V1TenantCreateRequest{
-		Tenant: &models.V1Tenant{
-			Meta: &models.V1Meta{
-				Apiversion:  r.Meta.Apiversion,
-				Kind:        r.Meta.Kind,
-				ID:          r.Meta.ID,
-				Annotations: r.Meta.Annotations,
-				Labels:      r.Meta.Labels,
-				Version:     r.Meta.Version,
-			},
-			Description: r.Description,
-			Name:        r.Name,
-			Quotas:      r.Quotas,
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
 		},
+		Description: r.Description,
+		Name:        r.Name,
+		Quotas:      r.Quotas,
 	}
 }
 
 func tenantResponseToUpdate(r *models.V1TenantResponse) *models.V1TenantUpdateRequest {
 	return &models.V1TenantUpdateRequest{
-		Tenant: &models.V1Tenant{
-			Meta: &models.V1Meta{
-				Apiversion:  r.Meta.Apiversion,
-				Kind:        r.Meta.Kind,
-				ID:          r.Meta.ID,
-				Annotations: r.Meta.Annotations,
-				Labels:      r.Meta.Labels,
-				Version:     r.Meta.Version,
-			},
-			Description: r.Description,
-			Name:        r.Name,
-			Quotas:      r.Quotas,
+		Name: r.Name,
+		Meta: &models.V1Meta{
+			Apiversion:  r.Meta.Apiversion,
+			Kind:        r.Meta.Kind,
+			ID:          r.Meta.ID,
+			Annotations: r.Meta.Annotations,
+			Labels:      r.Meta.Labels,
+			Version:     r.Meta.Version,
 		},
+		Description:   r.Description,
+		IamConfig:     &models.V1IAMConfig{},
+		DefaultQuotas: &models.V1QuotaSet{},
+		Quotas:        r.Quotas,
 	}
 }
 
@@ -185,21 +183,18 @@ func (w *tenantCmd) createFromCLI() (*models.V1TenantCreateRequest, error) {
 	}
 
 	return &models.V1TenantCreateRequest{
-			Tenant: &models.V1Tenant{
-
-				Name:        viper.GetString("name"),
-				Description: viper.GetString("description"),
-				Quotas: &models.V1QuotaSet{
-					Cluster: clusterQuota,
-					Machine: machineQuota,
-					IP:      ipQuota,
-				},
-				Meta: &models.V1Meta{
-					Kind:        "Tenant",
-					Apiversion:  "v1",
-					Annotations: annotations,
-					Labels:      viper.GetStringSlice("label"),
-				},
+			Name:        viper.GetString("name"),
+			Description: viper.GetString("description"),
+			Quotas: &models.V1QuotaSet{
+				Cluster: clusterQuota,
+				Machine: machineQuota,
+				IP:      ipQuota,
+			},
+			Meta: &models.V1Meta{
+				Kind:        "Tenant",
+				Apiversion:  "v1",
+				Annotations: annotations,
+				Labels:      viper.GetStringSlice("label"),
 			},
 		},
 		nil
