@@ -237,6 +237,9 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 }
 
 func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
+	if firewall.Allocation == nil || firewall.Allocation.Project == nil {
+		return fmt.Errorf("firewall allocation or allocation.project is nil")
+	}
 	projectID := firewall.Allocation.Project
 	fmt.Fprintf(c.out, "accessing firewall through vpn ")
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
@@ -258,7 +261,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	defer s.Close()
 
 	// now disable logging, maybe altogether later
-	if os.Getenv("DEBUG") == "" {
+	if !viper.GetBool("debug") {
 		s.Logf = func(format string, args ...any) {}
 	}
 
@@ -279,7 +282,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 			}
 			if status.Self.Online {
 				for _, peer := range status.Peer {
-					if strings.HasPrefix(peer.HostName, *firewall.ID) {
+					if strings.HasPrefix(peer.HostName, *firewall.ID) && len(peer.TailscaleIPs) > 0 {
 						firewallVPNIP = peer.TailscaleIPs[0]
 						fmt.Printf(" connected to %s (ip %s) took: %s\n", *firewall.ID, firewallVPNIP, time.Since(start))
 						return nil
