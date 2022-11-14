@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/metal-stack/metal-go v0.21.5-0.20221110123606-62b31b32dd41
 	github.com/metal-stack/metal-lib v0.11.2
-	github.com/metal-stack/updater v1.1.3
+	github.com/metal-stack/updater v1.1.4
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/spf13/afero v1.9.2
@@ -22,10 +22,10 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tailscale/golang-x-crypto v0.0.0-20221102133106-bc99ab8c2d17
 	go.uber.org/zap v1.23.0
-	golang.org/x/exp v0.0.0-20221109134031-9ce248df8de5
+	golang.org/x/exp v0.0.0-20221111204811-129d8d6c17ab
 	golang.org/x/term v0.2.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280
+	k8s.io/kube-openapi v0.0.0-20221110221610-a28e98eb7c70
 	tailscale.com v1.32.2
 )
 
@@ -59,7 +59,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/emicklei/go-restful-openapi/v2 v2.9.1 // indirect
-	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
+	github.com/emicklei/go-restful/v3 v3.10.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
@@ -76,14 +76,14 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-github/v32 v32.1.0 // indirect
+	github.com/google/btree v1.1.2 // indirect
+	github.com/google/go-github/v48 v48.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hdevalence/ed25519consensus v0.0.0-20220222234857-c00d1f31bab3 // indirect
-	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/hdevalence/ed25519consensus v0.1.0 // indirect
+	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/icza/dyno v0.0.0-20220812133438-f0b6f8a18845 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
@@ -91,9 +91,9 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/josharian/native v1.0.0 // indirect
-	github.com/jsimonetti/rtnetlink v1.1.2-0.20220408201609-d380b505068b // indirect
+	github.com/jsimonetti/rtnetlink v1.2.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.15.4 // indirect
+	github.com/klauspost/compress v1.15.12 // indirect
 	github.com/kortschak/wol v0.0.0-20200729010619-da482cc4850a // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
@@ -106,11 +106,11 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
-	github.com/mdlayher/genetlink v1.2.0 // indirect
-	github.com/mdlayher/netlink v1.6.0 // indirect
+	github.com/mdlayher/genetlink v1.3.0 // indirect
+	github.com/mdlayher/netlink v1.7.0 // indirect
 	github.com/mdlayher/sdnotify v1.0.0 // indirect
-	github.com/mdlayher/socket v0.2.3 // indirect
-	github.com/metal-stack/security v0.6.5 // indirect
+	github.com/mdlayher/socket v0.4.0 // indirect
+	github.com/metal-stack/security v0.6.6 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/go-ps v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -151,7 +151,7 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.2.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
-	golang.zx2c4.com/wireguard v0.0.0-20220904105730-b51010ba13f0 // indirect
+	golang.zx2c4.com/wireguard v0.0.0-20220920152132-bb719d3a6e2c // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
