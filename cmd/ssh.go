@@ -6,10 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/avast/retry-go/v4"
-	"golang.org/x/net/proxy"
-
-	"golang.org/x/crypto/ssh"
+	"github.com/tailscale/golang-x-crypto/ssh"
 	"golang.org/x/term"
 )
 
@@ -29,50 +26,24 @@ func SSHClient(user, keyfile, host string, port int) error {
 	return createSSHSession(client)
 }
 
-func SSHClientOverSOCKS5(user, keyfile, host string, port int, proxyAddr string) error {
-	sshConfig, err := getSSHConfig(user, keyfile)
+// sshClient opens an interactive ssh session to the host on port with user, authenticated by the key.
+func sshClientWithConn(user, host, privateKey string, conn net.Conn) error {
+	sshConfig, err := getSSHConfig(user, privateKey)
 	if err != nil {
 		return fmt.Errorf("failed to create SSH config: %w", err)
 	}
 
-	client, err := getProxiedSSHClient(fmt.Sprintf("%s:%d", host, port), proxyAddr, sshConfig)
+	sshConn, sshChan, req, err := ssh.NewClientConn(conn, host, sshConfig)
+	if err != nil {
+		return err
+	}
+	client := ssh.NewClient(sshConn, sshChan, req)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
 	return createSSHSession(client)
-}
-
-func getProxiedSSHClient(sshServerAddress, proxyAddr string, sshConfig *ssh.ClientConfig) (*ssh.Client, error) {
-	dialer, err := proxy.SOCKS5("tcp", proxyAddr, nil, proxy.Direct)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create a proxy dialer: %w", err)
-	}
-
-	var conn net.Conn
-	err = retry.Do(
-		func() error {
-			fmt.Printf(".")
-			conn, err = dialer.Dial("tcp", sshServerAddress)
-			if err == nil {
-				fmt.Printf("\n")
-				return nil
-			}
-			return err
-		},
-		retry.Attempts(50),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to proxy at address %s: %w", proxyAddr, err)
-	}
-
-	c, chans, reqs, err := ssh.NewClientConn(conn, sshServerAddress, sshConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ssh connection: %w", err)
-	}
-
-	return ssh.NewClient(c, chans, reqs), nil
 }
 
 func createSSHSession(client *ssh.Client) error {
