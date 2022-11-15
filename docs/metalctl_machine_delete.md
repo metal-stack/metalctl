@@ -13,7 +13,7 @@ metalctl machine delete <id> [flags]
 ### Options
 
 ```
-      --bulk-output            prints results in a bulk at the end, the results are a list. default is printing results intermediately during delete, which causes single entities to be printed sequentially.
+      --bulk-output            when deleting from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during deletion, which causes single entities to be printed sequentially.
   -f, --file string            filename of the create or update request in yaml format, or - for stdin.
                                
                                Example:
