@@ -20,6 +20,7 @@ metalctl switch update [flags]
                       $ # or via file
                       $ metalctl switch update -f switch.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

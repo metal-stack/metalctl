@@ -20,6 +20,7 @@ metalctl network ip delete <id> [flags]
                       $ # or via file
                       $ metalctl ip delete -f ip.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

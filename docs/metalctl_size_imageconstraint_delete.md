@@ -20,6 +20,7 @@ metalctl size imageconstraint delete <id> [flags]
                       $ # or via file
                       $ metalctl imageconstraint delete -f imageconstraint.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

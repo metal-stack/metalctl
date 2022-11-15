@@ -23,6 +23,7 @@ metalctl project create [flags]
                               $ # or via file
                               $ metalctl project create -f project.yaml
                               	
+      --force                 skips security prompty for bulk operations
   -h, --help                  help for create
       --ip-quota int32        ip quota
       --label strings         add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar

@@ -20,6 +20,7 @@ metalctl project apply [flags]
                       $ # or via file
                       $ metalctl project apply -f project.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

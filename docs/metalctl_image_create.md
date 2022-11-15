@@ -22,6 +22,7 @@ metalctl image create [flags]
                              $ # or via file
                              $ metalctl image create -f image.yaml
                              	
+      --force                skips security prompty for bulk operations
   -h, --help                 help for create
       --id string            ID of the image.
   -n, --name string          Name of the image.

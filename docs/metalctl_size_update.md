@@ -20,6 +20,7 @@ metalctl size update [flags]
                       $ # or via file
                       $ metalctl size update -f size.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

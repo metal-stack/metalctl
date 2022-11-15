@@ -20,6 +20,7 @@ metalctl filesystemlayout create [flags]
                       $ # or via file
                       $ metalctl filesystemlayout create -f filesystemlayout.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for create
 ```
 

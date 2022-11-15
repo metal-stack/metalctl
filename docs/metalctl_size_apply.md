@@ -20,6 +20,7 @@ metalctl size apply [flags]
                       $ # or via file
                       $ metalctl size apply -f size.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

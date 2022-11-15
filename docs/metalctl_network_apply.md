@@ -20,6 +20,7 @@ metalctl network apply [flags]
                       $ # or via file
                       $ metalctl network apply -f network.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

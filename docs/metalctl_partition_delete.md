@@ -20,6 +20,7 @@ metalctl partition delete <id> [flags]
                       $ # or via file
                       $ metalctl partition delete -f partition.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

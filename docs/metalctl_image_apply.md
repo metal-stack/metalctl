@@ -20,6 +20,7 @@ metalctl image apply [flags]
                       $ # or via file
                       $ metalctl image apply -f image.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

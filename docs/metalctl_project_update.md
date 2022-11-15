@@ -20,6 +20,7 @@ metalctl project update [flags]
                       $ # or via file
                       $ metalctl project update -f project.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

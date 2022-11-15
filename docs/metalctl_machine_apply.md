@@ -20,6 +20,7 @@ metalctl machine apply [flags]
                       $ # or via file
                       $ metalctl machine apply -f machine.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

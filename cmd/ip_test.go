@@ -87,7 +87,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "apply",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "apply", "--bulk-output", "-f", "/file.yaml"}
+				return []string{"network", "ip", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -111,7 +111,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "create", "-f", "/file.yaml"}
+				return []string{"network", "ip", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -130,7 +130,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "update", "-f", "/file.yaml"}
+				return []string{"network", "ip", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -149,7 +149,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "delete", "-f", "/file.yaml"}
+				return []string{"network", "ip", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -230,7 +230,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 					"--type", *want.Type,
 					"--tags", strings.Join(want.Tags, ","),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{

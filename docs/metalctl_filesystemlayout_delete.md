@@ -20,6 +20,7 @@ metalctl filesystemlayout delete <id> [flags]
                       $ # or via file
                       $ metalctl filesystemlayout delete -f filesystemlayout.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

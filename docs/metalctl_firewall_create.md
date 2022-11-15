@@ -22,6 +22,7 @@ metalctl firewall create [flags]
                                   $ metalctl firewall create -f firewall.yaml
                                   	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
+      --force                     skips security prompty for bulk operations
   -h, --help                      help for create
   -H, --hostname string           Hostname of the firewall. [required]
   -I, --id string                 ID of a specific firewall to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.

@@ -151,7 +151,7 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1SwitchResponse) []string {
-				return []string{"switch", "update", "-f", "/file.yaml"}
+				return []string{"switch", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -170,7 +170,7 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1SwitchResponse) []string {
-				return []string{"switch", "delete", "-f", "/file.yaml"}
+				return []string{"switch", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

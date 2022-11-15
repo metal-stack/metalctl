@@ -20,6 +20,7 @@ metalctl filesystemlayout apply [flags]
                       $ # or via file
                       $ metalctl filesystemlayout apply -f filesystemlayout.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

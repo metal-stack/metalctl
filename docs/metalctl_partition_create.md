@@ -22,6 +22,7 @@ metalctl partition create [flags]
                              $ # or via file
                              $ metalctl partition create -f partition.yaml
                              	
+      --force                skips security prompty for bulk operations
   -h, --help                 help for create
       --id string            ID of the partition. [required]
       --imageurl string      initrd for the metal-hammer in the partition. [required]

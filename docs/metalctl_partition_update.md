@@ -20,6 +20,7 @@ metalctl partition update [flags]
                       $ # or via file
                       $ metalctl partition update -f partition.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

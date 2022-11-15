@@ -87,7 +87,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "apply",
 			cmd: func(want []*models.V1PartitionResponse) []string {
-				return []string{"partition", "apply", "--bulk-output", "-f", "/file.yaml"}
+				return []string{"partition", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -111,7 +111,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1PartitionResponse) []string {
-				return []string{"partition", "create", "-f", "/file.yaml"}
+				return []string{"partition", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -130,7 +130,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1PartitionResponse) []string {
-				return []string{"partition", "update", "-f", "/file.yaml"}
+				return []string{"partition", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -149,7 +149,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1PartitionResponse) []string {
-				return []string{"partition", "delete", "-f", "/file.yaml"}
+				return []string{"partition", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -230,7 +230,7 @@ ID   NAME          DESCRIPTION
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{

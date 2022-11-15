@@ -22,6 +22,7 @@ metalctl network create [flags]
                                        $ # or via file
                                        $ metalctl network create -f network.yaml
                                        	
+      --force                          skips security prompty for bulk operations
   -h, --help                           help for create
       --id string                      id of the network to create. [optional]
       --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".

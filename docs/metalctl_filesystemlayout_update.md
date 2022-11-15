@@ -20,6 +20,7 @@ metalctl filesystemlayout update [flags]
                       $ # or via file
                       $ metalctl filesystemlayout update -f filesystemlayout.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

@@ -20,6 +20,7 @@ metalctl partition apply [flags]
                       $ # or via file
                       $ metalctl partition apply -f partition.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

@@ -20,6 +20,7 @@ metalctl network ip update [flags]
                       $ # or via file
                       $ metalctl ip update -f ip.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for update
 ```
 

@@ -20,6 +20,7 @@ metalctl size imageconstraint create [flags]
                       $ # or via file
                       $ metalctl imageconstraint create -f imageconstraint.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for create
 ```
 

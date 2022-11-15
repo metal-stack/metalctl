@@ -148,7 +148,7 @@ nw2 network-2
 		{
 			name: "apply",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "apply", "--bulk-output", "-f", "/file.yaml"}
+				return []string{"network", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -172,7 +172,7 @@ nw2 network-2
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "create", "-f", "/file.yaml"}
+				return []string{"network", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -191,7 +191,7 @@ nw2 network-2
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "update", "-f", "/file.yaml"}
+				return []string{"network", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -210,7 +210,7 @@ nw2 network-2
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "delete", "-f", "/file.yaml"}
+				return []string{"network", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -298,7 +298,7 @@ nw1 network-1
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -323,7 +323,7 @@ nw1 network-1
 					"--labels", "a=b",
 					"--name", want.Name,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{

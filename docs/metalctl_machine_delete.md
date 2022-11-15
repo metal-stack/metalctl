@@ -24,6 +24,7 @@ metalctl machine delete <id> [flags]
                                $ # or via file
                                $ metalctl machine delete -f machine.yaml
                                	
+      --force                  skips security prompty for bulk operations
   -h, --help                   help for delete
       --remove-from-database   remove given machine from the database, is only required for maintenance reasons [optional] (admin only).
 ```

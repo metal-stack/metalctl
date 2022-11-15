@@ -20,6 +20,7 @@ metalctl network ip apply [flags]
                       $ # or via file
                       $ metalctl ip apply -f ip.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for apply
 ```
 

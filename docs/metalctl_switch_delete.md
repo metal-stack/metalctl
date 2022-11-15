@@ -20,6 +20,7 @@ metalctl switch delete <id> [flags]
                       $ # or via file
                       $ metalctl switch delete -f switch.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

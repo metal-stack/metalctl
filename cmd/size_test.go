@@ -108,7 +108,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "apply",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "apply", "--bulk-output", "-f", "/file.yaml"}
+				return []string{"size", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -132,7 +132,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "create", "-f", "/file.yaml"}
+				return []string{"size", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -151,7 +151,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "update", "-f", "/file.yaml"}
+				return []string{"size", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -170,7 +170,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "delete", "-f", "/file.yaml"}
+				return []string{"size", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -250,7 +250,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 					"--min", strconv.FormatInt(*want.Constraints[0].Min, 10),
 					"--type", *want.Constraints[0].Type,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{

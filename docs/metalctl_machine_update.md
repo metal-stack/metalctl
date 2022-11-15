@@ -22,6 +22,7 @@ metalctl machine update [flags]
                               $ # or via file
                               $ metalctl machine update -f machine.yaml
                               	
+      --force                 skips security prompty for bulk operations
   -h, --help                  help for update
       --remove-tags strings   tags to be removed from the machine [optional]
 ```

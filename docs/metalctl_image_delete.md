@@ -20,6 +20,7 @@ metalctl image delete <id> [flags]
                       $ # or via file
                       $ metalctl image delete -f image.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

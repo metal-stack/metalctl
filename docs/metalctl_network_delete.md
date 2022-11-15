@@ -20,6 +20,7 @@ metalctl network delete <id> [flags]
                       $ # or via file
                       $ metalctl network delete -f network.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

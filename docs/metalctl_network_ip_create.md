@@ -21,6 +21,7 @@ metalctl network ip create [flags]
                              $ # or via file
                              $ metalctl ip create -f ip.yaml
                              	
+      --force                skips security prompty for bulk operations
   -h, --help                 help for create
       --ipaddress string     a specific ip address to allocate. [optional]
   -n, --name string          name of the IP to allocate. [optional]

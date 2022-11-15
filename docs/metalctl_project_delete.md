@@ -20,6 +20,7 @@ metalctl project delete <id> [flags]
                       $ # or via file
                       $ metalctl project delete -f project.yaml
                       	
+      --force         skips security prompty for bulk operations
   -h, --help          help for delete
 ```
 

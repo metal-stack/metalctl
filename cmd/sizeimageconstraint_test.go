@@ -83,7 +83,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 		{
 			name: "apply",
 			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
-				return []string{"size", "imageconstraint", "apply", "--bulk-output", "-f", "/file.yaml"}
+				return []string{"size", "imageconstraint", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -107,7 +107,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
-				return []string{"size", "imageconstraint", "create", "-f", "/file.yaml"}
+				return []string{"size", "imageconstraint", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -126,7 +126,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
-				return []string{"size", "imageconstraint", "update", "-f", "/file.yaml"}
+				return []string{"size", "imageconstraint", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

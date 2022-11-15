@@ -62,6 +62,7 @@ Once created the machine installation can not be modified anymore.
                                   $ metalctl machine create -f machine.yaml
                                   	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
+      --force                     skips security prompty for bulk operations
   -h, --help                      help for create
   -H, --hostname string           Hostname of the machine. [required]
   -I, --id string                 ID of a specific machine to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.

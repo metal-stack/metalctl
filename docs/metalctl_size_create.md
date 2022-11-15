@@ -21,6 +21,7 @@ metalctl size create [flags]
                              $ # or via file
                              $ metalctl size create -f size.yaml
                              	
+      --force                skips security prompty for bulk operations
   -h, --help                 help for create
       --id string            ID of the size. [required]
       --max int              min value of given size constraint type. [required]

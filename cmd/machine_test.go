@@ -200,7 +200,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1MachineResponse) []string {
-				return []string{"machine", "create", "-f", "/file.yaml"}
+				return []string{"machine", "create", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -219,7 +219,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1MachineResponse) []string {
-				return []string{"machine", "update", "-f", "/file.yaml"}
+				return []string{"machine", "update", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -238,7 +238,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1MachineResponse) []string {
-				return []string{"machine", "delete", "-f", "/file.yaml"}
+				return []string{"machine", "delete", "-f", "/file.yaml", "--force"}
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -335,7 +335,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -355,7 +355,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--add-tags", strings.Join(want.Tags, ","),
 					"--remove-tags", "z",
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output")
+				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
 				return args
 			},
 			mocks: &client.MetalMockFns{
