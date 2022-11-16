@@ -87,7 +87,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "apply",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "ip", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -111,7 +111,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "ip", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -130,7 +130,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "ip", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -149,7 +149,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "ip", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

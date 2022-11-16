@@ -86,7 +86,7 @@ ubuntu ubuntu-name
 		{
 			name: "apply",
 			cmd: func(want []*models.V1ImageResponse) []string {
-				return []string{"image", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("image", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -110,7 +110,7 @@ ubuntu ubuntu-name
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1ImageResponse) []string {
-				return []string{"image", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("image", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -129,7 +129,7 @@ ubuntu ubuntu-name
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1ImageResponse) []string {
-				return []string{"image", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("image", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -148,7 +148,7 @@ ubuntu ubuntu-name
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1ImageResponse) []string {
-				return []string{"image", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("image", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

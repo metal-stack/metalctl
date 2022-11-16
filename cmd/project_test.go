@@ -156,7 +156,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "apply",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("project", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -187,7 +187,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("project", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -206,7 +206,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("project", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -234,7 +234,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1ProjectResponse) []string {
-				return []string{"project", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("project", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ProjectResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

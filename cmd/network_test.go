@@ -148,7 +148,7 @@ nw2 network-2
 		{
 			name: "apply",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -172,7 +172,7 @@ nw2 network-2
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -191,7 +191,7 @@ nw2 network-2
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -210,7 +210,7 @@ nw2 network-2
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("network", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

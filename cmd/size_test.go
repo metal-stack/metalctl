@@ -108,7 +108,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "apply",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("size", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -132,7 +132,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("size", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -151,7 +151,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("size", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -170,7 +170,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1SizeResponse) []string {
-				return []string{"size", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("size", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))

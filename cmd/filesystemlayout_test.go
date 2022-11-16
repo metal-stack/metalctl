@@ -176,7 +176,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 		{
 			name: "apply",
 			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "apply", "--bulk-output", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("fsl", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -200,7 +200,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 		{
 			name: "create from file",
 			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "create", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("fsl", "create")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -219,7 +219,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 		{
 			name: "update from file",
 			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "update", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("fsl", "update")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -238,7 +238,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 		{
 			name: "delete from file",
 			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "delete", "-f", "/file.yaml", "--force"}
+				return appendFromFileCommonArgs("fsl", "delete")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
