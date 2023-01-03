@@ -132,9 +132,9 @@ ID   PARTITION   RACK     STATUS
 2    1           rack-1    ●
 `),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-1    1           rack-1   operational   0s          1s              5m ago: error
-2    1           rack-1   operational   0s          1s              5m ago: error
+ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+1    1           rack-1             operational   0s          1s              5m ago: error
+2    1           rack-1             operational   0s          1s              5m ago: error
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -174,8 +174,8 @@ ID   PARTITION   RACK     STATUS
 1    1           rack-1    ●
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-1    1           rack-1   operational   0s          1s              5m ago: error
+ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+1    1           rack-1             operational   0s          1s              5m ago: error
 					`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`

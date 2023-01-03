@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"sort"
 	"strings"
 
@@ -58,10 +60,24 @@ func newSwitchCmd(c *config) *cobra.Command {
 			return w.switchReplace(args)
 		},
 	}
+	switchSSHCmd := &cobra.Command{
+		Use:   "ssh <switchID>",
+		Short: "connect to the switch via ssh",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchSSH(args)
+		},
+	}
+	switchConsoleCmd := &cobra.Command{
+		Use:   "console <switchID>",
+		Short: "connect to the switch console",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchConsole(args)
+		},
+	}
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
 
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -121,11 +137,15 @@ func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateR
 
 func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
 	return &models.V1SwitchUpdateRequest{
-		Description: r.Description,
-		ID:          r.ID,
-		Mode:        r.Mode,
-		Name:        r.Name,
-		RackID:      r.RackID,
+		ConsoleCommand: r.ConsoleCommand,
+		Description:    r.Description,
+		ID:             r.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           r.Mode,
+		Name:           r.Name,
+		Os:             &models.V1SwitchOS{},
+		RackID:         r.RackID,
 	}
 }
 
@@ -171,15 +191,63 @@ func (c *switchCmd) switchReplace(args []string) error {
 	}
 
 	uresp, err := c.Update(&models.V1SwitchUpdateRequest{
-		ID:          resp.ID,
-		Name:        resp.Name,
-		Description: resp.Description,
-		RackID:      resp.RackID,
-		Mode:        "replace",
+		ConsoleCommand: "",
+		Description:    resp.Description,
+		ID:             resp.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           "replace",
+		Name:           resp.Name,
+		Os:             &models.V1SwitchOS{},
+		RackID:         resp.RackID,
 	})
 	if err != nil {
 		return err
 	}
 
 	return c.describePrinter.Print(uresp)
+}
+
+func (c *switchCmd) switchSSH(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", resp.ManagementUser, resp.ManagementIP))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
+}
+
+func (c *switchCmd) switchConsole(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	if resp.ConsoleCommand == "" {
+		return fmt.Errorf("unable to connect to console because no console_command was specified for this switch")
+	}
+	parts := strings.Split(resp.ConsoleCommand, " ")
+
+	cmd := exec.Command(parts[0])
+	if len(parts) > 1 {
+		cmd = exec.Command(parts[0], parts[1:]...)
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
 }

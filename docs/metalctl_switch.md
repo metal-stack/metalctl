@@ -43,11 +43,13 @@ switch are the leaf switches in the data center that are controlled by metal-sta
 ### SEE ALSO
 
 * [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
+* [metalctl switch console](metalctl_switch_console.md)	 - connect to the switch console
 * [metalctl switch delete](metalctl_switch_delete.md)	 - deletes the switch
 * [metalctl switch describe](metalctl_switch_describe.md)	 - describes the switch
 * [metalctl switch detail](metalctl_switch_detail.md)	 - switch details
 * [metalctl switch edit](metalctl_switch_edit.md)	 - edit the switch through an editor and update
 * [metalctl switch list](metalctl_switch_list.md)	 - list all switches
 * [metalctl switch replace](metalctl_switch_replace.md)	 - puts a switch in replace mode in preparation for physical replacement
+* [metalctl switch ssh](metalctl_switch_ssh.md)	 - connect to the switch via ssh
 * [metalctl switch update](metalctl_switch_update.md)	 - updates the switch
 

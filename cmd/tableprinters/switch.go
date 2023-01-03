@@ -16,7 +16,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 	header := []string{"ID", "Partition", "Rack", "Status"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
 	}
 
 	for _, s := range data {
@@ -59,8 +59,13 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			mode = "operational"
 		}
 
+		os := ""
+		if s.Os != nil {
+			os = s.Os.Vendor + "/" + s.Os.Version
+		}
+
 		if wide {
-			rows = append(rows, []string{id, partition, rack, mode, syncAgeStr, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, s.ManagementIP, mode, syncAgeStr, syncDurStr, syncError})
 		} else {
 			rows = append(rows, []string{id, partition, rack, shortStatus})
 		}
