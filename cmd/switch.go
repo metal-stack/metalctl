@@ -247,7 +247,7 @@ func (c *switchCmd) switchConsole(args []string) error {
 	if resp.ConsoleCommand == "" {
 		return fmt.Errorf("unable to connect to console because no console_command was specified for this switch")
 	}
-	parts := strings.Split(resp.ConsoleCommand, " ")
+	parts := strings.Fields(resp.ConsoleCommand)
 
 	// nolint: gosec
 	cmd := exec.Command(parts[0])
