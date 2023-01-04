@@ -59,6 +59,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchReplace(args)
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 	switchSSHCmd := &cobra.Command{
 		Use:   "ssh <switchID>",
@@ -66,6 +67,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchSSH(args)
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 	switchConsoleCmd := &cobra.Command{
 		Use:   "console <switchID>",
@@ -73,10 +75,10 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchConsole(args)
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-
 	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
@@ -218,7 +220,11 @@ func (c *switchCmd) switchSSH(args []string) error {
 	if err != nil {
 		return err
 	}
+	if resp.ManagementIP == "" || resp.ManagementUser == "" {
+		return fmt.Errorf("unable to connect to switch by ssh because no ip and user was stored for this switch, please restart metal-core on this switch")
+	}
 
+	// nolint: gosec
 	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", resp.ManagementUser, resp.ManagementIP))
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -242,8 +248,10 @@ func (c *switchCmd) switchConsole(args []string) error {
 	}
 	parts := strings.Split(resp.ConsoleCommand, " ")
 
+	// nolint: gosec
 	cmd := exec.Command(parts[0])
 	if len(parts) > 1 {
+		// nolint: gosec
 		cmd = exec.Command(parts[0], parts[1:]...)
 	}
 	cmd.Stdin = os.Stdin
