@@ -38,6 +38,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 			genericcli.DeleteCmd,
 			genericcli.EditCmd,
 		),
+		Aliases:         []string{"sw"},
 		Singular:        "switch",
 		Plural:          "switches",
 		Description:     "switch are the leaf switches in the data center that are controlled by metal-stack.",
