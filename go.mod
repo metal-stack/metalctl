@@ -22,8 +22,8 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/tailscale/golang-x-crypto v0.0.0-20221115211329-17a3db2c30d2
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20221230185412-738e83a70c30
-	golang.org/x/term v0.3.0
+	golang.org/x/exp v0.0.0-20230105000112-eab7a2c85304
+	golang.org/x/term v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/kube-openapi v0.0.0-20221207184640-f3cff1453715
 	tailscale.com v1.34.1
@@ -150,15 +150,15 @@ require (
 	go.uber.org/multierr v1.9.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20220925034521-797b0c90d8ab // indirect
-	golang.org/x/crypto v0.4.0 // indirect
+	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.4.0 // indirect
-	golang.org/x/oauth2 v0.3.0 // indirect
+	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/oauth2 v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/text v0.5.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.4.0 // indirect
+	golang.org/x/tools v0.5.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20220920152132-bb719d3a6e2c // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect

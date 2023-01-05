@@ -9,6 +9,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/olekukonko/tablewriter"
 )
@@ -18,7 +19,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		rows [][]string
 	)
 
-	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition"}
+	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition", "Rack"}
 	if wide {
 		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Tags", "Lock/Reserve"}
 	}
@@ -38,6 +39,16 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		desc := alloc.Description
 		hostname := pointer.SafeDeref(alloc.Hostname)
 		image := pointer.SafeDeref(alloc.Image).Name
+
+		rack := ""
+		for _, t := range machine.Tags {
+			if strings.HasPrefix(t, tag.MachineRack) {
+				_, r, found := strings.Cut(t, "=")
+				if found {
+					rack = r
+				}
+			}
+		}
 
 		truncatedHostname := genericcli.TruncateEnd(hostname, 30)
 
@@ -76,7 +87,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		if wide {
 			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
 		} else {
-			rows = append(rows, []string{machineID, emojis, lastEvent, when, age, truncatedHostname, project, sizeID, image, partitionID})
+			rows = append(rows, []string{machineID, emojis, lastEvent, when, age, truncatedHostname, project, sizeID, image, partitionID, rack})
 		}
 	}
 
