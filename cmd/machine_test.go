@@ -177,8 +177,8 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 			},
 			wantTable: pointer.Pointer(`
 ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
-2       Waiting       1m                                            1                    1
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
+2       Waiting       1m                                            1                    1           rack-1
+1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
 ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
@@ -191,10 +191,10 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION | RACK |
-|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|------|
-|  2 |  | Waiting     | 1m   |     |                    |           |    1 |             |         1 |      |
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |      |
+| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
+|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
+|  2 |  | Waiting     | 1m   |     |                    |           |    1 |             |         1 | rack-1 |
+|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
 `),
 		},
 	}
@@ -220,7 +220,7 @@ func Test_MachineCmd_SingleResult(t *testing.T) {
 			want: machine1,
 			wantTable: pointer.Pointer(`
 ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
+1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
 ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
@@ -231,9 +231,9 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION | RACK |
-|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|------|
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |      |
+| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
+|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
+|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
 `),
 		},
 		{

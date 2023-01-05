@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/olekukonko/tablewriter"
 )
@@ -40,15 +39,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		hostname := pointer.SafeDeref(alloc.Hostname)
 		image := pointer.SafeDeref(alloc.Image).Name
 
-		rack := ""
-		for _, t := range machine.Tags {
-			if strings.HasPrefix(t, tag.MachineRack) {
-				_, r, found := strings.Cut(t, "=")
-				if found {
-					rack = r
-				}
-			}
-		}
+		rack := machine.Rackid
 
 		truncatedHostname := genericcli.TruncateEnd(hostname, 30)
 
