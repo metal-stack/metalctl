@@ -28,6 +28,11 @@ func MachineSorter() *multisort.Sorter[*models.V1MachineResponse] {
 			bID := p.SafeDeref(p.SafeDeref(b.Partition).ID)
 			return multisort.Compare(aID, bID, descending)
 		},
+		"rack": func(a, b *models.V1MachineResponse, descending bool) multisort.CompareResult {
+			aID := a.Rackid
+			bID := b.Rackid
+			return multisort.Compare(aID, bID, descending)
+		},
 		"project": func(a, b *models.V1MachineResponse, descending bool) multisort.CompareResult {
 			aID := p.SafeDeref(p.SafeDeref(a.Allocation).Project)
 			bID := p.SafeDeref(p.SafeDeref(b.Allocation).Project)
@@ -77,6 +82,11 @@ func MachineIPMISorter() *multisort.Sorter[*models.V1MachineIPMIResponse] {
 		"partition": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
 			aID := p.SafeDeref(p.SafeDeref(a.Partition).ID)
 			bID := p.SafeDeref(p.SafeDeref(b.Partition).ID)
+			return multisort.Compare(aID, bID, descending)
+		},
+		"rack": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
+			aID := a.Rackid
+			bID := b.Rackid
 			return multisort.Compare(aID, bID, descending)
 		},
 		"project": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
