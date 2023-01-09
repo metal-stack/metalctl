@@ -65,6 +65,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 	switchSSHCmd := &cobra.Command{
 		Use:   "ssh <switchID>",
 		Short: "connect to the switch via ssh",
+		Long:  "this requires a network connectivity to the management ip address of the switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchSSH(args)
 		},
@@ -73,6 +74,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 	switchConsoleCmd := &cobra.Command{
 		Use:   "console <switchID>",
 		Short: "connect to the switch console",
+		Long:  "this requires a network connectivity to the ip address of the console server this switch is connected to.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchConsole(args)
 		},
