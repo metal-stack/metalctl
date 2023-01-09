@@ -127,9 +127,9 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 				switch2,
 			},
 			wantTable: pointer.Pointer(`
-ID   PARTITION   RACK     STATUS
-1    1           rack-1    ●
-2    1           rack-1    ●
+ID   PARTITION   RACK     OS   STATUS 
+1    1           rack-1         ●       
+2    1           rack-1         ●
 `),
 			wantWideTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
@@ -142,10 +142,10 @@ ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LA
 2 switch-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | PARTITION |  RACK  | STATUS |
-|----|-----------|--------|--------|
-|  1 |         1 | rack-1 |  ●     |
-|  2 |         1 | rack-1 |  ●     |
+| ID | PARTITION |  RACK  | OS | STATUS |
+|----|-----------|--------|----|--------|
+|  1 |         1 | rack-1 |    |  ●     |
+|  2 |         1 | rack-1 |    |  ●     |
 `),
 		},
 	}
@@ -170,8 +170,8 @@ func Test_SwitchCmd_SingleResult(t *testing.T) {
 			},
 			want: switch1,
 			wantTable: pointer.Pointer(`
-ID   PARTITION   RACK     STATUS
-1    1           rack-1    ●
+ID   PARTITION   RACK     OS   STATUS 
+1    1           rack-1         ●
 		`),
 			wantWideTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
@@ -182,9 +182,9 @@ ID   PARTITION   RACK     OS   IP   MODE          LAST SYNC   SYNC DURATION   LA
 1 switch-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID | PARTITION |  RACK  | STATUS |
-|----|-----------|--------|--------|
-|  1 |         1 | rack-1 |  ●     |
+| ID | PARTITION |  RACK  | OS | STATUS |
+|----|-----------|--------|----|--------|
+|  1 |         1 | rack-1 |    |  ●     |
 		`),
 		},
 		{
