@@ -181,9 +181,9 @@ ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE
 1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
-2    Waiting       1m                                                                                         1                    1                                  b
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
+ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE 
+2    Waiting       1m                                                                                         1                    1           rack-1                          b                     
+1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -223,8 +223,8 @@ ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE
 1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
+ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE 
+1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`

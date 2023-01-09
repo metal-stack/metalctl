@@ -2,6 +2,10 @@
 
 connect to the switch console
 
+### Synopsis
+
+this requires a network connectivity to the ip address of the console server this switch is connected to.
+
 ```
 metalctl switch console <switchID> [flags]
 ```

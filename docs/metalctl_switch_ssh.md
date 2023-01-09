@@ -2,6 +2,10 @@
 
 connect to the switch via ssh
 
+### Synopsis
+
+this requires a network connectivity to the management ip address of the switch.
+
 ```
 metalctl switch ssh <switchID> [flags]
 ```

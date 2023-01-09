@@ -20,7 +20,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 
 	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition", "Rack"}
 	if wide {
-		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Tags", "Lock/Reserve"}
+		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Rack", "Started", "Tags", "Lock/Reserve"}
 	}
 
 	for _, machine := range data {
@@ -76,7 +76,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, alloc.Vpn)
 
 		if wide {
-			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
+			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, rack, started, tags, reserved})
 		} else {
 			rows = append(rows, []string{machineID, emojis, lastEvent, when, age, truncatedHostname, project, sizeID, image, partitionID, rack})
 		}
