@@ -230,7 +230,7 @@ ID   NAME          DESCRIPTION
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

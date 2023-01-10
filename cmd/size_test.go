@@ -250,7 +250,7 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 					"--min", strconv.FormatInt(*want.Constraints[0].Min, 10),
 					"--type", *want.Constraints[0].Type,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

@@ -9,7 +9,7 @@ metalctl size create [flags]
 ### Options
 
 ```
-      --bulk-output          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --bulk-output          when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string   Description of the size. [required]
   -f, --file string          filename of the create or update request in yaml format, or - for stdin.
                              
@@ -29,6 +29,7 @@ metalctl size create [flags]
       --max int              min value of given size constraint type. [required]
       --min int              min value of given size constraint type. [required]
   -n, --name string          Name of the size. [optional]
+      --timestamps           when used with --file (bulk operation): prints timestamps in-between the operations
       --type string          type of constraints. [required]
 ```
 

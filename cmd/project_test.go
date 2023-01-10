@@ -316,7 +316,7 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 					"--machine-quota", strconv.FormatInt(int64(want.Quotas.Machine.Quota), 10),
 					"--ip-quota", strconv.FormatInt(int64(want.Quotas.IP.Quota), 10),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

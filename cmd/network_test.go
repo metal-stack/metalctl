@@ -298,7 +298,7 @@ nw1 network-1
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -323,7 +323,7 @@ nw1 network-1
 					"--labels", "a=b",
 					"--name", want.Name,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

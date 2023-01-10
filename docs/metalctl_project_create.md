@@ -10,7 +10,7 @@ metalctl project create [flags]
 
 ```
       --annotation strings    add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
-      --bulk-output           for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --bulk-output           when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --cluster-quota int32   cluster quota
       --description string    description of the project.
   -f, --file string           filename of the create or update request in yaml format, or - for stdin.
@@ -32,6 +32,7 @@ metalctl project create [flags]
       --machine-quota int32   machine quota
       --name string           name of the project, max 10 characters.
       --tenant string         create project for given tenant
+      --timestamps            when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands

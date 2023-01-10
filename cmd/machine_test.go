@@ -335,7 +335,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -355,7 +355,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--add-tags", strings.Join(want.Tags, ","),
 					"--remove-tags", "z",
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

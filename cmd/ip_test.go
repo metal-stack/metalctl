@@ -230,7 +230,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 					"--type", *want.Type,
 					"--tags", strings.Join(want.Tags, ","),
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

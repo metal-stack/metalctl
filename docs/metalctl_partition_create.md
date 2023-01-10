@@ -9,7 +9,7 @@ metalctl partition create [flags]
 ### Options
 
 ```
-      --bulk-output          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --bulk-output          when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --cmdline string       kernel commandline for the metal-hammer in the partition. [required]
   -d, --description string   Description of the partition. [required]
   -f, --file string          filename of the create or update request in yaml format, or - for stdin.
@@ -31,6 +31,7 @@ metalctl partition create [flags]
       --kernelurl string     kernel url for the metal-hammer in the partition. [required]
       --mgmtserver string    management server address in the partition. [required]
   -n, --name string          Name of the partition. [optional]
+      --timestamps           when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands

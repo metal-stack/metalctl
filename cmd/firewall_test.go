@@ -300,7 +300,7 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

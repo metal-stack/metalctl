@@ -227,7 +227,7 @@ debian debian-name
 					"--url", want.URL,
 					"--features", want.Features[0],
 				}
-				assertExhaustiveArgs(t, args, "file", "bulk-output", "force")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

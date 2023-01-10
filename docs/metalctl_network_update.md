@@ -11,7 +11,7 @@ metalctl network update [flags]
 ```
       --add-destinationprefixes strings      destination prefixes to be added to the network [optional]
       --add-prefixes strings                 prefixes to be added to the network [optional]
-      --bulk-output                          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --bulk-output                          when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --description string                   the description of the network [optional]
   -f, --file string                          filename of the create or update request in yaml format, or - for stdin.
                                              
@@ -32,6 +32,7 @@ metalctl network update [flags]
       --remove-destinationprefixes strings   destination prefixes to be removed from the network [optional]
       --remove-prefixes strings              prefixes to be removed from the network [optional]
       --shared                               marks a network as shared or not [optional]
+      --timestamps                           when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands
