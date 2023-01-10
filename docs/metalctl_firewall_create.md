@@ -9,7 +9,7 @@ metalctl firewall create [flags]
 ### Options
 
 ```
-      --bulk-output               when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
+      --bulk-output               for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string        Description of the firewall to create. [optional]
   -f, --file string               filename of the create or update request in yaml format, or - for stdin.
                                   
@@ -20,9 +20,11 @@ metalctl firewall create [flags]
                                   $ cat firewall.yaml | metalctl firewall create -f -
                                   $ # or via file
                                   $ metalctl firewall create -f firewall.yaml
+                                  
+                                  the file can also contain multiple documents and perform a bulk operation.
                                   	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
-      --force                     skips security prompty for bulk operations
+      --force                     skips security prompt for bulk operations
   -h, --help                      help for create
   -H, --hostname string           Hostname of the firewall. [required]
   -I, --id string                 ID of a specific firewall to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.

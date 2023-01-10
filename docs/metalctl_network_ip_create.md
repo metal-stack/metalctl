@@ -9,7 +9,7 @@ metalctl network ip create [flags]
 ### Options
 
 ```
-      --bulk-output          when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
+      --bulk-output          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string   description of the IP to allocate. [optional]
   -f, --file string          filename of the create or update request in yaml format, or - for stdin.
                              
@@ -20,8 +20,10 @@ metalctl network ip create [flags]
                              $ cat ip.yaml | metalctl ip create -f -
                              $ # or via file
                              $ metalctl ip create -f ip.yaml
+                             
+                             the file can also contain multiple documents and perform a bulk operation.
                              	
-      --force                skips security prompty for bulk operations
+      --force                skips security prompt for bulk operations
   -h, --help                 help for create
       --ipaddress string     a specific ip address to allocate. [optional]
   -n, --name string          name of the IP to allocate. [optional]

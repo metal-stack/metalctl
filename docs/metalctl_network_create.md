@@ -9,7 +9,7 @@ metalctl network create [flags]
 ### Options
 
 ```
-      --bulk-output                    when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
+      --bulk-output                    for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string             description of the network to create. [optional]
       --destination-prefixes strings   destination prefixes in this network.
   -f, --file string                    filename of the create or update request in yaml format, or - for stdin.
@@ -21,8 +21,10 @@ metalctl network create [flags]
                                        $ cat network.yaml | metalctl network create -f -
                                        $ # or via file
                                        $ metalctl network create -f network.yaml
+                                       
+                                       the file can also contain multiple documents and perform a bulk operation.
                                        	
-      --force                          skips security prompty for bulk operations
+      --force                          skips security prompt for bulk operations
   -h, --help                           help for create
       --id string                      id of the network to create. [optional]
       --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".

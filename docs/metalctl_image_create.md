@@ -9,7 +9,7 @@ metalctl image create [flags]
 ### Options
 
 ```
-      --bulk-output          when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
+      --bulk-output          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string   Description of the image.
       --features strings     features of the image, can be one of machine|firewall
   -f, --file string          filename of the create or update request in yaml format, or - for stdin.
@@ -21,8 +21,10 @@ metalctl image create [flags]
                              $ cat image.yaml | metalctl image create -f -
                              $ # or via file
                              $ metalctl image create -f image.yaml
+                             
+                             the file can also contain multiple documents and perform a bulk operation.
                              	
-      --force                skips security prompty for bulk operations
+      --force                skips security prompt for bulk operations
   -h, --help                 help for create
       --id string            ID of the image.
   -n, --name string          Name of the image.

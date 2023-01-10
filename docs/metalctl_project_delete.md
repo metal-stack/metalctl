@@ -9,7 +9,7 @@ metalctl project delete <id> [flags]
 ### Options
 
 ```
-      --bulk-output   when deleting from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during deletion, which causes single entities to be printed sequentially.
+      --bulk-output   for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -f, --file string   filename of the create or update request in yaml format, or - for stdin.
                       
                       Example:
@@ -19,8 +19,10 @@ metalctl project delete <id> [flags]
                       $ cat project.yaml | metalctl project delete -f -
                       $ # or via file
                       $ metalctl project delete -f project.yaml
+                      
+                      the file can also contain multiple documents and perform a bulk operation.
                       	
-      --force         skips security prompty for bulk operations
+      --force         skips security prompt for bulk operations
   -h, --help          help for delete
 ```
 

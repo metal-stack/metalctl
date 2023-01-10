@@ -11,7 +11,7 @@ metalctl network update [flags]
 ```
       --add-destinationprefixes strings      destination prefixes to be added to the network [optional]
       --add-prefixes strings                 prefixes to be added to the network [optional]
-      --bulk-output                          when updating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during update, which causes single entities to be printed sequentially.
+      --bulk-output                          for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --description string                   the description of the network [optional]
   -f, --file string                          filename of the create or update request in yaml format, or - for stdin.
                                              
@@ -22,8 +22,10 @@ metalctl network update [flags]
                                              $ cat network.yaml | metalctl network update -f -
                                              $ # or via file
                                              $ metalctl network update -f network.yaml
+                                             
+                                             the file can also contain multiple documents and perform a bulk operation.
                                              	
-      --force                                skips security prompty for bulk operations
+      --force                                skips security prompt for bulk operations
   -h, --help                                 help for update
       --labels strings                       the labels of the network, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2". [optional]
       --name string                          the name of the network [optional]

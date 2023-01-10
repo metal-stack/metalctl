@@ -10,7 +10,7 @@ metalctl project create [flags]
 
 ```
       --annotation strings    add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
-      --bulk-output           when creating from file: prints results in a bulk at the end, the results are a list. default is printing results intermediately during creation, which causes single entities to be printed sequentially.
+      --bulk-output           for bulk operations from file: prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --cluster-quota int32   cluster quota
       --description string    description of the project.
   -f, --file string           filename of the create or update request in yaml format, or - for stdin.
@@ -22,8 +22,10 @@ metalctl project create [flags]
                               $ cat project.yaml | metalctl project create -f -
                               $ # or via file
                               $ metalctl project create -f project.yaml
+                              
+                              the file can also contain multiple documents and perform a bulk operation.
                               	
-      --force                 skips security prompty for bulk operations
+      --force                 skips security prompt for bulk operations
   -h, --help                  help for create
       --ip-quota int32        ip quota
       --label strings         add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar
