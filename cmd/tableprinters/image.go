@@ -12,10 +12,10 @@ import (
 
 func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		rows [][]string
+		rows      [][]string
+		header    = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
+		showUsage = viper.GetBool("show-usage")
 	)
-
-	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
 	for _, image := range data {
 		id := pointer.SafeDeref(image.ID)
@@ -33,7 +33,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 		if wide {
 			usedBy = strings.Join(image.Usedby, "\n")
 		}
-		if !viper.GetBool("show-usage") {
+		if !showUsage {
 			usedBy = ""
 		}
 
