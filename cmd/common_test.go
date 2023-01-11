@@ -20,6 +20,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -38,7 +39,16 @@ type test[R any] struct {
 	fsMocks func(fs afero.Fs, want R)
 	cmd     func(want R) []string
 
-	disableMockClient bool // can switch off mock client creation
+	// disableMockClient can switch off mock client creation
+	//
+	// BE CAREFUL WITH THIS FLAG!
+	// the tests will then run with an HTTP client that really communicates with an endpoint.
+	//
+	// only use this flag for testing code parts for client creation!
+	//
+	// point to a test http server and make sure that environment variables
+	// that can potentially override values for client creation are cleaned up before running the test
+	disableMockClient bool
 
 	wantErr       error
 	want          R       // for json and yaml
@@ -71,6 +81,8 @@ func (c *test[R]) testCmd(t *testing.T) {
 		format := format
 		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 			mock, out, config := c.newMockConfig(t)
+
+			viper.Reset()
 
 			cmd := newRootCmd(config)
 			os.Args = append([]string{binaryName}, c.cmd(c.want)...)

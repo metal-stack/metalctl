@@ -62,8 +62,8 @@ func Test_ImageCmd_MultiResult(t *testing.T) {
 				image2,
 			},
 			wantTable: pointer.Pointer(`
-ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY 
-debian   debian-name   debian-description   machine    3d           supported   1        
+ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY
+debian   debian-name   debian-description   machine    3d           supported   1
 ubuntu   ubuntu-name   ubuntu-description   machine    3d           supported   1
 `),
 			wantWideTable: pointer.Pointer(`
@@ -186,12 +186,12 @@ func Test_ImageCmd_SingleResult(t *testing.T) {
 			},
 			want: image1,
 			wantTable: pointer.Pointer(`
-ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY 
-debian   debian-name   debian-description   machine    3d           supported   1
+ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY
+debian   debian-name   debian-description   machine    3d           supported
 		`),
 			wantWideTable: pointer.Pointer(`
-ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY 
-debian   debian-name   debian-description   machine    3d           supported   abc-def
+ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY
+debian   debian-name   debian-description   machine    3d           supported
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -200,7 +200,7 @@ debian debian-name
 			wantMarkdown: pointer.Pointer(`
 |   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION |  STATUS   | USEDBY |
 |--------|-------------|--------------------|----------|------------|-----------|--------|
-| debian | debian-name | debian-description | machine  | 3d         | supported |      1 |
+| debian | debian-name | debian-description | machine  | 3d         | supported |        |
 		`),
 		},
 		{
