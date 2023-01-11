@@ -16,6 +16,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 	)
 
 	showUsage := viper.GetBool("show-usage")
+	fmt.Println(showUsage)
 
 	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
