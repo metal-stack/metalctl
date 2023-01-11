@@ -2,7 +2,6 @@ package tableprinters
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -20,7 +19,6 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 
 	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
-	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	for _, image := range data {
 		id := pointer.SafeDeref(image.ID)
 		features := strings.Join(image.Features, ",")
