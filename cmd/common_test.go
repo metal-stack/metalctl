@@ -19,6 +19,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -70,6 +71,8 @@ func (c *test[R]) testCmd(t *testing.T) {
 		format := format
 		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 			mock, out, config := c.newMockConfig(t)
+
+			viper.Reset()
 
 			cmd := newRootCmd(config)
 			os.Args = append([]string{binaryName}, c.cmd(c.want)...)
