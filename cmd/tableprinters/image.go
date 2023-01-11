@@ -15,10 +15,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 		rows [][]string
 	)
 
-	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status"}
-	if wide {
-		header = []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
-	}
+	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
 	sort.SliceStable(data, func(i, j int) bool { return *data[i].ID < *data[j].ID })
 	for _, image := range data {
@@ -38,11 +35,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 			usedBy = strings.Join(image.Usedby, "\n")
 		}
 
-		if wide {
-			rows = append(rows, []string{id, name, description, features, expiration, status, usedBy})
-		} else {
-			rows = append(rows, []string{id, name, description, features, expiration, status})
-		}
+		rows = append(rows, []string{id, name, description, features, expiration, status, usedBy})
 	}
 
 	return header, rows, nil
