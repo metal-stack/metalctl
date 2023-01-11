@@ -15,9 +15,6 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 		rows [][]string
 	)
 
-	showUsage := viper.GetBool("show-usage")
-	fmt.Println(showUsage)
-
 	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
 	for _, image := range data {
@@ -36,7 +33,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 		if wide {
 			usedBy = strings.Join(image.Usedby, "\n")
 		}
-		if !showUsage {
+		if !viper.GetBool("show-usage") {
 			usedBy = ""
 		}
 
