@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -16,6 +17,14 @@ import (
 )
 
 func Test_BasicRootCmdStuff(t *testing.T) {
+	// prevent env variables for metalctl being set from the outside, which could cause bad side-effects
+	// for these tests as the mock client gets disabled (to point it to the test HTTP server instead)
+	for _, env := range os.Environ() {
+		if strings.HasPrefix(env, strings.ToUpper(binaryName)+"_") {
+			t.Setenv(strings.Split(env, "=")[0], "")
+		}
+	}
+
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer") {

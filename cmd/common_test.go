@@ -38,7 +38,16 @@ type test[R any] struct {
 	fsMocks func(fs afero.Fs, want R)
 	cmd     func(want R) []string
 
-	disableMockClient bool // can switch off mock client creation
+	// disableMockClient can switch off mock client creation
+	//
+	// BE CAREFUL WITH THIS FLAG!
+	// the tests will then run with an HTTP client that really communicates with an endpoint.
+	//
+	// only use this flag for testing code parts for client creation!
+	//
+	// point to a test http server and make sure that environment variables
+	// that can potentially override values for client creation are cleaned up before running the test
+	disableMockClient bool
 
 	wantErr       error
 	want          R       // for json and yaml
