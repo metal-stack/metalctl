@@ -8,12 +8,15 @@ import (
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/spf13/viper"
 )
 
 func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
+
+	showUsage := viper.GetBool("show-usage")
 
 	header := []string{"ID", "Name", "Description", "Features", "Expiration", "Status", "UsedBy"}
 
@@ -33,6 +36,9 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 		usedBy := fmt.Sprintf("%d", len(image.Usedby))
 		if wide {
 			usedBy = strings.Join(image.Usedby, "\n")
+		}
+		if !showUsage {
+			usedBy = ""
 		}
 
 		rows = append(rows, []string{id, name, description, features, expiration, status, usedBy})
