@@ -216,7 +216,6 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	}
 	wide = state
 	if ipmi.Powermetric != nil {
-
 		wide = wide + " " + humanize.SI(float64(*ipmi.Powermetric.Averageconsumedwatts), "W")
 	}
 
