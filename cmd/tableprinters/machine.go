@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -214,6 +215,10 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 		short = color.WhiteString(dot)
 	}
 	wide = state
+	if ipmi.Powermetric != nil {
+
+		wide = wide + " " + humanize.SI(float64(*ipmi.Powermetric.Averageconsumedwatts), "W")
+	}
 
 	return short, wide
 }
