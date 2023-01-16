@@ -38,7 +38,16 @@ type test[R any] struct {
 	fsMocks func(fs afero.Fs, want R)
 	cmd     func(want R) []string
 
-	disableMockClient bool // can switch off mock client creation
+	// disableMockClient can switch off mock client creation
+	//
+	// BE CAREFUL WITH THIS FLAG!
+	// the tests will then run with an HTTP client that really communicates with an endpoint.
+	//
+	// only use this flag for testing code parts for client creation!
+	//
+	// point to a test http server and make sure that environment variables
+	// that can potentially override values for client creation are cleaned up before running the test
+	disableMockClient bool
 
 	wantErr       error
 	want          R       // for json and yaml
@@ -54,7 +63,7 @@ func (c *test[R]) testCmd(t *testing.T) {
 	require.NotEmpty(t, c.cmd, "cmd must not be empty")
 
 	if c.wantErr != nil {
-		mock, _, config := c.newMockConfig(t)
+		_, _, config := c.newMockConfig(t)
 
 		cmd := newRootCmd(config)
 		os.Args = append([]string{binaryName}, c.cmd(c.want)...)
@@ -64,13 +73,12 @@ func (c *test[R]) testCmd(t *testing.T) {
 			t.Errorf("error diff (+got -want):\n %s", diff)
 		}
 
-		mock.AssertExpectations(t)
 	}
 
 	for _, format := range outputFormats(c) {
 		format := format
 		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
-			mock, out, config := c.newMockConfig(t)
+			_, out, config := c.newMockConfig(t)
 
 			viper.Reset()
 
@@ -82,14 +90,12 @@ func (c *test[R]) testCmd(t *testing.T) {
 			assert.NoError(t, err)
 
 			format.Validate(t, out.Bytes())
-
-			mock.AssertExpectations(t)
 		})
 	}
 }
 
 func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.Buffer, *config) {
-	mock, client := client.NewMetalMockClient(c.mocks)
+	mock, client := client.NewMetalMockClient(t, c.mocks)
 
 	fs := afero.NewMemMapFs()
 	if c.fsMocks != nil {
