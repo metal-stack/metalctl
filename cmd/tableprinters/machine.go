@@ -114,6 +114,9 @@ func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models
 		case "RESERVED":
 			emojis = append(emojis, api.Bark)
 			wide = append(wide, "Reserved")
+		case "SHUTDOWN":
+			emojis = append(emojis, api.Sleep)
+			wide = append(wide, "Shutdown")
 		}
 	}
 
