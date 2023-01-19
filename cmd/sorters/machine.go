@@ -64,9 +64,14 @@ func MachineIPMISorter() *multisort.Sorter[*models.V1MachineIPMIResponse] {
 			bID := p.SafeDeref(p.SafeDeref(b.Size).ID)
 			return multisort.Compare(aID, bID, descending)
 		},
-		"image": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
-			aID := p.SafeDeref(p.SafeDeref(p.SafeDeref(a.Allocation).Image).ID)
-			bID := p.SafeDeref(p.SafeDeref(p.SafeDeref(b.Allocation).Image).ID)
+		"bios": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
+			aID := p.SafeDeref(p.SafeDeref(a.Bios).Version)
+			bID := p.SafeDeref(p.SafeDeref(b.Bios).Version)
+			return multisort.Compare(aID, bID, descending)
+		},
+		"bmc": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
+			aID := p.SafeDeref(p.SafeDeref(a.Ipmi).Bmcversion)
+			bID := p.SafeDeref(p.SafeDeref(b.Ipmi).Bmcversion)
 			return multisort.Compare(aID, bID, descending)
 		},
 		"partition": func(a, b *models.V1MachineIPMIResponse, descending bool) multisort.CompareResult {
@@ -97,5 +102,5 @@ func MachineIPMISorter() *multisort.Sorter[*models.V1MachineIPMIResponse] {
 			bEvent := p.SafeDeref(p.SafeDeref(p.FirstOrZero(p.SafeDeref(b.Events).Log)).Event)
 			return multisort.Compare(aEvent, bEvent, descending)
 		},
-	}, multisort.Keys{{ID: "project"}, {ID: "id"}})
+	}, multisort.Keys{{ID: "partition"}, {ID: "size"}, {ID: "bios"}, {ID: "bmc"}, {ID: "id"}})
 }

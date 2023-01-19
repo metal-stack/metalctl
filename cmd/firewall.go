@@ -1,10 +1,17 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
+	"net/netip"
+	"os"
+	"strings"
+	"time"
 
+	"github.com/avast/retry-go/v4"
 	"github.com/metal-stack/metal-go/api/client/firewall"
+	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
@@ -12,6 +19,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"tailscale.com/tsnet"
 )
 
 type firewallCmd struct {
@@ -62,7 +70,17 @@ func newFirewallCmd(c *config) *cobra.Command {
 		},
 	}
 
-	return genericcli.NewCmds(cmdsConfig)
+	firewallSSHCmd := &cobra.Command{
+		Use:   "ssh <firewall ID>",
+		Short: "SSH to a firewall",
+		Long:  `SSH to a firewall via VPN.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.firewallSSH(args)
+		},
+		ValidArgsFunction: c.comp.FirewallListCompletion,
+	}
+	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
+	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
 func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
@@ -172,4 +190,119 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
 	}, nil
+}
+
+func (c *firewallCmd) firewallSSH(args []string) (err error) {
+	firewallID, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	firewall, err := c.Get(firewallID)
+	if err != nil {
+		return fmt.Errorf("failed to find firewall: %w", err)
+	}
+
+	if firewall.Allocation != nil && firewall.Allocation.Vpn != nil && firewall.Allocation.Vpn.Connected != nil && *firewall.Allocation.Vpn.Connected {
+		return c.firewallSSHViaVPN(firewall)
+	}
+
+	// Try to connect to firewall via SSH
+	if err := c.firewallPureSSH(firewall.Allocation); err != nil {
+		return fmt.Errorf("failed to connect to firewall via SSH: %w", err)
+	}
+
+	return nil
+}
+
+func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) (err error) {
+	networks := fwAllocation.Networks
+	for _, nw := range networks {
+		if *nw.Underlay || *nw.Private {
+			continue
+		}
+		for _, ip := range nw.Ips {
+			if portOpen(ip, "22", time.Second) {
+				err = SSHClient("metal", viper.GetString("identity"), ip, 22)
+				if err != nil {
+					return err
+				}
+
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("no ip with a open ssh port found")
+}
+
+func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
+	if firewall.Allocation == nil || firewall.Allocation.Project == nil {
+		return fmt.Errorf("firewall allocation or allocation.project is nil")
+	}
+	projectID := firewall.Allocation.Project
+	fmt.Fprintf(c.out, "accessing firewall through vpn ")
+	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
+		Pid:       projectID,
+		Ephemeral: pointer.Pointer(true),
+	}), nil)
+	if err != nil {
+		return fmt.Errorf("failed to get VPN auth key: %w", err)
+	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		return err
+	}
+	s := &tsnet.Server{
+		Hostname:   hostname,
+		ControlURL: *authKeyResp.Payload.Address,
+		AuthKey:    *authKeyResp.Payload.AuthKey,
+	}
+	defer s.Close()
+
+	// now disable logging, maybe altogether later
+	if !viper.GetBool("debug") {
+		s.Logf = func(format string, args ...any) {}
+	}
+
+	start := time.Now()
+	lc, err := s.LocalClient()
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+
+	var firewallVPNIP netip.Addr
+	err = retry.Do(
+		func() error {
+			fmt.Printf(".")
+			status, err := lc.Status(ctx)
+			if err != nil {
+				return err
+			}
+			if status.Self.Online {
+				for _, peer := range status.Peer {
+					if strings.HasPrefix(peer.HostName, *firewall.ID) && len(peer.TailscaleIPs) > 0 {
+						firewallVPNIP = peer.TailscaleIPs[0]
+						fmt.Printf(" connected to %s (ip %s) took: %s\n", *firewall.ID, firewallVPNIP, time.Since(start))
+						return nil
+					}
+				}
+			}
+			return fmt.Errorf("did not get online")
+		},
+		retry.Attempts(50),
+	)
+	if err != nil {
+		return err
+	}
+	// disable logging after successful connect
+	s.Logf = func(format string, args ...any) {}
+
+	conn, err := lc.DialTCP(ctx, firewallVPNIP.String(), 22)
+	if err != nil {
+		return err
+	}
+
+	return sshClientWithConn("metal", hostname, viper.GetString("identity"), conn)
 }

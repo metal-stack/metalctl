@@ -2,35 +2,51 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"time"
 
-	"golang.org/x/crypto/ssh"
+	"github.com/tailscale/golang-x-crypto/ssh"
 	"golang.org/x/term"
 )
 
-// SSHClient opens a interactive ssh session to the host on port with user, authenticated by the key.
+// SSHClient opens an interactive ssh session to the host on port with user, authenticated by the key.
 func SSHClient(user, keyfile, host string, port int) error {
-	publicKeyAuthMethod, err := publicKey(keyfile)
+	sshConfig, err := getSSHConfig(user, keyfile)
 	if err != nil {
-		return err
-	}
-	config := &ssh.ClientConfig{
-		User: user,
-		Auth: []ssh.AuthMethod{
-			publicKeyAuthMethod,
-		},
-		//nolint:gosec
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         2 * time.Second,
+		return fmt.Errorf("failed to create SSH config: %w", err)
 	}
 
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
+	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), sshConfig)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
+	return createSSHSession(client)
+}
+
+// sshClient opens an interactive ssh session to the host on port with user, authenticated by the key.
+func sshClientWithConn(user, host, privateKey string, conn net.Conn) error {
+	sshConfig, err := getSSHConfig(user, privateKey)
+	if err != nil {
+		return fmt.Errorf("failed to create SSH config: %w", err)
+	}
+
+	sshConn, sshChan, req, err := ssh.NewClientConn(conn, host, sshConfig)
+	if err != nil {
+		return err
+	}
+	client := ssh.NewClient(sshConn, sshChan, req)
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+
+	return createSSHSession(client)
+}
+
+func createSSHSession(client *ssh.Client) error {
 	session, err := client.NewSession()
 	if err != nil {
 		return err
@@ -86,6 +102,28 @@ func SSHClient(user, keyfile, host string, port int) error {
 	// You should now be connected via SSH with a fully-interactive terminal
 	// This call blocks until the user exits the session (e.g. via CTRL + D)
 	return session.Wait()
+}
+
+func getSSHConfig(user, keyfile string) (*ssh.ClientConfig, error) {
+	keyfile, err := expandFilepath(keyfile)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKeyAuthMethod, err := publicKey(keyfile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ssh.ClientConfig{
+		User: user,
+		Auth: []ssh.AuthMethod{
+			publicKeyAuthMethod,
+		},
+		//nolint:gosec
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}, nil
 }
 
 func publicKey(path string) (ssh.AuthMethod, error) {

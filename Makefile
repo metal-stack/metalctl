@@ -30,3 +30,7 @@ build:
 		"$(LINKMODE)" \
 		-o bin/$(BINARY) \
 		$(MAINMODULE)
+
+.PHONY: lint
+lint:
+	docker run --rm -v $(PWD):/app -w /app golangci/golangci-lint golangci-lint run -v

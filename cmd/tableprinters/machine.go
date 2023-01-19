@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -71,7 +72,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, alloc.Vpn)
 
 		if wide {
 			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
@@ -83,7 +84,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 	return header, rows, nil
 }
 
-func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState) (string, string) {
+func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models.V1MachineRecentProvisioningEvents, state *models.V1MachineState, vpn *models.V1MachineVPN) (string, string) {
 	var (
 		emojis []string
 		wide   []string
@@ -131,6 +132,11 @@ func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models
 			emojis = append(emojis, api.Loop)
 			wide = append(wide, "CrashLoop")
 		}
+	}
+
+	if vpn != nil && *vpn.Connected {
+		emojis = append(emojis, api.VPN)
+		wide = append(wide, "VPN")
 	}
 
 	return strings.Join(emojis, nbr), strings.Join(wide, ", ")
@@ -182,7 +188,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			biosVersion = pointer.SafeDeref(bios.Version)
 		}
 
-		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		if wide {
 			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition})
@@ -209,6 +215,9 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 		short = color.WhiteString(dot)
 	}
 	wide = state
+	if ipmi.Powermetric != nil {
+		wide = wide + " " + humanize.SI(float64(*ipmi.Powermetric.Averageconsumedwatts), "W")
+	}
 
 	return short, wide
 }
@@ -290,7 +299,7 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
-		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State)
+		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		for _, issue := range machineWithIssues.Issues {
 			text := fmt.Sprintf("%s (%s)", issue.Description, issue.Type)

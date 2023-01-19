@@ -132,6 +132,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newLogoutCmd(c))
 	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
+	rootCmd.AddCommand(newVPNCmd(c))
 	rootCmd.AddCommand(newUpdateCmd())
 
 	return rootCmd
@@ -211,7 +212,7 @@ func initConfigWithViperCtx(c *config) error {
 		}
 	}
 
-	client, _, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	client, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	if err != nil {
 		return err
 	}
