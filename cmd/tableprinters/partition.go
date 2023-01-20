@@ -10,12 +10,12 @@ import (
 
 func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description"}
+		header = []string{"ID", "Name", "Description", "MinWait", "MaxWait"}
 		rows   [][]string
 	)
 
 	for _, p := range data {
-		rows = append(rows, []string{pointer.SafeDeref(p.ID), p.Name, p.Description})
+		rows = append(rows, []string{pointer.SafeDeref(p.ID), p.Name, p.Description, p.Waitingpoolminsize, p.Waitingpoolmaxsize})
 	}
 
 	return header, rows, nil

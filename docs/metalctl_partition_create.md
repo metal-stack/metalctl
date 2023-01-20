@@ -9,24 +9,26 @@ metalctl partition create [flags]
 ### Options
 
 ```
-      --cmdline string       kernel commandline for the metal-hammer in the partition. [required]
-  -d, --description string   Description of the partition. [required]
-  -f, --file string          filename of the create or update request in yaml format, or - for stdin.
-                             
-                             Example:
-                             $ metalctl partition describe partition-1 -o yaml > partition.yaml
-                             $ vi partition.yaml
-                             $ # either via stdin
-                             $ cat partition.yaml | metalctl partition create -f -
-                             $ # or via file
-                             $ metalctl partition create -f partition.yaml
-                             	
-  -h, --help                 help for create
-      --id string            ID of the partition. [required]
-      --imageurl string      initrd for the metal-hammer in the partition. [required]
-      --kernelurl string     kernel url for the metal-hammer in the partition. [required]
-      --mgmtserver string    management server address in the partition. [required]
-  -n, --name string          Name of the partition. [optional]
+      --cmdline string                 kernel commandline for the metal-hammer in the partition. [required]
+  -d, --description string             Description of the partition. [required]
+  -f, --file string                    filename of the create or update request in yaml format, or - for stdin.
+                                       
+                                       Example:
+                                       $ metalctl partition describe partition-1 -o yaml > partition.yaml
+                                       $ vi partition.yaml
+                                       $ # either via stdin
+                                       $ cat partition.yaml | metalctl partition create -f -
+                                       $ # or via file
+                                       $ metalctl partition create -f partition.yaml
+                                       	
+  -h, --help                           help for create
+      --id string                      ID of the partition. [required]
+      --imageurl string                initrd for the metal-hammer in the partition. [required]
+      --kernelurl string               kernel url for the metal-hammer in the partition. [required]
+      --mgmtserver string              management server address in the partition. [required]
+  -n, --name string                    Name of the partition. [optional]
+      --waiting-pool-max-size string   The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]
+      --waiting-pool-min-size string   The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]
 ```
 
 ### Options inherited from parent commands

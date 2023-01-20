@@ -26,6 +26,8 @@ var (
 		Mgmtserviceaddress:         "mgmt",
 		Name:                       "partition-1",
 		Privatenetworkprefixlength: 24,
+		Waitingpoolmaxsize:         "10%",
+		Waitingpoolminsize:         "5%",
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -63,13 +65,13 @@ func Test_PartitionCmd_MultiResult(t *testing.T) {
 				partition2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 2    partition-2   partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 2    partition-2   partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -78,10 +80,10 @@ ID   NAME          DESCRIPTION
 2 partition-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
-|  2 | partition-2 | partition 2 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
+|  2 | partition-2 | partition 2 |         |         |
 `),
 		},
 		{
@@ -130,21 +132,21 @@ func Test_PartitionCmd_SingleResult(t *testing.T) {
 			},
 			want: partition1,
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
 `),
 		},
 		{
@@ -172,6 +174,8 @@ ID   NAME          DESCRIPTION
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
+					"--waiting-pool-min-size", want.Waitingpoolminsize,
+					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
 				}
 				assertExhaustiveArgs(t, args, "file")
 				return args
