@@ -46,6 +46,8 @@ func newPartitionCmd(c *config) *cobra.Command {
 					Imageurl:    viper.GetString("imageurl"),
 					Kernelurl:   viper.GetString("kernelurl"),
 				},
+				Waitingpoolmaxsize: viper.GetString("waiting-pool-max-size"),
+				Waitingpoolminsize: viper.GetString("waiting-pool-min-size"),
 			}, nil
 		},
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
@@ -56,6 +58,8 @@ func newPartitionCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
+			cmd.Flags().String("waiting-pool-min-size", "", "The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]")
+			cmd.Flags().String("waiting-pool-max-size", "", "The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]")
 		},
 	}
 
@@ -146,6 +150,8 @@ func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1Partitio
 		Mgmtserviceaddress:         r.Mgmtserviceaddress,
 		Name:                       r.Name,
 		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
+		Waitingpoolmaxsize:         r.Waitingpoolmaxsize,
+		Waitingpoolminsize:         r.Waitingpoolminsize,
 	}
 }
 
@@ -160,6 +166,8 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 		ID:                 r.ID,
 		Mgmtserviceaddress: r.Mgmtserviceaddress,
 		Name:               r.Name,
+		Waitingpoolmaxsize: r.Waitingpoolmaxsize,
+		Waitingpoolminsize: r.Waitingpoolminsize,
 	}
 }
 
