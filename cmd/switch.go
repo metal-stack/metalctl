@@ -43,6 +43,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		Plural:          "switches",
 		Description:     "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		Sorter:          sorters.SwitchSorter(),
+		ValidArgsFn:     c.comp.SwitchListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 	}
@@ -53,6 +54,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchDetail()
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
