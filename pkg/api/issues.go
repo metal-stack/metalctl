@@ -392,7 +392,17 @@ func (i *IssueFailedMachineReclaim) Spec() *issueSpec {
 }
 
 func (i *IssueFailedMachineReclaim) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
-	return pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim)
+	if pointer.SafeDeref(pointer.SafeDeref(m.Events).FailedMachineReclaim) {
+		return true
+	}
+
+	// compatibility: before the provisioning FSM was renewed, this state could be detected the following way
+	// we should keep this condition
+	if m.Allocation == nil && pointer.SafeDeref(pointer.SafeDeref(pointer.FirstOrZero(pointer.SafeDeref(m.Events).Log)).Event) == "Phoned Home" {
+		return true
+	}
+
+	return false
 }
 
 func (i *IssueFailedMachineReclaim) Details() string {
