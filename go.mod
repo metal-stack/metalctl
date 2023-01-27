@@ -6,7 +6,7 @@ require (
 	bou.ke/monkey v1.0.2
 	github.com/avast/retry-go/v4 v4.3.2
 	github.com/dustin/go-humanize v1.0.1
-	github.com/fatih/color v1.14.0
+	github.com/fatih/color v1.14.1
 	github.com/go-openapi/runtime v0.25.0
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/google/go-cmp v0.5.9
@@ -20,12 +20,12 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.15.0
 	github.com/stretchr/testify v1.8.1
-	github.com/tailscale/golang-x-crypto v0.0.0-20221102133106-bc99ab8c2d17
+	github.com/tailscale/golang-x-crypto v0.0.0-20221115211329-17a3db2c30d2
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20230118134722-a68e582fa157
+	golang.org/x/exp v0.0.0-20230126173853-a67bb567ff2e
 	golang.org/x/term v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/kube-openapi v0.0.0-20230118215034-64b6bb138190
+	k8s.io/kube-openapi v0.0.0-20230123231816-1cb3ae25d79a
 	tailscale.com v1.34.2
 )
 
@@ -140,7 +140,7 @@ require (
 	github.com/tcnksm/go-httpstat v0.2.0 // indirect
 	github.com/u-root/uio v0.0.0-20221213070652-c3537552635f // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
-	github.com/vishvananda/netns v0.0.3 // indirect
+	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.mongodb.org/mongo-driver v1.11.1 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
@@ -148,7 +148,7 @@ require (
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
-	go4.org/netipx v0.0.0-20230118030647-987e16ee2705 // indirect
+	go4.org/netipx v0.0.0-20230125063823-8449b0a6169f // indirect
 	golang.org/x/crypto v0.5.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
 	golang.org/x/net v0.5.0 // indirect
@@ -158,7 +158,7 @@ require (
 	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.5.0 // indirect
-	golang.zx2c4.com/wintun v0.0.0-20211104114900-415007cec224 // indirect
+	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20220920152132-bb719d3a6e2c // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
