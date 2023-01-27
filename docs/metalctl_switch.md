@@ -49,7 +49,7 @@ switch are the leaf switches in the data center that are controlled by metal-sta
 * [metalctl switch detail](metalctl_switch_detail.md)	 - switch details
 * [metalctl switch edit](metalctl_switch_edit.md)	 - edit the switch through an editor and update
 * [metalctl switch list](metalctl_switch_list.md)	 - list all switches
-* [metalctl switch replace](metalctl_switch_replace.md)	 - puts a switch in replace mode in preparation for physical replacement
+* [metalctl switch replace](metalctl_switch_replace.md)	 - put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
 * [metalctl switch ssh](metalctl_switch_ssh.md)	 - connect to the switch via ssh
 * [metalctl switch update](metalctl_switch_update.md)	 - updates the switch
 
