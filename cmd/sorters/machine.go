@@ -112,5 +112,5 @@ func MachineIPMISorter() *multisort.Sorter[*models.V1MachineIPMIResponse] {
 			bEvent := p.SafeDeref(p.SafeDeref(p.FirstOrZero(p.SafeDeref(b.Events).Log)).Event)
 			return multisort.Compare(aEvent, bEvent, descending)
 		},
-	}, multisort.Keys{{ID: "partition"}, {ID: "size"}, {ID: "bios"}, {ID: "bmc"}, {ID: "id"}})
+	}, multisort.Keys{{ID: "partition"}, {ID: "rack"}, {ID: "size"}, {ID: "bios"}, {ID: "bmc"}, {ID: "id"}})
 }
