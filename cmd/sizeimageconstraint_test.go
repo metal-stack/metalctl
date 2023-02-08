@@ -45,7 +45,7 @@ func Test_SizeImageConstraintCmd_MultiResult(t *testing.T) {
 				return []string{"size", "imageconstraint", "list"}
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("ListSizeImageConstraints", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewListSizeImageConstraintsParams()), nil).Return(&sizeimageconstraint.ListSizeImageConstraintsOK{
 						Payload: []*models.V1SizeImageConstraintResponse{
 							sic2,
@@ -89,7 +89,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(nil, &sizeimageconstraint.CreateSizeImageConstraintConflict{}).Once()
 					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
@@ -113,7 +113,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic1,
 					}, nil)
@@ -132,7 +132,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
@@ -156,7 +156,7 @@ func Test_SizeImageConstraintCmd_SingleResult(t *testing.T) {
 				return []string{"size", "imageconstraint", "describe", *want.ID}
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("FindSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewFindSizeImageConstraintParams().WithID(*sic1.ID)), nil).Return(&sizeimageconstraint.FindSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
@@ -187,8 +187,42 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 				return []string{"size", "imageconstraint", "rm", *want.ID}
 			},
 			mocks: &client.MetalMockFns{
-				SizeImageConstraint: func(mock *mock.Mock) {
+				Sizeimageconstraint: func(mock *mock.Mock) {
 					mock.On("DeleteSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewDeleteSizeImageConstraintParams().WithID(*sic1.ID)), nil).Return(&sizeimageconstraint.DeleteSizeImageConstraintOK{
+						Payload: sic1,
+					}, nil)
+				},
+			},
+			want: sic1,
+		},
+		{
+			name: "create from file",
+			cmd: func(want *models.V1SizeImageConstraintResponse) []string {
+				return []string{"size", "imageconstraint", "create", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1SizeImageConstraintResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Sizeimageconstraint: func(mock *mock.Mock) {
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+						Payload: sic1,
+					}, nil)
+				},
+			},
+			want: sic1,
+		},
+		{
+			name: "update from file",
+			cmd: func(want *models.V1SizeImageConstraintResponse) []string {
+				return []string{"size", "imageconstraint", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1SizeImageConstraintResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Sizeimageconstraint: func(mock *mock.Mock) {
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
 				},

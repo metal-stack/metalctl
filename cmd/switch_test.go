@@ -113,7 +113,7 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 				return []string{"switch", "list"}
 			},
 			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
+				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("ListSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewListSwitchesParams()), nil).Return(&switch_operations.ListSwitchesOK{
 						Payload: []*models.V1SwitchResponse{
 							switch2,
@@ -157,7 +157,7 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
+				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
 						Payload: switch1,
 					}, nil)
@@ -176,7 +176,7 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
+				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
 						Payload: switch1,
 					}, nil)
@@ -200,7 +200,7 @@ func Test_SwitchCmd_SingleResult(t *testing.T) {
 				return []string{"switch", "describe", *want.ID}
 			},
 			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
+				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("FindSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.FindSwitchOK{
 						Payload: switch1,
 					}, nil)
@@ -231,8 +231,25 @@ ID   PARTITION   RACK     MODE          LAST SYNC   SYNC DURATION   LAST SYNC ER
 				return []string{"switch", "rm", *want.ID}
 			},
 			mocks: &client.MetalMockFns{
-				Switch: func(mock *mock.Mock) {
+				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: switch1,
+		},
+		{
+			name: "update from file",
+			cmd: func(want *models.V1SwitchResponse) []string {
+				return []string{"switch", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1SwitchResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},
