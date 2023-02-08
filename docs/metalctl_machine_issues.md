@@ -38,6 +38,7 @@ metalctl machine issues [<machine ID>] [flags]
       --project string                        allocation project to filter [optional]
       --severity string                       issue severity to include [optional]
       --size string                           size to filter [optional]
+      --sort-by strings                       sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|bios|bmc|event|id|liveliness|partition|project|size|when
       --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 

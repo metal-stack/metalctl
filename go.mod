@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/google/go-cmp v0.5.9
 	github.com/metal-stack/metal-go v0.21.5
-	github.com/metal-stack/metal-lib v0.11.4-0.20230208090939-906429c57e94
+	github.com/metal-stack/metal-lib v0.11.4-0.20230208091713-34564146a383
 	github.com/metal-stack/updater v1.1.4
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5

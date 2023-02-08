@@ -356,7 +356,10 @@ In case the machine did not register properly a direct ipmi console access is av
 	}
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
+	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
+
 	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
+	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
 
 	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
@@ -1242,12 +1245,17 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return c.describePrinter.Print(resp.Payload)
 	}
 
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
@@ -1256,12 +1264,17 @@ func (c *machineCmd) machineIpmi(args []string) error {
 }
 
 func (c *machineCmd) machineIssues(args []string) error {
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
