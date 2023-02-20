@@ -11,9 +11,9 @@ import (
 
 // Contexts contains all configuration contexts of metalctl
 type Contexts struct {
-	CurrentContext  string `yaml:"current"`
-	PreviousContext string `yaml:"previous"`
-	Contexts        map[string]Context
+	CurrentContext  string             `yaml:"current"`
+	PreviousContext string             `yaml:"previous"`
+	Contexts        map[string]Context `yaml:"contexts"`
 }
 
 // Context configure metalctl behaviour
