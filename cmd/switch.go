@@ -5,14 +5,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"sort"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -112,13 +110,6 @@ func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, s := range resp.Payload {
-		s := s
-		sort.SliceStable(s.Connections, func(i, j int) bool {
-			return pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[i])).Nic).Name) < pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[j])).Nic).Name)
-		})
 	}
 
 	return resp.Payload, nil
