@@ -30,19 +30,19 @@ jobs:
         password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - uses: google-github-actions/auth@v0
+    - uses: google-github-actions/auth@v1
       with:
         credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v0
+      uses: google-github-actions/setup-gcloud@v1
 
     - name: Ensure Go Version
       uses: actions/setup-go@v3
       with:
-        go-version: '1.19'
+        go-version: '1.20'
         # go-version-file: 'go.mod'
 
     - name: Lint
