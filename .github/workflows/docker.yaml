@@ -30,7 +30,7 @@ jobs:
         password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - uses: google-github-actions/auth@v1
       with:
@@ -42,7 +42,7 @@ jobs:
     - name: Ensure Go Version
       uses: actions/setup-go@v3
       with:
-        go-version: '1.19'
+        go-version: '1.20'
         # go-version-file: 'go.mod'
 
     - name: Lint
