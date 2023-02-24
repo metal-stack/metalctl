@@ -75,13 +75,16 @@ func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
 	url := resp.Payload.URL
 	if viper.GetBool("show-packages") {
 		packageURL := strings.Replace(url, "img.tar.lz4", "packages.txt", 1)
+		//nolint:gosec,noctx
 		res, err := http.Head(packageURL)
 		if err != nil {
 			return nil, fmt.Errorf("image:%s does not have a package list", id)
 		}
+		defer res.Body.Close()
 		if res.StatusCode >= 400 {
 			return nil, fmt.Errorf("image:%s does not have a package list", id)
 		}
+		//nolint:gosec,noctx
 		getResp, err := http.Get(packageURL)
 		if err != nil {
 			return nil, err
