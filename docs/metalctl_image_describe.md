@@ -9,7 +9,8 @@ metalctl image describe <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for describe
+  -h, --help            help for describe
+      --show-packages   show packages of the image
 ```
 
 ### Options inherited from parent commands

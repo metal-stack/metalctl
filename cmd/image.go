@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
@@ -54,6 +58,9 @@ func newImageCmd(c *config) *cobra.Command {
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
 		},
+		DescribeCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().BoolP("show-packages", "", false, "show packages of the image")
+		},
 	}
 
 	return genericcli.NewCmds(cmdsConfig)
@@ -63,6 +70,29 @@ func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
 	resp, err := c.client.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
+	}
+
+	url := resp.Payload.URL
+	if viper.GetBool("show-packages") {
+		packageURL := strings.Replace(url, "img.tar.lz4", "packages.txt", 1)
+		res, err := http.Head(packageURL)
+		if err != nil {
+			return nil, fmt.Errorf("image:%s does not have a package list", id)
+		}
+		if res.StatusCode >= 400 {
+			return nil, fmt.Errorf("image:%s does not have a package list", id)
+		}
+		getResp, err := http.Get(packageURL)
+		if err != nil {
+			return nil, err
+		}
+		defer getResp.Body.Close()
+		content, err := io.ReadAll(getResp.Body)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("%s", string(content))
+		return nil, nil
 	}
 
 	return resp.Payload, nil
