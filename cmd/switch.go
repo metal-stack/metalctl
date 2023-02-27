@@ -146,6 +146,12 @@ func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateR
 }
 
 func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
+	switchOS := &models.V1SwitchOS{}
+	if r.Os != nil {
+		switchOS.Vendor = r.Os.Vendor
+		switchOS.Vendor = r.Os.Version
+	}
+
 	return &models.V1SwitchUpdateRequest{
 		ConsoleCommand: r.ConsoleCommand,
 		Description:    r.Description,
@@ -154,7 +160,7 @@ func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRe
 		ManagementUser: "",
 		Mode:           r.Mode,
 		Name:           r.Name,
-		Os:             &models.V1SwitchOS{},
+		Os:             switchOS,
 		RackID:         r.RackID,
 	}
 }
@@ -200,6 +206,12 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
+	switchOS := &models.V1SwitchOS{}
+	if resp.Os != nil {
+		switchOS.Vendor = resp.Os.Vendor
+		switchOS.Vendor = resp.Os.Version
+	}
+
 	uresp, err := c.Update(&models.V1SwitchUpdateRequest{
 		ConsoleCommand: "",
 		Description:    resp.Description,
@@ -208,7 +220,7 @@ func (c *switchCmd) switchReplace(args []string) error {
 		ManagementUser: "",
 		Mode:           "replace",
 		Name:           resp.Name,
-		Os:             &models.V1SwitchOS{},
+		Os:             switchOS,
 		RackID:         resp.RackID,
 	})
 	if err != nil {
