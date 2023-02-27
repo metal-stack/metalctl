@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -62,13 +63,13 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		os := ""
 		osIcon := ""
 		if s.Os != nil {
-			switch s.Os.Vendor {
-			case "Cumulus":
+			switch strings.ToLower(s.Os.Vendor) {
+			case "cumulus":
 				osIcon = "🐢"
-			case "SONiC":
+			case "sonic":
 				osIcon = "🦔"
 			default:
-				osIcon = ""
+				osIcon = s.Os.Vendor
 			}
 
 			os = s.Os.Vendor
