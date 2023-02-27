@@ -264,7 +264,12 @@ func (c *switchCmd) switchConsole(args []string) error {
 	}
 
 	if resp.ConsoleCommand == "" {
-		return fmt.Errorf("unable to connect to console because no console_command was specified for this switch")
+		return fmt.Errorf(`
+unable to connect to console because no console_command was specified for this switch
+You can add a working console_command to every switch with metalctl switch edit
+A sample would look like:
+
+telnet console-server 7008`)
 	}
 	parts := strings.Fields(resp.ConsoleCommand)
 
