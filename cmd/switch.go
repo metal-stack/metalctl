@@ -3,14 +3,14 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"sort"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -36,10 +36,12 @@ func newSwitchCmd(c *config) *cobra.Command {
 			genericcli.DeleteCmd,
 			genericcli.EditCmd,
 		),
+		Aliases:         []string{"sw"},
 		Singular:        "switch",
 		Plural:          "switches",
 		Description:     "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		Sorter:          sorters.SwitchSorter(),
+		ValidArgsFn:     c.comp.SwitchListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 	}
@@ -50,6 +52,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchDetail()
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
@@ -69,11 +72,29 @@ Operational steps to replace a switch:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchReplace(args)
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+	switchSSHCmd := &cobra.Command{
+		Use:   "ssh <switchID>",
+		Short: "connect to the switch via ssh",
+		Long:  "this requires a network connectivity to the management ip address of the switch.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchSSH(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+	switchConsoleCmd := &cobra.Command{
+		Use:   "console <switchID>",
+		Short: "connect to the switch console",
+		Long:  "this requires a network connectivity to the ip address of the console server this switch is connected to.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchConsole(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
 	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -89,13 +110,6 @@ func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, s := range resp.Payload {
-		s := s
-		sort.SliceStable(s.Connections, func(i, j int) bool {
-			return pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[i])).Nic).Name) < pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[j])).Nic).Name)
-		})
 	}
 
 	return resp.Payload, nil
@@ -132,12 +146,22 @@ func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateR
 }
 
 func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
+	switchOS := &models.V1SwitchOS{}
+	if r.Os != nil {
+		switchOS.Vendor = r.Os.Vendor
+		switchOS.Vendor = r.Os.Version
+	}
+
 	return &models.V1SwitchUpdateRequest{
-		Description: r.Description,
-		ID:          r.ID,
-		Mode:        r.Mode,
-		Name:        r.Name,
-		RackID:      r.RackID,
+		ConsoleCommand: r.ConsoleCommand,
+		Description:    r.Description,
+		ID:             r.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           r.Mode,
+		Name:           r.Name,
+		Os:             switchOS,
+		RackID:         r.RackID,
 	}
 }
 
@@ -182,16 +206,81 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
+	switchOS := &models.V1SwitchOS{}
+	if resp.Os != nil {
+		switchOS.Vendor = resp.Os.Vendor
+		switchOS.Vendor = resp.Os.Version
+	}
+
 	uresp, err := c.Update(&models.V1SwitchUpdateRequest{
-		ID:          resp.ID,
-		Name:        resp.Name,
-		Description: resp.Description,
-		RackID:      resp.RackID,
-		Mode:        "replace",
+		ConsoleCommand: "",
+		Description:    resp.Description,
+		ID:             resp.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           "replace",
+		Name:           resp.Name,
+		Os:             switchOS,
+		RackID:         resp.RackID,
 	})
 	if err != nil {
 		return err
 	}
 
 	return c.describePrinter.Print(uresp)
+}
+
+func (c *switchCmd) switchSSH(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+	if resp.ManagementIP == "" || resp.ManagementUser == "" {
+		return fmt.Errorf("unable to connect to switch by ssh because no ip and user was stored for this switch, please restart metal-core on this switch")
+	}
+
+	// nolint: gosec
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", resp.ManagementUser, resp.ManagementIP))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
+}
+
+func (c *switchCmd) switchConsole(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	if resp.ConsoleCommand == "" {
+		return fmt.Errorf(`
+unable to connect to console because no console_command was specified for this switch
+You can add a working console_command to every switch with metalctl switch edit
+A sample would look like:
+
+telnet console-server 7008`)
+	}
+	parts := strings.Fields(resp.ConsoleCommand)
+
+	// nolint: gosec
+	cmd := exec.Command(parts[0])
+	if len(parts) > 1 {
+		// nolint: gosec
+		cmd = exec.Command(parts[0], parts[1:]...)
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
 }

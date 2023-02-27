@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -14,9 +15,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		rows [][]string
 	)
 
-	header := []string{"ID", "Partition", "Rack", "Status"}
+	header := []string{"ID", "Partition", "Rack", "OS", "Status"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
 	}
 
 	for _, s := range data {
@@ -59,10 +60,28 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			mode = "operational"
 		}
 
+		os := ""
+		osIcon := ""
+		if s.Os != nil {
+			switch strings.ToLower(s.Os.Vendor) {
+			case "cumulus":
+				osIcon = "🐢"
+			case "sonic":
+				osIcon = "🦔"
+			default:
+				osIcon = s.Os.Vendor
+			}
+
+			os = s.Os.Vendor
+			if s.Os.Version != "" {
+				os = os + "/" + s.Os.Version
+			}
+		}
+
 		if wide {
-			rows = append(rows, []string{id, partition, rack, mode, syncAgeStr, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, s.ManagementIP, mode, syncAgeStr, syncDurStr, syncError})
 		} else {
-			rows = append(rows, []string{id, partition, rack, shortStatus})
+			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus})
 		}
 	}
 
