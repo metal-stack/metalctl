@@ -124,7 +124,7 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {
-					mock.On("ListSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewListSwitchesParams()), nil).Return(&switch_operations.ListSwitchesOK{
+					mock.On("FindSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{})), nil).Return(&switch_operations.FindSwitchesOK{
 						Payload: []*models.V1SwitchResponse{
 							switch2,
 							switch1,
@@ -157,6 +157,50 @@ ID   PARTITION   RACK     OS          IP        MODE          LAST SYNC   SYNC D
 |  1 |         1 | rack-1 | 🦔 |  ●     |
 |  2 |         1 | rack-1 | 🐢 |  ●     |
 `),
+		},
+		{
+			name: "list with filters",
+			cmd: func(want []*models.V1SwitchResponse) []string {
+				args := []string{"switch", "list", "--id", *want[0].ID, "--name", want[0].Name, "--os-vendor", want[0].Os.Vendor, "--os-version", want[0].Os.Version, "--partition", *want[0].Partition.ID, "--rack", *want[0].RackID}
+				assertExhaustiveArgs(t, args, "sort-by")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("FindSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{
+						ID:          *switch1.ID,
+						Name:        switch1.Name,
+						Osvendor:    switch1.Os.Vendor,
+						Osversion:   switch1.Os.Version,
+						Partitionid: *switch1.Partition.ID,
+						Rackid:      *switch1.RackID,
+					})), nil).Return(&switch_operations.FindSwitchesOK{
+						Payload: []*models.V1SwitchResponse{
+							switch1,
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1SwitchResponse{
+				switch1,
+			},
+			wantTable: pointer.Pointer(`
+ID   PARTITION   RACK     OS   STATUS
+1    1           rack-1   🦔    ●
+		`),
+			wantWideTable: pointer.Pointer(`
+ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+1    1           rack-1   SONiC/1   1.2.3.4   operational   0s          1s              5m ago: error
+		`),
+			template: pointer.Pointer("{{ .id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+1 switch-1
+		`),
+			wantMarkdown: pointer.Pointer(`
+| ID | PARTITION |  RACK  | OS | STATUS |
+|----|-----------|--------|----|--------|
+|  1 |         1 | rack-1 | 🦔 |  ●     |
+		`),
 		},
 	}
 	for _, tt := range tests {
