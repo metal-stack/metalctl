@@ -9,8 +9,14 @@ metalctl switch list [flags]
 ### Options
 
 ```
-  -h, --help              help for list
-      --sort-by strings   sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
+  -h, --help                help for list
+      --id string           ID of the switch.
+      --name string         Name of the switch.
+      --os-vendor string    OS vendor of this switch.
+      --os-version string   OS version of this switch.
+      --partition string    Partition of this switch.
+      --rack string         Rack of this switch.
+      --sort-by strings     sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
 ```
 
 ### Options inherited from parent commands

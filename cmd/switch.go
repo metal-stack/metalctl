@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -44,6 +43,21 @@ func newSwitchCmd(c *config) *cobra.Command {
 		ValidArgsFn:     c.comp.SwitchListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "ID of the switch.")
+			cmd.Flags().String("name", "", "Name of the switch.")
+			cmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+			cmd.Flags().String("os-version", "", "OS version of this switch.")
+			cmd.Flags().String("partition", "", "Partition of this switch.")
+			cmd.Flags().String("rack", "", "Rack of this switch.")
+
+			must(cmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
+		},
 	}
 
 	switchDetailCmd := &cobra.Command{
@@ -54,6 +68,19 @@ func newSwitchCmd(c *config) *cobra.Command {
 		},
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
+
+	switchDetailCmd.Flags().String("id", "", "ID of the switch.")
+	switchDetailCmd.Flags().String("name", "", "Name of the switch.")
+	switchDetailCmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+	switchDetailCmd.Flags().String("os-version", "", "OS version of this switch.")
+	switchDetailCmd.Flags().String("partition", "", "Partition of this switch.")
+	switchDetailCmd.Flags().String("rack", "", "Rack of this switch.")
+
+	must(switchDetailCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.",
@@ -93,7 +120,6 @@ Operational steps to replace a switch:
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
-	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
 	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
@@ -107,7 +133,14 @@ func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
 }
 
 func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
-	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
+	resp, err := c.client.SwitchOperations().FindSwitches(switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{
+		ID:          viper.GetString("id"),
+		Name:        viper.GetString("name"),
+		Osvendor:    viper.GetString("os-vendor"),
+		Osversion:   viper.GetString("os-version"),
+		Partitionid: viper.GetString("partition"),
+		Rackid:      viper.GetString("rack"),
+	}), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -174,22 +207,8 @@ func (c *switchCmd) switchDetail() error {
 	}
 
 	var result []*tableprinters.SwitchDetail
-	filter := viper.GetString("filter")
 	for _, s := range resp {
-		partitionID := ""
-		if s.Partition != nil {
-			partitionID = *s.Partition.ID
-		}
-		if strings.Contains(*s.ID, filter) ||
-			strings.Contains(partitionID, filter) ||
-			strings.Contains(*s.RackID, filter) {
-			result = append(result, &tableprinters.SwitchDetail{V1SwitchResponse: s})
-		}
-	}
-
-	if len(result) < 1 {
-		log.Printf("no switch detail for filter: %s", filter)
-		return nil
+		result = append(result, &tableprinters.SwitchDetail{V1SwitchResponse: s})
 	}
 
 	return c.listPrinter.Print(result)
