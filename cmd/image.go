@@ -65,6 +65,8 @@ func newImageCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
 			must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
 			must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
+			must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
 		},
 	}
 

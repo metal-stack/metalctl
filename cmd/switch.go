@@ -55,6 +55,8 @@ func newSwitchCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
 		},
 	}
 
