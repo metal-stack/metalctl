@@ -30,6 +30,7 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
       --os-version string   OS version of this switch.
       --partition string    Partition of this switch.
       --rack string         Rack of this switch.
+      --size string         Size of the connectedmachines.
 ```
 
 ### Options inherited from parent commands
