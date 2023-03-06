@@ -1,15 +1,35 @@
-## metalctl switch
+## metalctl switch connected-machines
 
-manage switch entities
+shows switches with their connected machines
 
-### Synopsis
+```
+metalctl switch connected-machines [flags]
+```
 
-switch are the leaf switches in the data center that are controlled by metal-stack.
+### Examples
+
+```
+The command will show the machines connected to the switch ports.
+
+Can also be used with -o template in order to generate CSV-style output:
+
+$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
+r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
+r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
+...
+
+```
 
 ### Options
 
 ```
-  -h, --help   help for switch
+  -h, --help                help for connected-machines
+      --id string           ID of the switch.
+      --name string         Name of the switch.
+      --os-vendor string    OS vendor of this switch.
+      --os-version string   OS version of this switch.
+      --partition string    Partition of this switch.
+      --rack string         Rack of this switch.
 ```
 
 ### Options inherited from parent commands
@@ -42,15 +62,5 @@ switch are the leaf switches in the data center that are controlled by metal-sta
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl switch connected-machines](metalctl_switch_connected-machines.md)	 - shows switches with their connected machines
-* [metalctl switch console](metalctl_switch_console.md)	 - connect to the switch console
-* [metalctl switch delete](metalctl_switch_delete.md)	 - deletes the switch
-* [metalctl switch describe](metalctl_switch_describe.md)	 - describes the switch
-* [metalctl switch detail](metalctl_switch_detail.md)	 - switch details
-* [metalctl switch edit](metalctl_switch_edit.md)	 - edit the switch through an editor and update
-* [metalctl switch list](metalctl_switch_list.md)	 - list all switches
-* [metalctl switch replace](metalctl_switch_replace.md)	 - put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
-* [metalctl switch ssh](metalctl_switch_ssh.md)	 - connect to the switch via ssh
-* [metalctl switch update](metalctl_switch_update.md)	 - updates the switch
+* [metalctl switch](metalctl_switch.md)	 - manage switch entities
 

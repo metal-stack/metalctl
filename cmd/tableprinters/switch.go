@@ -2,6 +2,9 @@ package tableprinters
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -86,6 +89,90 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 	}
 
 	return header, rows, nil
+}
+
+type SwitchesWithMachines struct {
+	SS []*models.V1SwitchResponse               `json:"switches" yaml:"switches"`
+	MS map[string]*models.V1MachineIPMIResponse `json:"machines" yaml:"machines"`
+}
+
+func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachines, wide bool) ([]string, [][]string, error) {
+	var (
+		rows [][]string
+	)
+
+	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial"}
+
+	for _, s := range data.SS {
+		id := pointer.SafeDeref(s.ID)
+		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
+		rack := pointer.SafeDeref(s.RackID)
+
+		rows = append(rows, []string{id, "", "", partition, rack})
+
+		sort.Slice(s.Connections, switchInterfaceNameLessFunc(s.Connections))
+
+		for i, conn := range s.Connections {
+			m := data.MS[conn.MachineID]
+
+			prefix := "├"
+			if i == len(s.Connections)-1 {
+				prefix = "└"
+			}
+			prefix += "─╴"
+
+			identifier := pointer.SafeDeref(conn.Nic.Identifier)
+			if identifier == "" {
+				identifier = pointer.SafeDeref(conn.Nic.Mac)
+			}
+
+			rows = append(rows, []string{
+				fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+				pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+				identifier,
+				pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+				m.Rackid,
+				pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+				pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+			})
+		}
+	}
+
+	return header, rows, nil
+}
+
+var numberRegex = regexp.MustCompile("([0-9]+)")
+
+func switchInterfaceNameLessFunc(conns []*models.V1SwitchConnection) func(i, j int) bool {
+	return func(i, j int) bool {
+		var (
+			a = pointer.SafeDeref(pointer.SafeDeref(conns[i]).Nic.Name)
+			b = pointer.SafeDeref(pointer.SafeDeref(conns[j]).Nic.Name)
+
+			aMatch = numberRegex.FindAllStringSubmatch(a, -1)
+			bMatch = numberRegex.FindAllStringSubmatch(b, -1)
+		)
+
+		for i := range aMatch {
+			if i >= len(bMatch) {
+				return true
+			}
+
+			interfaceNumberA, aErr := strconv.Atoi(aMatch[i][0])
+			interfaceNumberB, bErr := strconv.Atoi(bMatch[i][0])
+
+			if aErr == nil && bErr == nil {
+				if interfaceNumberA < interfaceNumberB {
+					return true
+				}
+				if interfaceNumberA != interfaceNumberB {
+					return false
+				}
+			}
+		}
+
+		return a < b
+	}
 }
 
 type SwitchDetail struct {
