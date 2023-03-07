@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -81,6 +82,37 @@ func newSwitchCmd(c *config) *cobra.Command {
 	must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
 
+	switchMachinesCmd := &cobra.Command{
+		Use:   "connected-machines",
+		Short: "shows switches with their connected machines",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchMachines()
+		},
+		Example: `The command will show the machines connected to the switch ports.
+
+Can also be used with -o template in order to generate CSV-style output:
+
+$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
+r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
+r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
+...
+`,
+	}
+
+	switchMachinesCmd.Flags().String("id", "", "ID of the switch.")
+	switchMachinesCmd.Flags().String("name", "", "Name of the switch.")
+	switchMachinesCmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+	switchMachinesCmd.Flags().String("os-version", "", "OS version of this switch.")
+	switchMachinesCmd.Flags().String("partition", "", "Partition of this switch.")
+	switchMachinesCmd.Flags().String("rack", "", "Rack of this switch.")
+	switchMachinesCmd.Flags().String("size", "", "Size of the connectedmachines.")
+
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.",
@@ -120,7 +152,7 @@ Operational steps to replace a switch:
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -212,6 +244,43 @@ func (c *switchCmd) switchDetail() error {
 	}
 
 	return c.listPrinter.Print(result)
+}
+
+func (c *switchCmd) switchMachines() error {
+	switches, err := c.List()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.SwitchSorter().SortBy(switches)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+		PartitionID: viper.GetString("partition"),
+		Rackid:      viper.GetString("rack"),
+		Sizeid:      viper.GetString("size"),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	machines := map[string]*models.V1MachineIPMIResponse{}
+	for _, m := range resp.Payload {
+		m := m
+
+		if m.ID == nil {
+			continue
+		}
+
+		machines[*m.ID] = m
+	}
+
+	return c.listPrinter.Print(&tableprinters.SwitchesWithMachines{
+		SS: switches,
+		MS: machines,
+	})
 }
 
 func (c *switchCmd) switchReplace(args []string) error {

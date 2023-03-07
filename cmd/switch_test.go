@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/go-openapi/strfmt"
+	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/afero"
 
 	"github.com/stretchr/testify/mock"
@@ -201,6 +203,93 @@ ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DUR
 |----|-----------|--------|----|--------|
 |  1 |         1 | rack-1 | 🦔 |  ●     |
 		`),
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
+	tests := []*test[*tableprinters.SwitchesWithMachines]{
+		{
+			name: "connected-machines",
+			cmd: func(want *tableprinters.SwitchesWithMachines) []string {
+				return []string{"switch", "connected-machines"}
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{})), nil).Return(&machine.FindIPMIMachinesOK{
+						Payload: []*models.V1MachineIPMIResponse{
+							{
+								ID:     pointer.Pointer("machine-1"),
+								Rackid: "rack-1",
+								Partition: &models.V1PartitionResponse{
+									ID: pointer.Pointer("1"),
+								},
+								Size: &models.V1SizeResponse{
+									ID: pointer.Pointer("n1-medium-x86"),
+								},
+								Ipmi: &models.V1MachineIPMI{
+									Fru: &models.V1MachineFru{
+										ProductSerial: "123",
+									},
+								},
+							},
+						},
+					}, nil)
+				},
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("FindSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{})), nil).Return(&switch_operations.FindSwitchesOK{
+						Payload: []*models.V1SwitchResponse{
+							switch2,
+							switch1,
+						},
+					}, nil)
+				},
+			},
+			want: &tableprinters.SwitchesWithMachines{
+				SS: []*models.V1SwitchResponse{
+					switch1,
+					switch2,
+				},
+				MS: map[string]*models.V1MachineIPMIResponse{
+					"machine-1": {
+						ID:     pointer.Pointer("machine-1"),
+						Rackid: "rack-1",
+						Partition: &models.V1PartitionResponse{
+							ID: pointer.Pointer("1"),
+						},
+						Size: &models.V1SizeResponse{
+							ID: pointer.Pointer("n1-medium-x86"),
+						},
+						Ipmi: &models.V1MachineIPMI{
+							Fru: &models.V1MachineFru{
+								ProductSerial: "123",
+							},
+						},
+					},
+				},
+			},
+			wantTable: pointer.Pointer(`
+ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
+1                                      1           rack-1
+└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+2                                      1           rack-1
+└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+`),
+			wantWideTable: pointer.Pointer(`
+ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
+1                                      1           rack-1
+└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+2                                      1           rack-1
+└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+`),
+			template: pointer.Pointer(`{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}`),
+			wantTemplate: pointer.Pointer(`
+1,rack-1,a-name,machine-1,123
+2,rack-1,a-name,machine-1,123
+`),
 		},
 	}
 	for _, tt := range tests {
