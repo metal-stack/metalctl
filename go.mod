@@ -2,6 +2,8 @@ module github.com/metal-stack/metalctl
 
 go 1.20
 
+replace github.com/metal-stack/metal-go => ../metal-go
+
 require (
 	bou.ke/monkey v1.0.2
 	github.com/avast/retry-go/v4 v4.3.3

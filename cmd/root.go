@@ -115,6 +115,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
+	rootCmd.AddCommand(newAuditCmd(c))
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
 	rootCmd.AddCommand(newFirewallCmd(c))
