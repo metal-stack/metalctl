@@ -31,12 +31,12 @@ func newAuditCmd(c *config) *cobra.Command {
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		ListCmdMutateFn: func(cmd *cobra.Command) {
-			cmd.Flags().StringP("query", "q", "", "request id of the audit trace.")
-			cmd.Flags().String("path", "", "request id of the audit trace.")
-			cmd.Flags().String("phase", "", "request id of the audit trace.")
+			cmd.Flags().StringP("query", "q", "", "filters audit trace payloads for the given text.")
+			cmd.Flags().String("path", "", "api path of the audit trace.")
+			cmd.Flags().String("phase", "", "phase of the audit trace.")
 			cmd.Flags().String("request-id", "", "request id of the audit trace.")
-			cmd.Flags().String("tenant", "", "request id of the audit trace.")
-			cmd.Flags().String("user", "", "request id of the audit trace.")
+			cmd.Flags().String("tenant", "", "tenant of the audit trace.")
+			cmd.Flags().String("user", "", "user of the audit trace.")
 		},
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,

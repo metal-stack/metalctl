@@ -10,13 +10,13 @@ metalctl audit list [flags]
 
 ```
   -h, --help                help for list
-      --path string         request id of the audit trace.
-      --phase string        request id of the audit trace.
-  -q, --query string        request id of the audit trace.
+      --path string         api path of the audit trace.
+      --phase string        phase of the audit trace.
+  -q, --query string        filters audit trace payloads for the given text.
       --request-id string   request id of the audit trace.
       --sort-by strings     sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: path|tenant|timestamp|user
-      --tenant string       request id of the audit trace.
-      --user string         request id of the audit trace.
+      --tenant string       tenant of the audit trace.
+      --user string         user of the audit trace.
 ```
 
 ### Options inherited from parent commands
