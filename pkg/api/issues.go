@@ -400,9 +400,10 @@ func (i *IssueLivelinessNotAvailable) Evaluate(m *models.V1MachineIPMIResponse, 
 	}
 
 	allowed := map[string]bool{
-		"Alive":   true,
-		"Dead":    true,
-		"Unknown": true,
+		models.V1FirewallResponseLivelinessAlive:   true,
+		models.V1FirewallResponseLivelinessDead:    true,
+		models.V1MachineBaseLivelinessHibernated:   true,
+		models.V1FirewallResponseLivelinessUnknown: true,
 	}
 
 	return !allowed[*m.Liveliness]
