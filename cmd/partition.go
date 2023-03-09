@@ -57,6 +57,11 @@ func newPartitionCmd(c *config) *cobra.Command {
 			}
 
 			return &models.V1PartitionUpdateRequest{
+				Bootconfig: &models.V1PartitionBootConfiguration{
+					Commandline: viper.GetString("cmdline"),
+					Imageurl:    viper.GetString("imageurl"),
+					Kernelurl:   viper.GetString("kernelurl"),
+				},
 				Description:        viper.GetString("description"),
 				ID:                 pointer.Pointer(id),
 				Mgmtserviceaddress: viper.GetString("mgmtserver"),
@@ -78,8 +83,11 @@ func newPartitionCmd(c *config) *cobra.Command {
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
-			cmd.Flags().StringP("description", "d", "", "Description of the partition. [required]")
-			cmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [required]")
+			cmd.Flags().StringP("description", "d", "", "Description of the partition. [optional]")
+			cmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [optional]")
+			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [optional]")
+			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [optional]")
+			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [optional]")
 			cmd.Flags().String("waiting-pool-min-size", "", "The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]")
 			cmd.Flags().String("waiting-pool-max-size", "", "The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]")
 		},

@@ -209,6 +209,33 @@ ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
 			want: partition1,
 		},
 		{
+			name: "update",
+			cmd: func(want *models.V1PartitionResponse) []string {
+				args := []string{"partition", "update", *want.ID,
+					"--name", want.Name,
+					"--description", want.Description,
+					"--mgmtserver", want.Mgmtserviceaddress,
+					"--cmdline", want.Bootconfig.Commandline,
+					"--kernelurl", want.Bootconfig.Kernelurl,
+					"--imageurl", want.Bootconfig.Imageurl,
+					"--waiting-pool-min-size", want.Waitingpoolminsize,
+					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
+				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					p := partition1
+					p.Privatenetworkprefixlength = 0
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(p))), nil).Return(&partition.UpdatePartitionOK{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: partition1,
+		},
+		{
 			name: "update from file",
 			cmd: func(want *models.V1PartitionResponse) []string {
 				return []string{"partition", "update", "-f", "/file.yaml"}
