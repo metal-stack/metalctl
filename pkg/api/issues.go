@@ -30,6 +30,7 @@ const (
 	IssueTypeBMCWithoutIP           IssueType = "bmc-without-ip"
 	IssueTypeASNUniqueness          IssueType = "asn-not-unique"
 	IssueTypeNonDistinctBMCIP       IssueType = "bmc-no-distinct-ip"
+	IssueTypeMachineZombie          IssueType = "machine-zombie"
 )
 
 type (
@@ -73,6 +74,7 @@ type (
 	IssueNonDistinctBMCIP struct {
 		details string
 	}
+	IssueMachineZombie struct{}
 
 	// MachineWithIssues summarizes a machine with issues
 	MachineWithIssues struct {
@@ -119,6 +121,7 @@ func AllIssueTypes() []IssueType {
 		IssueTypeBMCWithoutIP,
 		IssueTypeASNUniqueness,
 		IssueTypeNonDistinctBMCIP,
+		IssueTypeMachineZombie,
 	}
 }
 
@@ -275,6 +278,8 @@ func newIssueFromType(t IssueType) (issue, error) {
 		return &IssueASNUniqueness{}, nil
 	case IssueTypeNonDistinctBMCIP:
 		return &IssueNonDistinctBMCIP{}, nil
+	case IssueTypeMachineZombie:
+		return &IssueMachineZombie{}, nil
 	default:
 		return nil, fmt.Errorf("unknown issue type: %s", t)
 	}
@@ -304,6 +309,31 @@ func (mim machineIssueMap) toList() MachineIssues {
 	})
 
 	return res
+}
+
+func (i *IssueMachineZombie) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeMachineZombie,
+		Severity:    IssueSeverityMinor,
+		Description: "hibernated machine is still sending events",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#machine-zombie",
+	}
+}
+
+func (i *IssueMachineZombie) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
+	hibernated := pointer.SafeDeref(pointer.SafeDeref(pointer.SafeDeref(m.State).Hibernation).Enabled)
+	lastEventTime := time.Time(pointer.SafeDeref(m.Events).LastEventTime)
+	hibernationChanged := time.Time(pointer.SafeDeref(pointer.SafeDeref(m.State).Hibernation).Changed)
+
+	if lastEventTime.IsZero() || hibernationChanged.IsZero() {
+		return false
+	}
+
+	return hibernated && lastEventTime.Sub(hibernationChanged) > 5*time.Minute
+}
+
+func (i *IssueMachineZombie) Details() string {
+	return ""
 }
 
 func (i *IssueNoPartition) Spec() *issueSpec {
