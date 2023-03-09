@@ -26,6 +26,8 @@ var (
 		Mgmtserviceaddress:         "mgmt",
 		Name:                       "partition-1",
 		Privatenetworkprefixlength: 24,
+		Waitingpoolmaxsize:         "10%",
+		Waitingpoolminsize:         "5%",
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -63,13 +65,13 @@ func Test_PartitionCmd_MultiResult(t *testing.T) {
 				partition2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 2    partition-2   partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 2    partition-2   partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -78,10 +80,10 @@ ID   NAME          DESCRIPTION
 2 partition-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
-|  2 | partition-2 | partition 2 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
+|  2 | partition-2 | partition 2 |         |         |
 `),
 		},
 		{
@@ -130,21 +132,21 @@ func Test_PartitionCmd_SingleResult(t *testing.T) {
 			},
 			want: partition1,
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
 `),
 		},
 		{
@@ -172,6 +174,8 @@ ID   NAME          DESCRIPTION
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
+					"--waiting-pool-min-size", want.Waitingpoolminsize,
+					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
 				}
 				assertExhaustiveArgs(t, args, "file")
 				return args
@@ -198,6 +202,33 @@ ID   NAME          DESCRIPTION
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(&partition.CreatePartitionCreated{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: partition1,
+		},
+		{
+			name: "update",
+			cmd: func(want *models.V1PartitionResponse) []string {
+				args := []string{"partition", "update", *want.ID,
+					"--name", want.Name,
+					"--description", want.Description,
+					"--mgmtserver", want.Mgmtserviceaddress,
+					"--cmdline", want.Bootconfig.Commandline,
+					"--kernelurl", want.Bootconfig.Kernelurl,
+					"--imageurl", want.Bootconfig.Imageurl,
+					"--waiting-pool-min-size", want.Waitingpoolminsize,
+					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
+				}
+				assertExhaustiveArgs(t, args, "file")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					p := partition1
+					p.Privatenetworkprefixlength = 0
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(p))), nil).Return(&partition.UpdatePartitionOK{
 						Payload: partition1,
 					}, nil)
 				},

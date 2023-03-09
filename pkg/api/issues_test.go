@@ -88,6 +88,18 @@ var (
 			Address: pointer.Pointer("127.0.0.1"),
 		},
 	}
+	zombieMachine = &models.V1MachineIPMIResponse{
+		ID: pointer.Pointer("15"),
+		State: &models.V1MachineState{
+			Hibernation: &models.V1MachineHibernation{
+				Enabled: pointer.Pointer(true),
+				Changed: strfmt.DateTime(testTime.Add(-10 * time.Minute)),
+			},
+		},
+		Events: &models.V1MachineRecentProvisioningEvents{
+			LastEventTime: strfmt.DateTime(testTime),
+		},
+	}
 )
 
 func init() {
@@ -303,6 +315,21 @@ func TestFindIssues(t *testing.T) {
 						toIssue(&IssueNonDistinctBMCIP{
 							details: fmt.Sprintf("BMC IP (127.0.0.1) not unique, shared with [%[1]s]", *nonDistinctBMCMachine1.ID),
 						}),
+					},
+				},
+			},
+		},
+		{
+			name: "zombie machine",
+			c: &IssueConfig{
+				Only:     []IssueType{IssueTypeMachineZombie},
+				Machines: []*models.V1MachineIPMIResponse{failedReclaimMachine, zombieMachine, goodMachine},
+			},
+			want: MachineIssues{
+				{
+					Machine: zombieMachine,
+					Issues: Issues{
+						toIssue(&IssueMachineZombie{}),
 					},
 				},
 			},
