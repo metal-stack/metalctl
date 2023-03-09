@@ -1,21 +1,19 @@
-## metalctl switch detail
+## metalctl switch console
 
-switch details
+connect to the switch console
+
+### Synopsis
+
+this requires a network connectivity to the ip address of the console server this switch is connected to.
 
 ```
-metalctl switch detail [flags]
+metalctl switch console <switchID> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                help for detail
-      --id string           ID of the switch.
-      --name string         Name of the switch.
-      --os-vendor string    OS vendor of this switch.
-      --os-version string   OS version of this switch.
-      --partition string    Partition of this switch.
-      --rack string         Rack of this switch.
+  -h, --help   help for console
 ```
 
 ### Options inherited from parent commands

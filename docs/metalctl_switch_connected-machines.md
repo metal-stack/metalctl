@@ -1,21 +1,36 @@
-## metalctl switch detail
+## metalctl switch connected-machines
 
-switch details
+shows switches with their connected machines
 
 ```
-metalctl switch detail [flags]
+metalctl switch connected-machines [flags]
+```
+
+### Examples
+
+```
+The command will show the machines connected to the switch ports.
+
+Can also be used with -o template in order to generate CSV-style output:
+
+$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
+r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
+r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
+...
+
 ```
 
 ### Options
 
 ```
-  -h, --help                help for detail
+  -h, --help                help for connected-machines
       --id string           ID of the switch.
       --name string         Name of the switch.
       --os-vendor string    OS vendor of this switch.
       --os-version string   OS version of this switch.
       --partition string    Partition of this switch.
       --rack string         Rack of this switch.
+      --size string         Size of the connectedmachines.
 ```
 
 ### Options inherited from parent commands

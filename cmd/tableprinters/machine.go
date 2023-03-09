@@ -19,9 +19,9 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		rows [][]string
 	)
 
-	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition"}
+	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition", "Rack"}
 	if wide {
-		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Started", "Tags", "Lock/Reserve"}
+		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Rack", "Started", "Tags", "Lock/Reserve"}
 	}
 
 	for _, machine := range data {
@@ -39,6 +39,8 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		desc := alloc.Description
 		hostname := pointer.SafeDeref(alloc.Hostname)
 		image := pointer.SafeDeref(alloc.Image).Name
+
+		rack := machine.Rackid
 
 		truncatedHostname := genericcli.TruncateEnd(hostname, 30)
 
@@ -75,9 +77,9 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, alloc.Vpn)
 
 		if wide {
-			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, started, tags, reserved})
+			rows = append(rows, []string{machineID, lastEvent, when, age, desc, name, hostname, project, ips, sizeID, image, partitionID, rack, started, tags, reserved})
 		} else {
-			rows = append(rows, []string{machineID, emojis, lastEvent, when, age, truncatedHostname, project, sizeID, image, partitionID})
+			rows = append(rows, []string{machineID, emojis, lastEvent, when, age, truncatedHostname, project, sizeID, image, partitionID, rack})
 		}
 	}
 
@@ -150,9 +152,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		rows [][]string
 	)
 
-	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition"}
+	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
 	if wide {
-		header = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition"}
+		header = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
 	}
 
 	for _, machine := range data {
@@ -169,6 +171,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		power := color.WhiteString(dot)
 		powerText := ""
 		ipmi := machine.Ipmi
+		rack := machine.Rackid
 
 		if ipmi != nil {
 			ipAddress = pointer.SafeDeref(ipmi.Address)
@@ -194,9 +197,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		if wide {
-			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition})
+			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack})
 		} else {
-			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition})
+			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack})
 		}
 	}
 

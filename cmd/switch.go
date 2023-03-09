@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"sort"
+	"os"
+	"os/exec"
 	"strings"
 
+	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -36,12 +36,29 @@ func newSwitchCmd(c *config) *cobra.Command {
 			genericcli.DeleteCmd,
 			genericcli.EditCmd,
 		),
+		Aliases:         []string{"sw"},
 		Singular:        "switch",
 		Plural:          "switches",
 		Description:     "switch are the leaf switches in the data center that are controlled by metal-stack.",
 		Sorter:          sorters.SwitchSorter(),
+		ValidArgsFn:     c.comp.SwitchListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "ID of the switch.")
+			cmd.Flags().String("name", "", "Name of the switch.")
+			cmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+			cmd.Flags().String("os-version", "", "OS version of this switch.")
+			cmd.Flags().String("partition", "", "Partition of this switch.")
+			cmd.Flags().String("rack", "", "Rack of this switch.")
+
+			must(cmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
+		},
 	}
 
 	switchDetailCmd := &cobra.Command{
@@ -50,7 +67,52 @@ func newSwitchCmd(c *config) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchDetail()
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
+
+	switchDetailCmd.Flags().String("id", "", "ID of the switch.")
+	switchDetailCmd.Flags().String("name", "", "Name of the switch.")
+	switchDetailCmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+	switchDetailCmd.Flags().String("os-version", "", "OS version of this switch.")
+	switchDetailCmd.Flags().String("partition", "", "Partition of this switch.")
+	switchDetailCmd.Flags().String("rack", "", "Rack of this switch.")
+
+	must(switchDetailCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+
+	switchMachinesCmd := &cobra.Command{
+		Use:   "connected-machines",
+		Short: "shows switches with their connected machines",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchMachines()
+		},
+		Example: `The command will show the machines connected to the switch ports.
+
+Can also be used with -o template in order to generate CSV-style output:
+
+$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
+r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
+r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
+...
+`,
+	}
+
+	switchMachinesCmd.Flags().String("id", "", "ID of the switch.")
+	switchMachinesCmd.Flags().String("name", "", "Name of the switch.")
+	switchMachinesCmd.Flags().String("os-vendor", "", "OS vendor of this switch.")
+	switchMachinesCmd.Flags().String("os-version", "", "OS version of this switch.")
+	switchMachinesCmd.Flags().String("partition", "", "Partition of this switch.")
+	switchMachinesCmd.Flags().String("rack", "", "Rack of this switch.")
+	switchMachinesCmd.Flags().String("size", "", "Size of the connectedmachines.")
+
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
 		Short: "put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.",
@@ -69,11 +131,28 @@ Operational steps to replace a switch:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.switchReplace(args)
 		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+	switchSSHCmd := &cobra.Command{
+		Use:   "ssh <switchID>",
+		Short: "connect to the switch via ssh",
+		Long:  "this requires a network connectivity to the management ip address of the switch.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchSSH(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+	switchConsoleCmd := &cobra.Command{
+		Use:   "console <switchID>",
+		Short: "connect to the switch console",
+		Long:  "this requires a network connectivity to the ip address of the console server this switch is connected to.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchConsole(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
-	switchDetailCmd.Flags().StringP("filter", "F", "", "filter for site, rack, ID")
-
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchReplaceCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -86,16 +165,16 @@ func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
 }
 
 func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
-	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
+	resp, err := c.client.SwitchOperations().FindSwitches(switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{
+		ID:          viper.GetString("id"),
+		Name:        viper.GetString("name"),
+		Osvendor:    viper.GetString("os-vendor"),
+		Osversion:   viper.GetString("os-version"),
+		Partitionid: viper.GetString("partition"),
+		Rackid:      viper.GetString("rack"),
+	}), nil)
 	if err != nil {
 		return nil, err
-	}
-
-	for _, s := range resp.Payload {
-		s := s
-		sort.SliceStable(s.Connections, func(i, j int) bool {
-			return pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[i])).Nic).Name) < pointer.SafeDeref(pointer.SafeDeref((pointer.SafeDeref(s.Connections[j])).Nic).Name)
-		})
 	}
 
 	return resp.Payload, nil
@@ -132,12 +211,22 @@ func (c switchCmd) ToUpdate(r *models.V1SwitchResponse) (*models.V1SwitchUpdateR
 }
 
 func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRequest {
+	switchOS := &models.V1SwitchOS{}
+	if r.Os != nil {
+		switchOS.Vendor = r.Os.Vendor
+		switchOS.Vendor = r.Os.Version
+	}
+
 	return &models.V1SwitchUpdateRequest{
-		Description: r.Description,
-		ID:          r.ID,
-		Mode:        r.Mode,
-		Name:        r.Name,
-		RackID:      r.RackID,
+		ConsoleCommand: r.ConsoleCommand,
+		Description:    r.Description,
+		ID:             r.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           r.Mode,
+		Name:           r.Name,
+		Os:             switchOS,
+		RackID:         r.RackID,
 	}
 }
 
@@ -150,25 +239,48 @@ func (c *switchCmd) switchDetail() error {
 	}
 
 	var result []*tableprinters.SwitchDetail
-	filter := viper.GetString("filter")
 	for _, s := range resp {
-		partitionID := ""
-		if s.Partition != nil {
-			partitionID = *s.Partition.ID
-		}
-		if strings.Contains(*s.ID, filter) ||
-			strings.Contains(partitionID, filter) ||
-			strings.Contains(*s.RackID, filter) {
-			result = append(result, &tableprinters.SwitchDetail{V1SwitchResponse: s})
-		}
-	}
-
-	if len(result) < 1 {
-		log.Printf("no switch detail for filter: %s", filter)
-		return nil
+		result = append(result, &tableprinters.SwitchDetail{V1SwitchResponse: s})
 	}
 
 	return c.listPrinter.Print(result)
+}
+
+func (c *switchCmd) switchMachines() error {
+	switches, err := c.List()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.SwitchSorter().SortBy(switches)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+		PartitionID: viper.GetString("partition"),
+		Rackid:      viper.GetString("rack"),
+		Sizeid:      viper.GetString("size"),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	machines := map[string]*models.V1MachineIPMIResponse{}
+	for _, m := range resp.Payload {
+		m := m
+
+		if m.ID == nil {
+			continue
+		}
+
+		machines[*m.ID] = m
+	}
+
+	return c.listPrinter.Print(&tableprinters.SwitchesWithMachines{
+		SS: switches,
+		MS: machines,
+	})
 }
 
 func (c *switchCmd) switchReplace(args []string) error {
@@ -182,16 +294,81 @@ func (c *switchCmd) switchReplace(args []string) error {
 		return err
 	}
 
+	switchOS := &models.V1SwitchOS{}
+	if resp.Os != nil {
+		switchOS.Vendor = resp.Os.Vendor
+		switchOS.Vendor = resp.Os.Version
+	}
+
 	uresp, err := c.Update(&models.V1SwitchUpdateRequest{
-		ID:          resp.ID,
-		Name:        resp.Name,
-		Description: resp.Description,
-		RackID:      resp.RackID,
-		Mode:        "replace",
+		ConsoleCommand: "",
+		Description:    resp.Description,
+		ID:             resp.ID,
+		ManagementIP:   "",
+		ManagementUser: "",
+		Mode:           "replace",
+		Name:           resp.Name,
+		Os:             switchOS,
+		RackID:         resp.RackID,
 	})
 	if err != nil {
 		return err
 	}
 
 	return c.describePrinter.Print(uresp)
+}
+
+func (c *switchCmd) switchSSH(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+	if resp.ManagementIP == "" || resp.ManagementUser == "" {
+		return fmt.Errorf("unable to connect to switch by ssh because no ip and user was stored for this switch, please restart metal-core on this switch")
+	}
+
+	// nolint: gosec
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", resp.ManagementUser, resp.ManagementIP))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
+}
+
+func (c *switchCmd) switchConsole(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.Get(id)
+	if err != nil {
+		return err
+	}
+
+	if resp.ConsoleCommand == "" {
+		return fmt.Errorf(`
+unable to connect to console because no console_command was specified for this switch
+You can add a working console_command to every switch with metalctl switch edit
+A sample would look like:
+
+telnet console-server 7008`)
+	}
+	parts := strings.Fields(resp.ConsoleCommand)
+
+	// nolint: gosec
+	cmd := exec.Command(parts[0])
+	if len(parts) > 1 {
+		// nolint: gosec
+		cmd = exec.Command(parts[0], parts[1:]...)
+	}
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stdout
+	return cmd.Run()
 }

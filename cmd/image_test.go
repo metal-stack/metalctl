@@ -19,7 +19,7 @@ import (
 var (
 	imageExpiration = pointer.Pointer(strfmt.DateTime(testTime.Add(3 * 24 * time.Hour)))
 	image1          = &models.V1ImageResponse{
-		Classification: "supported",
+		Classification: models.DatastoreImageSearchQueryClassificationSupported,
 		Description:    "debian-description",
 		ExpirationDate: imageExpiration,
 		Features:       []string{"machine"},
@@ -29,7 +29,7 @@ var (
 		Usedby:         []string{"abc-def"},
 	}
 	image2 = &models.V1ImageResponse{
-		Classification: "supported",
+		Classification: models.DatastoreImageSearchQueryClassificationSupported,
 		Description:    "ubuntu-description",
 		ExpirationDate: imageExpiration,
 		Features:       []string{"machine"},
@@ -49,7 +49,9 @@ func Test_ImageCmd_MultiResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Image: func(mock *mock.Mock) {
-					mock.On("ListImages", testcommon.MatchIgnoreContext(t, image.NewListImagesParams().WithShowUsage(pointer.Pointer(true))), nil).Return(&image.ListImagesOK{
+					mock.On("FindImages", testcommon.MatchIgnoreContext(t, image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
+						Features: []string{},
+					}).WithShowUsage(pointer.Pointer(true))), nil).Return(&image.FindImagesOK{
 						Payload: []*models.V1ImageResponse{
 							image2,
 							image1,
@@ -81,6 +83,57 @@ ubuntu ubuntu-name
 |--------|-------------|--------------------|----------|------------|-----------|--------|
 | debian | debian-name | debian-description | machine  | 3d         | supported |      1 |
 | ubuntu | ubuntu-name | ubuntu-description | machine  | 3d         | supported |      1 |
+`),
+		},
+		{
+			name: "list with filters",
+			cmd: func(want []*models.V1ImageResponse) []string {
+				args := []string{"image", "list",
+					"--id", *want[0].ID,
+					"--name", want[0].Name,
+					"--classification", want[0].Classification,
+					"--features", want[0].Features[0],
+					"--os", "debian", "--version", "10",
+					"--show-usage",
+				}
+				assertExhaustiveArgs(t, args, "sort-by")
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Image: func(mock *mock.Mock) {
+					mock.On("FindImages", testcommon.MatchIgnoreContext(t, image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
+						Classification: image1.Classification,
+						Features:       image1.Features,
+						ID:             *image1.ID,
+						Name:           image1.Name,
+						Os:             "debian",
+						Version:        "10",
+					}).WithShowUsage(pointer.Pointer(true))), nil).Return(&image.FindImagesOK{
+						Payload: []*models.V1ImageResponse{
+							image1,
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1ImageResponse{
+				image1,
+			},
+			wantTable: pointer.Pointer(`
+ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY
+debian   debian-name   debian-description   machine    3d           supported   1
+`),
+			wantWideTable: pointer.Pointer(`
+ID       NAME          DESCRIPTION          FEATURES   EXPIRATION   STATUS      USEDBY
+debian   debian-name   debian-description   machine    3d           supported   abc-def
+`),
+			template: pointer.Pointer("{{ .id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+debian debian-name
+`),
+			wantMarkdown: pointer.Pointer(`
+|   ID   |    NAME     |    DESCRIPTION     | FEATURES | EXPIRATION |  STATUS   | USEDBY |
+|--------|-------------|--------------------|----------|------------|-----------|--------|
+| debian | debian-name | debian-description | machine  | 3d         | supported |      1 |
 `),
 		},
 		{
