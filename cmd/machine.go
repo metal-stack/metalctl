@@ -1237,9 +1237,6 @@ func (c *machineCmd) machineIpmi(args []string) error {
 			return err
 		}
 
-		hidden := "<hidden>"
-		resp.Payload.Ipmi.Password = &hidden
-
 		return c.describePrinter.Print(resp.Payload)
 	}
 
