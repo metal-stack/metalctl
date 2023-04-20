@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,28 +18,28 @@ import (
 
 var (
 	auditTrace1 = &models.V1AuditResponse{
-		Body:          `{"a": "b"}`,
-		Code:          http.StatusOK,
-		ForwardedFor:  "192.168.2.2",
-		Path:          "/v1/audit",
-		Phase:         "response",
-		RemoteAddress: "192.168.2.1",
-		Rqid:          "c40ad996-e1fd-4511-a7bf-418219cb8d91",
-		Tenant:        "a-tenant",
-		Timestamp:     strfmt.DateTime(testTime),
-		User:          "a-user",
+		Body:         `{"a": "b"}`,
+		StatusCode:   http.StatusOK,
+		ForwardedFor: "192.168.2.2",
+		Path:         "/v1/audit",
+		Phase:        "response",
+		RemoteAddr:   "192.168.2.1",
+		Rqid:         "c40ad996-e1fd-4511-a7bf-418219cb8d91",
+		Tenant:       "a-tenant",
+		Timestamp:    strfmt.DateTime(testTime),
+		User:         "a-user",
 	}
 	auditTrace2 = &models.V1AuditResponse{
-		Body:          `{"c": "d"}`,
-		Code:          http.StatusForbidden,
-		ForwardedFor:  "192.168.2.4",
-		Path:          "/v1/audit",
-		Phase:         "request",
-		RemoteAddress: "192.168.2.3",
-		Rqid:          "b5817ef7-980a-41ef-9ed3-741a143870b0",
-		Tenant:        "b-tenant",
-		Timestamp:     strfmt.DateTime(testTime.Add(1 * time.Minute)),
-		User:          "b-user",
+		Body:         `{"c": "d"}`,
+		StatusCode:   http.StatusForbidden,
+		ForwardedFor: "192.168.2.4",
+		Path:         "/v1/audit",
+		Phase:        "request",
+		RemoteAddr:   "192.168.2.3",
+		Rqid:         "b5817ef7-980a-41ef-9ed3-741a143870b0",
+		Tenant:       "b-tenant",
+		Timestamp:    strfmt.DateTime(testTime.Add(1 * time.Minute)),
+		User:         "b-user",
 	}
 )
 
@@ -91,14 +92,20 @@ May 19 01:03:03.000   b5817ef7-980a-41ef-9ed3-741a143870b0   /v1/audit   403    
 			name: "list with filters",
 			cmd: func(want []*models.V1AuditResponse) []string {
 				args := []string{"audit", "list",
-					"--path", want[0].Path,
 					"--query", want[0].Body,
+					"--path", want[0].Path,
 					"--phase", want[0].Phase,
 					"--request-id", want[0].Rqid,
 					"--tenant", want[0].Tenant,
 					"--user", want[0].User,
+					// "--from", want[0].F
+					// "--to", want[0]
+					"--detail", want[0].Detail,
+					"--component", want[0].Component,
+					"--status-code", strconv.Itoa(int(want[0].StatusCode)),
+					"--limit", "100",
 				}
-				assertExhaustiveArgs(t, args, "sort-by")
+				assertExhaustiveArgs(t, args)
 				return args
 			},
 			mocks: &client.MetalMockFns{
