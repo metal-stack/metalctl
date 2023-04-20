@@ -51,12 +51,14 @@ func Test_AuditCmd_MultiResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Audit: func(mock *mock.Mock) {
-					mock.On("FindAuditTraces", testcommon.MatchIgnoreContext(t, audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{})), nil).Return(&audit.FindAuditTracesOK{
-						Payload: []*models.V1AuditResponse{
-							auditTrace2,
-							auditTrace1,
-						},
-					}, nil)
+					mock.On("FindAuditTraces", testcommon.MatchIgnoreContext(t, audit.NewFindAuditTracesParams().
+						WithBody(&models.V1AuditFindRequest{Limit: 100})), nil).
+						Return(&audit.FindAuditTracesOK{
+							Payload: []*models.V1AuditResponse{
+								auditTrace2,
+								auditTrace1,
+							},
+						}, nil)
 				},
 			},
 			want: []*models.V1AuditResponse{

@@ -37,9 +37,15 @@ func newAuditCmd(c *config) *cobra.Command {
 			cmd.Flags().String("request-id", "", "request id of the audit trace.")
 			cmd.Flags().String("tenant", "", "tenant of the audit trace.")
 			cmd.Flags().String("user", "", "user of the audit trace.")
+			cmd.Flags().String("from", "", "start time of the audit trace.")
+			cmd.Flags().String("to", "", "end time of the audit trace.")
+			cmd.Flags().String("detail", "", "detail of the audit trace.")
+			cmd.Flags().String("component", "", "component of the audit trace.")
+			cmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
 		},
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
+			genericcli.DescribeCmd,
 		),
 	}
 
@@ -47,18 +53,35 @@ func newAuditCmd(c *config) *cobra.Command {
 }
 
 func (c auditCmd) Get(id string) (*models.V1AuditResponse, error) {
-	return nil, fmt.Errorf("not implemented for audit traces")
+	traces, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
+		Rqid: id,
+	}), nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(traces.Payload) == 0 {
+		return nil, fmt.Errorf("no audit trace found with request id %s", id)
+	}
+	return traces.Payload[0], nil
 }
 
 func (c auditCmd) List() ([]*models.V1AuditResponse, error) {
 	resp, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
-		Body: viper.GetString("query"),
-		// From:   strfmt.DateTime{},
-		Path:   viper.GetString("path"),
-		Phase:  viper.GetString("phase"),
-		Rqid:   viper.GetString("request-id"),
-		Tenant: viper.GetString("tenant"),
-		// To:     strfmt.DateTime{},
+		Body:         viper.GetString("query"),
+		Component:    viper.GetString("component"),
+		Detail:       viper.GetString("detail"),
+		Error:        viper.GetString("error"),
+		ForwardedFor: viper.GetString("forwarded-for"),
+		// From:         strfmt.DateTime{},
+		Limit:      viper.GetInt64("limit"),
+		Path:       viper.GetString("path"),
+		Phase:      viper.GetString("phase"),
+		RemoteAddr: viper.GetString("remote-addr"),
+		Rqid:       viper.GetString("request-id"),
+		StatusCode: viper.GetInt32("status-code"),
+		Tenant:     viper.GetString("tenant"),
+		// To:           strfmt.DateTime{},
+		Type: viper.GetString("type"),
 		User: viper.GetString("user"),
 	}), nil)
 	if err != nil {
