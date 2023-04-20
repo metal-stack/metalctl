@@ -50,7 +50,7 @@ func newAuditCmd(c *config) *cobra.Command {
 
 			cmd.Flags().String("path", "", "api path of the audit trace.")
 			cmd.Flags().String("forwarded-for", "", "forwarded for of the audit trace.")
-			cmd.Flags().String("remote-address", "", "remote address of the audit trace.")
+			cmd.Flags().String("remote-addr", "", "remote address of the audit trace.")
 
 			cmd.Flags().String("error", "", "error of the audit trace.")
 			cmd.Flags().Int32("status-code", 0, "HTTP status code of the audit trace.")
@@ -88,7 +88,6 @@ func (c auditCmd) List() ([]*models.V1AuditResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(fromDateTime, toDateTime)
 	resp, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
 		Body:         viper.GetString("query"),
 		From:         fromDateTime,
