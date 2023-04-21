@@ -64,8 +64,9 @@ func Test_AuditCmd_MultiResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Audit: func(mock *mock.Mock) {
+					beforeOneHour := strfmt.DateTime(testTime.Add(-1 * time.Hour))
 					mock.On("FindAuditTraces", testcommon.MatchIgnoreContext(t, audit.NewFindAuditTracesParams().
-						WithBody(&models.V1AuditFindRequest{Limit: 100})), nil).
+						WithBody(&models.V1AuditFindRequest{Limit: 100, From: beforeOneHour})), nil).
 						Return(&audit.FindAuditTracesOK{
 							Payload: []*models.V1AuditResponse{
 								auditTrace2,
