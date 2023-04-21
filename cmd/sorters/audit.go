@@ -21,5 +21,5 @@ func AuditSorter() *multisort.Sorter[*models.V1AuditResponse] {
 		"path": func(a, b *models.V1AuditResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(a.Path, b.Path, descending)
 		},
-	}, multisort.Keys{{ID: "timestamp"}})
+	}, multisort.Keys{{ID: "timestamp", Descending: true}})
 }
