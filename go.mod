@@ -11,8 +11,8 @@ require (
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
-	github.com/metal-stack/metal-go v0.22.4-0.20230420115251-495dbba4cafe
-	github.com/metal-stack/metal-lib v0.11.6
+	github.com/metal-stack/metal-go v0.22.4
+	github.com/metal-stack/metal-lib v0.11.7
 	github.com/metal-stack/updater v1.1.4
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -33,7 +33,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.0 // indirect
+	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/icza/dyno v0.0.0-20220812133438-f0b6f8a18845 // indirect
 	github.com/illarion/gonotify v1.0.1 // indirect
-	github.com/imdario/mergo v0.3.14 // indirect
+	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/insomniacslk/dhcp v0.0.0-20230307103557-e252950ab961 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

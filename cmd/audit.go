@@ -35,7 +35,7 @@ func newAuditCmd(c *config) *cobra.Command {
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
 
-			cmd.Flags().String("from", "", "start of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
+			cmd.Flags().String("from", "1h", "start of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
 			cmd.Flags().String("to", "", "end of range of the audit traces. e.g. 1h, 10m, 2006-01-02 15:04:05")
 
 			cmd.Flags().String("component", "", "component of the audit trace.")
