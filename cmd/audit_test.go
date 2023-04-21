@@ -75,29 +75,29 @@ func Test_AuditCmd_MultiResult(t *testing.T) {
 				},
 			},
 			want: []*models.V1AuditResponse{
-				auditTrace1,
 				auditTrace2,
+				auditTrace1,
 			},
 			wantTable: pointer.Pointer(`
 TIME                  REQUEST ID                             DETAIL   PATH        CODE   TENANT     USER     PHASE    
-May 19 01:02:03.000   c40ad996-e1fd-4511-a7bf-418219cb8d91   GET      /v1/audit   200    a-tenant   a-user   response 
 May 19 01:03:03.000   b5817ef7-980a-41ef-9ed3-741a143870b0   POST     /v1/audit   403    b-tenant   b-user   request
+May 19 01:02:03.000   c40ad996-e1fd-4511-a7bf-418219cb8d91   GET      /v1/audit   200    a-tenant   a-user   response 
 `),
 			wantWideTable: pointer.Pointer(`
 TIME                  REQUEST ID                             DETAIL   PATH        CODE   TENANT     USER     PHASE      BODY
-May 19 01:02:03.000   c40ad996-e1fd-4511-a7bf-418219cb8d91   GET      /v1/audit   200    a-tenant   a-user   response   {"a": "b"}
 May 19 01:03:03.000   b5817ef7-980a-41ef-9ed3-741a143870b0   POST     /v1/audit   403    b-tenant   b-user   request    {"c": "d"}
+May 19 01:02:03.000   c40ad996-e1fd-4511-a7bf-418219cb8d91   GET      /v1/audit   200    a-tenant   a-user   response   {"a": "b"}
 `),
 			template: pointer.Pointer(`{{ date "02/01/2006" .timestamp }} {{ .rqid }}`),
 			wantTemplate: pointer.Pointer(`
-19/05/2022 c40ad996-e1fd-4511-a7bf-418219cb8d91
 19/05/2022 b5817ef7-980a-41ef-9ed3-741a143870b0
+19/05/2022 c40ad996-e1fd-4511-a7bf-418219cb8d91
 `),
 			wantMarkdown: pointer.Pointer(`
 |        TIME         |              REQUEST ID              | DETAIL |   PATH    | CODE |  TENANT  |  USER  |  PHASE   |
 |---------------------|--------------------------------------|--------|-----------|------|----------|--------|----------|
-| May 19 01:02:03.000 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | GET    | /v1/audit |  200 | a-tenant | a-user | response |
 | May 19 01:03:03.000 | b5817ef7-980a-41ef-9ed3-741a143870b0 | POST   | /v1/audit |  403 | b-tenant | b-user | request  |
+| May 19 01:02:03.000 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | GET    | /v1/audit |  200 | a-tenant | a-user | response |
 `),
 		},
 		{
