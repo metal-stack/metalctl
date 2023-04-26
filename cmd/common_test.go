@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"bou.ke/monkey"
 	"golang.org/x/exp/slices"
 
-	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
