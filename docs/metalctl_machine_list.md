@@ -34,8 +34,10 @@ metalctl machine list [flags]
       --name string                           allocation name to filter [optional]
       --partition string                      partition to filter [optional]
       --project string                        allocation project to filter [optional]
+      --rack string                           rack to filter [optional]
       --size string                           size to filter [optional]
       --sort-by strings                       sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|event|id|image|liveliness|partition|project|rack|size|when
+      --state string                          state to filter [optional]
       --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 

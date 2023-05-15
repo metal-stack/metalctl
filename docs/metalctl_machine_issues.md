@@ -36,8 +36,10 @@ metalctl machine issues [<machine ID>] [flags]
       --only strings                          issue types to include [optional]
       --partition string                      partition to filter [optional]
       --project string                        allocation project to filter [optional]
+      --rack string                           rack to filter [optional]
       --severity string                       issue severity to include [optional]
       --size string                           size to filter [optional]
+      --state string                          state to filter [optional]
       --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 
