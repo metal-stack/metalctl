@@ -46,11 +46,19 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "project", f: c.comp.ProjectListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
 		{flagName: "image", f: c.comp.ImageListCompletion},
+		{flagName: "state", f: cobra.FixedCompletions([]string{
+			// empty does not work:
+			// models.V1FirewallFindRequestStateValueEmpty,
+			models.V1FirewallFindRequestStateValueLOCKED,
+			models.V1MachineFindRequestStateValueRESERVED,
+		}, cobra.ShellCompDirectiveDefault)},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
 	cmd.Flags().String("partition", "", "partition to filter [optional]")
 	cmd.Flags().String("size", "", "size to filter [optional]")
+	cmd.Flags().String("rack", "", "rack to filter [optional]")
+	cmd.Flags().String("state", "", "state to filter [optional]")
 	cmd.Flags().String("name", "", "allocation name to filter [optional]")
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
 	cmd.Flags().String("image", "", "allocation image to filter [optional]")
@@ -531,11 +539,13 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
 		Sizeid:             viper.GetString("size"),
+		Rackid:             viper.GetString("rack"),
 		Name:               viper.GetString("name"),
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
 		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		StateValue:         viper.GetString("state"),
 		Tags:               viper.GetStringSlice("tags"),
 	}
 }

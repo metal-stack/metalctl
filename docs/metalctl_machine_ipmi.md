@@ -34,7 +34,9 @@ metalctl machine ipmi [<machine ID>] [flags]
       --name string                           allocation name to filter [optional]
       --partition string                      partition to filter [optional]
       --project string                        allocation project to filter [optional]
+      --rack string                           rack to filter [optional]
       --size string                           size to filter [optional]
+      --state string                          state to filter [optional]
       --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 
