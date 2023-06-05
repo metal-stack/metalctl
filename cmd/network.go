@@ -12,6 +12,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"golang.org/x/exp/slices"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -373,7 +374,9 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 	if viper.IsSet("remove-prefixes") {
 		diff := removePrefixes.Difference(currentPrefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", diff.UnsortedList())
+			difflist := diff.UnsortedList()
+			slices.Sort(difflist)
+			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", difflist)
 		}
 		newPrefixes = newPrefixes.Difference(removePrefixes)
 	}
