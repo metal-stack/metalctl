@@ -12,7 +12,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/kube-openapi/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type networkCmd struct {
@@ -361,48 +361,48 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Prefixes:            nil,
 			Shared:              shared,
 		}
-		addPrefixes                = sets.NewString(viper.GetStringSlice("add-prefixes")...)
-		removePrefixes             = sets.NewString(viper.GetStringSlice("remove-prefixes")...)
-		addDestinationprefixes     = sets.NewString(viper.GetStringSlice("add-destinationprefixes")...)
-		removeDestinationprefixes  = sets.NewString(viper.GetStringSlice("remove-destinationprefixes")...)
-		currentPrefixes            = sets.NewString(resp.Prefixes...)
-		currentDestinationprefixes = sets.NewString(resp.Destinationprefixes...)
+		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
+		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)
+		addDestinationprefixes     = sets.New(viper.GetStringSlice("add-destinationprefixes")...)
+		removeDestinationprefixes  = sets.New(viper.GetStringSlice("remove-destinationprefixes")...)
+		currentPrefixes            = sets.New(resp.Prefixes...)
+		currentDestinationprefixes = sets.New(resp.Destinationprefixes...)
 	)
 
-	newPrefixes := sets.NewString(currentPrefixes.List()...)
+	newPrefixes := currentPrefixes.Clone()
 	if viper.IsSet("remove-prefixes") {
 		diff := removePrefixes.Difference(currentPrefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", diff.List())
+			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", diff.UnsortedList())
 		}
 		newPrefixes = newPrefixes.Difference(removePrefixes)
 	}
 	if viper.IsSet("add-prefixes") {
-		if currentPrefixes.HasAny(addPrefixes.List()...) {
-			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", addPrefixes.Intersection(currentPrefixes).List())
+		if currentPrefixes.HasAny(addPrefixes.UnsortedList()...) {
+			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", addPrefixes.Intersection(currentPrefixes).UnsortedList())
 		}
 		newPrefixes = newPrefixes.Union(addPrefixes)
 	}
 	if !newPrefixes.Equal(currentPrefixes) {
-		ur.Prefixes = newPrefixes.List()
+		ur.Prefixes = newPrefixes.UnsortedList()
 	}
 
-	newDestinationprefixes := sets.NewString(currentDestinationprefixes.List()...)
+	newDestinationprefixes := currentDestinationprefixes.Clone()
 	if viper.IsSet("remove-destinationprefixes") {
 		diff := removeDestinationprefixes.Difference(currentDestinationprefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", diff.List())
+			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", diff.UnsortedList())
 		}
 		newDestinationprefixes = newDestinationprefixes.Difference(removeDestinationprefixes)
 	}
 	if viper.IsSet("add-destinationprefixes") {
-		if currentDestinationprefixes.HasAny(addDestinationprefixes.List()...) {
-			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", addDestinationprefixes.Intersection(currentDestinationprefixes).List())
+		if currentDestinationprefixes.HasAny(addDestinationprefixes.UnsortedList()...) {
+			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", addDestinationprefixes.Intersection(currentDestinationprefixes).UnsortedList())
 		}
 		newDestinationprefixes = newDestinationprefixes.Union(addDestinationprefixes)
 	}
 	if !newDestinationprefixes.Equal(currentDestinationprefixes) {
-		ur.Destinationprefixes = newDestinationprefixes.List()
+		ur.Destinationprefixes = newDestinationprefixes.UnsortedList()
 	}
 
 	return ur, nil
