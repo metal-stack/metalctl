@@ -382,7 +382,9 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 	}
 	if viper.IsSet("add-prefixes") {
 		if currentPrefixes.HasAny(addPrefixes.UnsortedList()...) {
-			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", addPrefixes.Intersection(currentPrefixes).UnsortedList())
+			intersection := addPrefixes.Intersection(currentPrefixes).UnsortedList()
+			slices.Sort(intersection)
+			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", intersection)
 		}
 		newPrefixes = newPrefixes.Union(addPrefixes)
 	}
@@ -394,13 +396,17 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 	if viper.IsSet("remove-destinationprefixes") {
 		diff := removeDestinationprefixes.Difference(currentDestinationprefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", diff.UnsortedList())
+			difflist := diff.UnsortedList()
+			slices.Sort(difflist)
+			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", difflist)
 		}
 		newDestinationprefixes = newDestinationprefixes.Difference(removeDestinationprefixes)
 	}
 	if viper.IsSet("add-destinationprefixes") {
 		if currentDestinationprefixes.HasAny(addDestinationprefixes.UnsortedList()...) {
-			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", addDestinationprefixes.Intersection(currentDestinationprefixes).UnsortedList())
+			interSection := addDestinationprefixes.Intersection(currentDestinationprefixes).UnsortedList()
+			slices.Sort(interSection)
+			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", interSection)
 		}
 		newDestinationprefixes = newDestinationprefixes.Union(addDestinationprefixes)
 	}
