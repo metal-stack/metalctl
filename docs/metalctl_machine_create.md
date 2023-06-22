@@ -64,7 +64,6 @@ Once created the machine installation can not be modified anymore.
                                   the file can also contain multiple documents and perform a bulk operation.
                                   	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
-      --force                     skips security prompt for bulk operations
   -h, --help                      help for create
   -H, --hostname string           Hostname of the machine. [required]
   -I, --id string                 ID of a specific machine to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
@@ -81,6 +80,7 @@ Once created the machine installation can not be modified anymore.
   -S, --partition string          partition/datacenter where the machine is created. [required, except for reserved machines]
   -P, --project string            Project where the machine should belong to. [required]
   -s, --size string               Size of the machine. [required, except for reserved machines]
+      --skip-security-prompts     skips security prompt for bulk operations
   -p, --sshpublickey string       SSH public key for access via ssh and console. [optional]
                                   Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
                                   If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.

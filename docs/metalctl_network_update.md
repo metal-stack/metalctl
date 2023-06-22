@@ -25,13 +25,13 @@ metalctl network update [flags]
                                              
                                              the file can also contain multiple documents and perform a bulk operation.
                                              	
-      --force                                skips security prompt for bulk operations
   -h, --help                                 help for update
       --labels strings                       the labels of the network, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2". [optional]
       --name string                          the name of the network [optional]
       --remove-destinationprefixes strings   destination prefixes to be removed from the network [optional]
       --remove-prefixes strings              prefixes to be removed from the network [optional]
       --shared                               marks a network as shared or not [optional]
+      --skip-security-prompts                skips security prompt for bulk operations
       --timestamps                           when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 

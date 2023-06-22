@@ -24,7 +24,6 @@ metalctl network create [flags]
                                        
                                        the file can also contain multiple documents and perform a bulk operation.
                                        	
-      --force                          skips security prompt for bulk operations
   -h, --help                           help for create
       --id string                      id of the network to create. [optional]
       --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
@@ -34,6 +33,7 @@ metalctl network create [flags]
       --prefixes strings               prefixes in this network.
       --privatesuper                   set private super flag of network, if set to true, this network is used to start machines there.
       --project string                 project of the network to create. [optional]
+      --skip-security-prompts          skips security prompt for bulk operations
       --timestamps                     when used with --file (bulk operation): prints timestamps in-between the operations
       --underlay                       set underlay flag of network, if set to true, this is used to transport underlay network traffic
       --vrf int                        vrf of this network

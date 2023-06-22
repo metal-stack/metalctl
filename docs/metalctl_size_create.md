@@ -9,28 +9,28 @@ metalctl size create [flags]
 ### Options
 
 ```
-      --bulk-output          when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
-  -d, --description string   Description of the size. [required]
-  -f, --file string          filename of the create or update request in yaml format, or - for stdin.
-                             
-                             Example:
-                             $ metalctl size describe size-1 -o yaml > size.yaml
-                             $ vi size.yaml
-                             $ # either via stdin
-                             $ cat size.yaml | metalctl size create -f -
-                             $ # or via file
-                             $ metalctl size create -f size.yaml
-                             
-                             the file can also contain multiple documents and perform a bulk operation.
-                             	
-      --force                skips security prompt for bulk operations
-  -h, --help                 help for create
-      --id string            ID of the size. [required]
-      --max int              min value of given size constraint type. [required]
-      --min int              min value of given size constraint type. [required]
-  -n, --name string          Name of the size. [optional]
-      --timestamps           when used with --file (bulk operation): prints timestamps in-between the operations
-      --type string          type of constraints. [required]
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -d, --description string      Description of the size. [required]
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl size describe size-1 -o yaml > size.yaml
+                                $ vi size.yaml
+                                $ # either via stdin
+                                $ cat size.yaml | metalctl size create -f -
+                                $ # or via file
+                                $ metalctl size create -f size.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for create
+      --id string               ID of the size. [required]
+      --max int                 min value of given size constraint type. [required]
+      --min int                 min value of given size constraint type. [required]
+  -n, --name string             Name of the size. [optional]
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
+      --type string             type of constraints. [required]
 ```
 
 ### Options inherited from parent commands
