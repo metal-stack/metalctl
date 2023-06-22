@@ -2,11 +2,16 @@ package tableprinters
 
 import (
 	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/spf13/viper"
 )
 
 func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) ([]string, [][]string, error) {
@@ -14,9 +19,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		rows [][]string
 	)
 
-	header := []string{"ID", "Partition", "Rack", "Status"}
+	header := []string{"ID", "Partition", "Rack", "OS", "Status"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
 	}
 
 	for _, s := range data {
@@ -59,14 +64,136 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			mode = "operational"
 		}
 
+		os := ""
+		osIcon := ""
+		if s.Os != nil {
+			switch strings.ToLower(s.Os.Vendor) {
+			case "cumulus":
+				osIcon = "🐢"
+			case "sonic":
+				osIcon = "🦔"
+			default:
+				osIcon = s.Os.Vendor
+			}
+
+			os = s.Os.Vendor
+			if s.Os.Version != "" {
+				os = os + "/" + s.Os.Version
+			}
+		}
+
 		if wide {
-			rows = append(rows, []string{id, partition, rack, mode, syncAgeStr, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, s.ManagementIP, mode, syncAgeStr, syncDurStr, syncError})
 		} else {
-			rows = append(rows, []string{id, partition, rack, shortStatus})
+			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus})
 		}
 	}
 
 	return header, rows, nil
+}
+
+type SwitchesWithMachines struct {
+	SS []*models.V1SwitchResponse               `json:"switches" yaml:"switches"`
+	MS map[string]*models.V1MachineIPMIResponse `json:"machines" yaml:"machines"`
+}
+
+func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachines, wide bool) ([]string, [][]string, error) {
+	var (
+		rows [][]string
+	)
+
+	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial"}
+
+	for _, s := range data.SS {
+		id := pointer.SafeDeref(s.ID)
+		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
+		rack := pointer.SafeDeref(s.RackID)
+
+		rows = append(rows, []string{id, "", "", partition, rack})
+
+		conns := s.Connections
+		if viper.IsSet("size") {
+			conns = []*models.V1SwitchConnection{}
+			for _, conn := range s.Connections {
+				conn := conn
+
+				m, ok := data.MS[conn.MachineID]
+				if !ok {
+					continue
+				}
+
+				if pointer.SafeDeref(m.Size.ID) == viper.GetString("size") {
+					conns = append(conns, conn)
+				}
+			}
+		}
+
+		sort.Slice(conns, switchInterfaceNameLessFunc(conns))
+
+		for i, conn := range conns {
+			prefix := "├"
+			if i == len(conns)-1 {
+				prefix = "└"
+			}
+			prefix += "─╴"
+
+			m, ok := data.MS[conn.MachineID]
+			if !ok {
+				return nil, nil, fmt.Errorf("switch port %s is connected to a machine which does not exist: %q", pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name), conn.MachineID)
+			}
+
+			identifier := pointer.SafeDeref(conn.Nic.Identifier)
+			if identifier == "" {
+				identifier = pointer.SafeDeref(conn.Nic.Mac)
+			}
+
+			rows = append(rows, []string{
+				fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+				pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+				identifier,
+				pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+				m.Rackid,
+				pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+				pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+			})
+		}
+	}
+
+	return header, rows, nil
+}
+
+var numberRegex = regexp.MustCompile("([0-9]+)")
+
+func switchInterfaceNameLessFunc(conns []*models.V1SwitchConnection) func(i, j int) bool {
+	return func(i, j int) bool {
+		var (
+			a = pointer.SafeDeref(pointer.SafeDeref(conns[i]).Nic.Name)
+			b = pointer.SafeDeref(pointer.SafeDeref(conns[j]).Nic.Name)
+
+			aMatch = numberRegex.FindAllStringSubmatch(a, -1)
+			bMatch = numberRegex.FindAllStringSubmatch(b, -1)
+		)
+
+		for i := range aMatch {
+			if i >= len(bMatch) {
+				return true
+			}
+
+			interfaceNumberA, aErr := strconv.Atoi(aMatch[i][0])
+			interfaceNumberB, bErr := strconv.Atoi(bMatch[i][0])
+
+			if aErr == nil && bErr == nil {
+				if interfaceNumberA < interfaceNumberB {
+					return true
+				}
+				if interfaceNumberA != interfaceNumberB {
+					return false
+				}
+			}
+		}
+
+		return a < b
+	}
 }
 
 type SwitchDetail struct {

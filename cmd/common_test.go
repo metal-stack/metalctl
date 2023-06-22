@@ -9,8 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"golang.org/x/exp/slices"
-
 	"bou.ke/monkey"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
@@ -24,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 

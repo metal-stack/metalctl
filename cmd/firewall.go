@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
@@ -252,10 +253,18 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	if err != nil {
 		return err
 	}
+	randomSuffix, _, _ := strings.Cut(uuid.NewString(), "-")
+	hostname = fmt.Sprintf("metalctl-%s-%s", hostname, randomSuffix)
+	tempDir, err := os.MkdirTemp("", hostname)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempDir)
 	s := &tsnet.Server{
 		Hostname:   hostname,
 		ControlURL: *authKeyResp.Payload.Address,
 		AuthKey:    *authKeyResp.Payload.AuthKey,
+		Dir:        tempDir,
 	}
 	defer s.Close()
 
