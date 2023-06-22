@@ -20,9 +20,9 @@ metalctl machine delete <id> [flags]
                                $ metalctl machine describe machine-1 -o yaml > machine.yaml
                                $ vi machine.yaml
                                $ # either via stdin
-                               $ cat machine.yaml | metalctl machine delete -f -
+                               $ cat machine.yaml | metalctl machine delete <id> -f -
                                $ # or via file
-                               $ metalctl machine delete -f machine.yaml
+                               $ metalctl machine delete <id> -f machine.yaml
                                
                                the file can also contain multiple documents and perform a bulk operation.
                                	

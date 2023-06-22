@@ -16,9 +16,9 @@ metalctl size delete <id> [flags]
                       $ metalctl size describe size-1 -o yaml > size.yaml
                       $ vi size.yaml
                       $ # either via stdin
-                      $ cat size.yaml | metalctl size delete -f -
+                      $ cat size.yaml | metalctl size delete <id> -f -
                       $ # or via file
-                      $ metalctl size delete -f size.yaml
+                      $ metalctl size delete <id> -f size.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

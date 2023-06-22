@@ -16,9 +16,9 @@ metalctl image delete <id> [flags]
                       $ metalctl image describe image-1 -o yaml > image.yaml
                       $ vi image.yaml
                       $ # either via stdin
-                      $ cat image.yaml | metalctl image delete -f -
+                      $ cat image.yaml | metalctl image delete <id> -f -
                       $ # or via file
-                      $ metalctl image delete -f image.yaml
+                      $ metalctl image delete <id> -f image.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

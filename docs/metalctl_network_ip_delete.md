@@ -16,9 +16,9 @@ metalctl network ip delete <id> [flags]
                       $ metalctl ip describe ip-1 -o yaml > ip.yaml
                       $ vi ip.yaml
                       $ # either via stdin
-                      $ cat ip.yaml | metalctl ip delete -f -
+                      $ cat ip.yaml | metalctl ip delete <id> -f -
                       $ # or via file
-                      $ metalctl ip delete -f ip.yaml
+                      $ metalctl ip delete <id> -f ip.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

@@ -16,9 +16,9 @@ metalctl network delete <id> [flags]
                       $ metalctl network describe network-1 -o yaml > network.yaml
                       $ vi network.yaml
                       $ # either via stdin
-                      $ cat network.yaml | metalctl network delete -f -
+                      $ cat network.yaml | metalctl network delete <id> -f -
                       $ # or via file
-                      $ metalctl network delete -f network.yaml
+                      $ metalctl network delete <id> -f network.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

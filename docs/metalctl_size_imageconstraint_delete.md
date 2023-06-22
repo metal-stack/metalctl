@@ -16,9 +16,9 @@ metalctl size imageconstraint delete <id> [flags]
                       $ metalctl imageconstraint describe imageconstraint-1 -o yaml > imageconstraint.yaml
                       $ vi imageconstraint.yaml
                       $ # either via stdin
-                      $ cat imageconstraint.yaml | metalctl imageconstraint delete -f -
+                      $ cat imageconstraint.yaml | metalctl imageconstraint delete <id> -f -
                       $ # or via file
-                      $ metalctl imageconstraint delete -f imageconstraint.yaml
+                      $ metalctl imageconstraint delete <id> -f imageconstraint.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

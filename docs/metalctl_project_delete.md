@@ -16,9 +16,9 @@ metalctl project delete <id> [flags]
                       $ metalctl project describe project-1 -o yaml > project.yaml
                       $ vi project.yaml
                       $ # either via stdin
-                      $ cat project.yaml | metalctl project delete -f -
+                      $ cat project.yaml | metalctl project delete <id> -f -
                       $ # or via file
-                      $ metalctl project delete -f project.yaml
+                      $ metalctl project delete <id> -f project.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

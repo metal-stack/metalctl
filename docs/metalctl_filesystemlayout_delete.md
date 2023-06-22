@@ -16,9 +16,9 @@ metalctl filesystemlayout delete <id> [flags]
                       $ metalctl filesystemlayout describe filesystemlayout-1 -o yaml > filesystemlayout.yaml
                       $ vi filesystemlayout.yaml
                       $ # either via stdin
-                      $ cat filesystemlayout.yaml | metalctl filesystemlayout delete -f -
+                      $ cat filesystemlayout.yaml | metalctl filesystemlayout delete <id> -f -
                       $ # or via file
-                      $ metalctl filesystemlayout delete -f filesystemlayout.yaml
+                      $ metalctl filesystemlayout delete <id> -f filesystemlayout.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

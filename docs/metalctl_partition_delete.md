@@ -16,9 +16,9 @@ metalctl partition delete <id> [flags]
                       $ metalctl partition describe partition-1 -o yaml > partition.yaml
                       $ vi partition.yaml
                       $ # either via stdin
-                      $ cat partition.yaml | metalctl partition delete -f -
+                      $ cat partition.yaml | metalctl partition delete <id> -f -
                       $ # or via file
-                      $ metalctl partition delete -f partition.yaml
+                      $ metalctl partition delete <id> -f partition.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	

@@ -16,9 +16,9 @@ metalctl switch delete <id> [flags]
                       $ metalctl switch describe switch-1 -o yaml > switch.yaml
                       $ vi switch.yaml
                       $ # either via stdin
-                      $ cat switch.yaml | metalctl switch delete -f -
+                      $ cat switch.yaml | metalctl switch delete <id> -f -
                       $ # or via file
-                      $ metalctl switch delete -f switch.yaml
+                      $ metalctl switch delete <id> -f switch.yaml
                       
                       the file can also contain multiple documents and perform a bulk operation.
                       	
