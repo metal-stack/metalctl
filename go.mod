@@ -12,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/metal-stack/metal-go v0.22.5
-	github.com/metal-stack/metal-lib v0.11.11-0.20230622084942-312c669cb979
+	github.com/metal-stack/metal-lib v0.12.1
 	github.com/metal-stack/updater v1.1.4
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
@@ -23,8 +23,8 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/tailscale/golang-x-crypto v0.0.0-20221115211329-17a3db2c30d2
 	go.uber.org/zap v1.24.0
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
-	golang.org/x/term v0.8.0
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
+	golang.org/x/term v0.9.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.27.2
 	tailscale.com v1.42.0
@@ -100,6 +100,7 @@ require (
 	github.com/josharian/native v1.1.1-0.20230202152459-5c7d0dd6ab86 // indirect
 	github.com/jsimonetti/rtnetlink v1.3.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/jszwec/csvutil v1.8.0 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/kortschak/wol v0.0.0-20200729010619-da482cc4850a // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
@@ -153,20 +154,20 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20230303233057-f1b76eb4bb35 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/mod v0.11.0 // indirect
+	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/oauth2 v0.9.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
-	golang.org/x/tools v0.9.3 // indirect
+	golang.org/x/tools v0.10.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
@@ -174,5 +175,6 @@ require (
 	gvisor.dev/gvisor v0.0.0-20230504175454-7b0a1988a28f // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
+	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
