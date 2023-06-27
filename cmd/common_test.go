@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"bou.ke/monkey"
-	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -202,21 +201,6 @@ type jsonOutputFormat[R any] struct {
 
 func (o *jsonOutputFormat[R]) Args() []string {
 	return []string{"-o", "json"}
-}
-
-func StrFmtPtrDateComparer() cmp.Option {
-	return cmp.Comparer(func(x, y *strfmt.DateTime) bool {
-		if x == nil && y == nil {
-			return true
-		}
-		if x == nil && y != nil {
-			return false
-		}
-		if x != nil && y == nil {
-			return false
-		}
-		return time.Time(*x).Unix() == time.Time(*y).Unix()
-	})
 }
 
 func (o *jsonOutputFormat[R]) Validate(t *testing.T, output []byte) {
