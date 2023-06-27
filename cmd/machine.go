@@ -364,7 +364,10 @@ In case the machine did not register properly a direct ipmi console access is av
 	}
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
+	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
+
 	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
+	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
 
 	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
@@ -590,12 +593,11 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) ToCreate(r *models.V1MachineResponse) (*models.V1MachineAllocateRequest, error) {
-	return machineResponseToCreate(r), nil
-}
-
-func (c machineCmd) ToUpdate(r *models.V1MachineResponse) (*models.V1MachineUpdateRequest, error) {
-	return machineResponseToUpdate(r), nil
+func (c machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.ID, machineResponseToCreate(r), machineResponseToUpdate(r), nil
 }
 
 func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAllocateRequest {
@@ -1250,12 +1252,17 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return c.describePrinter.Print(resp.Payload)
 	}
 
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
@@ -1264,12 +1271,17 @@ func (c *machineCmd) machineIpmi(args []string) error {
 }
 
 func (c *machineCmd) machineIssues(args []string) error {
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}

@@ -129,12 +129,11 @@ func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
 }
 
-func (c firewallCmd) ToCreate(r *models.V1FirewallResponse) (*models.V1FirewallCreateRequest, error) {
-	return firewallResponseToCreate(r), nil
-}
-
-func (c firewallCmd) ToUpdate(r *models.V1FirewallResponse) (any, error) {
-	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
+func (c firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, firewallResponseToCreate(r), nil, nil
 }
 
 func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCreateRequest {

@@ -9,25 +9,30 @@ metalctl project create [flags]
 ### Options
 
 ```
-      --annotation strings    add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
-      --cluster-quota int32   cluster quota
-      --description string    description of the project.
-  -f, --file string           filename of the create or update request in yaml format, or - for stdin.
-                              
-                              Example:
-                              $ metalctl project describe project-1 -o yaml > project.yaml
-                              $ vi project.yaml
-                              $ # either via stdin
-                              $ cat project.yaml | metalctl project create -f -
-                              $ # or via file
-                              $ metalctl project create -f project.yaml
-                              	
-  -h, --help                  help for create
-      --ip-quota int32        ip quota
-      --label strings         add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar
-      --machine-quota int32   machine quota
-      --name string           name of the project, max 10 characters.
-      --tenant string         create project for given tenant
+      --annotation strings      add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --cluster-quota int32     cluster quota
+      --description string      description of the project.
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl project describe project-1 -o yaml > project.yaml
+                                $ vi project.yaml
+                                $ # either via stdin
+                                $ cat project.yaml | metalctl project create -f -
+                                $ # or via file
+                                $ metalctl project create -f project.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for create
+      --ip-quota int32          ip quota
+      --label strings           add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar
+      --machine-quota int32     machine quota
+      --name string             name of the project, max 10 characters.
+      --skip-security-prompts   skips security prompt for bulk operations
+      --tenant string           create project for given tenant
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands

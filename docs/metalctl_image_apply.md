@@ -9,17 +9,22 @@ metalctl image apply [flags]
 ### Options
 
 ```
-  -f, --file string   filename of the create or update request in yaml format, or - for stdin.
-                      
-                      Example:
-                      $ metalctl image describe image-1 -o yaml > image.yaml
-                      $ vi image.yaml
-                      $ # either via stdin
-                      $ cat image.yaml | metalctl image apply -f -
-                      $ # or via file
-                      $ metalctl image apply -f image.yaml
-                      	
-  -h, --help          help for apply
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl image describe image-1 -o yaml > image.yaml
+                                $ vi image.yaml
+                                $ # either via stdin
+                                $ cat image.yaml | metalctl image apply -f -
+                                $ # or via file
+                                $ metalctl image apply -f image.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for apply
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands

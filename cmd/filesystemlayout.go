@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
@@ -118,12 +119,12 @@ func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
-func (c fslCmd) ToCreate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutCreateRequest, error) {
-	return filesystemLayoutResponseToCreate(r), nil
-}
+func (c fslCmd) Convert(r *models.V1FilesystemLayoutResponse) (string, *models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
 
-func (c fslCmd) ToUpdate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutUpdateRequest, error) {
-	return filesystemLayoutResponseToUpdate(r), nil
+	return *r.ID, filesystemLayoutResponseToCreate(r), filesystemLayoutResponseToUpdate(r), nil
 }
 
 func filesystemLayoutResponseToCreate(r *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutCreateRequest {

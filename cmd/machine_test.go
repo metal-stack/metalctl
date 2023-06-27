@@ -197,6 +197,63 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 |  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
 `),
 		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("AllocateMachine", testcommon.MatchIgnoreContext(t, machine.NewAllocateMachineParams().WithBody(machineResponseToCreate(machine1))), nil).Return(&machine.AllocateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("FreeMachine", testcommon.MatchIgnoreContext(t, machine.NewFreeMachineParams().WithID(*machine1.ID)), nil).Return(&machine.FreeMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
+		},
 	}
 	for _, tt := range tests {
 		tt.testCmd(t)
@@ -278,7 +335,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -298,7 +355,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--add-tags", strings.Join(want.Tags, ","),
 					"--remove-tags", "z",
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -308,40 +365,6 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					mock.On("FindMachine", testcommon.MatchIgnoreContext(t, machine.NewFindMachineParams().WithID(*machine1.ID)), nil).Return(&machine.FindMachineOK{
 						Payload: machineToUpdate,
 					}, nil)
-					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
-						Payload: machine1,
-					}, nil)
-				},
-			},
-			want: machine1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1MachineResponse) []string {
-				return []string{"machine", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Machine: func(mock *mock.Mock) {
-					mock.On("AllocateMachine", testcommon.MatchIgnoreContext(t, machine.NewAllocateMachineParams().WithBody(machineResponseToCreate(machine1))), nil).Return(&machine.AllocateMachineOK{
-						Payload: machine1,
-					}, nil)
-				},
-			},
-			want: machine1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1MachineResponse) []string {
-				return []string{"machine", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Machine: func(mock *mock.Mock) {
 					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
 						Payload: machine1,
 					}, nil)

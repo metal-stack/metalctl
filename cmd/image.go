@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
@@ -129,12 +130,11 @@ func (c imageCmd) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageRespon
 	return resp.Payload, nil
 }
 
-func (c imageCmd) ToCreate(r *models.V1ImageResponse) (*models.V1ImageCreateRequest, error) {
-	return imageResponseToCreate(r), nil
-}
-
-func (c imageCmd) ToUpdate(r *models.V1ImageResponse) (*models.V1ImageUpdateRequest, error) {
-	return imageResponseToUpdate(r), nil
+func (c imageCmd) Convert(r *models.V1ImageResponse) (string, *models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, imageResponseToCreate(r), imageResponseToUpdate(r), nil
 }
 
 func imageResponseToCreate(r *models.V1ImageResponse) *models.V1ImageCreateRequest {

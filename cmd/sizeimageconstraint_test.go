@@ -83,7 +83,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 		{
 			name: "apply",
 			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
-				return []string{"size", "imageconstraint", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("size", "imageconstraint", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -102,6 +102,44 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			want: []*models.V1SizeImageConstraintResponse{
 				sic1,
 				sic2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
+				return appendFromFileCommonArgs("size", "imageconstraint", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Sizeimageconstraint: func(mock *mock.Mock) {
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+						Payload: sic1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SizeImageConstraintResponse{
+				sic1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1SizeImageConstraintResponse) []string {
+				return appendFromFileCommonArgs("size", "imageconstraint", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SizeImageConstraintResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Sizeimageconstraint: func(mock *mock.Mock) {
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+						Payload: sic1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SizeImageConstraintResponse{
+				sic1,
 			},
 		},
 	}

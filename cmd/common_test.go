@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"bou.ke/monkey"
-	"golang.org/x/exp/slices"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -23,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
@@ -318,4 +317,12 @@ func validateTableRows(t *testing.T, want, got string) {
 			assert.Equal(t, wantFields[i], gotFields[i])
 		}
 	}
+}
+
+func appendFromFileCommonArgs(args ...string) []string {
+	return append(args, []string{"-f", "/file.yaml", "--skip-security-prompts", "--bulk-output"}...)
+}
+
+func commonExcludedFileArgs() []string {
+	return []string{"file", "bulk-output", "skip-security-prompts", "timestamps"}
 }

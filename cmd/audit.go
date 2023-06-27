@@ -125,12 +125,8 @@ func (c auditCmd) Update(_ any) (*models.V1AuditResponse, error) {
 	return nil, fmt.Errorf("not implemented for audit traces")
 }
 
-func (c auditCmd) ToCreate(_ *models.V1AuditResponse) (any, error) {
-	return nil, fmt.Errorf("not implemented for audit traces")
-}
-
-func (c auditCmd) ToUpdate(_ *models.V1AuditResponse) (any, error) {
-	return nil, fmt.Errorf("not implemented for audit traces")
+func (c auditCmd) Convert(r *models.V1AuditResponse) (string, any, any, error) {
+	return "", nil, nil, fmt.Errorf("not implemented for audit traces")
 }
 
 func eventuallyRelativeDateTime(s string) (strfmt.DateTime, error) {
