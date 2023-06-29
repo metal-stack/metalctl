@@ -10,11 +10,11 @@ import (
 func (t *TablePrinter) AuditTable(data []*models.V1AuditResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows   [][]string
-		header = []string{"Time", "Request ID", "Detail", "Path", "Code", "Tenant", "User", "Phase"}
+		header = []string{"Time", "Request ID", "Component", "Detail", "Path", "Code", "User"}
 	)
 
 	if wide {
-		header = []string{"Time", "Request ID", "Detail", "Path", "Code", "Tenant", "User", "Phase", "Body"}
+		header = []string{"Time", "Request ID", "Component", "Detail", "Path", "Code", "User", "Tenant", "Body"}
 	}
 
 	for _, trace := range data {
@@ -23,18 +23,23 @@ func (t *TablePrinter) AuditTable(data []*models.V1AuditResponse, wide bool) ([]
 			statusCode = fmt.Sprintf("%d", trace.StatusCode)
 		}
 		row := []string{
-			time.Time(trace.Timestamp).Format(time.StampMilli),
+			time.Time(trace.Timestamp).Format(time.DateTime),
 			trace.Rqid,
+			trace.Component,
 			trace.Detail,
 			trace.Path,
 			statusCode,
-			trace.Tenant,
 			trace.User,
-			trace.Phase,
 		}
 
 		if wide {
-			row = append(row, trace.Body)
+			row = append(row, trace.Tenant)
+
+			body := trace.Body
+			if len(body) > 40 {
+				body = body[:37] + "..."
+			}
+			row = append(row, body)
 		}
 
 		rows = append(rows, row)
