@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 )
 
 func (t *TablePrinter) AuditTable(data []*models.V1AuditResponse, wide bool) ([]string, [][]string, error) {
@@ -35,10 +36,7 @@ func (t *TablePrinter) AuditTable(data []*models.V1AuditResponse, wide bool) ([]
 		if wide {
 			row = append(row, trace.Tenant)
 
-			body := trace.Body
-			if len(body) > 40 {
-				body = body[:37] + "..."
-			}
+			body := genericcli.TruncateEnd(trace.Body, 40)
 			row = append(row, body)
 		}
 
