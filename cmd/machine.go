@@ -633,6 +633,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 }
 
 func machineResponseToUpdate(r *models.V1MachineResponse) *models.V1MachineUpdateRequest {
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		Description: pointer.PointerOrNil(pointer.SafeDeref(r.Allocation).Description),
 		ID:          r.ID,
@@ -746,6 +748,8 @@ func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdat
 		newTags = append(newTags, t)
 	}
 
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		ID:          pointer.Pointer(id),
 		Description: pointer.Pointer(viper.GetString("description")),
