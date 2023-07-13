@@ -46,11 +46,19 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "project", f: c.comp.ProjectListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
 		{flagName: "image", f: c.comp.ImageListCompletion},
+		{flagName: "state", f: cobra.FixedCompletions([]string{
+			// empty does not work:
+			// models.V1FirewallFindRequestStateValueEmpty,
+			models.V1FirewallFindRequestStateValueLOCKED,
+			models.V1MachineFindRequestStateValueRESERVED,
+		}, cobra.ShellCompDirectiveDefault)},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
 	cmd.Flags().String("partition", "", "partition to filter [optional]")
 	cmd.Flags().String("size", "", "size to filter [optional]")
+	cmd.Flags().String("rack", "", "rack to filter [optional]")
+	cmd.Flags().String("state", "", "state to filter [optional]")
 	cmd.Flags().String("name", "", "allocation name to filter [optional]")
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
 	cmd.Flags().String("image", "", "allocation image to filter [optional]")
@@ -356,7 +364,10 @@ In case the machine did not register properly a direct ipmi console access is av
 	}
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
+	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
+
 	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
+	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
 
 	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
 	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
@@ -531,11 +542,13 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
 		Sizeid:             viper.GetString("size"),
+		Rackid:             viper.GetString("rack"),
 		Name:               viper.GetString("name"),
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
 		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		StateValue:         viper.GetString("state"),
 		Tags:               viper.GetStringSlice("tags"),
 	}
 }
@@ -580,12 +593,11 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) ToCreate(r *models.V1MachineResponse) (*models.V1MachineAllocateRequest, error) {
-	return machineResponseToCreate(r), nil
-}
-
-func (c machineCmd) ToUpdate(r *models.V1MachineResponse) (*models.V1MachineUpdateRequest, error) {
-	return machineResponseToUpdate(r), nil
+func (c machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.ID, machineResponseToCreate(r), machineResponseToUpdate(r), nil
 }
 
 func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAllocateRequest {
@@ -621,6 +633,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 }
 
 func machineResponseToUpdate(r *models.V1MachineResponse) *models.V1MachineUpdateRequest {
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		Description: pointer.PointerOrNil(pointer.SafeDeref(r.Allocation).Description),
 		ID:          r.ID,
@@ -734,6 +748,8 @@ func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdat
 		newTags = append(newTags, t)
 	}
 
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		ID:          pointer.Pointer(id),
 		Description: pointer.Pointer(viper.GetString("description")),
@@ -1237,10 +1253,12 @@ func (c *machineCmd) machineIpmi(args []string) error {
 			return err
 		}
 
-		hidden := "<hidden>"
-		resp.Payload.Ipmi.Password = &hidden
-
 		return c.describePrinter.Print(resp.Payload)
+	}
+
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1248,7 +1266,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
@@ -1257,12 +1275,17 @@ func (c *machineCmd) machineIpmi(args []string) error {
 }
 
 func (c *machineCmd) machineIssues(args []string) error {
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}

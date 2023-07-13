@@ -176,14 +176,14 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 				machine1,
 			},
 			wantTable: pointer.Pointer(`
-ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION
-2       Waiting       1m                                            1                    1
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
+ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
+2       Waiting       1m                                            1                    1           rack-1
+1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
-2    Waiting       1m                                                                                         1                    1                                  b
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
+ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE 
+2    Waiting       1m                                                                                         1                    1           rack-1                          b                     
+1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -191,11 +191,68 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |
-|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|
-|  2 |  | Waiting     | 1m   |     |                    |           |    1 |             |         1 |
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |
+| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
+|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
+|  2 |  | Waiting     | 1m   |     |                    |           |    1 |             |         1 | rack-1 |
+|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
 `),
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("AllocateMachine", testcommon.MatchIgnoreContext(t, machine.NewAllocateMachineParams().WithBody(machineResponseToCreate(machine1))), nil).Return(&machine.AllocateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1MachineResponse) []string {
+				return appendFromFileCommonArgs("machine", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1MachineResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("FreeMachine", testcommon.MatchIgnoreContext(t, machine.NewFreeMachineParams().WithID(*machine1.ID)), nil).Return(&machine.FreeMachineOK{
+						Payload: machine1,
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineResponse{
+				machine1,
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -219,21 +276,21 @@ func Test_MachineCmd_SingleResult(t *testing.T) {
 			},
 			want: machine1,
 			wantTable: pointer.Pointer(`
-ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1
+ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
+1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   STARTED                TAGS   LOCK/RESERVE
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           2022-05-05T01:02:03Z   a
+ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE 
+1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |
-|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 |
+| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
+|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
+|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
 `),
 		},
 		{
@@ -278,7 +335,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -298,7 +355,7 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--add-tags", strings.Join(want.Tags, ","),
 					"--remove-tags", "z",
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -308,40 +365,6 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					mock.On("FindMachine", testcommon.MatchIgnoreContext(t, machine.NewFindMachineParams().WithID(*machine1.ID)), nil).Return(&machine.FindMachineOK{
 						Payload: machineToUpdate,
 					}, nil)
-					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
-						Payload: machine1,
-					}, nil)
-				},
-			},
-			want: machine1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1MachineResponse) []string {
-				return []string{"machine", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Machine: func(mock *mock.Mock) {
-					mock.On("AllocateMachine", testcommon.MatchIgnoreContext(t, machine.NewAllocateMachineParams().WithBody(machineResponseToCreate(machine1))), nil).Return(&machine.AllocateMachineOK{
-						Payload: machine1,
-					}, nil)
-				},
-			},
-			want: machine1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1MachineResponse) []string {
-				return []string{"machine", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1MachineResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Machine: func(mock *mock.Mock) {
 					mock.On("UpdateMachine", testcommon.MatchIgnoreContext(t, machine.NewUpdateMachineParams().WithBody(machineResponseToUpdate(machine1))), nil).Return(&machine.UpdateMachineOK{
 						Payload: machine1,
 					}, nil)

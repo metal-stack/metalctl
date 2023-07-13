@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	tenantmodel "github.com/metal-stack/metal-go/api/client/tenant"
 	"github.com/metal-stack/metal-go/api/models"
@@ -121,12 +122,11 @@ func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantRes
 	return updateResp.Payload, nil
 }
 
-func (c tenantCmd) ToCreate(r *models.V1TenantResponse) (*models.V1TenantCreateRequest, error) {
-	return tenantResponseToCreate(r), nil
-}
-
-func (c tenantCmd) ToUpdate(r *models.V1TenantResponse) (*models.V1TenantUpdateRequest, error) {
-	return tenantResponseToUpdate(r), nil
+func (c tenantCmd) Convert(r *models.V1TenantResponse) (string, *models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, error) {
+	if r.Meta == nil {
+		return "", nil, nil, fmt.Errorf("meta is nil")
+	}
+	return r.Meta.ID, tenantResponseToCreate(r), tenantResponseToUpdate(r), nil
 }
 
 func tenantResponseToCreate(r *models.V1TenantResponse) *models.V1TenantCreateRequest {

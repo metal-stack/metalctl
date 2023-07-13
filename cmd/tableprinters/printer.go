@@ -29,6 +29,10 @@ func (t *TablePrinter) SetLastEventErrorThreshold(threshold time.Duration) {
 
 func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {
 	switch d := data.(type) {
+	case []*models.V1AuditResponse:
+		return t.AuditTable(d, wide)
+	case *models.V1AuditResponse:
+		return t.AuditTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1MachineResponse:
 		return t.MachineTable(d, wide)
 	case *models.V1MachineResponse:
@@ -55,6 +59,8 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SwitchTable(pointer.WrapInSlice(d), wide)
 	case []*SwitchDetail:
 		return t.SwitchDetailTable(d, wide)
+	case *SwitchesWithMachines:
+		return t.SwitchWithConnectedMachinesTable(d, wide)
 	case *models.V1NetworkResponse:
 		return t.NetworkTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1NetworkResponse:

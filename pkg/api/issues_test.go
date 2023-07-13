@@ -30,17 +30,18 @@ var (
 	notAvailableMachine1  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("4"), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")}}
 	notAvailableMachine2  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("5"), Liveliness: pointer.Pointer(""), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")}}
 	failedReclaimMachine  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("6"), Events: &models.V1MachineRecentProvisioningEvents{FailedMachineReclaim: pointer.Pointer(true)}}
-	crashingMachine       = &models.V1MachineIPMIResponse{ID: pointer.Pointer("7"), Events: &models.V1MachineRecentProvisioningEvents{CrashLoop: pointer.Pointer(true)}}
+	failedReclaimMachine2 = &models.V1MachineIPMIResponse{ID: pointer.Pointer("7"), Events: &models.V1MachineRecentProvisioningEvents{Log: []*models.V1MachineProvisioningEvent{{Event: pointer.Pointer("Phoned Home")}}}}
+	crashingMachine       = &models.V1MachineIPMIResponse{ID: pointer.Pointer("8"), Events: &models.V1MachineRecentProvisioningEvents{CrashLoop: pointer.Pointer(true)}}
 	lastEventErrorMachine = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("8"),
+		ID: pointer.Pointer("9"),
 		Events: &models.V1MachineRecentProvisioningEvents{
 			LastErrorEvent: &models.V1MachineProvisioningEvent{
 				Time: strfmt.DateTime(testTime.Add(-5 * time.Minute)),
 			},
 		},
 	}
-	bmcWithoutMacMachine = &models.V1MachineIPMIResponse{ID: pointer.Pointer("9"), Ipmi: &models.V1MachineIPMI{}}
-	bmcWithoutIPMachine  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("10"), Ipmi: &models.V1MachineIPMI{}}
+	bmcWithoutMacMachine = &models.V1MachineIPMIResponse{ID: pointer.Pointer("10"), Ipmi: &models.V1MachineIPMI{}}
+	bmcWithoutIPMachine  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("11"), Ipmi: &models.V1MachineIPMI{}}
 	asnSharedMachine1    = &models.V1MachineIPMIResponse{
 		ID: pointer.Pointer("11"),
 		Allocation: &models.V1MachineAllocation{
@@ -174,6 +175,21 @@ func TestFindIssues(t *testing.T) {
 			want: MachineIssues{
 				{
 					Machine: failedReclaimMachine,
+					Issues: Issues{
+						toIssue(&IssueFailedMachineReclaim{}),
+					},
+				},
+			},
+		},
+		{
+			name: "failed machine reclaim 2",
+			c: &IssueConfig{
+				Only:     []IssueType{IssueTypeFailedMachineReclaim},
+				Machines: []*models.V1MachineIPMIResponse{failedReclaimMachine2, goodMachine},
+			},
+			want: MachineIssues{
+				{
+					Machine: failedReclaimMachine2,
 					Issues: Issues{
 						toIssue(&IssueFailedMachineReclaim{}),
 					},

@@ -9,8 +9,13 @@ metalctl switch detail [flags]
 ### Options
 
 ```
-  -F, --filter string   filter for site, rack, ID
-  -h, --help            help for detail
+  -h, --help                help for detail
+      --id string           ID of the switch.
+      --name string         Name of the switch.
+      --os-vendor string    OS vendor of this switch.
+      --os-version string   OS version of this switch.
+      --partition string    Partition of this switch.
+      --rack string         Rack of this switch.
 ```
 
 ### Options inherited from parent commands

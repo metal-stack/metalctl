@@ -87,7 +87,7 @@ ID   NAME          DESCRIPTION
 		{
 			name: "apply",
 			cmd: func(want []*models.V1PartitionResponse) []string {
-				return []string{"partition", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("partition", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -106,6 +106,63 @@ ID   NAME          DESCRIPTION
 			want: []*models.V1PartitionResponse{
 				partition1,
 				partition2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1PartitionResponse) []string {
+				return appendFromFileCommonArgs("partition", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(&partition.CreatePartitionCreated{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: []*models.V1PartitionResponse{
+				partition1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1PartitionResponse) []string {
+				return appendFromFileCommonArgs("partition", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(partition1))), nil).Return(&partition.UpdatePartitionOK{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: []*models.V1PartitionResponse{
+				partition1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1PartitionResponse) []string {
+				return appendFromFileCommonArgs("partition", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1PartitionResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					mock.On("DeletePartition", testcommon.MatchIgnoreContext(t, partition.NewDeletePartitionParams().WithID(*partition1.ID)), nil).Return(&partition.DeletePartitionOK{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: []*models.V1PartitionResponse{
+				partition1,
 			},
 		},
 	}
@@ -173,7 +230,7 @@ ID   NAME          DESCRIPTION
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -181,40 +238,6 @@ ID   NAME          DESCRIPTION
 					p := partition1
 					p.Privatenetworkprefixlength = 0
 					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(p))), nil).Return(&partition.CreatePartitionCreated{
-						Payload: partition1,
-					}, nil)
-				},
-			},
-			want: partition1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1PartitionResponse) []string {
-				return []string{"partition", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1PartitionResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Partition: func(mock *mock.Mock) {
-					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(&partition.CreatePartitionCreated{
-						Payload: partition1,
-					}, nil)
-				},
-			},
-			want: partition1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1PartitionResponse) []string {
-				return []string{"partition", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1PartitionResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Partition: func(mock *mock.Mock) {
-					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(partition1))), nil).Return(&partition.UpdatePartitionOK{
 						Payload: partition1,
 					}, nil)
 				},

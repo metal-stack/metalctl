@@ -12,7 +12,8 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"k8s.io/kube-openapi/pkg/util/sets"
+	"golang.org/x/exp/slices"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type networkCmd struct {
@@ -121,7 +122,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 		Use:   "free <networkid>",
 		Short: "free a network",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.childCLI.DeleteAndPrint(args, c.describePrinter)
+			id, err := genericcli.GetExactlyOneArg(args)
+			if err != nil {
+				return err
+			}
+
+			return w.childCLI.DeleteAndPrint(id, c.describePrinter)
 		},
 		ValidArgsFunction: c.comp.NetworkListCompletion,
 	}
@@ -209,12 +215,11 @@ func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkCreateRequest, error) {
-	return networkResponseToCreate(r), nil
-}
-
-func (c networkCmd) ToUpdate(r *models.V1NetworkResponse) (*models.V1NetworkUpdateRequest, error) {
-	return networkResponseToUpdate(r), nil
+func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, networkResponseToCreate(r), networkResponseToUpdate(r), nil
 }
 
 func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
@@ -310,8 +315,11 @@ func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
 	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
 }
 
-func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1NetworkAllocateRequest, error) {
-	return &models.V1NetworkAllocateRequest{
+func (c networkChildCRUD) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkAllocateRequest, any, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, &models.V1NetworkAllocateRequest{
 		Description:         r.Description,
 		Destinationprefixes: r.Destinationprefixes,
 		Labels:              r.Labels,
@@ -320,11 +328,7 @@ func (c networkChildCRUD) ToCreate(r *models.V1NetworkResponse) (*models.V1Netwo
 		Partitionid:         r.Partitionid,
 		Projectid:           r.Projectid,
 		Shared:              false,
-	}, nil
-}
-
-func (c networkChildCRUD) ToUpdate(r *models.V1NetworkResponse) (any, error) {
-	return nil, fmt.Errorf("not implemented for child networks, use network update")
+	}, nil, nil
 }
 
 func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdateRequest, error) {
@@ -361,48 +365,56 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Prefixes:            nil,
 			Shared:              shared,
 		}
-		addPrefixes                = sets.NewString(viper.GetStringSlice("add-prefixes")...)
-		removePrefixes             = sets.NewString(viper.GetStringSlice("remove-prefixes")...)
-		addDestinationprefixes     = sets.NewString(viper.GetStringSlice("add-destinationprefixes")...)
-		removeDestinationprefixes  = sets.NewString(viper.GetStringSlice("remove-destinationprefixes")...)
-		currentPrefixes            = sets.NewString(resp.Prefixes...)
-		currentDestinationprefixes = sets.NewString(resp.Destinationprefixes...)
+		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
+		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)
+		addDestinationprefixes     = sets.New(viper.GetStringSlice("add-destinationprefixes")...)
+		removeDestinationprefixes  = sets.New(viper.GetStringSlice("remove-destinationprefixes")...)
+		currentPrefixes            = sets.New(resp.Prefixes...)
+		currentDestinationprefixes = sets.New(resp.Destinationprefixes...)
 	)
 
-	newPrefixes := sets.NewString(currentPrefixes.List()...)
+	newPrefixes := currentPrefixes.Clone()
 	if viper.IsSet("remove-prefixes") {
 		diff := removePrefixes.Difference(currentPrefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", diff.List())
+			difflist := diff.UnsortedList()
+			slices.Sort(difflist)
+			return nil, fmt.Errorf("cannot remove prefixes because they are currently not present: %s", difflist)
 		}
 		newPrefixes = newPrefixes.Difference(removePrefixes)
 	}
 	if viper.IsSet("add-prefixes") {
-		if currentPrefixes.HasAny(addPrefixes.List()...) {
-			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", addPrefixes.Intersection(currentPrefixes).List())
+		if currentPrefixes.HasAny(addPrefixes.UnsortedList()...) {
+			intersection := addPrefixes.Intersection(currentPrefixes).UnsortedList()
+			slices.Sort(intersection)
+			return nil, fmt.Errorf("cannot add prefixes because they are already present: %s", intersection)
 		}
 		newPrefixes = newPrefixes.Union(addPrefixes)
 	}
 	if !newPrefixes.Equal(currentPrefixes) {
-		ur.Prefixes = newPrefixes.List()
+		ur.Prefixes = newPrefixes.UnsortedList()
 	}
 
-	newDestinationprefixes := sets.NewString(currentDestinationprefixes.List()...)
+	newDestinationprefixes := currentDestinationprefixes.Clone()
 	if viper.IsSet("remove-destinationprefixes") {
 		diff := removeDestinationprefixes.Difference(currentDestinationprefixes)
 		if diff.Len() > 0 {
-			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", diff.List())
+			difflist := diff.UnsortedList()
+			slices.Sort(difflist)
+			return nil, fmt.Errorf("cannot remove destination prefixes because they are currently not present: %s", difflist)
 		}
 		newDestinationprefixes = newDestinationprefixes.Difference(removeDestinationprefixes)
 	}
 	if viper.IsSet("add-destinationprefixes") {
-		if currentDestinationprefixes.HasAny(addDestinationprefixes.List()...) {
-			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", addDestinationprefixes.Intersection(currentDestinationprefixes).List())
+		if currentDestinationprefixes.HasAny(addDestinationprefixes.UnsortedList()...) {
+			interSection := addDestinationprefixes.Intersection(currentDestinationprefixes).UnsortedList()
+			slices.Sort(interSection)
+			return nil, fmt.Errorf("cannot add destination prefixes because they are already present: %s", interSection)
 		}
 		newDestinationprefixes = newDestinationprefixes.Union(addDestinationprefixes)
 	}
 	if !newDestinationprefixes.Equal(currentDestinationprefixes) {
-		ur.Destinationprefixes = newDestinationprefixes.List()
+		ur.Destinationprefixes = newDestinationprefixes.UnsortedList()
 	}
 
 	return ur, nil

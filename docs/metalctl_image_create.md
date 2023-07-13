@@ -9,22 +9,27 @@ metalctl image create [flags]
 ### Options
 
 ```
-  -d, --description string   Description of the image.
-      --features strings     features of the image, can be one of machine|firewall
-  -f, --file string          filename of the create or update request in yaml format, or - for stdin.
-                             
-                             Example:
-                             $ metalctl image describe image-1 -o yaml > image.yaml
-                             $ vi image.yaml
-                             $ # either via stdin
-                             $ cat image.yaml | metalctl image create -f -
-                             $ # or via file
-                             $ metalctl image create -f image.yaml
-                             	
-  -h, --help                 help for create
-      --id string            ID of the image.
-  -n, --name string          Name of the image.
-      --url string           url of the image.
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -d, --description string      Description of the image.
+      --features strings        features of the image, can be one of machine|firewall
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl image describe image-1 -o yaml > image.yaml
+                                $ vi image.yaml
+                                $ # either via stdin
+                                $ cat image.yaml | metalctl image create -f -
+                                $ # or via file
+                                $ metalctl image create -f image.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for create
+      --id string               ID of the image.
+  -n, --name string             Name of the image.
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
+      --url string              url of the image.
 ```
 
 ### Options inherited from parent commands

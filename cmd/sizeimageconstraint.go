@@ -101,12 +101,11 @@ func (c sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateReq
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) ToCreate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintCreateRequest, error) {
-	return sizeImageContraintResponseToCreate(r), nil
-}
-
-func (c sizeImageConstraintCmd) ToUpdate(r *models.V1SizeImageConstraintResponse) (*models.V1SizeImageConstraintUpdateRequest, error) {
-	return sizeImageContraintResponseToUpdate(r), nil
+func (c sizeImageConstraintCmd) Convert(r *models.V1SizeImageConstraintResponse) (string, *models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, sizeImageContraintResponseToCreate(r), sizeImageContraintResponseToUpdate(r), nil
 }
 
 func sizeImageContraintResponseToCreate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {

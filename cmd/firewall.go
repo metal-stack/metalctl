@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/firewall"
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
@@ -128,12 +129,11 @@ func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
 }
 
-func (c firewallCmd) ToCreate(r *models.V1FirewallResponse) (*models.V1FirewallCreateRequest, error) {
-	return firewallResponseToCreate(r), nil
-}
-
-func (c firewallCmd) ToUpdate(r *models.V1FirewallResponse) (any, error) {
-	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
+func (c firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, firewallResponseToCreate(r), nil, nil
 }
 
 func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
@@ -253,10 +253,18 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	if err != nil {
 		return err
 	}
+	randomSuffix, _, _ := strings.Cut(uuid.NewString(), "-")
+	hostname = fmt.Sprintf("metalctl-%s-%s", hostname, randomSuffix)
+	tempDir, err := os.MkdirTemp("", hostname)
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tempDir)
 	s := &tsnet.Server{
 		Hostname:   hostname,
 		ControlURL: *authKeyResp.Payload.Address,
 		AuthKey:    *authKeyResp.Payload.AuthKey,
+		Dir:        tempDir,
 	}
 	defer s.Close()
 

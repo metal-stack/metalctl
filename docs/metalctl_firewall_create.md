@@ -9,6 +9,7 @@ metalctl firewall create [flags]
 ### Options
 
 ```
+      --bulk-output               when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string        Description of the firewall to create. [optional]
   -f, --file string               filename of the create or update request in yaml format, or - for stdin.
                                   
@@ -19,6 +20,8 @@ metalctl firewall create [flags]
                                   $ cat firewall.yaml | metalctl firewall create -f -
                                   $ # or via file
                                   $ metalctl firewall create -f firewall.yaml
+                                  
+                                  the file can also contain multiple documents and perform a bulk operation.
                                   	
       --filesystemlayout string   Filesystemlayout to use during machine installation. [optional]
   -h, --help                      help for create
@@ -38,10 +41,12 @@ metalctl firewall create [flags]
   -S, --partition string          partition/datacenter where the firewall is created. [required, except for reserved machines]
   -P, --project string            Project where the firewall should belong to. [required]
   -s, --size string               Size of the firewall. [required, except for reserved machines]
+      --skip-security-prompts     skips security prompt for bulk operations
   -p, --sshpublickey string       SSH public key for access via ssh and console. [optional]
                                   Can be either the public key as string, or pointing to the public key file to use e.g.: "@~/.ssh/id_rsa.pub".
                                   If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picked as default, matching the first one in this order.
       --tags strings              tags to add to the firewall, use it like: --tags "tag1,tag2" or --tags "tag3".
+      --timestamps                when used with --file (bulk operation): prints timestamps in-between the operations
       --userdata string           cloud-init.io compatible userdata. [optional]
                                   Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".
 ```

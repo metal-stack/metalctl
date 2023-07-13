@@ -33,6 +33,7 @@ a cli to manage entities in the metal-stack api
 
 ### SEE ALSO
 
+* [metalctl audit](metalctl_audit.md)	 - manage audit trace entities
 * [metalctl completion](metalctl_completion.md)	 - Generate the autocompletion script for the specified shell
 * [metalctl context](metalctl_context.md)	 - manage metalctl context
 * [metalctl filesystemlayout](metalctl_filesystemlayout.md)	 - manage filesystemlayout entities

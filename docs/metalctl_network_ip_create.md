@@ -9,24 +9,29 @@ metalctl network ip create [flags]
 ### Options
 
 ```
-  -d, --description string   description of the IP to allocate. [optional]
-  -f, --file string          filename of the create or update request in yaml format, or - for stdin.
-                             
-                             Example:
-                             $ metalctl ip describe ip-1 -o yaml > ip.yaml
-                             $ vi ip.yaml
-                             $ # either via stdin
-                             $ cat ip.yaml | metalctl ip create -f -
-                             $ # or via file
-                             $ metalctl ip create -f ip.yaml
-                             	
-  -h, --help                 help for create
-      --ipaddress string     a specific ip address to allocate. [optional]
-  -n, --name string          name of the IP to allocate. [optional]
-      --network string       network from where the IP should be allocated.
-      --project string       project for which the IP should be allocated.
-      --tags strings         tags to attach to the IP.
-      --type string          type of the IP to allocate: ephemeral|static [optional] (default "ephemeral")
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -d, --description string      description of the IP to allocate. [optional]
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl ip describe ip-1 -o yaml > ip.yaml
+                                $ vi ip.yaml
+                                $ # either via stdin
+                                $ cat ip.yaml | metalctl ip create -f -
+                                $ # or via file
+                                $ metalctl ip create -f ip.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for create
+      --ipaddress string        a specific ip address to allocate. [optional]
+  -n, --name string             name of the IP to allocate. [optional]
+      --network string          network from where the IP should be allocated.
+      --project string          project for which the IP should be allocated.
+      --skip-security-prompts   skips security prompt for bulk operations
+      --tags strings            tags to attach to the IP.
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
+      --type string             type of the IP to allocate: ephemeral|static [optional] (default "ephemeral")
 ```
 
 ### Options inherited from parent commands

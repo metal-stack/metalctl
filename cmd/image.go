@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
@@ -53,6 +54,20 @@ func newImageCmd(c *config) *cobra.Command {
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("show-usage", false, "show from how many allocated machines every image is used")
+
+			cmd.Flags().String("classification", "", "Classification of this image.")
+			cmd.Flags().String("features", "", "Features of this image.")
+			cmd.Flags().String("id", "", "ID of the image.")
+			cmd.Flags().String("name", "", "Name of the image.")
+			cmd.Flags().String("os", "", "OS derivate of this image.")
+			cmd.Flags().String("version", "", "Version of this image.")
+
+			must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
+			must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
+			must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
+			must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
+			must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
 		},
 	}
 
@@ -69,7 +84,14 @@ func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
 }
 
 func (c imageCmd) List() ([]*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().ListImages(image.NewListImagesParams().WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
+	resp, err := c.client.Image().FindImages(image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
+		Classification: viper.GetString("classification"),
+		Features:       viper.GetStringSlice("features"),
+		ID:             viper.GetString("id"),
+		Name:           viper.GetString("name"),
+		Os:             viper.GetString("os"),
+		Version:        viper.GetString("version"),
+	}).WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +130,11 @@ func (c imageCmd) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageRespon
 	return resp.Payload, nil
 }
 
-func (c imageCmd) ToCreate(r *models.V1ImageResponse) (*models.V1ImageCreateRequest, error) {
-	return imageResponseToCreate(r), nil
-}
-
-func (c imageCmd) ToUpdate(r *models.V1ImageResponse) (*models.V1ImageUpdateRequest, error) {
-	return imageResponseToUpdate(r), nil
+func (c imageCmd) Convert(r *models.V1ImageResponse) (string, *models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, imageResponseToCreate(r), imageResponseToUpdate(r), nil
 }
 
 func imageResponseToCreate(r *models.V1ImageResponse) *models.V1ImageCreateRequest {
