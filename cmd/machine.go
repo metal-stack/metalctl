@@ -1229,11 +1229,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
-	if err != nil {
-		return err
-	}
-	err = SSHClient(id, key, parsedurl.Host, bmcConsolePort)
+	err = sshClient(id, key, parsedurl.Host, bmcConsolePort, &authContext.IDToken)
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
