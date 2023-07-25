@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
@@ -32,7 +34,14 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 		return err
 	}
 	defer v.Close()
-	privateKey, err := os.ReadFile(viper.GetString("identity"))
+
+	privateKeyFile := viper.GetString("identity")
+	if strings.HasPrefix(privateKeyFile, "~/") {
+		home, _ := os.UserHomeDir()
+		privateKeyFile = filepath.Join(home, privateKeyFile[2:])
+	}
+
+	privateKey, err := os.ReadFile(privateKeyFile)
 	if err != nil {
 		return err
 	}
