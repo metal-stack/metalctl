@@ -52,7 +52,10 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 		if s.LastSyncError != nil {
 			errorTime := time.Time(*s.LastSyncError.Time)
-			syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+			// after 7 days we do not show sync errors anymore
+			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
+				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+			}
 		}
 
 		var mode string
