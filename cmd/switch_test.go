@@ -141,8 +141,8 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 			},
 			wantTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
-2    1           rack-1   🐢    ●
+1    1           rack-1   🦔   ●
+2    1           rack-1   🐢   ●
 `),
 			wantWideTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
@@ -157,8 +157,8 @@ ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST
 			wantMarkdown: pointer.Pointer(`
 | ID | PARTITION |  RACK  | OS | STATUS |
 |----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
-|  2 |         1 | rack-1 | 🐢 |  ●     |
+|  1 |         1 | rack-1 | 🦔 | ●      |
+|  2 |         1 | rack-1 | 🐢 | ●      |
 `),
 		},
 		{
@@ -189,7 +189,7 @@ ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST
 			},
 			wantTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
+1    1           rack-1   🦔   ●
 		`),
 			wantWideTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
@@ -202,7 +202,7 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 			wantMarkdown: pointer.Pointer(`
 | ID | PARTITION |  RACK  | OS | STATUS |
 |----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
+|  1 |         1 | rack-1 | 🦔 | ●      |
 		`),
 		},
 		{
@@ -353,7 +353,7 @@ func Test_SwitchCmd_SingleResult(t *testing.T) {
 			want: switch1,
 			wantTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
+1    1           rack-1   🦔   ●
 		`),
 			wantWideTable: pointer.Pointer(`
 ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
@@ -366,7 +366,7 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 			wantMarkdown: pointer.Pointer(`
 | ID | PARTITION |  RACK  | OS | STATUS |
 |----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
+|  1 |         1 | rack-1 | 🦔 | ●      |
 		`),
 		},
 		{
