@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"slices"
+
 	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
@@ -21,7 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 

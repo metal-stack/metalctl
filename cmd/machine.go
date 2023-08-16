@@ -12,7 +12,7 @@ import (
 
 	"net/url"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/client/machine"
