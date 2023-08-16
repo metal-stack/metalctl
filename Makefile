@@ -38,7 +38,7 @@ lint:
 
 .PHONY: build-platforms
 build-platforms:
-	docker build --no-cache -t platforms-binaries --target platforms .
+	docker build -f Dockerfile.binaries --no-cache -t platforms-binaries .
 
 .PHONY: extract-binaries
 extract-binaries: build-platforms
