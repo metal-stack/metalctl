@@ -35,14 +35,9 @@ jobs:
         with:
           args: --build-tags integration -p bugs -p unused --timeout=5m
 
-      - name: Lint Structs
-        uses: golangci/golangci-lint-action@v3
-        with:
-          args: --enable exhaustruct ./cmd --tests=false --timeout=5m
-
       - name: Test
         run: |
-          make test
+          make test lint-structs
 
   build:
     runs-on: ubuntu-latest
