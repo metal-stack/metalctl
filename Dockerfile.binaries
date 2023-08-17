@@ -1,3 +1,0 @@
-FROM metalstack/builder:latest
-RUN make platforms \
- && strip bin/metalctl-linux-amd64
