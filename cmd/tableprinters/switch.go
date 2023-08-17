@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
 
@@ -22,6 +23,10 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 	header := []string{"ID", "Partition", "Rack", "OS", "Status"}
 	if wide {
 		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+
+		t.t.MutateTable(func(table *tablewriter.Table) {
+			table.SetAutoWrapText(false)
+		})
 	}
 
 	for _, s := range data {
@@ -39,11 +44,11 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			syncAge := time.Since(syncTime)
 			syncDur := time.Duration(*s.LastSync.Duration).Round(time.Millisecond)
 			if syncAge >= time.Minute*10 || syncDur >= 30*time.Second {
-				shortStatus += color.RedString(dot)
+				shortStatus = color.RedString(dot)
 			} else if syncAge >= time.Minute*1 || syncDur >= 20*time.Second {
-				shortStatus += color.YellowString(dot)
+				shortStatus = color.YellowString(dot)
 			} else {
-				shortStatus += color.GreenString(dot)
+				shortStatus = color.GreenString(dot)
 			}
 
 			syncAgeStr = humanizeDuration(syncAge)
@@ -52,7 +57,14 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 		if s.LastSyncError != nil {
 			errorTime := time.Time(*s.LastSyncError.Time)
-			syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+			// after 7 days we do not show sync errors anymore
+			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
+				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+
+				if errorTime.After(time.Time(pointer.SafeDeref(s.LastSync.Time))) {
+					shortStatus = color.RedString(dot)
+				}
+			}
 		}
 
 		var mode string
@@ -79,9 +91,10 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 			os = s.Os.Vendor
 			if s.Os.Version != "" {
-				os = os + "/" + s.Os.Version
+				os = fmt.Sprintf("%s (%s)", os, s.Os.Version)
 			}
-			metalCore = s.Os.MetalCoreVersion
+			// metal core version is very long: v0.9.1 (1d5e42ea), tags/v0.9.1-0-g1d5e42e, go1.20.5
+			metalCore = strings.Split(s.Os.MetalCoreVersion, ",")[0]
 		}
 
 		if wide {

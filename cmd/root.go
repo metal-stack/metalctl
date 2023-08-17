@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -10,8 +11,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -25,7 +24,7 @@ type config struct {
 	driverURL       string
 	comp            *completion.Completion
 	client          metalgo.Client
-	log             *zap.SugaredLogger
+	log             *slog.Logger
 	describePrinter printers.Printer
 	listPrinter     printers.Printer
 }
@@ -183,11 +182,12 @@ func initConfigWithViperCtx(c *config) error {
 	c.describePrinter = defaultToYAMLPrinter(c.out)
 
 	if c.log == nil {
-		logger, err := newLogger()
-		if err != nil {
-			return fmt.Errorf("error creating logger: %w", err)
+		opts := &slog.HandlerOptions{}
+		if viper.GetBool("debug") {
+			opts.Level = slog.LevelDebug
 		}
-		c.log = logger
+		jsonHandler := slog.NewJSONHandler(os.Stdout, opts)
+		c.log = slog.New(jsonHandler)
 	}
 
 	if c.client != nil {
@@ -224,24 +224,6 @@ func initConfigWithViperCtx(c *config) error {
 	c.client = client
 
 	return nil
-}
-
-func newLogger() (*zap.SugaredLogger, error) {
-	cfg := zap.NewProductionConfig()
-	if viper.GetBool("debug") {
-		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	}
-	cfg.EncoderConfig.TimeKey = "timestamp"
-	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-
-	l, err := cfg.Build()
-	if err != nil {
-		return nil, err
-	}
-
-	return l.Sugar(), nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {

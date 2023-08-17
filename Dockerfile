@@ -1,8 +1,4 @@
-FROM metalstack/builder:latest as builder
-RUN make platforms \
- && strip bin/metalctl-linux-amd64 bin/metalctl
-
-FROM alpine:3.17
-LABEL maintainer="metal-stack Authors <info@metal-stack.io>"
-COPY --from=builder /work/bin/metalctl /metalctl
+FROM alpine:3.18
+LABEL maintainer="metal-stack authors <info@metal-stack.io>"
+COPY bin/metalctl-linux-amd64 /metalctl
 ENTRYPOINT ["/metalctl"]

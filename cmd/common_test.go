@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"slices"
 
 	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
@@ -20,8 +23,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
-	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 )
 
@@ -107,7 +108,7 @@ func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.B
 			fs:     fs,
 			client: client,
 			out:    &out,
-			log:    zaptest.NewLogger(t).Sugar(),
+			log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
 			comp:   &completion.Completion{},
 		}
 	)
