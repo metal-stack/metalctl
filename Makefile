@@ -1,6 +1,7 @@
 GOOS := linux
 GOARCH := amd64
 CGO_ENABLED := 1
+TAGS := -tags 'netgo'
 BINARY := metalctl-$(GOOS)-$(GOARCH)
 
 SHA := $(shell git rev-parse --short=8 HEAD)
@@ -9,7 +10,10 @@ BUILDDATE := $(shell date --rfc-3339=seconds)
 VERSION := $(or ${VERSION},$(shell git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD))
 
 ifeq ($(CGO_ENABLED),1)
+ifeq ($(GOOS),linux)
 	LINKMODE := -linkmode external -extldflags '-static -s -w'
+	TAGS := -tags 'osusergo netgo static_build'
+endif
 endif
 
 LINKMODE := $(LINKMODE) \
@@ -24,7 +28,7 @@ all: build test lint-structs markdown
 .PHONY: build
 build:
 	go build \
-		-tags netgo \
+		$(TAGS) \
 		-ldflags \
 		"$(LINKMODE)" \
 		-o bin/$(BINARY) \
