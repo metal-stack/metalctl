@@ -8,6 +8,10 @@ GITVERSION := $(shell git describe --long --all)
 BUILDDATE := $(shell date --rfc-3339=seconds)
 VERSION := $(or ${VERSION},$(shell git describe --tags --exact-match 2> /dev/null || git symbolic-ref -q --short HEAD || git rev-parse --short HEAD))
 
+ifeq ($(CGO_ENABLED),1)
+	LINKMODE := -linkmode external -extldflags '-static -s -w'
+endif
+
 LINKMODE := $(LINKMODE) \
 		 -X 'github.com/metal-stack/v.Version=$(VERSION)' \
 		 -X 'github.com/metal-stack/v.Revision=$(GITVERSION)' \
