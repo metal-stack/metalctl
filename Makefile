@@ -1,6 +1,6 @@
 GOOS := linux
 GOARCH := amd64
-CGO_ENABLED := 0
+CGO_ENABLED := 1
 BINARY := metalctl-$(GOOS)-$(GOARCH)
 
 SHA := $(shell git rev-parse --short=8 HEAD)
