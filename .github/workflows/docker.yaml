@@ -17,78 +17,105 @@ env:
   GCS_BUCKET: images.metal-pod.io
 
 jobs:
-  build:
-    name: Docker Build
+  test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Log in to the container registry
-      uses: docker/login-action@v2
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.DOCKER_REGISTRY_USER }}
-        password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Checkout
-      uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+          cache: false
 
-    - uses: google-github-actions/auth@v1
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          args: --build-tags integration -p bugs -p unused --timeout=5m
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
+      - name: Test
+        run: |
+          make test lint-structs
 
-    - name: Ensure Go Version
-      uses: actions/setup-go@v3
-      with:
-        go-version: '1.21'
-        # go-version-file: 'go.mod'
+  build:
+    runs-on: ubuntu-latest
 
-    - name: Lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        args: --build-tags integration -p bugs -p unused --timeout=3m
+    strategy:
+      matrix:
+        os:
+          - linux
+          - windows
+          - darwin
+        arch:
+          - amd64
+          - arm64
+        exclude:
+          - os: linux
+            arch: arm64
+          - os: windows
+            arch: arm64
 
-    - name: Lint Structs
-      uses: golangci/golangci-lint-action@v3
-      with:
-        args: --enable exhaustruct ./cmd --tests=false --timeout=3m
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Make tag
-      run: |
-        [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TAG_NAME=$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
-        [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-        [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TAG_NAME=latest" >> $GITHUB_ENV || true
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
 
-        [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TARGET_BINARY_LOCATION=pull-requests/$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
-        [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TARGET_BINARY_LOCATION=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-        [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TARGET_BINARY_LOCATION=latest" >> $GITHUB_ENV || true
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-    - name: Build platform binaries
-      run: |
-        make extract-binaries
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
 
-    - name: Build and push image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_NAME }}
+      - name: Make tag
+        run: |
+          [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TAG_NAME=$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TAG_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TAG_NAME=latest" >> $GITHUB_ENV || true
 
-    - name: Prepare upload
-      run: |
-        mkdir -p metalctl/${TARGET_BINARY_LOCATION}
-        sudo chown -R $(id -u):$(id -g) result
-        cp result/* metalctl/${TARGET_BINARY_LOCATION}/
+          [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "TARGET_BINARY_LOCATION=pull-requests/$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "TARGET_BINARY_LOCATION=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "TARGET_BINARY_LOCATION=latest" >> $GITHUB_ENV || true
 
-    - name: Upload image tarballs to GCS
-      run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+      - name: Build
+        run: |
+          make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
 
-    - name: Upload Release Asset
-      uses: softprops/action-gh-release@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        files: |
-          result/metalctl-*
-      if: ${{ github.event_name == 'release' }}
+      - name: Log in to the container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_REGISTRY_USER }}
+          password: ${{ secrets.DOCKER_REGISTRY_TOKEN }}
+        if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_NAME }}
+        if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
+
+      - name: Prepare upload
+        run: |
+          mkdir -p metalctl/${TARGET_BINARY_LOCATION}
+          sudo chown -R $(id -u):$(id -g) bin
+          cp bin/* metalctl/${TARGET_BINARY_LOCATION}/
+
+      - name: Upload image tarballs to GCS
+        run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            bin/metalctl-*
+        if: ${{ github.event_name == 'release' }}
