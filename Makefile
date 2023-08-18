@@ -34,7 +34,6 @@ build:
 		-o bin/$(BINARY) \
 		github.com/metal-stack/metalctl
 
-	strip bin/$(BINARY) || true
 	md5sum bin/$(BINARY) > bin/$(BINARY).md5
 
 .PHONY: test
