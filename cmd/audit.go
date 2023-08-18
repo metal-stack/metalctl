@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -56,6 +58,15 @@ func newAuditCmd(c *config) *cobra.Command {
 			cmd.Flags().Int32("status-code", 0, "HTTP status code of the audit trace.")
 
 			cmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
+
+			must(cmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
+			must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+		},
+		DescribeCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
+			cmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
+
+			must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 		},
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
@@ -68,7 +79,8 @@ func newAuditCmd(c *config) *cobra.Command {
 
 func (c auditCmd) Get(id string) (*models.V1AuditResponse, error) {
 	traces, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
-		Rqid: id,
+		Rqid:  id,
+		Phase: viper.GetString("phase"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -76,7 +88,21 @@ func (c auditCmd) Get(id string) (*models.V1AuditResponse, error) {
 	if len(traces.Payload) == 0 {
 		return nil, fmt.Errorf("no audit trace found with request id %s", id)
 	}
-	return traces.Payload[0], nil
+
+	trace := traces.Payload[0]
+
+	if viper.GetBool("prettify-body") {
+		trimmed := strings.Trim(trace.Body, `"`)
+		body := map[string]any{}
+		err = json.Unmarshal([]byte(trimmed), &body)
+		if err == nil {
+			if pretty, err := json.MarshalIndent(body, "", "    "); err == nil {
+				trace.Body = string(pretty)
+			}
+		}
+	}
+
+	return trace, nil
 }
 
 func (c auditCmd) List() ([]*models.V1AuditResponse, error) {
