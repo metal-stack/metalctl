@@ -107,8 +107,7 @@ func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Project
 		return nil, err
 	}
 
-	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
-	rq.Meta.Version = resp.Payload.Meta.Version + 1
+	rq.Meta.Version = resp.Payload.Meta.Version
 
 	updateResp, err := c.client.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
 	if err != nil {
