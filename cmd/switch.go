@@ -105,13 +105,15 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 	switchMachinesCmd.Flags().String("os-version", "", "OS version of this switch.")
 	switchMachinesCmd.Flags().String("partition", "", "Partition of this switch.")
 	switchMachinesCmd.Flags().String("rack", "", "Rack of this switch.")
-	switchMachinesCmd.Flags().String("size", "", "Size of the connectedmachines.")
+	switchMachinesCmd.Flags().String("size", "", "Size of the connected machines.")
+	switchMachinesCmd.Flags().String("machine-id", "", "The id of the connected machine, ignores size flag if set.")
 
 	must(switchMachinesCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
 	must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
 	must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
 	must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	must(switchMachinesCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
 
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",
@@ -256,29 +258,43 @@ func (c *switchCmd) switchMachines() error {
 		return err
 	}
 
-	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
-		PartitionID: viper.GetString("partition"),
-		Rackid:      viper.GetString("rack"),
-		Sizeid:      viper.GetString("size"),
-	}), nil)
-	if err != nil {
-		return err
+	var machines []*models.V1MachineIPMIResponse
+
+	if viper.IsSet("machine-id") {
+		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(viper.GetString("machine-id")), nil)
+		if err != nil {
+			return err
+		}
+
+		machines = append(machines, resp.Payload)
+	} else {
+		resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+			ID:          viper.GetString("machine-id"),
+			PartitionID: viper.GetString("partition"),
+			Rackid:      viper.GetString("rack"),
+			Sizeid:      viper.GetString("size"),
+		}), nil)
+		if err != nil {
+			return err
+		}
+
+		machines = append(machines, resp.Payload...)
 	}
 
-	machines := map[string]*models.V1MachineIPMIResponse{}
-	for _, m := range resp.Payload {
+	ms := map[string]*models.V1MachineIPMIResponse{}
+	for _, m := range machines {
 		m := m
 
 		if m.ID == nil {
 			continue
 		}
 
-		machines[*m.ID] = m
+		ms[*m.ID] = m
 	}
 
 	return c.listPrinter.Print(&tableprinters.SwitchesWithMachines{
 		SS: switches,
-		MS: machines,
+		MS: ms,
 	})
 }
 
