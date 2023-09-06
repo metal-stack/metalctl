@@ -157,8 +157,8 @@ func tenantResponseToUpdate(r *models.V1TenantResponse) *models.V1TenantUpdateRe
 			Version:     r.Meta.Version,
 		},
 		Description:   r.Description,
-		IamConfig:     &models.V1IAMConfig{},
-		DefaultQuotas: &models.V1QuotaSet{},
+		IamConfig:     r.IamConfig,
+		DefaultQuotas: r.DefaultQuotas,
 		Quotas:        r.Quotas,
 	}
 }
