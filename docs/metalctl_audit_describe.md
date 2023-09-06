@@ -9,7 +9,9 @@ metalctl audit describe <id> [flags]
 ### Options
 
 ```
-  -h, --help   help for describe
+  -h, --help            help for describe
+      --phase string    phase of the audit trace. One of [request, response, single, error, opened, closed] (default "response")
+      --prettify-body   attempts to interpret the body as json and prettifies it
 ```
 
 ### Options inherited from parent commands

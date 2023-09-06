@@ -25,12 +25,13 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 ```
   -h, --help                help for connected-machines
       --id string           ID of the switch.
+      --machine-id string   The id of the connected machine, ignores size flag if set.
       --name string         Name of the switch.
       --os-vendor string    OS vendor of this switch.
       --os-version string   OS version of this switch.
       --partition string    Partition of this switch.
       --rack string         Rack of this switch.
-      --size string         Size of the connectedmachines.
+      --size string         Size of the connected machines.
 ```
 
 ### Options inherited from parent commands
