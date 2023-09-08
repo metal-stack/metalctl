@@ -127,8 +127,9 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 		rows = append(rows, []string{id, "", "", partition, rack})
 
 		conns := s.Connections
-		if viper.IsSet("size") {
-			conns = []*models.V1SwitchConnection{}
+		if viper.IsSet("size") || viper.IsSet("machine-id") {
+			filteredConns := []*models.V1SwitchConnection{}
+
 			for _, conn := range s.Connections {
 				conn := conn
 
@@ -137,10 +138,16 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 					continue
 				}
 
-				if pointer.SafeDeref(m.Size.ID) == viper.GetString("size") {
-					conns = append(conns, conn)
+				if viper.IsSet("machine-id") && pointer.SafeDeref(m.ID) == viper.GetString("machine-id") {
+					filteredConns = append(filteredConns, conn)
+				}
+
+				if viper.IsSet("size") && pointer.SafeDeref(m.Size.ID) == viper.GetString("size") {
+					filteredConns = append(filteredConns, conn)
 				}
 			}
+
+			conns = filteredConns
 		}
 
 		sort.Slice(conns, switchInterfaceNameLessFunc(conns))

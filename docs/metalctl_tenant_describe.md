@@ -1,37 +1,15 @@
-## metalctl switch connected-machines
+## metalctl tenant describe
 
-shows switches with their connected machines
-
-```
-metalctl switch connected-machines [flags]
-```
-
-### Examples
+describes the tenant
 
 ```
-The command will show the machines connected to the switch ports.
-
-Can also be used with -o template in order to generate CSV-style output:
-
-$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
-r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
-r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
-...
-
+metalctl tenant describe <id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                help for connected-machines
-      --id string           ID of the switch.
-      --machine-id string   The id of the connected machine, ignores size flag if set.
-      --name string         Name of the switch.
-      --os-vendor string    OS vendor of this switch.
-      --os-version string   OS version of this switch.
-      --partition string    Partition of this switch.
-      --rack string         Rack of this switch.
-      --size string         Size of the connected machines.
+  -h, --help   help for describe
 ```
 
 ### Options inherited from parent commands
@@ -64,5 +42,5 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 
 ### SEE ALSO
 
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
+* [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
 

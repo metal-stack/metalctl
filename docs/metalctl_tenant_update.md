@@ -1,37 +1,30 @@
-## metalctl switch connected-machines
+## metalctl tenant update
 
-shows switches with their connected machines
-
-```
-metalctl switch connected-machines [flags]
-```
-
-### Examples
+updates the tenant
 
 ```
-The command will show the machines connected to the switch ports.
-
-Can also be used with -o template in order to generate CSV-style output:
-
-$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
-r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
-r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
-...
-
+metalctl tenant update [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help                help for connected-machines
-      --id string           ID of the switch.
-      --machine-id string   The id of the connected machine, ignores size flag if set.
-      --name string         Name of the switch.
-      --os-vendor string    OS vendor of this switch.
-      --os-version string   OS version of this switch.
-      --partition string    Partition of this switch.
-      --rack string         Rack of this switch.
-      --size string         Size of the connected machines.
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl tenant describe tenant-1 -o yaml > tenant.yaml
+                                $ vi tenant.yaml
+                                $ # either via stdin
+                                $ cat tenant.yaml | metalctl tenant update -f -
+                                $ # or via file
+                                $ metalctl tenant update -f tenant.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for update
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands
@@ -64,5 +57,5 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 
 ### SEE ALSO
 
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
+* [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
 

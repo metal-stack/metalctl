@@ -1,37 +1,15 @@
-## metalctl switch connected-machines
+## metalctl tenant
 
-shows switches with their connected machines
+manage tenant entities
 
-```
-metalctl switch connected-machines [flags]
-```
+### Synopsis
 
-### Examples
-
-```
-The command will show the machines connected to the switch ports.
-
-Can also be used with -o template in order to generate CSV-style output:
-
-$ metalctl switch connected-machines -o template --template '{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}'
-r01leaf01,swp1,f78cc340-e5e8-48ed-8fe7-2336c1e2ded2,<a-serial>
-r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
-...
-
-```
+a tenant belongs to a tenant and groups together entities in metal-stack.
 
 ### Options
 
 ```
-  -h, --help                help for connected-machines
-      --id string           ID of the switch.
-      --machine-id string   The id of the connected machine, ignores size flag if set.
-      --name string         Name of the switch.
-      --os-vendor string    OS vendor of this switch.
-      --os-version string   OS version of this switch.
-      --partition string    Partition of this switch.
-      --rack string         Rack of this switch.
-      --size string         Size of the connected machines.
+  -h, --help   help for tenant
 ```
 
 ### Options inherited from parent commands
@@ -64,5 +42,12 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 
 ### SEE ALSO
 
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
+* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
+* [metalctl tenant apply](metalctl_tenant_apply.md)	 - applies one or more tenants from a given file
+* [metalctl tenant create](metalctl_tenant_create.md)	 - creates the tenant
+* [metalctl tenant delete](metalctl_tenant_delete.md)	 - deletes the tenant
+* [metalctl tenant describe](metalctl_tenant_describe.md)	 - describes the tenant
+* [metalctl tenant edit](metalctl_tenant_edit.md)	 - edit the tenant through an editor and update
+* [metalctl tenant list](metalctl_tenant_list.md)	 - list all tenants
+* [metalctl tenant update](metalctl_tenant_update.md)	 - updates the tenant
 

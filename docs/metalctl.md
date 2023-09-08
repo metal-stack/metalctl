@@ -50,6 +50,7 @@ a cli to manage entities in the metal-stack api
 * [metalctl project](metalctl_project.md)	 - manage project entities
 * [metalctl size](metalctl_size.md)	 - manage size entities
 * [metalctl switch](metalctl_switch.md)	 - manage switch entities
+* [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
 * [metalctl update](metalctl_update.md)	 - update the program
 * [metalctl version](metalctl_version.md)	 - print the client and server version information
 * [metalctl vpn](metalctl_vpn.md)	 - access VPN
