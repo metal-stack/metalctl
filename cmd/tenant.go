@@ -111,6 +111,17 @@ func (c tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantRes
 }
 
 func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantResponse, error) {
+	if rq.Meta == nil {
+		return nil, fmt.Errorf("tenant meta is nil")
+	}
+
+	getResp, err := c.Get(rq.Meta.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	rq.Meta.Version = getResp.Meta.Version
+
 	updateResp, err := c.client.Tenant().UpdateTenant(tenantmodel.NewUpdateTenantParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err

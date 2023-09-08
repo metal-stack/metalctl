@@ -170,6 +170,9 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 			mocks: &client.MetalMockFns{
 				Tenant: func(mock *mock.Mock) {
 					mock.On("CreateTenant", testcommon.MatchIgnoreContext(t, tenant.NewCreateTenantParams().WithBody(tenantResponseToCreate(tenant1))), nil).Return(nil, &tenant.CreateTenantConflict{}).Once()
+					mock.On("GetTenant", testcommon.MatchIgnoreContext(t, tenant.NewGetTenantParams().WithID(tenant1.Meta.ID)), nil).Return(&tenant.GetTenantOK{
+						Payload: tenant1,
+					}, nil)
 					mock.On("UpdateTenant", testcommon.MatchIgnoreContext(t, tenant.NewUpdateTenantParams().WithBody(tenantResponseToUpdate(tenant1))), nil).Return(&tenant.UpdateTenantOK{
 						Payload: tenant1,
 					}, nil)
@@ -212,6 +215,9 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 			},
 			mocks: &client.MetalMockFns{
 				Tenant: func(mock *mock.Mock) {
+					mock.On("GetTenant", testcommon.MatchIgnoreContext(t, tenant.NewGetTenantParams().WithID(tenant1.Meta.ID)), nil).Return(&tenant.GetTenantOK{
+						Payload: tenant1,
+					}, nil)
 					mock.On("UpdateTenant", testcommon.MatchIgnoreContext(t, tenant.NewUpdateTenantParams().WithBody(tenantResponseToUpdate(tenant1))), nil).Return(&tenant.UpdateTenantOK{
 						Payload: tenant1,
 					}, nil)
