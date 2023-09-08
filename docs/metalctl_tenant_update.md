@@ -1,8 +1,33 @@
-## metalctl
+## metalctl tenant update
 
-a cli to manage entities in the metal-stack api
+updates the tenant
+
+```
+metalctl tenant update [flags]
+```
 
 ### Options
+
+```
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl tenant describe tenant-1 -o yaml > tenant.yaml
+                                $ vi tenant.yaml
+                                $ # either via stdin
+                                $ cat tenant.yaml | metalctl tenant update -f -
+                                $ # or via file
+                                $ metalctl tenant update -f tenant.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for update
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
+```
+
+### Options inherited from parent commands
 
 ```
       --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
@@ -17,7 +42,6 @@ a cli to manage entities in the metal-stack api
                                
       --debug                  debug output
       --force-color            force colored output even without tty
-  -h, --help                   help for metalctl
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
       --no-headers             do not print headers of table output format (default print headers)
   -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
@@ -33,26 +57,5 @@ a cli to manage entities in the metal-stack api
 
 ### SEE ALSO
 
-* [metalctl audit](metalctl_audit.md)	 - manage audit trace entities
-* [metalctl completion](metalctl_completion.md)	 - Generate the autocompletion script for the specified shell
-* [metalctl context](metalctl_context.md)	 - manage metalctl context
-* [metalctl filesystemlayout](metalctl_filesystemlayout.md)	 - manage filesystemlayout entities
-* [metalctl firewall](metalctl_firewall.md)	 - manage firewall entities
-* [metalctl firmware](metalctl_firmware.md)	 - manage firmwares
-* [metalctl health](metalctl_health.md)	 - shows the server health
-* [metalctl image](metalctl_image.md)	 - manage image entities
-* [metalctl login](metalctl_login.md)	 - login user and receive token
-* [metalctl logout](metalctl_logout.md)	 - logout user from OIDC SSO session
-* [metalctl machine](metalctl_machine.md)	 - manage machine entities
-* [metalctl markdown](metalctl_markdown.md)	 - create markdown documentation
-* [metalctl network](metalctl_network.md)	 - manage network entities
-* [metalctl partition](metalctl_partition.md)	 - manage partition entities
-* [metalctl project](metalctl_project.md)	 - manage project entities
-* [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
 * [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
-* [metalctl update](metalctl_update.md)	 - update the program
-* [metalctl version](metalctl_version.md)	 - print the client and server version information
-* [metalctl vpn](metalctl_vpn.md)	 - access VPN
-* [metalctl whoami](metalctl_whoami.md)	 - shows current user
 
