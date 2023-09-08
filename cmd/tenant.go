@@ -35,11 +35,11 @@ func newTenantCmd(c *config) *cobra.Command {
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "id of the tenant, max 10 characters.")
 			cmd.Flags().String("name", "", "name of the tenant, max 10 characters.")
 			cmd.Flags().String("description", "", "description of the tenant.")
-			cmd.Flags().String("tenant", "", "create tenant for given tenant")
-			cmd.Flags().StringSlice("label", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
-			cmd.Flags().StringSlice("annotation", nil, "add initial annotation, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
+			cmd.Flags().StringSlice("labels", nil, "add initial label, can be given multiple times to add multiple labels, e.g. --label=foo --label=bar")
+			cmd.Flags().StringSlice("annotations", nil, "add initial annotations, must be in the form of key=value, can be given multiple times to add multiple annotations, e.g. --annotation key=value --annotation foo=bar")
 			cmd.Flags().Int32("cluster-quota", 0, "cluster quota")
 			cmd.Flags().Int32("machine-quota", 0, "machine quota")
 			cmd.Flags().Int32("ip-quota", 0, "ip quota")
@@ -67,10 +67,15 @@ func (c tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
 }
 
 func (c tenantCmd) List() ([]*models.V1TenantResponse, error) {
-	annotations, err := genericcli.LabelsToMap(viper.GetStringSlice("annotation"))
-	if err != nil {
-		return nil, err
+	var annotations map[string]string
+	if viper.IsSet("annotations") {
+		var err error
+		annotations, err = genericcli.LabelsToMap(viper.GetStringSlice("annotations"))
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	resp, err := c.client.Tenant().FindTenants(tenantmodel.NewFindTenantsParams().WithBody(&models.V1TenantFindRequest{
 		ID:          viper.GetString("id"),
 		Name:        viper.GetString("name"),
@@ -106,14 +111,6 @@ func (c tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantRes
 }
 
 func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantResponse, error) {
-	resp, err := c.client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(rq.Meta.ID), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// FIXME: should not be done by the client, see https://github.com/fi-ts/cloudctl/pull/26
-	rq.Meta.Version = resp.Payload.Meta.Version + 1
-
 	updateResp, err := c.client.Tenant().UpdateTenant(tenantmodel.NewUpdateTenantParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -177,7 +174,7 @@ func (w *tenantCmd) createFromCLI() (*models.V1TenantCreateRequest, error) {
 		ipQuota = &models.V1Quota{Quota: viper.GetInt32("ip-quota")}
 	}
 
-	annotations, err := genericcli.LabelsToMap(viper.GetStringSlice("annotation"))
+	annotations, err := genericcli.LabelsToMap(viper.GetStringSlice("annotations"))
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +191,8 @@ func (w *tenantCmd) createFromCLI() (*models.V1TenantCreateRequest, error) {
 				Kind:        "Tenant",
 				Apiversion:  "v1",
 				Annotations: annotations,
-				Labels:      viper.GetStringSlice("label"),
+				Labels:      viper.GetStringSlice("labels"),
+				ID:          viper.GetString("id"),
 			},
 		},
 		nil

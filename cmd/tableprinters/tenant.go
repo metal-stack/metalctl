@@ -1,11 +1,11 @@
 package tableprinters
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 )
 
 func (t *TablePrinter) TenantTable(data []*models.V1TenantResponse, wide bool) ([]string, [][]string, error) {
@@ -15,15 +15,17 @@ func (t *TablePrinter) TenantTable(data []*models.V1TenantResponse, wide bool) (
 
 	header := []string{"ID", "Name", "Description", "Labels", "Annotations"}
 	if wide {
-		header = []string{"ID", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
+		header = []string{"ID", "Name", "Description", "Labels", "Annotations", "Quotas"}
 	}
 
 	for _, pr := range data {
-		quotas := "∞/∞/∞"
+		var (
+			clusterQuota = "∞"
+			machineQuota = "∞"
+			ipQuota      = "∞"
+		)
+
 		if pr.Quotas != nil {
-			clusterQuota := "∞"
-			machineQuota := "∞"
-			ipQuota := "∞"
 			qs := pr.Quotas
 			if qs.Cluster != nil {
 				if qs.Cluster.Quota != 0 {
@@ -40,17 +42,21 @@ func (t *TablePrinter) TenantTable(data []*models.V1TenantResponse, wide bool) (
 					ipQuota = strconv.FormatInt(int64(qs.IP.Quota), 10)
 				}
 			}
-			quotas = fmt.Sprintf("%s/%s/%s", clusterQuota, machineQuota, ipQuota)
 		}
+
+		quotas := []string{
+			clusterQuota + " Cluster(s)",
+			machineQuota + " Machine(s)",
+			ipQuota + " IP(s)",
+		}
+
 		labels := strings.Join(pr.Meta.Labels, "\n")
-		as := []string{}
-		for k, v := range pr.Meta.Annotations {
-			as = append(as, k+"="+v)
-		}
+
+		as := genericcli.MapToLabels(pr.Meta.Annotations)
 		annotations := strings.Join(as, "\n")
 
 		if wide {
-			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description, quotas, labels, annotations})
+			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description, labels, annotations, strings.Join(quotas, "\n")})
 		} else {
 			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description, labels, annotations})
 		}
