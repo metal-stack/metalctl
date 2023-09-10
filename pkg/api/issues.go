@@ -28,6 +28,7 @@ const (
 	IssueTypeLastEventError         IssueType = "last-event-error"
 	IssueTypeBMCWithoutMAC          IssueType = "bmc-without-mac"
 	IssueTypeBMCWithoutIP           IssueType = "bmc-without-ip"
+	IssueTypeBMCInfoOutdated        IssueType = "bmc-info-outdated"
 	IssueTypeASNUniqueness          IssueType = "asn-not-unique"
 	IssueTypeNonDistinctBMCIP       IssueType = "bmc-no-distinct-ip"
 )
@@ -65,8 +66,11 @@ type (
 	IssueLastEventError         struct {
 		details string
 	}
-	IssueBMCWithoutMAC struct{}
-	IssueBMCWithoutIP  struct{}
+	IssueBMCWithoutMAC   struct{}
+	IssueBMCWithoutIP    struct{}
+	IssueBMCInfoOutDated struct {
+		details string
+	}
 	IssueASNUniqueness struct {
 		details string
 	}
@@ -117,6 +121,7 @@ func AllIssueTypes() []IssueType {
 		IssueTypeLastEventError,
 		IssueTypeBMCWithoutMAC,
 		IssueTypeBMCWithoutIP,
+		IssueTypeBMCInfoOutdated,
 		IssueTypeASNUniqueness,
 		IssueTypeNonDistinctBMCIP,
 	}
@@ -271,6 +276,8 @@ func newIssueFromType(t IssueType) (issue, error) {
 		return &IssueBMCWithoutMAC{}, nil
 	case IssueTypeBMCWithoutIP:
 		return &IssueBMCWithoutIP{}, nil
+	case IssueTypeBMCInfoOutdated:
+		return &IssueBMCInfoOutDated{}, nil
 	case IssueTypeASNUniqueness:
 		return &IssueASNUniqueness{}, nil
 	case IssueTypeNonDistinctBMCIP:
@@ -493,6 +500,37 @@ func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, c *IssueCo
 
 func (i *IssueBMCWithoutIP) Details() string {
 	return ""
+}
+
+func (i *IssueBMCInfoOutDated) Details() string {
+	return i.details
+}
+
+func (i *IssueBMCInfoOutDated) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
+
+	if m.Ipmi == nil {
+		return true
+	}
+	if m.Ipmi.LastUpdated == nil {
+		i.details = "last_updated has not set yet"
+		return false
+	}
+	age := time.Since(time.Time(*m.Ipmi.LastUpdated))
+	if age > 10*time.Minute {
+		i.details = "ipmi was updated %s ago, please check metal-bmc functionality"
+		return false
+	}
+
+	return true
+}
+
+func (*IssueBMCInfoOutDated) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeBMCInfoOutdated,
+		Severity:    IssueSeverityMajor,
+		Description: "BMC has not been updated from either metal-hammer or metal-bmc",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#bmc-info-outdated",
+	}
 }
 
 func (i *IssueASNUniqueness) Spec() *issueSpec {
