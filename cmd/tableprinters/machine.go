@@ -151,7 +151,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 
 	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
 	if wide {
-		header = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
+		header = []string{"ID", "Status", "Power", "Age", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
 	}
 
 	for _, machine := range data {
@@ -170,6 +170,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		ipmi := machine.Ipmi
 		rack := machine.Rackid
 
+		age := ""
 		if ipmi != nil {
 			ipAddress = pointer.SafeDeref(ipmi.Address)
 			mac = pointer.SafeDeref(ipmi.Mac)
@@ -183,6 +184,10 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			}
 
 			power, powerText = extractPowerState(ipmi)
+
+			if ipmi.LastUpdated != nil && !time.Time(*ipmi.LastUpdated).IsZero() {
+				age = humanizeDuration(time.Since(time.Time(*ipmi.LastUpdated)))
+			}
 		}
 
 		biosVersion := ""
@@ -194,7 +199,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		if wide {
-			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack})
+			rows = append(rows, []string{id, wideEmojis, powerText, age, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack})
 		} else {
 			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack})
 		}
