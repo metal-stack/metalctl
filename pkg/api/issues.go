@@ -512,7 +512,7 @@ func (i *IssueBMCInfoOutDated) Evaluate(m *models.V1MachineIPMIResponse, c *Issu
 		return true
 	}
 	if m.Ipmi.LastUpdated == nil {
-		i.details = "last_updated has not set yet"
+		i.details = "last_updated has not been set yet"
 		return false
 	}
 	age := time.Since(time.Time(*m.Ipmi.LastUpdated))

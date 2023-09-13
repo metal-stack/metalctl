@@ -15,7 +15,7 @@ import (
 
 var (
 	testTime            = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
-	ipmiLastUpdatedTime = pointer.Pointer(strfmt.DateTime(time.Now()))
+	ipmiLastUpdatedTime = pointer.Pointer(strfmt.DateTime(testTime.Add(-1 * time.Minute)))
 	goodMachine         = &models.V1MachineIPMIResponse{
 		ID:         pointer.Pointer("0"),
 		Liveliness: pointer.Pointer("Alive"),
@@ -335,28 +335,28 @@ func TestFindIssues(t *testing.T) {
 			},
 		},
 		// FIXME make it pass
-		// {
-		// 	name: "severity major",
-		// 	c: &IssueConfig{
-		// 		Severity: IssueSeverityMajor,
-		// 		Machines: []*models.V1MachineIPMIResponse{deadMachine, failedReclaimMachine, notAvailableMachine1, goodMachine},
-		// 	},
-		// 	want: MachineIssues{
-		// 		{
-		// 			Machine: deadMachine,
-		// 			Issues: Issues{
-		// 				toIssue(&IssueLivelinessDead{}),
-		// 			},
-		// 		},
-		// 		{
-		// 			Machine: failedReclaimMachine,
-		// 			Issues: Issues{
-		// 				toIssue(&IssueNoPartition{}),
-		// 				toIssue(&IssueFailedMachineReclaim{}),
-		// 			},
-		// 		},
-		// 	},
-		// },
+		{
+			name: "severity major",
+			c: &IssueConfig{
+				Severity: IssueSeverityMajor,
+				Machines: []*models.V1MachineIPMIResponse{deadMachine, failedReclaimMachine, notAvailableMachine1, goodMachine},
+			},
+			want: MachineIssues{
+				{
+					Machine: deadMachine,
+					Issues: Issues{
+						toIssue(&IssueLivelinessDead{}),
+					},
+				},
+				{
+					Machine: failedReclaimMachine,
+					Issues: Issues{
+						toIssue(&IssueNoPartition{}),
+						toIssue(&IssueFailedMachineReclaim{}),
+					},
+				},
+			},
+		},
 		{
 			name: "severity critical",
 			c: &IssueConfig{
