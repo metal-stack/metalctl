@@ -68,7 +68,7 @@ type (
 	}
 	IssueBMCWithoutMAC   struct{}
 	IssueBMCWithoutIP    struct{}
-	IssueBMCInfoOutDated struct {
+	IssueBMCInfoOutdated struct {
 		details string
 	}
 	IssueASNUniqueness struct {
@@ -277,7 +277,7 @@ func newIssueFromType(t IssueType) (issue, error) {
 	case IssueTypeBMCWithoutIP:
 		return &IssueBMCWithoutIP{}, nil
 	case IssueTypeBMCInfoOutdated:
-		return &IssueBMCInfoOutDated{}, nil
+		return &IssueBMCInfoOutdated{}, nil
 	case IssueTypeASNUniqueness:
 		return &IssueASNUniqueness{}, nil
 	case IssueTypeNonDistinctBMCIP:
@@ -461,6 +461,7 @@ func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, c *Issue
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -502,29 +503,32 @@ func (i *IssueBMCWithoutIP) Details() string {
 	return ""
 }
 
-func (i *IssueBMCInfoOutDated) Details() string {
+func (i *IssueBMCInfoOutdated) Details() string {
 	return i.details
 }
 
-func (i *IssueBMCInfoOutDated) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
-
+func (i *IssueBMCInfoOutdated) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
 	if m.Ipmi == nil {
+		i.details = "machine ipmi has never been set"
 		return true
 	}
-	if m.Ipmi.LastUpdated == nil {
-		i.details = "last_updated has not been set yet"
-		return false
-	}
-	age := time.Since(time.Time(*m.Ipmi.LastUpdated))
-	if age > 10*time.Minute {
-		i.details = "ipmi was updated %s ago, please check metal-bmc functionality"
+
+	if m.Ipmi.LastUpdated == nil || m.Ipmi.LastUpdated.IsZero() {
+		// "last_updated has not been set yet"
 		return false
 	}
 
-	return true
+	lastUpdated := time.Since(time.Time(*m.Ipmi.LastUpdated))
+
+	if lastUpdated > 20*time.Minute {
+		i.details = fmt.Sprintf("last updated %s ago", lastUpdated.String())
+		return true
+	}
+
+	return false
 }
 
-func (*IssueBMCInfoOutDated) Spec() *issueSpec {
+func (*IssueBMCInfoOutdated) Spec() *issueSpec {
 	return &issueSpec{
 		Type:        IssueTypeBMCInfoOutdated,
 		Severity:    IssueSeverityMajor,

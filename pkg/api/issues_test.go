@@ -14,107 +14,7 @@ import (
 )
 
 var (
-	testTime            = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
-	ipmiLastUpdatedTime = pointer.Pointer(strfmt.DateTime(testTime.Add(-1 * time.Minute)))
-	goodMachine         = &models.V1MachineIPMIResponse{
-		ID:         pointer.Pointer("0"),
-		Liveliness: pointer.Pointer("Alive"),
-		Partition:  &models.V1PartitionResponse{ID: pointer.Pointer("a")},
-		Ipmi: &models.V1MachineIPMI{
-			Address:     pointer.Pointer("1.2.3.4"),
-			Mac:         pointer.Pointer("aa:bb:..."),
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	noPartitionMachine = &models.V1MachineIPMIResponse{ID: pointer.Pointer("1"), Partition: nil}
-	deadMachine        = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("2"), Liveliness: pointer.Pointer("Dead"), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	unknownMachine       = &models.V1MachineIPMIResponse{ID: pointer.Pointer("3"), Liveliness: pointer.Pointer("Unknown"), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")}}
-	notAvailableMachine1 = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("4"), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	notAvailableMachine2 = &models.V1MachineIPMIResponse{ID: pointer.Pointer("5"), Liveliness: pointer.Pointer(""), Partition: &models.V1PartitionResponse{ID: pointer.Pointer("a")}}
-	failedReclaimMachine = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("6"), Events: &models.V1MachineRecentProvisioningEvents{FailedMachineReclaim: pointer.Pointer(true)},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	failedReclaimMachine2 = &models.V1MachineIPMIResponse{ID: pointer.Pointer("7"), Events: &models.V1MachineRecentProvisioningEvents{Log: []*models.V1MachineProvisioningEvent{{Event: pointer.Pointer("Phoned Home")}}}}
-	crashingMachine       = &models.V1MachineIPMIResponse{ID: pointer.Pointer("8"), Events: &models.V1MachineRecentProvisioningEvents{CrashLoop: pointer.Pointer(true)}}
-	lastEventErrorMachine = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("9"),
-		Events: &models.V1MachineRecentProvisioningEvents{
-			LastErrorEvent: &models.V1MachineProvisioningEvent{
-				Time: strfmt.DateTime(testTime.Add(-5 * time.Minute)),
-			},
-		},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	bmcWithoutMacMachine = &models.V1MachineIPMIResponse{ID: pointer.Pointer("10"), Ipmi: &models.V1MachineIPMI{}}
-	bmcWithoutIPMachine  = &models.V1MachineIPMIResponse{ID: pointer.Pointer("11"), Ipmi: &models.V1MachineIPMI{}}
-	asnSharedMachine1    = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("11"),
-		Allocation: &models.V1MachineAllocation{
-			Role: pointer.Pointer(models.V1MachineAllocationRoleFirewall),
-			Networks: []*models.V1MachineNetwork{
-				{
-					Asn: pointer.Pointer(int64(0)),
-				},
-				{
-					Asn: pointer.Pointer(int64(100)),
-				},
-				{
-					Asn: pointer.Pointer(int64(200)),
-				},
-			},
-		},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	asnSharedMachine2 = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("12"),
-		Allocation: &models.V1MachineAllocation{
-			Role: pointer.Pointer(models.V1MachineAllocationRoleFirewall),
-			Networks: []*models.V1MachineNetwork{
-				{
-					Asn: pointer.Pointer(int64(1)),
-				},
-				{
-					Asn: pointer.Pointer(int64(100)),
-				},
-				{
-					Asn: pointer.Pointer(int64(200)),
-				},
-			},
-		},
-		Ipmi: &models.V1MachineIPMI{
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
-	nonDistinctBMCMachine1 = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("13"),
-		Ipmi: &models.V1MachineIPMI{
-			Address: pointer.Pointer("127.0.0.1"),
-		},
-	}
-	nonDistinctBMCMachine2 = &models.V1MachineIPMIResponse{
-		ID: pointer.Pointer("14"),
-		Ipmi: &models.V1MachineIPMI{
-			Address:     pointer.Pointer("127.0.0.1"),
-			LastUpdated: ipmiLastUpdatedTime,
-		},
-	}
+	testTime = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
 )
 
 func init() {
@@ -122,264 +22,432 @@ func init() {
 }
 
 func TestFindIssues(t *testing.T) {
+	goodMachine := func(id string) *models.V1MachineIPMIResponse {
+		return &models.V1MachineIPMIResponse{
+			ID:         pointer.Pointer(id),
+			Liveliness: pointer.Pointer("Alive"),
+			Partition:  &models.V1PartitionResponse{ID: pointer.Pointer("a")},
+			Ipmi: &models.V1MachineIPMI{
+				Address:     pointer.Pointer("1.2.3.4"),
+				Mac:         pointer.Pointer("aa:bb:00"),
+				LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-1 * time.Minute))),
+			},
+		}
+	}
+
 	tests := []struct {
-		name string
-		c    *IssueConfig
-		want MachineIssues
+		name     string
+		only     []IssueType
+		machines func() []*models.V1MachineIPMIResponse
+		want     func(machines []*models.V1MachineIPMIResponse) MachineIssues
 	}{
 		{
-			name: "no partition",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeNoPartition},
-				Machines: []*models.V1MachineIPMIResponse{noPartitionMachine, goodMachine},
+			name: "good machine has no issues",
+			machines: func() []*models.V1MachineIPMIResponse {
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: noPartitionMachine,
-					Issues: Issues{
-						toIssue(&IssueNoPartition{}),
+			want: nil,
+		},
+		{
+			name: "no partition",
+			only: []IssueType{IssueTypeNoPartition},
+			machines: func() []*models.V1MachineIPMIResponse {
+				noPartitionMachine := goodMachine("no-partition")
+				noPartitionMachine.ID = pointer.Pointer("no-partition")
+				noPartitionMachine.Partition = nil
+
+				return []*models.V1MachineIPMIResponse{
+					noPartitionMachine,
+					goodMachine("0"),
+				}
+			},
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueNoPartition{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "liveliness dead",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeLivelinessDead},
-				Machines: []*models.V1MachineIPMIResponse{deadMachine, goodMachine},
+			only: []IssueType{IssueTypeLivelinessDead},
+			machines: func() []*models.V1MachineIPMIResponse {
+				deadMachine := goodMachine("dead")
+				deadMachine.Liveliness = pointer.Pointer("Dead")
+
+				return []*models.V1MachineIPMIResponse{
+					deadMachine,
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: deadMachine,
-					Issues: Issues{
-						toIssue(&IssueLivelinessDead{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueLivelinessDead{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "liveliness unknown",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeLivelinessUnknown},
-				Machines: []*models.V1MachineIPMIResponse{unknownMachine, goodMachine},
+			only: []IssueType{IssueTypeLivelinessUnknown},
+			machines: func() []*models.V1MachineIPMIResponse {
+				unknownMachine := goodMachine("unknown")
+				unknownMachine.Liveliness = pointer.Pointer("Unknown")
+
+				return []*models.V1MachineIPMIResponse{
+					unknownMachine,
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: unknownMachine,
-					Issues: Issues{
-						toIssue(&IssueLivelinessUnknown{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueLivelinessUnknown{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "liveliness not available",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeLivelinessNotAvailable},
-				Machines: []*models.V1MachineIPMIResponse{notAvailableMachine1, notAvailableMachine2, goodMachine},
+			only: []IssueType{IssueTypeLivelinessNotAvailable},
+			machines: func() []*models.V1MachineIPMIResponse {
+				notAvailableMachine1 := goodMachine("na1")
+				notAvailableMachine1.Liveliness = nil
+
+				notAvailableMachine2 := goodMachine("na2")
+				notAvailableMachine2.Liveliness = pointer.Pointer("")
+
+				return []*models.V1MachineIPMIResponse{
+					notAvailableMachine1,
+					notAvailableMachine2,
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: notAvailableMachine1,
-					Issues: Issues{
-						toIssue(&IssueLivelinessNotAvailable{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueLivelinessNotAvailable{}),
+						},
 					},
-				},
-				{
-					Machine: notAvailableMachine2,
-					Issues: Issues{
-						toIssue(&IssueLivelinessNotAvailable{}),
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueLivelinessNotAvailable{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
-			name: "failed machine reclaim",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeFailedMachineReclaim},
-				Machines: []*models.V1MachineIPMIResponse{failedReclaimMachine, goodMachine},
+			name: "failed machine reclaim, flag is set",
+			only: []IssueType{IssueTypeFailedMachineReclaim},
+			machines: func() []*models.V1MachineIPMIResponse {
+				failedReclaimMachine := goodMachine("failed")
+				failedReclaimMachine.Events = &models.V1MachineRecentProvisioningEvents{FailedMachineReclaim: pointer.Pointer(true)}
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					failedReclaimMachine,
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: failedReclaimMachine,
-					Issues: Issues{
-						toIssue(&IssueFailedMachineReclaim{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueFailedMachineReclaim{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
-			name: "failed machine reclaim 2",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeFailedMachineReclaim},
-				Machines: []*models.V1MachineIPMIResponse{failedReclaimMachine2, goodMachine},
-			},
-			want: MachineIssues{
-				{
-					Machine: failedReclaimMachine2,
-					Issues: Issues{
-						toIssue(&IssueFailedMachineReclaim{}),
+			name: "failed machine reclaim, phoned home and not allocated (old behavior)",
+			only: []IssueType{IssueTypeFailedMachineReclaim},
+			machines: func() []*models.V1MachineIPMIResponse {
+				failedReclaimMachine := goodMachine("failed")
+				failedReclaimMachine.Allocation = nil
+				failedReclaimMachine.Events = &models.V1MachineRecentProvisioningEvents{
+					Log: []*models.V1MachineProvisioningEvent{
+						{
+							Event: pointer.Pointer("Phoned Home"),
+						},
 					},
-				},
+				}
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					failedReclaimMachine,
+				}
+			},
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueFailedMachineReclaim{}),
+						},
+					},
+				}
 			},
 		},
 		{
 			name: "crashloop",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeCrashLoop},
-				Machines: []*models.V1MachineIPMIResponse{crashingMachine, goodMachine},
+			only: []IssueType{IssueTypeCrashLoop},
+			machines: func() []*models.V1MachineIPMIResponse {
+				crashingMachine := goodMachine("crash")
+				crashingMachine.Events = &models.V1MachineRecentProvisioningEvents{
+					CrashLoop: pointer.Pointer(true),
+				}
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					crashingMachine,
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: crashingMachine,
-					Issues: Issues{
-						toIssue(&IssueCrashLoop{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueCrashLoop{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "last event error",
-			c: &IssueConfig{
-				Only:               []IssueType{IssueTypeLastEventError},
-				Machines:           []*models.V1MachineIPMIResponse{lastEventErrorMachine, goodMachine},
-				LastErrorThreshold: 10 * time.Minute,
-			},
-			want: MachineIssues{
-				{
-					Machine: lastEventErrorMachine,
-					Issues: Issues{
-						toIssue(&IssueLastEventError{details: "occurred 5m0s ago"}),
+			only: []IssueType{IssueTypeLastEventError},
+			machines: func() []*models.V1MachineIPMIResponse {
+				lastEventErrorMachine := goodMachine("last")
+				lastEventErrorMachine.Events = &models.V1MachineRecentProvisioningEvents{
+					LastErrorEvent: &models.V1MachineProvisioningEvent{
+						Time: strfmt.DateTime(testTime.Add(-5 * time.Minute)),
 					},
-				},
+				}
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					lastEventErrorMachine,
+				}
+			},
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueLastEventError{details: "occurred 5m0s ago"}),
+						},
+					},
+				}
 			},
 		},
 		{
 			name: "bmc without mac",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeBMCWithoutMAC},
-				Machines: []*models.V1MachineIPMIResponse{bmcWithoutMacMachine, goodMachine},
+			only: []IssueType{IssueTypeBMCWithoutMAC},
+			machines: func() []*models.V1MachineIPMIResponse {
+				bmcWithoutMacMachine := goodMachine("no-mac")
+				bmcWithoutMacMachine.Ipmi.Mac = nil
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					bmcWithoutMacMachine,
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: bmcWithoutMacMachine,
-					Issues: Issues{
-						toIssue(&IssueBMCWithoutMAC{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueBMCWithoutMAC{}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "bmc without ip",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeBMCWithoutIP},
-				Machines: []*models.V1MachineIPMIResponse{bmcWithoutIPMachine, goodMachine},
+			only: []IssueType{IssueTypeBMCWithoutIP},
+			machines: func() []*models.V1MachineIPMIResponse {
+				bmcWithoutMacMachine := goodMachine("no-ip")
+				bmcWithoutMacMachine.Ipmi.Address = nil
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					bmcWithoutMacMachine,
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: bmcWithoutIPMachine,
-					Issues: Issues{
-						toIssue(&IssueBMCWithoutIP{}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueBMCWithoutIP{}),
+						},
 					},
-				},
+				}
+			},
+		},
+		{
+			name: "bmc info outdated",
+			only: []IssueType{IssueTypeBMCInfoOutdated},
+			machines: func() []*models.V1MachineIPMIResponse {
+				bmcOutdatedMachine := goodMachine("outdated")
+				bmcOutdatedMachine.Ipmi.LastUpdated = pointer.Pointer(strfmt.DateTime(testTime.Add(-3 * 60 * time.Minute)))
+
+				return []*models.V1MachineIPMIResponse{
+					goodMachine("0"),
+					bmcOutdatedMachine,
+				}
+			},
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueBMCInfoOutdated{
+								details: "last updated 3h0m0s ago",
+							}),
+						},
+					},
+				}
 			},
 		},
 		{
 			name: "asn shared",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeASNUniqueness},
-				Machines: []*models.V1MachineIPMIResponse{asnSharedMachine1, asnSharedMachine2, goodMachine},
+			only: []IssueType{IssueTypeASNUniqueness},
+			machines: func() []*models.V1MachineIPMIResponse {
+				asnSharedMachine1 := goodMachine("shared1")
+				asnSharedMachine1.Allocation = &models.V1MachineAllocation{
+					Role: pointer.Pointer(models.V1MachineAllocationRoleFirewall),
+					Networks: []*models.V1MachineNetwork{
+						{
+							Asn: pointer.Pointer(int64(0)),
+						},
+						{
+							Asn: pointer.Pointer(int64(100)),
+						},
+						{
+							Asn: pointer.Pointer(int64(200)),
+						},
+					},
+				}
+
+				asnSharedMachine2 := goodMachine("shared2")
+				asnSharedMachine2.Allocation = &models.V1MachineAllocation{
+					Role: pointer.Pointer(models.V1MachineAllocationRoleFirewall),
+					Networks: []*models.V1MachineNetwork{
+						{
+							Asn: pointer.Pointer(int64(1)),
+						},
+						{
+							Asn: pointer.Pointer(int64(100)),
+						},
+						{
+							Asn: pointer.Pointer(int64(200)),
+						},
+					},
+				}
+
+				return []*models.V1MachineIPMIResponse{
+					asnSharedMachine1,
+					asnSharedMachine2,
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: asnSharedMachine1,
-					Issues: Issues{
-						toIssue(&IssueASNUniqueness{
-							details: fmt.Sprintf("- ASN (100) not unique, shared with [%[1]s]\n- ASN (200) not unique, shared with [%[1]s]", *asnSharedMachine2.ID),
-						}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueASNUniqueness{
+								details: fmt.Sprintf("- ASN (100) not unique, shared with [%[1]s]\n- ASN (200) not unique, shared with [%[1]s]", *machines[1].ID),
+							}),
+						},
 					},
-				},
-				{
-					Machine: asnSharedMachine2,
-					Issues: Issues{
-						toIssue(&IssueASNUniqueness{
-							details: fmt.Sprintf("- ASN (100) not unique, shared with [%[1]s]\n- ASN (200) not unique, shared with [%[1]s]", *asnSharedMachine1.ID),
-						}),
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueASNUniqueness{
+								details: fmt.Sprintf("- ASN (100) not unique, shared with [%[1]s]\n- ASN (200) not unique, shared with [%[1]s]", *machines[0].ID),
+							}),
+						},
 					},
-				},
+				}
 			},
 		},
 		{
 			name: "non distinct bmc ip",
-			c: &IssueConfig{
-				Only:     []IssueType{IssueTypeNonDistinctBMCIP},
-				Machines: []*models.V1MachineIPMIResponse{nonDistinctBMCMachine1, nonDistinctBMCMachine2, goodMachine},
+			only: []IssueType{IssueTypeNonDistinctBMCIP},
+			machines: func() []*models.V1MachineIPMIResponse {
+				nonDistinctBMCMachine1 := goodMachine("bmc1")
+				nonDistinctBMCMachine1.Ipmi.Address = pointer.Pointer("127.0.0.1")
+
+				nonDistinctBMCMachine2 := goodMachine("bmc2")
+				nonDistinctBMCMachine2.Ipmi.Address = pointer.Pointer("127.0.0.1")
+
+				return []*models.V1MachineIPMIResponse{
+					nonDistinctBMCMachine1,
+					nonDistinctBMCMachine2,
+					goodMachine("0"),
+				}
 			},
-			want: MachineIssues{
-				{
-					Machine: nonDistinctBMCMachine1,
-					Issues: Issues{
-						toIssue(&IssueNonDistinctBMCIP{
-							details: fmt.Sprintf("BMC IP (127.0.0.1) not unique, shared with [%[1]s]", *nonDistinctBMCMachine2.ID),
-						}),
+			want: func(machines []*models.V1MachineIPMIResponse) MachineIssues {
+				return MachineIssues{
+					{
+						Machine: machines[0],
+						Issues: Issues{
+							toIssue(&IssueNonDistinctBMCIP{
+								details: fmt.Sprintf("BMC IP (127.0.0.1) not unique, shared with [%[1]s]", *machines[1].ID),
+							}),
+						},
 					},
-				},
-				{
-					Machine: nonDistinctBMCMachine2,
-					Issues: Issues{
-						toIssue(&IssueNonDistinctBMCIP{
-							details: fmt.Sprintf("BMC IP (127.0.0.1) not unique, shared with [%[1]s]", *nonDistinctBMCMachine1.ID),
-						}),
+					{
+						Machine: machines[1],
+						Issues: Issues{
+							toIssue(&IssueNonDistinctBMCIP{
+								details: fmt.Sprintf("BMC IP (127.0.0.1) not unique, shared with [%[1]s]", *machines[0].ID),
+							}),
+						},
 					},
-				},
-			},
-		},
-		// FIXME make it pass
-		{
-			name: "severity major",
-			c: &IssueConfig{
-				Severity: IssueSeverityMajor,
-				Machines: []*models.V1MachineIPMIResponse{deadMachine, failedReclaimMachine, notAvailableMachine1, goodMachine},
-			},
-			want: MachineIssues{
-				{
-					Machine: deadMachine,
-					Issues: Issues{
-						toIssue(&IssueLivelinessDead{}),
-					},
-				},
-				{
-					Machine: failedReclaimMachine,
-					Issues: Issues{
-						toIssue(&IssueNoPartition{}),
-						toIssue(&IssueFailedMachineReclaim{}),
-					},
-				},
-			},
-		},
-		{
-			name: "severity critical",
-			c: &IssueConfig{
-				Severity: IssueSeverityCritical,
-				Machines: []*models.V1MachineIPMIResponse{deadMachine, failedReclaimMachine, notAvailableMachine1, goodMachine},
-			},
-			want: MachineIssues{
-				{
-					Machine: failedReclaimMachine,
-					Issues: Issues{
-						toIssue(&IssueFailedMachineReclaim{}),
-					},
-				},
+				}
 			},
 		},
 	}
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FindIssues(tt.c)
+			ms := tt.machines()
+
+			got, err := FindIssues(&IssueConfig{
+				Machines:           ms,
+				Only:               tt.only,
+				LastErrorThreshold: DefaultLastErrorThreshold(),
+			})
 			require.NoError(t, err)
 
-			if diff := cmp.Diff(tt.want, got, cmp.AllowUnexported(IssueLastEventError{}, IssueASNUniqueness{}, IssueNonDistinctBMCIP{})); diff != "" {
+			var want MachineIssues
+			if tt.want != nil {
+				want = tt.want(ms)
+			}
+
+			if diff := cmp.Diff(want, got, cmp.AllowUnexported(IssueLastEventError{}, IssueASNUniqueness{}, IssueNonDistinctBMCIP{})); diff != "" {
 				t.Errorf("diff (+got -want):\n %s", diff)
 			}
 		})
