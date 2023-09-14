@@ -28,6 +28,7 @@ const (
 	IssueTypeLastEventError         IssueType = "last-event-error"
 	IssueTypeBMCWithoutMAC          IssueType = "bmc-without-mac"
 	IssueTypeBMCWithoutIP           IssueType = "bmc-without-ip"
+	IssueTypeBMCInfoOutdated        IssueType = "bmc-info-outdated"
 	IssueTypeASNUniqueness          IssueType = "asn-not-unique"
 	IssueTypeNonDistinctBMCIP       IssueType = "bmc-no-distinct-ip"
 )
@@ -65,8 +66,11 @@ type (
 	IssueLastEventError         struct {
 		details string
 	}
-	IssueBMCWithoutMAC struct{}
-	IssueBMCWithoutIP  struct{}
+	IssueBMCWithoutMAC   struct{}
+	IssueBMCWithoutIP    struct{}
+	IssueBMCInfoOutdated struct {
+		details string
+	}
 	IssueASNUniqueness struct {
 		details string
 	}
@@ -117,6 +121,7 @@ func AllIssueTypes() []IssueType {
 		IssueTypeLastEventError,
 		IssueTypeBMCWithoutMAC,
 		IssueTypeBMCWithoutIP,
+		IssueTypeBMCInfoOutdated,
 		IssueTypeASNUniqueness,
 		IssueTypeNonDistinctBMCIP,
 	}
@@ -271,6 +276,8 @@ func newIssueFromType(t IssueType) (issue, error) {
 		return &IssueBMCWithoutMAC{}, nil
 	case IssueTypeBMCWithoutIP:
 		return &IssueBMCWithoutIP{}, nil
+	case IssueTypeBMCInfoOutdated:
+		return &IssueBMCInfoOutdated{}, nil
 	case IssueTypeASNUniqueness:
 		return &IssueASNUniqueness{}, nil
 	case IssueTypeNonDistinctBMCIP:
@@ -454,6 +461,7 @@ func (i *IssueLastEventError) Evaluate(m *models.V1MachineIPMIResponse, c *Issue
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -493,6 +501,40 @@ func (i *IssueBMCWithoutIP) Evaluate(m *models.V1MachineIPMIResponse, c *IssueCo
 
 func (i *IssueBMCWithoutIP) Details() string {
 	return ""
+}
+
+func (i *IssueBMCInfoOutdated) Details() string {
+	return i.details
+}
+
+func (i *IssueBMCInfoOutdated) Evaluate(m *models.V1MachineIPMIResponse, c *IssueConfig) bool {
+	if m.Ipmi == nil {
+		i.details = "machine ipmi has never been set"
+		return true
+	}
+
+	if m.Ipmi.LastUpdated == nil || m.Ipmi.LastUpdated.IsZero() {
+		// "last_updated has not been set yet"
+		return false
+	}
+
+	lastUpdated := time.Since(time.Time(*m.Ipmi.LastUpdated))
+
+	if lastUpdated > 20*time.Minute {
+		i.details = fmt.Sprintf("last updated %s ago", lastUpdated.String())
+		return true
+	}
+
+	return false
+}
+
+func (*IssueBMCInfoOutdated) Spec() *issueSpec {
+	return &issueSpec{
+		Type:        IssueTypeBMCInfoOutdated,
+		Severity:    IssueSeverityMajor,
+		Description: "BMC has not been updated from either metal-hammer or metal-bmc",
+		RefURL:      "https://docs.metal-stack.io/stable/installation/troubleshoot/#bmc-info-outdated",
+	}
 }
 
 func (i *IssueASNUniqueness) Spec() *issueSpec {
