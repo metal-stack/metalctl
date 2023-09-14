@@ -118,13 +118,20 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 	)
 
 	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial"}
+	if wide {
+		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial"}
+	}
 
 	for _, s := range data.SS {
 		id := pointer.SafeDeref(s.ID)
 		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
 		rack := pointer.SafeDeref(s.RackID)
 
-		rows = append(rows, []string{id, "", "", partition, rack})
+		if wide {
+			rows = append(rows, []string{id, "", "", "", partition, rack})
+		} else {
+			rows = append(rows, []string{id, "", "", partition, rack})
+		}
 
 		conns := s.Connections
 		if viper.IsSet("size") || viper.IsSet("machine-id") {
@@ -169,15 +176,31 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 				identifier = pointer.SafeDeref(conn.Nic.Mac)
 			}
 
-			rows = append(rows, []string{
-				fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
-				pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
-				identifier,
-				pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
-				m.Rackid,
-				pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
-				pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
-			})
+			if wide {
+				emojis, _ := t.getMachineStatusEmojis(m.Liveliness, m.Events, m.State, pointer.SafeDeref(m.Allocation).Vpn)
+
+				rows = append(rows, []string{
+					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+					emojis,
+					pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+					identifier,
+					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+					m.Rackid,
+					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+					pointer.SafeDeref(pointer.SafeDeref(m.Allocation).Hostname),
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+				})
+			} else {
+				rows = append(rows, []string{
+					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+					pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+					identifier,
+					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+					m.Rackid,
+					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+				})
+			}
 		}
 	}
 

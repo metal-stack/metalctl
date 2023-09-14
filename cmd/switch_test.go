@@ -263,6 +263,9 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 							{
 								ID:     pointer.Pointer("machine-1"),
 								Rackid: "rack-1",
+								Allocation: &models.V1MachineAllocation{
+									Hostname: pointer.Pointer("alloc-1"),
+								},
 								Partition: &models.V1PartitionResponse{
 									ID: pointer.Pointer("1"),
 								},
@@ -296,6 +299,9 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 					"machine-1": {
 						ID:     pointer.Pointer("machine-1"),
 						Rackid: "rack-1",
+						Allocation: &models.V1MachineAllocation{
+							Hostname: pointer.Pointer("alloc-1"),
+						},
 						Partition: &models.V1PartitionResponse{
 							ID: pointer.Pointer("1"),
 						},
@@ -318,11 +324,11 @@ ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PROD
 └─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
 `),
 			wantWideTable: pointer.Pointer(`
-ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
-1                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
-2                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+ID                  NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL
+1                                           1           rack-1
+└─╴machine-1   ❓   a-name     a-mac        1           rack-1   n1-medium-x86   alloc-1    123
+2                                           1           rack-1
+└─╴machine-1   ❓   a-name     a-mac        1           rack-1   n1-medium-x86   alloc-1    123
 `),
 			template: pointer.Pointer(`{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}`),
 			wantTemplate: pointer.Pointer(`
