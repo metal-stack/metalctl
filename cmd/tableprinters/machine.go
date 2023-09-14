@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -149,9 +148,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		rows [][]string
 	)
 
-	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
+	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios", "BMC", "Size", "Partition", "Rack", "Updated"}
 	if wide {
-		header = []string{"ID", "Status", "Power", "Age", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
+		header = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack", "Updated"}
 	}
 
 	for _, machine := range data {
@@ -169,8 +168,8 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		powerText := ""
 		ipmi := machine.Ipmi
 		rack := machine.Rackid
+		lastUpdated := "never"
 
-		age := ""
 		if ipmi != nil {
 			ipAddress = pointer.SafeDeref(ipmi.Address)
 			mac = pointer.SafeDeref(ipmi.Mac)
@@ -185,8 +184,8 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 
 			power, powerText = extractPowerState(ipmi)
 
-			if ipmi.LastUpdated != nil && !time.Time(*ipmi.LastUpdated).IsZero() {
-				age = humanizeDuration(time.Since(time.Time(*ipmi.LastUpdated)))
+			if ipmi.LastUpdated != nil && !ipmi.LastUpdated.IsZero() {
+				lastUpdated = fmt.Sprintf("%s ago", humanizeDuration(time.Since(time.Time(*ipmi.LastUpdated))))
 			}
 		}
 
@@ -199,9 +198,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		if wide {
-			rows = append(rows, []string{id, wideEmojis, powerText, age, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack})
+			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack, lastUpdated})
 		} else {
-			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack})
+			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack, lastUpdated})
 		}
 	}
 
@@ -222,9 +221,12 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	default:
 		short = color.WhiteString(dot)
 	}
+
 	wide = state
+
 	if ipmi.Powermetric != nil {
-		wide = wide + " " + humanize.SI(float64(*ipmi.Powermetric.Averageconsumedwatts), "W")
+		short = fmt.Sprintf("%s"+nbr+nbr+"(%.1fW)", short, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
+		wide = fmt.Sprintf("%s %.2fW", wide, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
 	}
 
 	return short, wide
