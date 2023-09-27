@@ -3,7 +3,6 @@ module github.com/metal-stack/metalctl
 go 1.21
 
 require (
-	bou.ke/monkey v1.0.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
 	github.com/go-openapi/runtime v0.26.0
@@ -14,13 +13,14 @@ require (
 	github.com/metal-stack/updater v1.1.5
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/spf13/afero v1.9.5
+	github.com/spf13/afero v1.10.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
 	github.com/stretchr/testify v1.8.4
+	github.com/undefinedlabs/go-mpatch v1.0.7
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.27.4
+	k8s.io/apimachinery v0.28.2
 )
 
 require (
