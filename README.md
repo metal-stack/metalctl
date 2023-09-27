@@ -90,6 +90,7 @@ contexts:
 ```
 
 Optional you can specify `issuer_type: generic` if you use other issuers as Dex, e.g. Keycloak (this will request scopes `openid,profile,email`):
+
 ```bash
 contexts:
   prod:
@@ -101,6 +102,7 @@ contexts:
 ```
 
 If you must specify special scopes for your issuer, you can use `custom_scopes`:
+
 ```bash
 contexts:
   prod:
@@ -118,3 +120,9 @@ Full documentation is generated out of the cobra command implementation with:
 `metalctl markdown`
 
 generated markdown is [here](docs/metalctl.md) and [here](https://docs.metal-stack.io/stable/external/metalctl/README/)
+
+## Development
+
+For MacOS users, running the tests might throw an error because tests are utilizing the [] library in order to manipulate the `time.Now` function. The patch allows testing with fixed timestamps.
+
+Instead, MacOS users can utilize the `make test-in-docker` target to execute the tests.
