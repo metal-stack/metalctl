@@ -2,13 +2,15 @@ module github.com/metal-stack/metalctl
 
 go 1.21
 
+replace github.com/metal-stack/metal-go => ../metal-go
+
 require (
-	bou.ke/monkey v1.0.2
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.15.0
 	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.7
 	github.com/google/go-cmp v0.5.9
+	github.com/markelog/monkey v1.1.2
 	github.com/metal-stack/metal-go v0.24.1
 	github.com/metal-stack/metal-lib v0.13.3
 	github.com/metal-stack/updater v1.1.5

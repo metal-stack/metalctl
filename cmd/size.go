@@ -71,7 +71,18 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd)
+	suggestCmd := &cobra.Command{
+		Use:   "suggest",
+		Short: "suggest size from a given machine id",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.suggest()
+		},
+	}
+
+	suggestCmd.Flags().String("machine-id", "", "Machine id used to create the size suggestion. [required]")
+	suggestCmd.Flags().String("id", "my-new-size", "The name of the suggested size")
+
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, suggestCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
@@ -201,4 +212,28 @@ func (c *sizeCmd) try() error {
 	}
 
 	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c *sizeCmd) suggest() error {
+	var (
+		machineid = viper.GetString("machine-id")
+		sizeid    = viper.GetString("id")
+	)
+
+	if machineid == "" {
+		return fmt.Errorf("machine-id flag is required")
+	}
+
+	resp, err := c.client.Size().Suggest(size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
+		MachineID: &machineid,
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.describePrinter.Print(&models.V1SizeResponse{
+		ID:          &sizeid,
+		Constraints: resp.Payload,
+	})
+	//return nil
 }

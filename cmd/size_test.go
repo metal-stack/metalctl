@@ -270,6 +270,41 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			},
 			want: size1,
 		},
+		{
+			name: "suggest",
+			cmd: func(want *models.V1SizeResponse) []string {
+
+				args := []string{"size", "suggest", "--machine-id=1", "--id=c1-large-x86"}
+
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Size: func(mock *mock.Mock) {
+					mock.On("FindSize", testcommon.MatchIgnoreContext(t, size.NewFindSizeParams().WithID(*size1.ID)), nil).Return(&size.FindSizeOK{
+						Payload: size1,
+					}, nil)
+				},
+			},
+			want: size1,
+			wantTable: pointer.Pointer(`
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
+`),
+			wantWideTable: pointer.Pointer(`
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
+`),
+			template: pointer.Pointer("{{ .id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+1 size-1
+`),
+			wantMarkdown: pointer.Pointer(`
+| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
+|----|--------|-------------|-----------|--------------|---------------|
+|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+`),
+		},
 	}
 	for _, tt := range tests {
 		tt.testCmd(t)

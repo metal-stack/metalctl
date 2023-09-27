@@ -12,8 +12,8 @@ import (
 
 	"slices"
 
-	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
+	"github.com/markelog/monkey"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
