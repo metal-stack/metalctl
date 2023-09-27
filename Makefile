@@ -43,7 +43,7 @@ test: build
 
 .PHONY: test-in-docker
 test-in-docker:
-	docker build -f Dockerfile.test .
+	docker build -f Dockerfile.test --progress plain .
 
 .PHONY: lint-structs
 lint-structs:
