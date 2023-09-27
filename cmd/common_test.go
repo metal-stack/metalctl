@@ -12,7 +12,6 @@ import (
 
 	"slices"
 
-	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -23,13 +22,17 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/undefinedlabs/go-mpatch"
 	"gopkg.in/yaml.v3"
 )
 
 var testTime = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
 
 func init() {
-	_ = monkey.Patch(time.Now, func() time.Time { return testTime })
+	_, err := mpatch.PatchMethod(time.Now, func() time.Time { return testTime })
+	if err != nil {
+		panic(err)
+	}
 }
 
 type test[R any] struct {

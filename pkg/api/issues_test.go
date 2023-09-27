@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"bou.ke/monkey"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/stretchr/testify/require"
+	"github.com/undefinedlabs/go-mpatch"
 )
 
 var (
@@ -18,7 +18,10 @@ var (
 )
 
 func init() {
-	_ = monkey.Patch(time.Now, func() time.Time { return testTime })
+	_, err := mpatch.PatchMethod(time.Now, func() time.Time { return testTime })
+	if err != nil {
+		panic(err)
+	}
 }
 
 func TestFindIssues(t *testing.T) {
