@@ -1,0 +1,6 @@
+FROM golang:1.21
+WORKDIR /work
+COPY go.* .
+RUN go mod download
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/go-build make test
