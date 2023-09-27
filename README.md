@@ -123,6 +123,6 @@ generated markdown is [here](docs/metalctl.md) and [here](https://docs.metal-sta
 
 ## Development
 
-For MacOS users, running the tests might throw an error because tests are utilizing the [] library in order to manipulate the `time.Now` function. The patch allows testing with fixed timestamps.
+For MacOS users, running the tests might throw an error because tests are utilizing [go-mpatch](https://github.com/undefinedlabs/go-mpatch) in order to manipulate the `time.Now` function. The patch allows testing with fixed timestamps.
 
 Instead, MacOS users can utilize the `make test-in-docker` target to execute the tests.
