@@ -3,7 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
 
+	"github.com/go-openapi/strfmt"
 	tenantmodel "github.com/metal-stack/metal-go/api/client/tenant"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -54,7 +57,18 @@ func newTenantCmd(c *config) *cobra.Command {
 		},
 	}
 
-	return genericcli.NewCmds(cmdsConfig)
+	tenantHistoryCmd := &cobra.Command{
+		Use:   "history",
+		Short: "get tenant at given timestamp",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.GetTenantHistory()
+		},
+	}
+
+	tenantHistoryCmd.Flags().StringP("id", "", "", "ID of tenant")
+	tenantHistoryCmd.Flags().StringP("at", "", "", "tenant will be returned at it was at this timestamp")
+
+	return genericcli.NewCmds(cmdsConfig, tenantHistoryCmd)
 }
 
 func (c tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
@@ -207,4 +221,22 @@ func (w *tenantCmd) createFromCLI() (*models.V1TenantCreateRequest, error) {
 			},
 		},
 		nil
+}
+
+func (c tenantCmd) GetTenantHistory() error {
+	id, err := strconv.ParseInt(viper.GetString("at"), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	params := tenantmodel.NewGetTenantHistoryParams().WithID(viper.GetString("id")).WithBody(&models.V1TenantGetHistoryRequest{
+		At: strfmt.DateTime(time.Unix(id, 0)),
+	})
+
+	resp, err := c.client.Tenant().GetTenantHistory(params, nil)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(resp.Payload)
 }
