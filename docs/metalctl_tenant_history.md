@@ -1,15 +1,17 @@
-## metalctl tenant
+## metalctl tenant history
 
-manage tenant entities
+get tenant at given timestamp
 
-### Synopsis
-
-a tenant belongs to a tenant and groups together entities in metal-stack.
+```
+metalctl tenant history [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for tenant
+      --at string   tenant will be returned at it was at this timestamp
+  -h, --help        help for history
+      --id string   ID of tenant
 ```
 
 ### Options inherited from parent commands
@@ -42,13 +44,5 @@ a tenant belongs to a tenant and groups together entities in metal-stack.
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl tenant apply](metalctl_tenant_apply.md)	 - applies one or more tenants from a given file
-* [metalctl tenant create](metalctl_tenant_create.md)	 - creates the tenant
-* [metalctl tenant delete](metalctl_tenant_delete.md)	 - deletes the tenant
-* [metalctl tenant describe](metalctl_tenant_describe.md)	 - describes the tenant
-* [metalctl tenant edit](metalctl_tenant_edit.md)	 - edit the tenant through an editor and update
-* [metalctl tenant history](metalctl_tenant_history.md)	 - get tenant at given timestamp
-* [metalctl tenant list](metalctl_tenant_list.md)	 - list all tenants
-* [metalctl tenant update](metalctl_tenant_update.md)	 - updates the tenant
+* [metalctl tenant](metalctl_tenant.md)	 - manage tenant entities
 
