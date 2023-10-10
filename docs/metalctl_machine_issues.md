@@ -29,8 +29,8 @@ metalctl machine issues [<machine ID>] [flags]
       --hostname string                       allocation hostname to filter [optional]
       --id string                             ID to filter [optional]
       --image string                          allocation image to filter [optional]
-      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
-      --mac string                            mac to filter [optional]
+      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional]
+      --mac strings                           mac to filter [optional]
       --name string                           allocation name to filter [optional]
       --omit strings                          issue types to omit [optional]
       --only strings                          issue types to include [optional]
@@ -75,4 +75,5 @@ metalctl machine issues [<machine ID>] [flags]
 ### SEE ALSO
 
 * [metalctl machine](metalctl_machine.md)	 - manage machine entities
+* [metalctl machine issues list](metalctl_machine_issues_list.md)	 - list all machine issues that the metal-api can evaluate
 
