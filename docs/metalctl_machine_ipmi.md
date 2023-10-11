@@ -25,16 +25,26 @@ metalctl machine ipmi [<machine ID>] [flags]
 ### Options
 
 ```
+      --bmc-address string                    bmc ipmi address (needs to include port) to filter [optional]
+      --bmc-mac string                        bmc mac address to filter [optional]
+      --board-part-number string              fru board part number to filter [optional]
   -h, --help                                  help for ipmi
       --hostname string                       allocation hostname to filter [optional]
       --id string                             ID to filter [optional]
       --image string                          allocation image to filter [optional]
       --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 1h0m0s)
-      --macs strings                          macs to filter [optional]
+      --mac string                            mac to filter [optional]
+      --manufacturer string                   fru manufacturer to filter [optional]
       --name string                           allocation name to filter [optional]
+      --network-destination-prefixes string   network destination prefixes to filter [optional]
+      --network-ids string                    network ids to filter [optional]
+      --network-ips string                    network ips to filter [optional]
       --partition string                      partition to filter [optional]
+      --product-part-number string            fru product part number to filter [optional]
+      --product-serial string                 fru product serial to filter [optional]
       --project string                        allocation project to filter [optional]
       --rack string                           rack to filter [optional]
+      --role string                           allocation role to filter [optional]
       --size string                           size to filter [optional]
       --sort-by strings                       sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|bios|bmc|event|id|liveliness|partition|project|rack|size|when
       --state string                          state to filter [optional]

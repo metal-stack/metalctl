@@ -53,6 +53,16 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 			models.V1FirewallFindRequestStateValueLOCKED,
 			models.V1MachineFindRequestStateValueRESERVED,
 		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "role", f: cobra.FixedCompletions([]string{
+			models.V1MachineAllocationRoleFirewall,
+			models.V1MachineAllocationRoleMachine,
+		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "manufacturer", f: c.comp.MachineManufacturerCompletion},
+		{flagName: "product-part-number", f: c.comp.MachineProductPartNumberCompletion},
+		{flagName: "product-serial", f: c.comp.MachineProductSerialCompletion},
+		{flagName: "board-part-number", f: c.comp.MachineBoardPartNumberCompletion},
+		{flagName: "network-destination-prefixes", f: c.comp.NetworkDestinationPrefixesCompletion},
+		{flagName: "network-ids", f: c.comp.NetworkListCompletion},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -64,9 +74,19 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
 	cmd.Flags().String("image", "", "allocation image to filter [optional]")
 	cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-	cmd.Flags().StringSlice("macs", []string{}, "macs to filter [optional]")
+	cmd.Flags().String("mac", "", "mac to filter [optional]")
 	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+	cmd.Flags().String("role", "", "allocation role to filter [optional]")
+	cmd.Flags().String("board-part-number", "", "fru board part number to filter [optional]")
+	cmd.Flags().String("manufacturer", "", "fru manufacturer to filter [optional]")
+	cmd.Flags().String("product-part-number", "", "fru product part number to filter [optional]")
+	cmd.Flags().String("product-serial", "", "fru product serial to filter [optional]")
+	cmd.Flags().String("bmc-address", "", "bmc ipmi address (needs to include port) to filter [optional]")
+	cmd.Flags().String("bmc-mac", "", "bmc mac address to filter [optional]")
+	cmd.Flags().String("network-destination-prefixes", "", "network destination prefixes to filter [optional]")
+	cmd.Flags().String("network-ids", "", "network ids to filter [optional]")
+	cmd.Flags().String("network-ips", "", "network ips to filter [optional]")
 
 	for _, c := range listFlagCompletions {
 		c := c
@@ -533,18 +553,33 @@ func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
 }
 
 func machineFindRequestFromCLI() *models.V1MachineFindRequest {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	return &models.V1MachineFindRequest{
-		ID:                 viper.GetString("id"),
-		PartitionID:        viper.GetString("partition"),
-		Sizeid:             viper.GetString("size"),
-		Rackid:             viper.GetString("rack"),
-		Name:               viper.GetString("name"),
-		AllocationProject:  viper.GetString("project"),
-		AllocationImageID:  viper.GetString("image"),
-		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("macs"),
-		StateValue:         viper.GetString("state"),
-		Tags:               viper.GetStringSlice("tags"),
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         viper.GetString("id"),
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
 	}
 }
 
@@ -1299,18 +1334,34 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 		return err
 	}
 
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	evalResp, err := c.client.Machine().Issues(machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
-		ID:                 id,
-		PartitionID:        viper.GetString("partition"),
-		Sizeid:             viper.GetString("size"),
-		Rackid:             viper.GetString("rack"),
-		Name:               viper.GetString("name"),
-		AllocationProject:  viper.GetString("project"),
-		AllocationImageID:  viper.GetString("image"),
-		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("macs"),
-		StateValue:         viper.GetString("state"),
-		Tags:               viper.GetStringSlice("tags"),
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         id,
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
+
 		LastErrorThreshold: pointer.PointerOrNil(int64(viper.GetDuration("last-event-error-threshold"))),
 		Omit:               viper.GetStringSlice("omit"),
 		Only:               viper.GetStringSlice("only"),

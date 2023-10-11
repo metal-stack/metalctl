@@ -212,8 +212,11 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Machine: func(mock *mock.Mock) {
 					mock.On("FindMachines", testcommon.MatchIgnoreContext(t, machine.NewFindMachinesParams().WithBody(&models.V1MachineFindRequest{
-						NicsMacAddresses: []string{},
-						Tags:             []string{},
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.FindMachinesOK{
 						Payload: []*models.V1MachineResponse{
 							machine1,
@@ -439,8 +442,11 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Machine: func(mock *mock.Mock) {
 					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
-						NicsMacAddresses: []string{},
-						Tags:             []string{},
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.FindIPMIMachinesOK{
 						Payload: []*models.V1MachineIPMIResponse{
 							ipmiMachine1,
@@ -553,10 +559,14 @@ func Test_MachineIssuesCmd(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Machine: func(mock *mock.Mock) {
 					mock.On("Issues", testcommon.MatchIgnoreContext(t, machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
-						Omit:             []string{},
-						Only:             []string{},
-						Tags:             []string{},
-						NicsMacAddresses: []string{},
+						Omit: []string{},
+						Only: []string{},
+
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.IssuesOK{
 						Payload: machineWithIssues.EvaluationResult,
 					}, nil)
@@ -564,8 +574,11 @@ func Test_MachineIssuesCmd(t *testing.T) {
 						Payload: machineWithIssues.Issues,
 					}, nil)
 					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
-						NicsMacAddresses: []string{},
-						Tags:             []string{},
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.FindIPMIMachinesOK{
 						Payload: machineWithIssues.Machines,
 					}, nil)
