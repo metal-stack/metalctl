@@ -30,7 +30,7 @@ metalctl machine ipmi [<machine ID>] [flags]
       --id string                             ID to filter [optional]
       --image string                          allocation image to filter [optional]
       --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 1h0m0s)
-      --mac strings                           mac to filter [optional]
+      --macs strings                          macs to filter [optional]
       --name string                           allocation name to filter [optional]
       --partition string                      partition to filter [optional]
       --project string                        allocation project to filter [optional]

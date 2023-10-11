@@ -64,8 +64,8 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
 	cmd.Flags().String("image", "", "allocation image to filter [optional]")
 	cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-	cmd.Flags().StringSlice("mac", nil, "mac to filter [optional]")
-	cmd.Flags().StringSlice("tags", nil, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
+	cmd.Flags().StringSlice("macs", []string{}, "macs to filter [optional]")
+	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	for _, c := range listFlagCompletions {
@@ -542,7 +542,7 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		NicsMacAddresses:   viper.GetStringSlice("macs"),
 		StateValue:         viper.GetString("state"),
 		Tags:               viper.GetStringSlice("tags"),
 	}
@@ -1308,7 +1308,7 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		NicsMacAddresses:   viper.GetStringSlice("macs"),
 		StateValue:         viper.GetString("state"),
 		Tags:               viper.GetStringSlice("tags"),
 		LastErrorThreshold: pointer.PointerOrNil(int64(viper.GetDuration("last-event-error-threshold"))),
