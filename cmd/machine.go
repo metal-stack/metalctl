@@ -341,9 +341,6 @@ In case the machine did not register properly a direct ipmi console access is av
 		Short: `display machines which are in a potential bad state`,
 		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if viper.GetBool("list") {
-				return w.machineIssuesList()
-			}
 			return w.machineIssuesEvaluate(args)
 		},
 		ValidArgsFunction: c.comp.MachineListCompletion,
