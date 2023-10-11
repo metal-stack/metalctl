@@ -453,7 +453,7 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 			},
 			wantTable: pointer.Pointer(`
 ID      POWER        IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED
-1       ●  (16.0W)   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
+1       ● (16.0W)    1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
 `),
 			wantWideTable: pointer.Pointer(`
 ID   STATUS   POWER       IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED
@@ -466,7 +466,7 @@ ID   STATUS   POWER       IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL
 			wantMarkdown: pointer.Pointer(`
 | ID |  |   POWER    |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
 |----|--|------------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
-|  1 |  | ●  (16.0W) | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+|  1 |  | ● (16.0W)  | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
 `),
 		},
 	}
