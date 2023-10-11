@@ -211,6 +211,10 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		}
 	}
 
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
+
 	return header, rows, nil
 }
 
