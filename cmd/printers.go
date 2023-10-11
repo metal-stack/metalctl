@@ -20,15 +20,17 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 		printer = printers.NewJSONPrinter().WithOut(out)
 	case "table", "wide", "markdown":
 		tp := tableprinters.New()
-		cfg := &printers.TablePrinterConfig{
+
+		tablePrinter := printers.NewTablePrinter(&printers.TablePrinterConfig{
 			ToHeaderAndRows: tp.ToHeaderAndRows,
 			Wide:            format == "wide",
 			Markdown:        format == "markdown",
 			NoHeaders:       viper.GetBool("no-headers"),
-		}
-		tablePrinter := printers.NewTablePrinter(cfg).WithOut(out)
+		}).WithOut(out)
+
 		tp.SetPrinter(tablePrinter)
 		tp.SetLastEventErrorThreshold(viper.GetDuration("last-event-error-threshold"))
+
 		printer = tablePrinter
 	case "template":
 		printer = printers.NewTemplatePrinter(viper.GetString("template")).WithOut(out)

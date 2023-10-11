@@ -12,6 +12,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/net"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/afero"
 
 	"github.com/stretchr/testify/mock"
@@ -149,6 +150,56 @@ var (
 		},
 		Tags: []string{"b"},
 	}
+	ipmiMachine1 = &models.V1MachineIPMIResponse{
+		Allocation: machine1.Allocation,
+		Bios: &models.V1MachineBIOS{
+			Version: pointer.Pointer("2.0"),
+		},
+		Changed:     machine1.Changed,
+		Created:     machine1.Created,
+		Description: machine1.Description,
+		Events:      machine1.Events,
+		Hardware:    machine1.Hardware,
+		ID:          machine1.ID,
+		Ipmi: &models.V1MachineIPMI{
+			Address:    pointer.Pointer("1.2.3.4"),
+			Bmcversion: pointer.Pointer("1.1"),
+			Fru: &models.V1MachineFru{
+				BoardPartNumber:   "part123",
+				ChassisPartSerial: "chassis123",
+				ProductSerial:     "product123",
+			},
+			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
+			Mac:         pointer.Pointer("1.2.3.4"),
+			Powermetric: &models.V1PowerMetric{
+				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
+			},
+			Powerstate: pointer.Pointer("ON"),
+		},
+		Ledstate:   &models.V1ChassisIdentifyLEDState{},
+		Liveliness: machine1.Liveliness,
+		Name:       machine1.Name,
+		Partition:  machine1.Partition,
+		Rackid:     machine1.Rackid,
+		Size:       machine1.Size,
+		State:      machine1.State,
+		Tags:       machine1.Tags,
+	}
+
+	machineIssue1 = &models.V1MachineIssue{
+		Description: pointer.Pointer("this is a test issue 1"),
+		Details:     pointer.Pointer("more details 1"),
+		ID:          pointer.Pointer("issue-1-id"),
+		RefURL:      pointer.Pointer("https://url-1"),
+		Severity:    pointer.Pointer("minor"),
+	}
+	machineIssue2 = &models.V1MachineIssue{
+		Description: pointer.Pointer("this is a test issue 2"),
+		Details:     pointer.Pointer("more details 2"),
+		ID:          pointer.Pointer("issue-2-id"),
+		RefURL:      pointer.Pointer("https://url-2"),
+		Severity:    pointer.Pointer("major"),
+	}
 )
 
 func Test_MachineCmd_MultiResult(t *testing.T) {
@@ -161,8 +212,11 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Machine: func(mock *mock.Mock) {
 					mock.On("FindMachines", testcommon.MatchIgnoreContext(t, machine.NewFindMachinesParams().WithBody(&models.V1MachineFindRequest{
-						NicsMacAddresses: []string{},
-						Tags:             []string{},
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.FindMachinesOK{
 						Payload: []*models.V1MachineResponse{
 							machine1,
@@ -379,42 +433,6 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 }
 
 func Test_MachineIPMICmd_MultiResult(t *testing.T) {
-	ipmiMachine1 := &models.V1MachineIPMIResponse{
-		Allocation: machine1.Allocation,
-		Bios: &models.V1MachineBIOS{
-			Version: pointer.Pointer("2.0"),
-		},
-		Changed:     machine1.Changed,
-		Created:     machine1.Created,
-		Description: machine1.Description,
-		Events:      machine1.Events,
-		Hardware:    machine1.Hardware,
-		ID:          machine1.ID,
-		Ipmi: &models.V1MachineIPMI{
-			Address:    pointer.Pointer("1.2.3.4"),
-			Bmcversion: pointer.Pointer("1.1"),
-			Fru: &models.V1MachineFru{
-				BoardPartNumber:   "part123",
-				ChassisPartSerial: "chassis123",
-				ProductSerial:     "product123",
-			},
-			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
-			Mac:         pointer.Pointer("1.2.3.4"),
-			Powermetric: &models.V1PowerMetric{
-				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
-			},
-			Powerstate: pointer.Pointer("ON"),
-		},
-		Ledstate:   &models.V1ChassisIdentifyLEDState{},
-		Liveliness: machine1.Liveliness,
-		Name:       machine1.Name,
-		Partition:  machine1.Partition,
-		Rackid:     machine1.Rackid,
-		Size:       machine1.Size,
-		State:      machine1.State,
-		Tags:       machine1.Tags,
-	}
-
 	tests := []*test[[]*models.V1MachineIPMIResponse]{
 		{
 			name: "machine ipmi",
@@ -424,8 +442,11 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Machine: func(mock *mock.Mock) {
 					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
-						NicsMacAddresses: []string{},
-						Tags:             []string{},
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
 					})), nil).Return(&machine.FindIPMIMachinesOK{
 						Payload: []*models.V1MachineIPMIResponse{
 							ipmiMachine1,
@@ -438,7 +459,7 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 			},
 			wantTable: pointer.Pointer(`
 ID      POWER        IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED
-1       ●  (16.0W)   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
+1       ● (16.0W)    1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
 `),
 			wantWideTable: pointer.Pointer(`
 ID   STATUS   POWER       IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED
@@ -451,7 +472,135 @@ ID   STATUS   POWER       IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL
 			wantMarkdown: pointer.Pointer(`
 | ID |  |   POWER    |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
 |----|--|------------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
-|  1 |  | ●  (16.0W) | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+|  1 |  | ● (16.0W)  | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+`),
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_MachineIssuesListCmd_MultiResult(t *testing.T) {
+	tests := []*test[[]*models.V1MachineIssue]{
+		{
+			name: "issues list",
+			cmd: func(want []*models.V1MachineIssue) []string {
+				return []string{"machine", "issues", "list"}
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("ListIssues", testcommon.MatchIgnoreContext(t, machine.NewListIssuesParams()), nil).Return(&machine.ListIssuesOK{
+						Payload: []*models.V1MachineIssue{
+							machineIssue1,
+							machineIssue2,
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineIssue{
+				machineIssue2,
+				machineIssue1,
+			},
+			wantTable: pointer.Pointer(`
+ID           SEVERITY   DESCRIPTION              REFERENCE URL
+issue-2-id   major      this is a test issue 2   https://url-2
+issue-1-id   minor      this is a test issue 1   https://url-1
+`),
+			wantWideTable: pointer.Pointer(`
+ID           SEVERITY   DESCRIPTION              REFERENCE URL
+issue-2-id   major      this is a test issue 2   https://url-2
+issue-1-id   minor      this is a test issue 1   https://url-1
+`),
+			template: pointer.Pointer("{{ .id }}"),
+			wantTemplate: pointer.Pointer(`
+			issue-2-id
+issue-1-id
+`),
+			wantMarkdown: pointer.Pointer(`
+|     ID     | SEVERITY |      DESCRIPTION       | REFERENCE URL |
+|------------|----------|------------------------|---------------|
+| issue-2-id | major    | this is a test issue 2 | https://url-2 |
+| issue-1-id | minor    | this is a test issue 1 | https://url-1 |
+`),
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_MachineIssuesCmd(t *testing.T) {
+	machineWithIssues := &tableprinters.MachinesAndIssues{
+		EvaluationResult: []*models.V1MachineIssueResponse{
+			{
+				Machineid: machine1.ID,
+				Issues: []string{
+					pointer.SafeDeref(machineIssue1.ID),
+					pointer.SafeDeref(machineIssue2.ID),
+				},
+			},
+		},
+		Issues: []*models.V1MachineIssue{
+			machineIssue1,
+			machineIssue2,
+		},
+		Machines: []*models.V1MachineIPMIResponse{
+			ipmiMachine1,
+		},
+	}
+
+	tests := []*test[*tableprinters.MachinesAndIssues]{
+		{
+			name: "issues",
+			cmd: func(want *tableprinters.MachinesAndIssues) []string {
+				return []string{"machine", "issues"}
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("Issues", testcommon.MatchIgnoreContext(t, machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
+						Omit: []string{},
+						Only: []string{},
+
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
+					})), nil).Return(&machine.IssuesOK{
+						Payload: machineWithIssues.EvaluationResult,
+					}, nil)
+					mock.On("ListIssues", testcommon.MatchIgnoreContext(t, machine.NewListIssuesParams()), nil).Return(&machine.ListIssuesOK{
+						Payload: machineWithIssues.Issues,
+					}, nil)
+					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
+					})), nil).Return(&machine.FindIPMIMachinesOK{
+						Payload: machineWithIssues.Machines,
+					}, nil)
+				},
+			},
+			want: machineWithIssues,
+			wantTable: pointer.Pointer(`
+ID   POWER        ALLOCATED      LOCK REASON   LAST EVENT    WHEN   ISSUES
+1    ●  (16.0W)   yes            state         Phoned Home   7d     this is a test issue 1 (issue-1-id)
+																	this is a test issue 2 (issue-2-id)
+`),
+			wantWideTable: pointer.Pointer(`
+ID   NAME        PARTITION   PROJECT     POWER       STATE   LOCK REASON   LAST EVENT    WHEN   ISSUES                                REF URL         DETAILS
+1    machine-1   1           project-1   ON 16.00W           state         Phoned Home   7d     this is a test issue 1 (issue-1-id)   https://url-1   more details 1
+																								this is a test issue 2 (issue-2-id)   https://url-2   more details 2
+
+`),
+			wantMarkdown: pointer.Pointer(`
+| ID |   POWER    | ALLOCATED |  | LOCK REASON | LAST EVENT  | WHEN |               ISSUES                |
+|----|------------|-----------|--|-------------|-------------|------|-------------------------------------|
+|  1 | ●  (16.0W) | yes       |  | state       | Phoned Home | 7d   | this is a test issue 1 (issue-1-id) |
+|    |            |           |  |             |             |      | this is a test issue 2 (issue-2-id) |
 `),
 		},
 	}

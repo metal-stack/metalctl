@@ -53,7 +53,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 			cmd.Flags().String("project", "", "allocation project to filter [optional]")
 			cmd.Flags().String("image", "", "allocation image to filter [optional]")
 			cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-			cmd.Flags().StringSlice("mac", []string{}, "mac to filter [optional]")
+			cmd.Flags().String("mac", "", "mac to filter [optional]")
 			cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
@@ -86,6 +86,11 @@ func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 }
 
 func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	resp, err := c.client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
@@ -94,7 +99,7 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		NicsMacAddresses:   macs,
 		Tags:               viper.GetStringSlice("tags"),
 	}), nil)
 	if err != nil {

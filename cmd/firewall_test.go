@@ -197,7 +197,7 @@ func Test_FirewallCmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Firewall: func(mock *mock.Mock) {
 					mock.On("FindFirewalls", testcommon.MatchIgnoreContext(t, firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
-						NicsMacAddresses: []string{},
+						NicsMacAddresses: nil,
 						Tags:             []string{},
 					})), nil).Return(&firewall.FindFirewallsOK{
 						Payload: []*models.V1FirewallResponse{

@@ -16,3 +16,17 @@ func (c *Completion) NetworkListCompletion(cmd *cobra.Command, args []string, to
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (c *Completion) NetworkDestinationPrefixesCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	resp, err := c.client.Network().ListNetworks(network.NewListNetworksParams(), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var prefixes []string
+	for _, n := range resp.Payload {
+		for _, prefix := range n.Destinationprefixes {
+			prefixes = append(prefixes, prefix)
+		}
+	}
+	return prefixes, cobra.ShellCompDirectiveNoFileComp
+}
