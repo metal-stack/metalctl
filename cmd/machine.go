@@ -1320,7 +1320,7 @@ func (c *machineCmd) machineIssuesList() error {
 }
 
 func (c *machineCmd) machineIssuesEvaluate(args []string) error {
-	id := viper.GetString("id")
+	var id string
 	if len(args) > 0 {
 		var err error
 		id, err = genericcli.GetExactlyOneArg(args)
