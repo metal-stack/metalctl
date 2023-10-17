@@ -80,7 +80,9 @@ func newSizeCmd(c *config) *cobra.Command {
 	}
 
 	suggestCmd.Flags().String("machine-id", "", "Machine id used to create the size suggestion. [required]")
-	suggestCmd.Flags().String("id", "my-new-size", "The name of the suggested size")
+	suggestCmd.Flags().String("id", "my-new-size", "The id of the suggested size")
+	suggestCmd.Flags().String("name", "mysize", "The name of the suggested size")
+	suggestCmd.Flags().String("description", "foo", "The description of the suggested size")
 
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, suggestCmd)
 }
@@ -216,8 +218,10 @@ func (c *sizeCmd) try() error {
 
 func (c *sizeCmd) suggest() error {
 	var (
-		machineid = viper.GetString("machine-id")
-		sizeid    = viper.GetString("id")
+		machineid   = viper.GetString("machine-id")
+		sizeid      = viper.GetString("id")
+		name        = viper.GetString("name")
+		description = viper.GetString("description")
 	)
 
 	if machineid == "" {
@@ -233,6 +237,8 @@ func (c *sizeCmd) suggest() error {
 
 	return c.describePrinter.Print(&models.V1SizeResponse{
 		ID:          &sizeid,
+		Name:        name,
+		Description: description,
 		Constraints: resp.Payload,
 	})
 	//return nil
