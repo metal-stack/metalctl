@@ -274,36 +274,58 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 			name: "suggest",
 			cmd: func(want *models.V1SizeResponse) []string {
 
-				args := []string{"size", "suggest", "--machine-id=1", "--id=c1-large-x86"}
+				args := []string{"size", "suggest", "--machine-id=1", "--id=c1-large-x86", "--name=mysize", "--description=foo"}
 
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("FindSize", testcommon.MatchIgnoreContext(t, size.NewFindSizeParams().WithID(*size1.ID)), nil).Return(&size.FindSizeOK{
-						Payload: size1,
+					mock.On("Suggest", testcommon.MatchIgnoreContext(t, size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
+						MachineID: pointer.Pointer("1"),
+					})), nil).Return(&size.SuggestOK{
+						Payload: []*models.V1SizeConstraint{
+							{
+								Max:  pointer.Pointer(int64(2)),
+								Min:  pointer.Pointer(int64(1)),
+								Type: pointer.Pointer("storage"),
+							},
+							{
+								Max:  pointer.Pointer(int64(4)),
+								Min:  pointer.Pointer(int64(3)),
+								Type: pointer.Pointer("memory"),
+							},
+							{
+								Max:  pointer.Pointer(int64(6)),
+								Min:  pointer.Pointer(int64(5)),
+								Type: pointer.Pointer("cores"),
+							},
+						},
 					}, nil)
 				},
 			},
-			want: size1,
-			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
-`),
-			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
-`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
-1 size-1
-`),
-			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
-`),
+			want: &models.V1SizeResponse{
+				Constraints: []*models.V1SizeConstraint{
+					{
+						Max:  pointer.Pointer(int64(2)),
+						Min:  pointer.Pointer(int64(1)),
+						Type: pointer.Pointer("storage"),
+					},
+					{
+						Max:  pointer.Pointer(int64(4)),
+						Min:  pointer.Pointer(int64(3)),
+						Type: pointer.Pointer("memory"),
+					},
+					{
+						Max:  pointer.Pointer(int64(6)),
+						Min:  pointer.Pointer(int64(5)),
+						Type: pointer.Pointer("cores"),
+					},
+				},
+				Description: "foo",
+				ID:          pointer.Pointer("c1-large-x86"),
+				Name:        "mysize",
+			},
 		},
 	}
 	for _, tt := range tests {
