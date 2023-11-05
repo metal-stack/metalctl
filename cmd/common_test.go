@@ -90,7 +90,7 @@ func (c *test[R]) testCmd(t *testing.T) {
 			os.Args = append(os.Args, format.Args()...)
 
 			err := cmd.Execute()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			format.Validate(t, out.Bytes())
 		})
@@ -141,7 +141,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		if slices.Contains(exclude, f.Name) {
 			return
 		}
-		assert.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+		require.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
 	})
 }
 
