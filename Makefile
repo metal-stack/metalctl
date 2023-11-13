@@ -1,5 +1,5 @@
-GOOS := darwin
-GOARCH := arm64
+GOOS := linux
+GOARCH := amd64
 CGO_ENABLED := 1
 TAGS := -tags 'netgo'
 BINARY := metalctl-$(GOOS)-$(GOARCH)
