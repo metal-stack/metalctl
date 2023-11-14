@@ -28,7 +28,7 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer") {
-			assert.Equal(t, authHeader, "Bearer i-am-token")
+			assert.Equal(t, "Bearer i-am-token", authHeader)
 		} else if strings.HasPrefix(authHeader, "Metal-Admin") {
 			assert.Len(t, strings.Split(authHeader, " "), 2)
 		} else {
@@ -40,7 +40,7 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 		_, err := w.Write(mustMarshal(t, &models.RestHealthResponse{
 			Status: pointer.Pointer(string(rest.HealthStatusHealthy)),
 		}))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}))
 	defer ts.Close()
 
