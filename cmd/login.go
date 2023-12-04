@@ -70,13 +70,7 @@ func newLoginCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			// We need to reread the written kubeconfig
-			err = initConfigWithViperCtx(c)
-			if err != nil {
-				return err
-			}
-
-			resp, err := c.client.Version().Info(version.NewInfoParams(), nil)
+			resp, err := c.client.Version().Info(version.NewInfoParams(), clientNoAuth())
 			if err != nil {
 				return err
 			}
@@ -86,16 +80,25 @@ func newLoginCmd(c *config) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("required metalctl minimum version:%q is not semver parsable:%w", minVersion, err)
 				}
+
 				// This is a developer build
 				if !strings.HasPrefix(v.Version, "v") {
 					return nil
 				}
+
 				thisVersion, err := semver.NewVersion(v.Version)
 				if err != nil {
 					return fmt.Errorf("metalctl version:%q is not semver parsable:%w", v.Version, err)
 				}
+
 				if thisVersion.LessThan(parsedMinVersion) {
 					return fmt.Errorf("your metalctl version:%s is smaller than the required minimum version:%s, please run `metalctl update do` to get this version", thisVersion, minVersion)
+				}
+
+				if !thisVersion.Equal(parsedMinVersion) {
+					fmt.Fprintln(c.out)
+					fmt.Fprintf(c.out, "WARNING: Your metalctl version %q might not compatible with the metal-api (supported version is %q). Please run `metalctl update do` to update to the supported version.", thisVersion, minVersion)
+					fmt.Fprintln(c.out)
 				}
 			}
 
