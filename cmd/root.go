@@ -134,7 +134,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
 	rootCmd.AddCommand(newVPNCmd(c))
-	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newUpdateCmd(c))
 
 	return rootCmd
 }

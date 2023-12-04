@@ -5,7 +5,8 @@ update the program
 ### Options
 
 ```
-  -h, --help   help for update
+  -h, --help             help for update
+  -v, --version string   the version to update to
 ```
 
 ### Options inherited from parent commands
