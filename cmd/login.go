@@ -95,7 +95,7 @@ func newLoginCmd(c *config) *cobra.Command {
 					return fmt.Errorf("metalctl version:%q is not semver parsable:%w", v.Version, err)
 				}
 				if thisVersion.LessThan(parsedMinVersion) {
-					return fmt.Errorf("your metalctl version:%s is smaller than the required minimum version:%s, please run `metalctl update do` to get the latest version", thisVersion, minVersion)
+					return fmt.Errorf("your metalctl version:%s is smaller than the required minimum version:%s, please run `metalctl update do` to get this version", thisVersion, minVersion)
 				}
 			}
 
