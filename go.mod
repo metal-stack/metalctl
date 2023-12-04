@@ -3,12 +3,13 @@ module github.com/metal-stack/metalctl
 go 1.21
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.16.0
 	github.com/go-openapi/runtime v0.26.0
-	github.com/go-openapi/strfmt v0.21.7
+	github.com/go-openapi/strfmt v0.21.8
 	github.com/google/go-cmp v0.6.0
-	github.com/metal-stack/metal-go v0.25.1-0.20231201111009-50f7ebd85fab
+	github.com/metal-stack/metal-go v0.25.1
 	github.com/metal-stack/metal-lib v0.14.1
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
@@ -26,7 +27,6 @@ require (
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
