@@ -65,7 +65,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
 				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
 
-				if errorTime.After(time.Time(pointer.SafeDeref(s.LastSync.Time))) {
+				if errorTime.After(time.Time(pointer.SafeDeref(pointer.SafeDeref(s.LastSync).Time))) {
 					shortStatus = color.RedString(dot)
 				}
 			}
