@@ -163,7 +163,7 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	go4.org/mem v0.0.0-20220726221520-4f986261bf13 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
