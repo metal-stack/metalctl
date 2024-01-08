@@ -5,12 +5,16 @@ import (
 	"fmt"
 
 	"github.com/dustin/go-humanize"
+	"github.com/metal-stack/metal-go/api/client/machine"
+	"github.com/metal-stack/metal-go/api/client/partition"
+	"github.com/metal-stack/metal-go/api/client/project"
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -71,7 +75,33 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd)
+	reservationsCmd := &cobra.Command{
+		Use:   "reservations",
+		Short: "manage size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+
+	listReservationsCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "list size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+	checkReservationsCmd := &cobra.Command{
+		Use:   "check",
+		Short: "check if there are size reservations that are ineffective, e.g. because a project was deleted",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.checkReverations()
+		},
+	}
+
+	reservationsCmd.AddCommand(listReservationsCmd, checkReservationsCmd)
+
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, reservationsCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
@@ -203,4 +233,93 @@ func (c *sizeCmd) try() error {
 	}
 
 	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c sizeCmd) listReverations() error {
+	sizes, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	projects, err := c.client.Project().ListProjects(project.NewListProjectsParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	machines, err := c.client.Machine().ListMachines(machine.NewListMachinesParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(&tableprinters.SizeReservations{
+		Sizes:    sizes.Payload,
+		Projects: projects.Payload,
+		Machines: machines.Payload,
+	})
+}
+
+func (c sizeCmd) checkReverations() error {
+	sizes, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	projects, err := c.client.Project().ListProjects(project.NewListProjectsParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	partitions, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	var (
+		errs []error
+
+		projectsByID   = tableprinters.ProjectsByID(projects.Payload)
+		partitionsByID = map[string]*models.V1PartitionResponse{}
+	)
+
+	for _, p := range partitions.Payload {
+		p := p
+		partitionsByID[*p.ID] = p
+	}
+
+	for _, size := range sizes.Payload {
+		size := size
+
+		for _, reservation := range size.Reservations {
+			reservation := reservation
+
+			var (
+				sizeID    = pointer.SafeDeref(size.ID)
+				projectID = pointer.SafeDeref(reservation.Projectid)
+			)
+
+			for _, partition := range reservation.Partitionids {
+				_, ok := partitionsByID[partition]
+				if !ok {
+					errs = append(errs, fmt.Errorf("size reservation for size %q and project %q references a non-existing partition %q", sizeID, projectID, partition))
+				}
+			}
+
+			_, ok := projectsByID[projectID]
+			if !ok {
+				errs = append(errs, fmt.Errorf("size reservation for size %q references a non-existing project %q", sizeID, projectID))
+			}
+		}
+	}
+
+	if len(errs) == 0 {
+		fmt.Fprintln(c.out, "all size reservations are effective")
+		return nil
+	} else {
+		for _, err := range errs {
+			fmt.Fprintln(c.out, "found ineffective size reservations:")
+			fmt.Fprintln(c.out, err.Error())
+		}
+	}
+
+	return nil
 }

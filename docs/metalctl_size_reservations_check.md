@@ -1,15 +1,15 @@
-## metalctl size
+## metalctl size reservations check
 
-manage size entities
+check if there are size reservations that are ineffective, e.g. because a project was deleted
 
-### Synopsis
-
-a size matches a machine in terms of cpu cores, ram and storage.
+```
+metalctl size reservations check [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for size
+  -h, --help   help for check
 ```
 
 ### Options inherited from parent commands
@@ -42,15 +42,5 @@ a size matches a machine in terms of cpu cores, ram and storage.
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl size apply](metalctl_size_apply.md)	 - applies one or more sizes from a given file
-* [metalctl size create](metalctl_size_create.md)	 - creates the size
-* [metalctl size delete](metalctl_size_delete.md)	 - deletes the size
-* [metalctl size describe](metalctl_size_describe.md)	 - describes the size
-* [metalctl size edit](metalctl_size_edit.md)	 - edit the size through an editor and update
-* [metalctl size imageconstraint](metalctl_size_imageconstraint.md)	 - manage imageconstraint entities
-* [metalctl size list](metalctl_size_list.md)	 - list all sizes
 * [metalctl size reservations](metalctl_size_reservations.md)	 - manage size reservations
-* [metalctl size try](metalctl_size_try.md)	 - try a specific hardware spec and give the chosen size back
-* [metalctl size update](metalctl_size_update.md)	 - updates the size
 
