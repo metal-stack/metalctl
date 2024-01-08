@@ -14,6 +14,7 @@ import (
 )
 
 type SizeReservation struct {
+	Size               string
 	Partition          string
 	Tenant             string
 	ProjectID          string
@@ -104,7 +105,7 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 
 func (t *TablePrinter) SizeReservationTable(data []*SizeReservation, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Partition", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
+		header = []string{"Partition", "Size", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
 		rows   [][]string
 	)
 
@@ -113,6 +114,7 @@ func (t *TablePrinter) SizeReservationTable(data []*SizeReservation, wide bool) 
 
 		rows = append(rows, []string{
 			d.Partition,
+			d.Size,
 			d.ProjectName,
 			d.ProjectID,
 			d.Tenant,

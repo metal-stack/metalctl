@@ -26,11 +26,14 @@ func SizeReservationsSorter() *multisort.Sorter[*tableprinters.SizeReservation] 
 		"partition": func(a, b *tableprinters.SizeReservation, descending bool) multisort.CompareResult {
 			return multisort.Compare(a.Partition, b.Partition, descending)
 		},
+		"size": func(a, b *tableprinters.SizeReservation, descending bool) multisort.CompareResult {
+			return multisort.Compare(a.Size, b.Size, descending)
+		},
 		"tenant": func(a, b *tableprinters.SizeReservation, descending bool) multisort.CompareResult {
 			return multisort.Compare(a.Tenant, b.Tenant, descending)
 		},
 		"project": func(a, b *tableprinters.SizeReservation, descending bool) multisort.CompareResult {
 			return multisort.Compare(a.ProjectID, b.ProjectID, descending)
 		},
-	}, multisort.Keys{{ID: "partition"}, {ID: "tenant"}, {ID: "project"}})
+	}, multisort.Keys{{ID: "partition"}, {ID: "size"}, {ID: "tenant"}, {ID: "project"}})
 }

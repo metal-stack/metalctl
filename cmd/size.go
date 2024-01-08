@@ -289,6 +289,7 @@ func (c sizeCmd) listReverations() error {
 				maxReservationCount := int(pointer.SafeDeref(reservation.Amount))
 
 				sizeReservations = append(sizeReservations, &tableprinters.SizeReservation{
+					Size:               *size.ID,
 					Partition:          partitionID,
 					Tenant:             tenant,
 					ProjectID:          *reservation.Projectid,
