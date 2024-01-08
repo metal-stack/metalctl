@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/dustin/go-humanize"
 	"github.com/metal-stack/metal-go/api/models"
@@ -11,7 +12,7 @@ import (
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range"}
 		rows   [][]string
 	)
 
@@ -28,7 +29,13 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			}
 		}
 
-		rows = append(rows, []string{pointer.SafeDeref(size.ID), size.Name, size.Description, cpu, memory, storage})
+		reservationCount := 0
+		for _, r := range size.Reservations {
+			r := r
+			reservationCount += int(pointer.SafeDeref(r.Amount))
+		}
+
+		rows = append(rows, []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage})
 	}
 
 	return header, rows, nil
