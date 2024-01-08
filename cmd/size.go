@@ -254,18 +254,25 @@ func (c sizeCmd) listReverations() error {
 	}
 
 	var (
-		sizeReservations  []*tableprinters.SizeReservation
-		projectsByID      = projectsByID(projects.Payload)
-		machinesByProject = map[string][]*models.V1MachineResponse{}
+		sizeReservations        []*tableprinters.SizeReservation
+		projectsByID            = projectsByID(projects.Payload)
+		machinesByProjectBySize = map[string]map[string][]*models.V1MachineResponse{}
 	)
 
 	for _, m := range machines.Payload {
 		m := m
-		if m.Allocation == nil || m.Allocation.Project == nil {
+		if m.Allocation == nil || m.Allocation.Project == nil || m.Size == nil || m.Size.ID == nil {
 			continue
 		}
 
-		machinesByProject[*m.Allocation.Project] = append(machinesByProject[*m.Allocation.Project], m)
+		byProject, ok := machinesByProjectBySize[*m.Allocation.Project]
+		if !ok {
+			byProject = map[string][]*models.V1MachineResponse{}
+		}
+
+		byProject[*m.Size.ID] = append(byProject[*m.Size.ID], m)
+
+		machinesByProjectBySize[*m.Allocation.Project] = byProject
 	}
 
 	for _, size := range sizes.Payload {
@@ -287,7 +294,7 @@ func (c sizeCmd) listReverations() error {
 					tenant = project.TenantID
 				}
 
-				projectMachineCount := len(machinesByProject[*reservation.Projectid])
+				projectMachineCount := len(machinesByProjectBySize[*reservation.Projectid][*size.ID])
 				maxReservationCount := int(pointer.SafeDeref(reservation.Amount))
 
 				sizeReservations = append(sizeReservations, &tableprinters.SizeReservation{
