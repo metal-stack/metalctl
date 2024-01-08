@@ -157,10 +157,12 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		})
 	}
 	return &models.V1SizeUpdateRequest{
-		Constraints: constraints,
-		Description: r.Description,
-		ID:          r.ID,
-		Name:        r.Name,
+		Constraints:  constraints,
+		Description:  r.Description,
+		ID:           r.ID,
+		Name:         r.Name,
+		Labels:       r.Labels,
+		Reservations: r.Reservations,
 	}
 }
 
