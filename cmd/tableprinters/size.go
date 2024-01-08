@@ -13,17 +13,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-type SizeReservation struct {
-	Size               string
-	Partition          string
-	Tenant             string
-	ProjectID          string
-	ProjectName        string
-	Reservations       int
-	UsedReservations   int
-	ProjectAllocations int
-}
-
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range"}
@@ -103,7 +92,7 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 	return header, rows, nil
 }
 
-func (t *TablePrinter) SizeReservationTable(data []*SizeReservation, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Partition", "Size", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
 		rows   [][]string
@@ -113,15 +102,14 @@ func (t *TablePrinter) SizeReservationTable(data []*SizeReservation, wide bool) 
 		d := d
 
 		rows = append(rows, []string{
-			d.Partition,
-			d.Size,
-			d.ProjectName,
-			d.ProjectID,
-			d.Tenant,
-			fmt.Sprintf("%d/%d", min(d.Reservations, d.UsedReservations), d.Reservations),
-			strconv.Itoa(d.ProjectAllocations),
+			pointer.SafeDeref(d.Partitionid),
+			pointer.SafeDeref(d.Sizeid),
+			pointer.SafeDeref(d.Tenant),
+			pointer.SafeDeref(d.Projectid),
+			pointer.SafeDeref(d.Projectname),
+			fmt.Sprintf("%d/%d", pointer.SafeDeref(d.Usedreservations), pointer.SafeDeref(d.Reservations)),
+			strconv.Itoa(int(pointer.SafeDeref(d.Projectallocations))),
 		})
-
 	}
 
 	return header, rows, nil
