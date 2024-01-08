@@ -9,7 +9,8 @@ metalctl size reservations list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help              help for list
+      --sort-by strings   sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: partition|project|size|tenant
 ```
 
 ### Options inherited from parent commands

@@ -99,6 +99,8 @@ func newSizeCmd(c *config) *cobra.Command {
 		},
 	}
 
+	genericcli.AddSortFlag(listReservationsCmd, sorters.SizeReservationsSorter())
+
 	reservationsCmd.AddCommand(listReservationsCmd, checkReservationsCmd)
 
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, reservationsCmd)
