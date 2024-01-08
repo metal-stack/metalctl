@@ -13,10 +13,14 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-type SizeReservations struct {
-	Projects []*models.V1ProjectResponse
-	Sizes    []*models.V1SizeResponse
-	Machines []*models.V1MachineResponse
+type SizeReservation struct {
+	Partition          string
+	Tenant             string
+	ProjectID          string
+	ProjectName        string
+	Reservations       int
+	UsedReservations   int
+	ProjectAllocations int
 }
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
@@ -98,72 +102,25 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 	return header, rows, nil
 }
 
-func (t *TablePrinter) SizeReservationTable(data *SizeReservations, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) SizeReservationTable(data []*SizeReservation, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Partition", "Tenant", "Project", "Project Name", "Used/Amount", "Total Allocations"}
+		header = []string{"Partition", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
 		rows   [][]string
 	)
 
-	projectsByID := ProjectsByID(data.Projects)
-	machinesByProject := map[string][]*models.V1MachineResponse{}
-	for _, m := range data.Machines {
-		m := m
-		if m.Allocation == nil || m.Allocation.Project == nil {
-			continue
-		}
-
-		machinesByProject[*m.Allocation.Project] = append(machinesByProject[*m.Allocation.Project], m)
-	}
-
-	for _, d := range data.Sizes {
+	for _, d := range data {
 		d := d
-		for _, reservation := range d.Reservations {
-			if reservation.Projectid == nil {
-				continue
-			}
 
-			for _, partitionID := range reservation.Partitionids {
-				var (
-					projectName string
-					tenant      string
-				)
+		rows = append(rows, []string{
+			d.Partition,
+			d.ProjectName,
+			d.ProjectID,
+			d.Tenant,
+			fmt.Sprintf("%d/%d", min(d.Reservations, d.UsedReservations), d.Reservations),
+			strconv.Itoa(d.ProjectAllocations),
+		})
 
-				project, ok := projectsByID[*reservation.Projectid]
-				if ok {
-					projectName = project.Name
-					tenant = project.TenantID
-				}
-
-				projectMachineCount := len(machinesByProject[*reservation.Projectid])
-				maxReservationCount := int(pointer.SafeDeref(reservation.Amount))
-
-				rows = append(rows, []string{
-					partitionID,
-					projectName,
-					*reservation.Projectid,
-					tenant,
-					fmt.Sprintf("%d/%d", min(maxReservationCount, projectMachineCount), maxReservationCount),
-					strconv.Itoa(projectMachineCount),
-				})
-			}
-		}
 	}
 
 	return header, rows, nil
-}
-
-func ProjectsByID(projects []*models.V1ProjectResponse) map[string]*models.V1ProjectResponse {
-	projectsByID := map[string]*models.V1ProjectResponse{}
-
-	for _, project := range projects {
-		project := project
-
-		if project.Meta == nil {
-			continue
-		}
-
-		projectsByID[project.Meta.ID] = project
-	}
-
-	return projectsByID
 }

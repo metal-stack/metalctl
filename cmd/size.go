@@ -251,11 +251,62 @@ func (c sizeCmd) listReverations() error {
 		return err
 	}
 
-	return c.listPrinter.Print(&tableprinters.SizeReservations{
-		Sizes:    sizes.Payload,
-		Projects: projects.Payload,
-		Machines: machines.Payload,
-	})
+	var (
+		sizeReservations  []*tableprinters.SizeReservation
+		projectsByID      = projectsByID(projects.Payload)
+		machinesByProject = map[string][]*models.V1MachineResponse{}
+	)
+
+	for _, m := range machines.Payload {
+		m := m
+		if m.Allocation == nil || m.Allocation.Project == nil {
+			continue
+		}
+
+		machinesByProject[*m.Allocation.Project] = append(machinesByProject[*m.Allocation.Project], m)
+	}
+
+	for _, size := range sizes.Payload {
+		size := size
+		for _, reservation := range size.Reservations {
+			if reservation.Projectid == nil {
+				continue
+			}
+
+			for _, partitionID := range reservation.Partitionids {
+				var (
+					projectName string
+					tenant      string
+				)
+
+				project, ok := projectsByID[*reservation.Projectid]
+				if ok {
+					projectName = project.Name
+					tenant = project.TenantID
+				}
+
+				projectMachineCount := len(machinesByProject[*reservation.Projectid])
+				maxReservationCount := int(pointer.SafeDeref(reservation.Amount))
+
+				sizeReservations = append(sizeReservations, &tableprinters.SizeReservation{
+					Partition:          partitionID,
+					Tenant:             tenant,
+					ProjectID:          *reservation.Projectid,
+					ProjectName:        projectName,
+					Reservations:       maxReservationCount,
+					UsedReservations:   min(maxReservationCount, projectMachineCount),
+					ProjectAllocations: projectMachineCount,
+				})
+			}
+		}
+	}
+
+	err = sorters.SizeReservationsSorter().SortBy(sizeReservations)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(sizeReservations)
 }
 
 func (c sizeCmd) checkReverations() error {
@@ -277,7 +328,7 @@ func (c sizeCmd) checkReverations() error {
 	var (
 		errs []error
 
-		projectsByID   = tableprinters.ProjectsByID(projects.Payload)
+		projectsByID   = projectsByID(projects.Payload)
 		partitionsByID = map[string]*models.V1PartitionResponse{}
 	)
 
@@ -322,4 +373,20 @@ func (c sizeCmd) checkReverations() error {
 	}
 
 	return nil
+}
+
+func projectsByID(projects []*models.V1ProjectResponse) map[string]*models.V1ProjectResponse {
+	projectsByID := map[string]*models.V1ProjectResponse{}
+
+	for _, project := range projects {
+		project := project
+
+		if project.Meta == nil {
+			continue
+		}
+
+		projectsByID[project.Meta.ID] = project
+	}
+
+	return projectsByID
 }
