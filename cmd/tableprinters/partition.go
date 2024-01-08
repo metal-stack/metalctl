@@ -23,7 +23,7 @@ func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide b
 
 func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Partition", "Size", "Total", "Free", "Allocated", "Reservations", "Other", "Faulty"}
+		header = []string{"Partition", "Size", "Total", "Free", "Allocated", "Reserved", "Other", "Faulty"}
 		rows   [][]string
 
 		totalCount           int32

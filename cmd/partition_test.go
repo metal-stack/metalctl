@@ -306,24 +306,24 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVATIONS   OTHER   FAULTY
-1           size-1   5       3      1           1/3            4       2
-Total                5       3      1           1/3            4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        4       2
+Total                5       3      1           1/3        4       2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVATIONS   OTHER   FAULTY
-1           size-1   5       3      1           1/3            def     abc
-Total                5       3      1           1/3            4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        def     abc
+Total                5       3      1           1/3        4       2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVATIONS | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|--------------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 | 1/3          |     4 |      2 |
-| Total     |        |     5 |    3 |         1 | 1/3          |     4 |      2 |
+| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
+|-----------|--------|-------|------|-----------|----------|-------|--------|
+|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
 `),
 		},
 		{
@@ -385,24 +385,24 @@ Total                5       3      1           1/3            4       2
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVATIONS   OTHER   FAULTY
-1           size-1   5       3      1           1/3            4       2
-Total                5       3      1           1/3            4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        4       2
+Total                5       3      1           1/3        4       2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVATIONS   OTHER   FAULTY
-1           size-1   5       3      1           1/3            def     abc
-Total                5       3      1           1/3            4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        def     abc
+Total                5       3      1           1/3        4       2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVATIONS | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|--------------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 | 1/3          |     4 |      2 |
-| Total     |        |     5 |    3 |         1 | 1/3          |     4 |      2 |
+| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
+|-----------|--------|-------|------|-----------|----------|-------|--------|
+|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
 `),
 		},
 	}
