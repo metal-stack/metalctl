@@ -34,6 +34,24 @@ var (
 				Type: pointer.Pointer("cores"),
 			},
 		},
+		Reservations: []*models.V1SizeReservation{
+			{
+				Amount:       pointer.Pointer(int32(5)),
+				Description:  "for testing",
+				Partitionids: []string{*partition1.ID},
+				Projectid:    pointer.Pointer(project1.Meta.ID),
+			},
+			{
+				Amount:       pointer.Pointer(int32(2)),
+				Description:  "for testing",
+				Partitionids: []string{*partition2.ID},
+				Projectid:    pointer.Pointer(project2.Meta.ID),
+			},
+		},
+		Labels: map[string]string{
+			"size.metal-stack.io/cpu-description":   "1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz",
+			"size.metal-stack.io/drive-description": "960GB NVMe",
+		},
 		Description: "size 1",
 		ID:          pointer.Pointer("1"),
 		Name:        "size-1",
@@ -84,14 +102,15 @@ func Test_SizeCmd_MultiResult(t *testing.T) {
 				size2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
-2    size-2   size 2        5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
+2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
-2    size-2   size 2        5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                      size.metal-stack.io/drive-description=960GB NVMe
+2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -99,10 +118,10 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 2 size-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
-|  2 | size-2 | size 2      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
+|----|--------|-------------|--------------|-----------|--------------|---------------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
 `),
 		},
 		{
@@ -208,21 +227,22 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 			},
 			want: size1,
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                      size.metal-stack.io/drive-description=960GB NVMe
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 size-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
+|----|--------|-------------|--------------|-----------|--------------|---------------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
 `),
 		},
 		{
@@ -269,6 +289,65 @@ ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE
 				},
 			},
 			want: size1,
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_SizeReservationsCmd_MultiResult(t *testing.T) {
+	reservations := []*models.V1SizeReservationResponse{
+		{
+			Partitionid:        pointer.Pointer("a"),
+			Projectallocations: pointer.Pointer(int32(10)),
+			Projectid:          pointer.Pointer("1"),
+			Projectname:        pointer.Pointer("project-1"),
+			Reservations:       pointer.Pointer(int32(5)),
+			Sizeid:             pointer.Pointer("size-1"),
+			Tenant:             pointer.Pointer("tenant-1"),
+			Usedreservations:   pointer.Pointer(int32(5)),
+		},
+		{
+			Partitionid:        pointer.Pointer("b"),
+			Projectallocations: pointer.Pointer(int32(1)),
+			Projectid:          pointer.Pointer("2"),
+			Projectname:        pointer.Pointer("project-2"),
+			Reservations:       pointer.Pointer(int32(3)),
+			Sizeid:             pointer.Pointer("size-2"),
+			Tenant:             pointer.Pointer("tenant-2"),
+			Usedreservations:   pointer.Pointer(int32(1)),
+		},
+	}
+
+	tests := []*test[[]*models.V1SizeReservationResponse]{
+		{
+			name: "reservation list",
+			cmd: func(want []*models.V1SizeReservationResponse) []string {
+				return []string{"size", "reservations", "list"}
+			},
+			mocks: &client.MetalMockFns{
+				Size: func(mock *mock.Mock) {
+					mock.On("ListSizeReservations", testcommon.MatchIgnoreContext(t, size.NewListSizeReservationsParams()), nil).Return(&size.ListSizeReservationsOK{Payload: reservations}, nil)
+				},
+			},
+			want: reservations,
+			wantTable: pointer.Pointer(`
+PARTITION   SIZE     TENANT     PROJECT   PROJECT NAME   USED/AMOUNT   PROJECT ALLOCATIONS
+a           size-1   tenant-1   1         project-1      5/5           10
+b           size-2   tenant-2   2         project-2      1/3           1
+`),
+			wantWideTable: pointer.Pointer(`
+PARTITION   SIZE     TENANT     PROJECT   PROJECT NAME   USED/AMOUNT   PROJECT ALLOCATIONS
+a           size-1   tenant-1   1         project-1      5/5           10
+b           size-2   tenant-2   2         project-2      1/3           1
+`),
+			wantMarkdown: pointer.Pointer(`
+| PARTITION |  SIZE  |  TENANT  | PROJECT | PROJECT NAME | USED/AMOUNT | PROJECT ALLOCATIONS |
+|-----------|--------|----------|---------|--------------|-------------|---------------------|
+| a         | size-1 | tenant-1 |       1 | project-1    | 5/5         |                  10 |
+| b         | size-2 | tenant-2 |       2 | project-2    | 1/3         |                   1 |
+`),
 		},
 	}
 	for _, tt := range tests {

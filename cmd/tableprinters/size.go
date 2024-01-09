@@ -2,18 +2,26 @@ package tableprinters
 
 import (
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/dustin/go-humanize"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range"}
 		rows   [][]string
 	)
+
+	if wide {
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "Labels"}
+	}
 
 	for _, size := range data {
 		var cpu, memory, storage string
@@ -28,8 +36,26 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			}
 		}
 
-		rows = append(rows, []string{pointer.SafeDeref(size.ID), size.Name, size.Description, cpu, memory, storage})
+		reservationCount := 0
+		for _, r := range size.Reservations {
+			r := r
+			reservationCount += int(pointer.SafeDeref(r.Amount))
+		}
+
+		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage}
+
+		if wide {
+			labels := genericcli.MapToLabels(size.Labels)
+			sort.Strings(labels)
+			row = append(row, strings.Join(labels, "\n"))
+		}
+
+		rows = append(rows, row)
 	}
+
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }
@@ -62,6 +88,29 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 		table.SetAutoWrapText(false)
 		table.SetColMinWidth(3, 40)
 	})
+
+	return header, rows, nil
+}
+
+func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResponse, wide bool) ([]string, [][]string, error) {
+	var (
+		header = []string{"Partition", "Size", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
+		rows   [][]string
+	)
+
+	for _, d := range data {
+		d := d
+
+		rows = append(rows, []string{
+			pointer.SafeDeref(d.Partitionid),
+			pointer.SafeDeref(d.Sizeid),
+			pointer.SafeDeref(d.Tenant),
+			pointer.SafeDeref(d.Projectid),
+			pointer.SafeDeref(d.Projectname),
+			fmt.Sprintf("%d/%d", pointer.SafeDeref(d.Usedreservations), pointer.SafeDeref(d.Reservations)),
+			strconv.Itoa(int(pointer.SafeDeref(d.Projectallocations))),
+		})
+	}
 
 	return header, rows, nil
 }

@@ -109,6 +109,10 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SizeMatchingLogTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeMatchingLog:
 		return t.SizeMatchingLogTable(d, wide)
+	case *models.V1SizeReservationResponse:
+		return t.SizeReservationTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1SizeReservationResponse:
+		return t.SizeReservationTable(d, wide)
 	default:
 		return nil, nil, fmt.Errorf("unknown table printer for type: %T", d)
 	}

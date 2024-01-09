@@ -71,7 +71,28 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd)
+	reservationsCmd := &cobra.Command{
+		Use:   "reservations",
+		Short: "manage size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+
+	listReservationsCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "list size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+
+	genericcli.AddSortFlag(listReservationsCmd, sorters.SizeReservationsSorter())
+
+	reservationsCmd.AddCommand(listReservationsCmd)
+
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, reservationsCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
@@ -157,10 +178,12 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		})
 	}
 	return &models.V1SizeUpdateRequest{
-		Constraints: constraints,
-		Description: r.Description,
-		ID:          r.ID,
-		Name:        r.Name,
+		Constraints:  constraints,
+		Description:  r.Description,
+		ID:           r.ID,
+		Name:         r.Name,
+		Labels:       r.Labels,
+		Reservations: r.Reservations,
 	}
 }
 
@@ -196,6 +219,20 @@ func (c *sizeCmd) try() error {
 		Memory:   &memory,
 		Disks:    disks,
 	}), nil)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c sizeCmd) listReverations() error {
+	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	err = sorters.SizeReservationsSorter().SortBy(resp.Payload)
 	if err != nil {
 		return err
 	}
