@@ -43,6 +43,5 @@ metalctl size reservations [flags]
 ### SEE ALSO
 
 * [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl size reservations check](metalctl_size_reservations_check.md)	 - check if there are size reservations that are ineffective, e.g. because a project was deleted
 * [metalctl size reservations list](metalctl_size_reservations_list.md)	 - list size reservations
 
