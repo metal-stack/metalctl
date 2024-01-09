@@ -328,7 +328,7 @@ func Test_SizeReservationsCmd_MultiResult(t *testing.T) {
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("ListSizeReservations", testcommon.MatchIgnoreContext(t, size.NewListSizeReservationsParams()), nil).Return(&size.ListSizeReservationsOK{Payload: reservations}, nil)
+					mock.On("ListSizeReservations", testcommon.MatchIgnoreContext(t, size.NewListSizeReservationsParams().WithBody(emptyBody)), nil).Return(&size.ListSizeReservationsOK{Payload: reservations}, nil)
 				},
 			},
 			want: reservations,

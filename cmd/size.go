@@ -227,7 +227,7 @@ func (c *sizeCmd) try() error {
 }
 
 func (c sizeCmd) listReverations() error {
-	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams(), nil)
+	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams().WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
