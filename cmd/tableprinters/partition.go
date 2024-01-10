@@ -2,9 +2,11 @@ package tableprinters
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 )
 
@@ -14,8 +16,20 @@ func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide b
 		rows   [][]string
 	)
 
+	if wide {
+		header = []string{"ID", "Name", "Description", "Labels"}
+	}
+
 	for _, p := range data {
-		rows = append(rows, []string{pointer.SafeDeref(p.ID), p.Name, p.Description})
+		row := []string{pointer.SafeDeref(p.ID), p.Name, p.Description}
+
+		if wide {
+			labels := genericcli.MapToLabels(p.Labels)
+			sort.Strings(labels)
+			row = append(row, strings.Join(labels, "\n"))
+		}
+
+		rows = append(rows, row)
 	}
 
 	return header, rows, nil

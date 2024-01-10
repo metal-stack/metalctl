@@ -159,6 +159,7 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 		ID:                 r.ID,
 		Mgmtserviceaddress: r.Mgmtserviceaddress,
 		Name:               r.Name,
+		Labels:             r.Labels,
 	}
 }
 
