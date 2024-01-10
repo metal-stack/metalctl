@@ -9,7 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.26.2
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/google/go-cmp v0.6.0
-	github.com/metal-stack/metal-go v0.26.1
+	github.com/metal-stack/metal-go v0.26.2-0.20240110082349-b3c02876b89c
 	github.com/metal-stack/metal-lib v0.14.2
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3

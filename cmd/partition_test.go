@@ -26,6 +26,9 @@ var (
 		Mgmtserviceaddress:         "mgmt",
 		Name:                       "partition-1",
 		Privatenetworkprefixlength: 24,
+		Labels: map[string]string{
+			"a": "b",
+		},
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -68,8 +71,8 @@ ID   NAME          DESCRIPTION
 2    partition-2   partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   LABELS
+1    partition-1   partition 1   a=b
 2    partition-2   partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -191,8 +194,8 @@ ID   NAME          DESCRIPTION
 1    partition-1   partition 1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   LABELS
+1    partition-1   partition 1   a=b
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
