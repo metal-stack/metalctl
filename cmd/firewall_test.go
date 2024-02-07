@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/net"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -299,6 +299,8 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--sshpublickey", pointer.FirstOrZero(want.Allocation.SSHPubKeys),
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
+					"--egress", "",
+					"--ingress", "",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -315,5 +317,38 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 	}
 	for _, tt := range tests {
 		tt.testCmd(t)
+	}
+}
+
+func Test_parseRuleSpec(t *testing.T) {
+	tests := []struct {
+		name    string
+		spec    string
+		want    *rule
+		wantErr bool
+	}{
+		{
+			name: "simple egress",
+			spec: "tcp@1.2.3.0/24#0.0.0.0/0@80#443#8080#8443@apt update",
+			want: &rule{
+				protocol: "tcp",
+				comment:  "apt update",
+				ports:    []int32{80, 443, 8080, 8443},
+				cidrs:    []string{"1.2.3.0/24", "0.0.0.0/0"},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseRuleSpec(tt.spec)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("parseRuleSpec() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parseRuleSpec() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

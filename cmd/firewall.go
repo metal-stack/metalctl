@@ -3,6 +3,9 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"net/netip"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/metal-stack/metal-go/api/client/firewall"
@@ -44,6 +47,8 @@ func newFirewallCmd(c *config) *cobra.Command {
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
+			cmd.Flags().StringSlice("egress", nil, "egress firewall rule to deploy on creation")
+			cmd.Flags().StringSlice("ingress", nil, "ingress firewall rule to deploy on creation")
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -171,6 +176,23 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		return nil, fmt.Errorf("firewall create error:%w", err)
 	}
 
+	egress, err := parseEgressFlags(viper.GetStringSlice("egress"))
+	if err != nil {
+		return nil, fmt.Errorf("firewall create error:%w", err)
+	}
+	ingress, err := parseIngressFlags(viper.GetStringSlice("ingress"))
+	if err != nil {
+		return nil, fmt.Errorf("firewall create error:%w", err)
+	}
+
+	var firewallRules *models.V1FirewallRules
+	if len(egress) > 0 || len(ingress) > 0 {
+		firewallRules = &models.V1FirewallRules{
+			Egress:  egress,
+			Ingress: ingress,
+		}
+	}
+
 	return &models.V1FirewallCreateRequest{
 		Description:        mcr.Description,
 		Filesystemlayoutid: mcr.Filesystemlayoutid,
@@ -186,7 +208,98 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Tags:               mcr.Tags,
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
+		FirewallRules:      firewallRules,
 	}, nil
+}
+
+// parseEgressFlags input must be in the form of
+// proto@cidr;cidr@port;port;port@comment
+// tcp@1.2.3.4/24;2.3.4.1/32@80#443#8080#8443@"Allow apt update"
+func parseEgressFlags(inputs []string) ([]*models.V1FirewallEgressRule, error) {
+	var rules []*models.V1FirewallEgressRule
+
+	for _, input := range inputs {
+		r, err := parseRuleSpec(input)
+		if err != nil {
+			return nil, err
+		}
+
+		rule := &models.V1FirewallEgressRule{
+			Protocol: r.protocol,
+			ToCidrs:  r.cidrs,
+			Ports:    r.ports,
+			Comment:  r.comment,
+		}
+		rules = append(rules, rule)
+	}
+
+	return rules, nil
+}
+
+func parseIngressFlags(inputs []string) ([]*models.V1FirewallIngressRule, error) {
+	var rules []*models.V1FirewallIngressRule
+
+	for _, input := range inputs {
+		r, err := parseRuleSpec(input)
+		if err != nil {
+			return nil, err
+		}
+
+		rule := &models.V1FirewallIngressRule{
+			Protocol:  r.protocol,
+			FromCidrs: r.cidrs,
+			Ports:     r.ports,
+			Comment:   r.comment,
+		}
+		rules = append(rules, rule)
+	}
+
+	return rules, nil
+}
+
+type rule struct {
+	comment  string
+	protocol string
+	cidrs    []string
+	ports    []int32
+}
+
+func parseRuleSpec(spec string) (*rule, error) {
+	parts := strings.Split(spec, "@")
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("at least proto, cidrs and ports must be given, spec:%q parts:%q", spec, parts)
+	}
+	if len(parts) > 4 {
+		return nil, fmt.Errorf("malformed rule spec:%q", spec)
+	}
+
+	r := &rule{}
+	comment := ""
+	if len(parts) == 4 {
+		comment = parts[3]
+	}
+	r.comment = comment
+	r.protocol = parts[0]
+
+	cidrs := strings.Split(parts[1], "#")
+	ports := strings.Split(parts[2], "#")
+
+	for _, cidr := range cidrs {
+		p, err := netip.ParsePrefix(cidr)
+		if err != nil {
+			return nil, err
+		}
+		r.cidrs = append(r.cidrs, p.String())
+	}
+
+	for _, port := range ports {
+		p, err := strconv.ParseInt(port, 10, 32)
+		if err != nil {
+			return nil, err
+		}
+		r.ports = append(r.ports, int32(p))
+	}
+	return r, nil
 }
 
 func (c *firewallCmd) firewallSSH(args []string) (err error) {
