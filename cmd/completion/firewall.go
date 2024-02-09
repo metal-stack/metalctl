@@ -20,3 +20,19 @@ func (c *Completion) FirewallListCompletion(cmd *cobra.Command, args []string, t
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (c *Completion) FirewallEgressCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	egressrules := []string{
+		"tcp@0.0.0.0/0@443@\"allow outgoing https\"\tdefault outgoing https",
+		"tcp@0.0.0.0/0@53@\"allow outgoing dns via tcp\"\tdefault outgoing dns via tcp",
+		"udp@0.0.0.0/0@53#123@\"allow outgoing dns and ntp via udp\"\tdefault outgoing dns and ntp via udp",
+	}
+	return egressrules, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) FirewallIngressCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	ingressrules := []string{
+		"tcp@0.0.0.0/0@22@\"allow incoming ssh\"\tallow incoming ssh",
+	}
+	return ingressrules, cobra.ShellCompDirectiveNoFileComp
+}

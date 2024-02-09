@@ -47,8 +47,10 @@ func newFirewallCmd(c *config) *cobra.Command {
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
-			cmd.Flags().StringSlice("egress", nil, "egress firewall rule to deploy on creation")
-			cmd.Flags().StringSlice("ingress", nil, "ingress firewall rule to deploy on creation")
+			cmd.Flags().StringSlice("egress", nil, "egress firewall rule to deploy on creation format: tcp|udp@cidr#cidr@port#port@comment")
+			cmd.Flags().StringSlice("ingress", nil, "ingress firewall rule to deploy on creation format: tcp|udp@cidr#cidr@port#port@comment")
+			must(cmd.RegisterFlagCompletionFunc("egress", c.comp.FirewallEgressCompletion))
+			must(cmd.RegisterFlagCompletionFunc("ingress", c.comp.FirewallIngressCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -213,8 +215,8 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 }
 
 // parseEgressFlags input must be in the form of
-// proto@cidr;cidr@port;port;port@comment
-// tcp@1.2.3.4/24;2.3.4.1/32@80#443#8080#8443@"Allow apt update"
+// proto@cidr#cidr@port#port#port@comment
+// tcp@1.2.3.4/24#2.3.4.1/32@80#443#8080#8443@"Allow apt update"
 func parseEgressFlags(inputs []string) ([]*models.V1FirewallEgressRule, error) {
 	var rules []*models.V1FirewallEgressRule
 
