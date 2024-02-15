@@ -66,7 +66,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("image", c.comp.FirewallImageListCompletion))
 		},
 	}
 
@@ -134,10 +134,10 @@ func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 }
 
 func (c firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
-	if r.ID == nil {
-		return "", nil, nil, fmt.Errorf("id is nil")
-	}
-	return *r.ID, firewallResponseToCreate(r), nil, nil
+	// if r.ID == nil {
+	// 	return "", nil, nil, fmt.Errorf("id is nil")
+	// }
+	return "", firewallResponseToCreate(r), nil, nil
 }
 
 func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
@@ -169,6 +169,7 @@ func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCr
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		FirewallRules:      allocation.FirewallRules,
 	}
 }
 
@@ -228,7 +229,7 @@ func parseEgressFlags(inputs []string) ([]*models.V1FirewallEgressRule, error) {
 
 		rule := &models.V1FirewallEgressRule{
 			Protocol: r.protocol,
-			ToCidrs:  r.cidrs,
+			To:       r.cidrs,
 			Ports:    r.ports,
 			Comment:  r.comment,
 		}
@@ -248,10 +249,10 @@ func parseIngressFlags(inputs []string) ([]*models.V1FirewallIngressRule, error)
 		}
 
 		rule := &models.V1FirewallIngressRule{
-			Protocol:  r.protocol,
-			FromCidrs: r.cidrs,
-			Ports:     r.ports,
-			Comment:   r.comment,
+			Protocol: r.protocol,
+			From:     r.cidrs,
+			Ports:    r.ports,
+			Comment:  r.comment,
 		}
 		rules = append(rules, rule)
 	}

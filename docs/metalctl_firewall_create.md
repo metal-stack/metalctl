@@ -11,7 +11,7 @@ metalctl firewall create [flags]
 ```
       --bulk-output               when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string        Description of the firewall to create. [optional]
-      --egress strings            egress firewall rule to deploy on creation
+      --egress strings            egress firewall rule to deploy on creation format: tcp|udp@cidr#cidr@port#port@comment
   -f, --file string               filename of the create or update request in yaml format, or - for stdin.
                                   
                                   Example:
@@ -29,7 +29,7 @@ metalctl firewall create [flags]
   -H, --hostname string           Hostname of the firewall. [required]
   -I, --id string                 ID of a specific firewall to allocate, if given, size and partition are ignored. Need to be set to reserved (--reserve) state before.
   -i, --image string              OS Image to install. [required]
-      --ingress strings           ingress firewall rule to deploy on creation
+      --ingress strings           ingress firewall rule to deploy on creation format: tcp|udp@cidr#cidr@port#port@comment
       --ips strings               Sets the firewall's IP address. Usage: [--ips[=IPV4-ADDRESS[,IPV4-ADDRESS]...]]...
                                   IPV4-ADDRESS specifies the IPv4 address to add.
                                   It can only be used in conjunction with --networks.

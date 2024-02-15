@@ -46,7 +46,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "size", f: c.comp.SizeListCompletion},
 		{flagName: "project", f: c.comp.ProjectListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
-		{flagName: "image", f: c.comp.ImageListCompletion},
+		{flagName: "image", f: c.comp.MachineImageListCompletion},
 		{flagName: "state", f: cobra.FixedCompletions([]string{
 			// empty does not work:
 			// models.V1FirewallFindRequestStateValueEmpty,
@@ -530,7 +530,7 @@ MODE can be omitted or one of:
 	must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	must(cmd.RegisterFlagCompletionFunc("image", c.comp.MachineImageListCompletion))
 	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
