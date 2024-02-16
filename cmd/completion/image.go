@@ -2,13 +2,10 @@ package completion
 
 import (
 	"errors"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 )
 
@@ -23,19 +20,12 @@ func (c *Completion) ImageClassificationCompletion(cmd *cobra.Command, args []st
 func (c *Completion) ImageFeatureCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	return []string{"machine", "firewall"}, cobra.ShellCompDirectiveNoFileComp
 }
-func (c *Completion) FirewallImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return c.listValidImages(pointer.Pointer(models.V1MachineAllocationRoleFirewall))
-}
-
-func (c *Completion) MachineImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return c.listValidImages(pointer.Pointer(models.V1MachineAllocationRoleMachine))
-}
 
 func (c *Completion) ImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return c.listValidImages(nil)
+	return c.listValidImages()
 }
 
-func (c *Completion) listValidImages(role *string) ([]string, cobra.ShellCompDirective) {
+func (c *Completion) listValidImages() ([]string, cobra.ShellCompDirective) {
 	resp, err := c.client.Image().ListImages(image.NewListImagesParams(), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
@@ -43,12 +33,6 @@ func (c *Completion) listValidImages(role *string) ([]string, cobra.ShellCompDir
 	var names []string
 	for _, i := range resp.Payload {
 		if i.ID == nil {
-			continue
-		}
-		if role != nil && !slices.Contains(i.Features, *role) {
-			continue
-		}
-		if i.ExpirationDate != nil && time.Now().After(time.Time(*i.ExpirationDate)) {
 			continue
 		}
 		names = append(names, *i.ID)

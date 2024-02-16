@@ -53,7 +53,7 @@ metalctl firewall create [flags]
                                        to:
                                        - 0.0.0.0/0
                                      ingress:
-                                     - comment: allow incoming ssh
+                                     - comment: allow incoming ssh only to one ip
                                        ports:
                                        - 22
                                        protocol: TCP
@@ -62,7 +62,7 @@ metalctl firewall create [flags]
                                        - 1.2.3.4/32
                                        to:
                                        - 212.34.83.19/32
-                                     - comment: allow incoming https
+                                     - comment: allow incoming https to all targets
                                        ports:
                                        - 80
                                        - 433

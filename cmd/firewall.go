@@ -108,7 +108,7 @@ ingress:
 			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("image", c.comp.FirewallImageListCompletion))
+			must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 		},
 	}
 
