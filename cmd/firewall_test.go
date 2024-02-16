@@ -12,7 +12,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/net"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -299,6 +298,7 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--sshpublickey", pointer.FirstOrZero(want.Allocation.SSHPubKeys),
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
+					"--firewall-rules-file", "",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
