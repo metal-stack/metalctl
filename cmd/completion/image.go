@@ -22,10 +22,6 @@ func (c *Completion) ImageFeatureCompletion(cmd *cobra.Command, args []string, t
 }
 
 func (c *Completion) ImageListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return c.listValidImages()
-}
-
-func (c *Completion) listValidImages() ([]string, cobra.ShellCompDirective) {
 	resp, err := c.client.Image().ListImages(image.NewListImagesParams(), nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
