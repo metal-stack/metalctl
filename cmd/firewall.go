@@ -260,7 +260,7 @@ func parseFirewallRulesFile() (*models.V1FirewallRules, error) {
 	}
 
 	var fwrules models.V1FirewallRules
-	err = yaml.Unmarshal([]byte(firewallRules), &fwrules)
+	err = yaml.Unmarshal(firewallRules, &fwrules)
 	return &fwrules, err
 }
 
