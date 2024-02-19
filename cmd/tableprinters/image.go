@@ -26,7 +26,7 @@ func (t *TablePrinter) ImageTable(data []*models.V1ImageResponse, wide bool) ([]
 
 		expiration := ""
 		if image.ExpirationDate != nil {
-			expiration = humanizeDuration(time.Until(time.Time(*image.ExpirationDate)))
+			expiration = HumanizeDuration(time.Until(time.Time(*image.ExpirationDate)))
 		}
 
 		usedBy := fmt.Sprintf("%d", len(image.Usedby))

@@ -9,6 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.27.1
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/google/go-cmp v0.6.0
+	github.com/google/uuid v1.6.0
 	github.com/metal-stack/metal-go v0.28.0
 	github.com/metal-stack/metal-lib v0.14.4
 	github.com/metal-stack/updater v1.2.1
@@ -18,6 +19,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.18.2
+	github.com/stmcginnis/gofish v0.15.0
 	github.com/stretchr/testify v1.8.4
 	github.com/undefinedlabs/go-mpatch v1.0.7
 	gopkg.in/yaml.v3 v3.0.1
@@ -82,7 +84,6 @@ require (
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/nftables v0.1.1-0.20230115205135-9aa6fdf5a28c // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/csrf v1.7.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect

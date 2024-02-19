@@ -21,8 +21,9 @@ func depth(path string) uint {
 	return count
 }
 
-func humanizeDuration(duration time.Duration) string {
-	days := int64(duration.Hours() / 24)
+func HumanizeDuration(duration time.Duration) string {
+	years := int64(duration.Hours() / 24 / 365)
+	days := int64(math.Mod(duration.Hours(), 24))
 	hours := int64(math.Mod(duration.Hours(), 24))
 	minutes := int64(math.Mod(duration.Minutes(), 60))
 	seconds := int64(math.Mod(duration.Seconds(), 60))
@@ -31,6 +32,7 @@ func humanizeDuration(duration time.Duration) string {
 		singularName string
 		amount       int64
 	}{
+		{"y", years},
 		{"d", days},
 		{"h", hours},
 		{"m", minutes},

@@ -44,6 +44,7 @@ a machine is a bare metal server provisioned through metal-stack that is intende
 
 * [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
 * [metalctl machine apply](metalctl_machine_apply.md)	 - applies one or more machines from a given file
+* [metalctl machine bmc](metalctl_machine_bmc.md)	 - 
 * [metalctl machine console](metalctl_machine_console.md)	 - console access to a machine
 * [metalctl machine consolepassword](metalctl_machine_consolepassword.md)	 - fetch the consolepassword for a machine
 * [metalctl machine create](metalctl_machine_create.md)	 - creates the machine

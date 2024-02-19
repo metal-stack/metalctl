@@ -60,7 +60,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		age := ""
 		if alloc.Created != nil && !time.Time(*alloc.Created).IsZero() {
 			started = time.Time(*alloc.Created).Format(time.RFC3339)
-			age = humanizeDuration(time.Since(time.Time(*alloc.Created)))
+			age = HumanizeDuration(time.Since(time.Time(*alloc.Created)))
 		}
 		tags := ""
 		if len(machine.Tags) > 0 {
@@ -76,7 +76,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 		when := ""
 		if len(machine.Events.Log) > 0 {
 			since := time.Since(time.Time(machine.Events.LastEventTime))
-			when = humanizeDuration(since)
+			when = HumanizeDuration(since)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 
@@ -192,7 +192,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			power, powerText = extractPowerState(ipmi)
 
 			if ipmi.LastUpdated != nil && !ipmi.LastUpdated.IsZero() {
-				lastUpdated = fmt.Sprintf("%s ago", humanizeDuration(time.Since(time.Time(*ipmi.LastUpdated))))
+				lastUpdated = fmt.Sprintf("%s ago", HumanizeDuration(time.Since(time.Time(*ipmi.LastUpdated))))
 			}
 		}
 
@@ -360,7 +360,7 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 		lastEvent := ""
 		if len(machine.Events.Log) > 0 {
 			since := time.Since(time.Time(machine.Events.LastEventTime))
-			when = humanizeDuration(since)
+			when = HumanizeDuration(since)
 			lastEvent = *machine.Events.Log[0].Event
 		}
 

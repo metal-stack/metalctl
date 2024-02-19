@@ -33,7 +33,7 @@ func (t *TablePrinter) FirewallTable(data []*models.V1FirewallResponse, wide boo
 
 		age := ""
 		if alloc.Created != nil && !time.Time(*alloc.Created).IsZero() {
-			age = humanizeDuration(time.Since(time.Time(*alloc.Created)))
+			age = HumanizeDuration(time.Since(time.Time(*alloc.Created)))
 		}
 
 		rows = append(rows, []string{firewallID, age, hostname, project, networks, ips, partition})

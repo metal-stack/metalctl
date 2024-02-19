@@ -55,7 +55,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 				shortStatus = color.GreenString(dot)
 			}
 
-			syncLast = humanizeDuration(syncAge) + " ago"
+			syncLast = HumanizeDuration(syncAge) + " ago"
 			syncDurStr = fmt.Sprintf("%v", syncDur)
 		}
 
@@ -63,7 +63,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			errorTime := time.Time(*s.LastSyncError.Time)
 			// after 7 days we do not show sync errors anymore
 			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
-				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+				syncError = fmt.Sprintf("%s ago: %s", HumanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
 
 				if errorTime.After(time.Time(pointer.SafeDeref(pointer.SafeDeref(s.LastSync).Time))) {
 					shortStatus = color.RedString(dot)

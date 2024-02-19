@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
@@ -14,6 +15,7 @@ import (
 
 	"slices"
 
+	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/client/machine"
 	"github.com/metal-stack/metal-go/api/models"
@@ -25,6 +27,7 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/stmcginnis/gofish"
 )
 
 const (
@@ -356,6 +359,13 @@ In case the machine did not register properly a direct ipmi console access is av
 		},
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
+	machineBMCCmd := &cobra.Command{
+		Use: "bmc [<machine ID>]",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.machineBMC(args)
+		},
+		ValidArgsFunction: c.comp.MachineListCompletion,
+	}
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues [<machine ID>]",
 		Short: `display machines which are in a potential bad state`,
@@ -462,6 +472,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		machineConsolePasswordCmd,
 		machineConsoleCmd,
 		machineIpmiCmd,
+		machineBMCCmd,
 		machineIssuesCmd,
 		machineLogsCmd,
 		machineUpdateFirmwareCmd,
@@ -1298,6 +1309,69 @@ func (c *machineCmd) machineIpmi(args []string) error {
 	}
 
 	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c *machineCmd) machineBMC(args []string) error {
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
+	if err != nil {
+		return err
+	}
+	log := slog.Default()
+
+	for _, ms := range resp.Payload {
+		if ms.Ipmi == nil || ms.Ipmi.Address == nil {
+			continue
+		}
+		ip, _, _ := strings.Cut(*ms.Ipmi.Address, ":")
+
+		// log.Info("connect to", "ID", ms.ID, "address", ip)
+		config := gofish.ClientConfig{
+			Endpoint: "https://" + ip,
+			Username: *ms.Ipmi.User,
+			Password: *ms.Ipmi.Password,
+			Insecure: true,
+		}
+		connection, err := gofish.Connect(config)
+		if err != nil {
+			log.Error("unable to connect to bmc", "ID", ms.ID, "error", err)
+			continue
+		}
+
+		systems, err := connection.Service.Systems()
+		if err != nil {
+			log.Error("unable to connect to system", "ID", ms.ID, "error", err)
+			continue
+		}
+
+		uid := ""
+		for _, system := range systems {
+			if system.UUID != "" {
+				uid = system.UUID
+				break
+			}
+		}
+
+		u, err := uuid.Parse(uid)
+		if err != nil {
+			log.Error("unable to parse uuid", "ID", ms.ID, "error", err)
+		}
+
+		timeDistance := time.Since(time.Unix(u.Time().UnixTime()))
+
+		log.Info("BMC", "ID", *ms.ID, "UUID", u.String(), "Version", u.Version().String(), "Time Distance", tableprinters.HumanizeDuration(timeDistance))
+	}
+
+	return nil
 }
 
 func (c *machineCmd) machineIssuesList() error {
