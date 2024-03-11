@@ -324,6 +324,9 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 		}
 
 		machine := machinesByID[*issue.Machineid]
+		if machine == nil {
+			continue
+		}
 
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
