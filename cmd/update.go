@@ -56,7 +56,7 @@ func newUpdateCmd(c *config) *cobra.Command {
 		},
 	}
 
-	updateCmd.Flags().StringP("version", "v", "", `the version to update to, by default updates to the supported version, use "latest" to update to latest version`)
+	updateDoCmd.Flags().StringP("version", "v", "", `the version to update to, by default updates to the supported version, use "latest" to update to latest version`)
 
 	updateCmd.AddCommand(updateCheckCmd)
 	updateCmd.AddCommand(updateDoCmd)
