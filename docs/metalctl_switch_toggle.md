@@ -1,15 +1,20 @@
-## metalctl switch
+## metalctl switch toggle
 
-manage switch entities
+toggles the given switch port up or down
 
 ### Synopsis
 
-switch are the leaf switches in the data center that are controlled by metal-stack.
+this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port.
+
+```
+metalctl switch toggle <switchID> <portID> [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for switch
+  -h, --help            help for toggle
+      --status string   the desired port status (default "up")
 ```
 
 ### Options inherited from parent commands
@@ -42,16 +47,5 @@ switch are the leaf switches in the data center that are controlled by metal-sta
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl switch connected-machines](metalctl_switch_connected-machines.md)	 - shows switches with their connected machines
-* [metalctl switch console](metalctl_switch_console.md)	 - connect to the switch console
-* [metalctl switch delete](metalctl_switch_delete.md)	 - deletes the switch
-* [metalctl switch describe](metalctl_switch_describe.md)	 - describes the switch
-* [metalctl switch detail](metalctl_switch_detail.md)	 - switch details
-* [metalctl switch edit](metalctl_switch_edit.md)	 - edit the switch through an editor and update
-* [metalctl switch list](metalctl_switch_list.md)	 - list all switches
-* [metalctl switch replace](metalctl_switch_replace.md)	 - put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
-* [metalctl switch ssh](metalctl_switch_ssh.md)	 - connect to the switch via ssh
-* [metalctl switch toggle](metalctl_switch_toggle.md)	 - toggles the given switch port up or down
-* [metalctl switch update](metalctl_switch_update.md)	 - updates the switch
+* [metalctl switch](metalctl_switch.md)	 - manage switch entities
 

@@ -153,8 +153,16 @@ Operational steps to replace a switch:
 		},
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
-
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
+	togglePortCmd := &cobra.Command{
+		Use:   "toggle <switchID> <portID> <desiredstate>",
+		Short: "toggles the given switch port up or down",
+		Long:  "this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.togglePort(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListAndPortCompletion,
+	}
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd, togglePortCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -386,4 +394,19 @@ telnet console-server 7008`)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	return cmd.Run()
+}
+
+func (c *switchCmd) togglePort(args []string) error {
+	if len(args) < 3 {
+		return fmt.Errorf("missing <switch-id> <port-id> <port-state>")
+	}
+
+	id, portid, status := args[0], args[1], args[2]
+
+	_, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
+		Nic:    &portid,
+		Status: &status,
+	}), nil)
+
+	return err
 }
