@@ -102,14 +102,14 @@ func Test_SizeCmd_MultiResult(t *testing.T) {
 				size2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPUS
 1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
 2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                      size.metal-stack.io/drive-description=960GB NVMe
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPUS   LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B              size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                             size.metal-stack.io/drive-description=960GB NVMe
 2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -118,10 +118,10 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 2 size-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|--------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
-|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE | GPUS |
+|----|--------|-------------|--------------|-----------|--------------|---------------|------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |      |
+|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |      |
 `),
 		},
 		{
@@ -227,22 +227,22 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 			},
 			want: size1,
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPUS
 1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                      size.metal-stack.io/drive-description=960GB NVMe
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPUS   LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B              size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                             size.metal-stack.io/drive-description=960GB NVMe
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 size-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|--------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE | GPUS |
+|----|--------|-------------|--------------|-----------|--------------|---------------|------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |      |
 `),
 		},
 		{

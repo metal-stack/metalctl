@@ -15,25 +15,28 @@ import (
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "Labels"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs", "Labels"}
 	}
 
 	for _, size := range data {
-		var cpu, memory, storage string
+		var cpu, memory, storage, gpu string
 		for _, c := range size.Constraints {
 			switch *c.Type {
-			case "cores":
+			case models.V1SizeConstraintTypeCores:
 				cpu = fmt.Sprintf("%d - %d", *c.Min, *c.Max)
-			case "memory":
+			case models.V1SizeConstraintTypeMemory:
 				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
-			case "storage":
+			case models.V1SizeConstraintTypeStorage:
 				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
+			case models.V1SizeConstraintTypeGpu:
+				gpu = fmt.Sprintf("%v", c.Gpus)
 			}
+
 		}
 
 		reservationCount := 0
@@ -42,7 +45,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			reservationCount += int(pointer.SafeDeref(r.Amount))
 		}
 
-		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage}
+		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage, gpu}
 
 		if wide {
 			labels := genericcli.MapToLabels(size.Labels)
