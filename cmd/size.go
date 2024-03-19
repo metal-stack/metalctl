@@ -158,6 +158,7 @@ func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest 
 			Max:  r.Constraints[i].Max,
 			Min:  r.Constraints[i].Min,
 			Type: r.Constraints[i].Type,
+			Gpus: r.Constraints[i].Gpus,
 		})
 	}
 	return &models.V1SizeCreateRequest{
@@ -175,6 +176,7 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 			Max:  r.Constraints[i].Max,
 			Min:  r.Constraints[i].Min,
 			Type: r.Constraints[i].Type,
+			Gpus: r.Constraints[i].Gpus,
 		})
 	}
 	return &models.V1SizeUpdateRequest{
