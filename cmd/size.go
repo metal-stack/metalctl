@@ -41,8 +41,8 @@ func newSizeCmd(c *config) *cobra.Command {
 				Description: viper.GetString("description"),
 				Constraints: []*models.V1SizeConstraint{
 					{
-						Max:  pointer.Pointer(viper.GetInt64("max")),
-						Min:  pointer.Pointer(viper.GetInt64("min")),
+						Max:  viper.GetInt64("max"),
+						Min:  viper.GetInt64("min"),
 						Type: pointer.Pointer(viper.GetString("type")),
 					},
 				},

@@ -28,13 +28,19 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 		for _, c := range size.Constraints {
 			switch *c.Type {
 			case models.V1SizeConstraintTypeCores:
-				cpu = fmt.Sprintf("%d - %d", *c.Min, *c.Max)
+				cpu = fmt.Sprintf("%d - %d", c.Min, c.Max)
 			case models.V1SizeConstraintTypeMemory:
-				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
+				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
 			case models.V1SizeConstraintTypeStorage:
-				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
+				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
 			case models.V1SizeConstraintTypeGpu:
-				gpu = fmt.Sprintf("%v", c.Gpus)
+				var gpus []string
+				for model, count := range c.Gpus {
+					gpus = append(gpus, fmt.Sprintf("%d x %s", count, model))
+				}
+				if len(gpus) > 0 {
+					gpu = strings.Join(gpus, ",")
+				}
 			}
 
 		}
@@ -75,11 +81,11 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 			c := cs.Constraint
 			switch *c.Type {
 			case "cores": // TODO: should be enums in spec
-				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", *c.Min, *c.Max, *cs.Log, *cs.Match)
+				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", c.Min, c.Max, *cs.Log, *cs.Match)
 			case "memory":
-				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
 			case "storage":
-				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
 			}
 		}
 		sizeMatch := fmt.Sprintf("%v", *d.Match)
