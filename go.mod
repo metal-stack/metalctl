@@ -175,3 +175,5 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 	tailscale.com v1.54.1 // indirect
 )
+
+replace github.com/metal-stack/metal-go v0.28.0 => github.com/metal-stack/metal-go v0.28.1-0.20240319084850-bee1c98c3a30
