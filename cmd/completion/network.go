@@ -24,9 +24,7 @@ func (c *Completion) NetworkDestinationPrefixesCompletion(cmd *cobra.Command, ar
 	}
 	var prefixes []string
 	for _, n := range resp.Payload {
-		for _, prefix := range n.Destinationprefixes {
-			prefixes = append(prefixes, prefix)
-		}
+		prefixes = append(prefixes, n.Destinationprefixes...)
 	}
 	return prefixes, cobra.ShellCompDirectiveNoFileComp
 }
