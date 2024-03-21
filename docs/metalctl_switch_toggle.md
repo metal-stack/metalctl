@@ -4,17 +4,16 @@ toggles the given switch port up or down
 
 ### Synopsis
 
-this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port.
+this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port. if no state is given it will toggle the current state.
 
 ```
-metalctl switch toggle <switchID> <portID> [flags]
+metalctl switch toggle <switchID> <portID> [<desiredstate>] [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help            help for toggle
-      --status string   the desired port status (default "up")
+  -h, --help   help for toggle
 ```
 
 ### Options inherited from parent commands

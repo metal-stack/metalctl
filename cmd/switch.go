@@ -154,9 +154,9 @@ Operational steps to replace a switch:
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 	togglePortCmd := &cobra.Command{
-		Use:   "toggle <switchID> <portID> <desiredstate>",
+		Use:   "toggle <switchID> <portID> [<desiredstate>]",
 		Short: "toggles the given switch port up or down",
-		Long:  "this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port.",
+		Long:  "this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port. if no state is given it will toggle the current state.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.togglePort(args)
 		},
@@ -397,16 +397,48 @@ telnet console-server 7008`)
 }
 
 func (c *switchCmd) togglePort(args []string) error {
-	if len(args) < 3 {
-		return fmt.Errorf("missing <switch-id> <port-id> <port-state>")
+	if len(args) < 2 {
+		return fmt.Errorf("missing <switch-id> <port-id> [<port-state>]")
 	}
 
-	id, portid, status := args[0], args[1], args[2]
+	id, portid, status := args[0], args[1], ""
 
-	_, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
+	if len(args) == 2 {
+		resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(args[0]), nil)
+		if err != nil {
+			return err
+		}
+
+		for _, n := range resp.Payload.Nics {
+			if n != nil && *n.Name == args[1] {
+				if n.Actual == nil {
+					// no actual state is set, so we assume it is down and we want to set it to up
+					status = models.V1SwitchNicActualUP
+				} else {
+					if *n.Actual == models.V1SwitchNicActualUP {
+						status = models.V1SwitchNicActualDOWN
+					}
+					if *n.Actual == models.V1SwitchNicActualDOWN {
+						status = models.V1SwitchNicActualUP
+					}
+				}
+				break
+			}
+		}
+		if status == "" {
+			return fmt.Errorf("port %q not found on switch %q", portid, id)
+		}
+	} else {
+		status = strings.ToUpper(args[2])
+	}
+
+	resp, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
 		Nic:    &portid,
 		Status: &status,
 	}), nil)
+	if err != nil {
+		return err
+	}
 
-	return err
+	return c.describePrinter.Print(resp.Payload.Nics)
 }

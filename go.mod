@@ -9,7 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.27.1
 	github.com/go-openapi/strfmt v0.22.0
 	github.com/google/go-cmp v0.6.0
-	github.com/metal-stack/metal-go v0.28.0
+	github.com/metal-stack/metal-go v0.28.1-0.20240319084850-bee1c98c3a30
 	github.com/metal-stack/metal-lib v0.14.4
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
@@ -179,5 +179,3 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 	tailscale.com v1.54.1 // indirect
 )
-
-replace github.com/metal-stack/metal-go v0.28.0 => github.com/metal-stack/metal-go v0.28.1-0.20240319084850-bee1c98c3a30
