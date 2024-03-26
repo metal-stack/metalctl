@@ -155,10 +155,10 @@ func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest 
 	var constraints []*models.V1SizeConstraint
 	for i := range r.Constraints {
 		constraints = append(constraints, &models.V1SizeConstraint{
-			Max:  r.Constraints[i].Max,
-			Min:  r.Constraints[i].Min,
-			Type: r.Constraints[i].Type,
-			Gpus: r.Constraints[i].Gpus,
+			Max:        r.Constraints[i].Max,
+			Min:        r.Constraints[i].Min,
+			Type:       r.Constraints[i].Type,
+			Identifier: r.Constraints[i].Identifier,
 		})
 	}
 	return &models.V1SizeCreateRequest{
@@ -173,10 +173,10 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 	var constraints []*models.V1SizeConstraint
 	for i := range r.Constraints {
 		constraints = append(constraints, &models.V1SizeConstraint{
-			Max:  r.Constraints[i].Max,
-			Min:  r.Constraints[i].Min,
-			Type: r.Constraints[i].Type,
-			Gpus: r.Constraints[i].Gpus,
+			Max:        r.Constraints[i].Max,
+			Min:        r.Constraints[i].Min,
+			Type:       r.Constraints[i].Type,
+			Identifier: r.Constraints[i].Identifier,
 		})
 	}
 	return &models.V1SizeUpdateRequest{

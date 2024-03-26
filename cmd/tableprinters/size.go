@@ -34,13 +34,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			case models.V1SizeConstraintTypeStorage:
 				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
 			case models.V1SizeConstraintTypeGpu:
-				var gpus []string
-				for model, count := range c.Gpus {
-					gpus = append(gpus, fmt.Sprintf("%d x %s", count, model))
-				}
-				if len(gpus) > 0 {
-					gpu = strings.Join(gpus, ",")
-				}
+				gpu = fmt.Sprintf("%q: %d - %d", c.Identifier, c.Min, c.Max)
 			}
 
 		}
