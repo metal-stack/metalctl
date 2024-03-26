@@ -15,25 +15,28 @@ import (
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "Labels"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs", "Labels"}
 	}
 
 	for _, size := range data {
-		var cpu, memory, storage string
+		var cpu, memory, storage, gpu string
 		for _, c := range size.Constraints {
 			switch *c.Type {
-			case "cores":
-				cpu = fmt.Sprintf("%d - %d", *c.Min, *c.Max)
-			case "memory":
-				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
-			case "storage":
-				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)))
+			case models.V1SizeConstraintTypeCores:
+				cpu = fmt.Sprintf("%d - %d", c.Min, c.Max)
+			case models.V1SizeConstraintTypeMemory:
+				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
+			case models.V1SizeConstraintTypeStorage:
+				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
+			case models.V1SizeConstraintTypeGpu:
+				gpu = fmt.Sprintf("%q: %d - %d", c.Identifier, c.Min, c.Max)
 			}
+
 		}
 
 		reservationCount := 0
@@ -42,7 +45,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			reservationCount += int(pointer.SafeDeref(r.Amount))
 		}
 
-		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage}
+		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage, gpu}
 
 		if wide {
 			labels := genericcli.MapToLabels(size.Labels)
@@ -72,11 +75,11 @@ func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wi
 			c := cs.Constraint
 			switch *c.Type {
 			case "cores": // TODO: should be enums in spec
-				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", *c.Min, *c.Max, *cs.Log, *cs.Match)
+				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", c.Min, c.Max, *cs.Log, *cs.Match)
 			case "memory":
-				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
 			case "storage":
-				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(*c.Min)), humanize.Bytes(uint64(*c.Max)), *cs.Log, *cs.Match)
+				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
 			}
 		}
 		sizeMatch := fmt.Sprintf("%v", *d.Match)
