@@ -23,17 +23,15 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(&health.HealthOK{
 						Payload: &models.RestHealthResponse{
-							Status:   pointer.Pointer(string(rest.HealthStatusHealthy)),
-							Message:  pointer.Pointer("ok"),
-							Services: make(map[string]models.RestHealthResult),
+							Status:  pointer.Pointer(string(rest.HealthStatusHealthy)),
+							Message: pointer.Pointer("ok"),
 						},
 					}, nil)
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:   rest.HealthStatusHealthy,
-				Message:  "ok",
-				Services: make(map[string]rest.HealthResult),
+				Status:  rest.HealthStatusHealthy,
+				Message: "ok",
 			},
 		},
 		{
@@ -45,17 +43,15 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(nil, &health.HealthInternalServerError{
 						Payload: &models.RestHealthResponse{
-							Status:   pointer.Pointer(string(rest.HealthStatusUnhealthy)),
-							Message:  pointer.Pointer("error"),
-							Services: make(map[string]models.RestHealthResult),
+							Status:  pointer.Pointer(string(rest.HealthStatusUnhealthy)),
+							Message: pointer.Pointer("error"),
 						},
 					})
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:   rest.HealthStatusUnhealthy,
-				Message:  "error",
-				Services: make(map[string]rest.HealthResult),
+				Status:  rest.HealthStatusUnhealthy,
+				Message: "error",
 			},
 		},
 	}
