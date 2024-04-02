@@ -246,7 +246,7 @@ func (c *ipCmd) ipIssues() error {
 				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
 					ip.Description = "bound to unallocated machine"
 					ips = append(ips, ip)
-				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
+				} else if m.Allocation != nil && *m.Allocation.Name != ip.Name {
 					ip.Description = "hostname mismatch"
 					ips = append(ips, ip)
 				}
