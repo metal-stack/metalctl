@@ -403,42 +403,44 @@ func (c *switchCmd) togglePort(args []string) error {
 
 	id, portid, status := args[0], args[1], ""
 
+	var response *models.V1SwitchResponse
+
 	if len(args) == 2 {
 		resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(args[0]), nil)
 		if err != nil {
 			return err
 		}
-
-		for _, n := range resp.Payload.Nics {
-			if n != nil && *n.Name == args[1] {
-				if n.Actual == nil {
-					// no actual state is set, so we assume it is down and we want to set it to up
-					status = models.V1SwitchNicActualUP
-				} else {
-					if *n.Actual == models.V1SwitchNicActualUP {
-						status = models.V1SwitchNicActualDOWN
-					}
-					if *n.Actual == models.V1SwitchNicActualDOWN {
-						status = models.V1SwitchNicActualUP
-					}
-				}
-				break
-			}
-		}
-		if status == "" {
-			return fmt.Errorf("port %q not found on switch %q", portid, id)
-		}
+		response = resp.Payload
 	} else {
 		status = strings.ToUpper(args[2])
 	}
 
-	resp, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
-		Nic:    &portid,
-		Status: &status,
-	}), nil)
-	if err != nil {
-		return err
+	if status != "" {
+		resp, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
+			Nic:    &portid,
+			Status: &status,
+		}), nil)
+		if err != nil {
+			return err
+		}
+		response = resp.Payload
 	}
 
-	return c.describePrinter.Print(resp.Payload.Nics)
+	var actual models.V1SwitchConnection
+	var nic models.V1SwitchNic
+
+	for _, con := range response.Connections {
+		if *con.Nic.Name == portid {
+			actual = *con
+			break
+		}
+	}
+	for _, desired := range response.Nics {
+		if *desired.Name == portid {
+			nic = *desired
+			break
+		}
+	}
+
+	return c.describePrinter.Print(map[string]any{"desired": nic, "actual": actual})
 }
