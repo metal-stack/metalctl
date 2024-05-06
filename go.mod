@@ -2,8 +2,6 @@ module github.com/metal-stack/metalctl
 
 go 1.22
 
-replace github.com/metal-stack/metal-go => ../metal-go
-
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/dustin/go-humanize v1.0.1
@@ -11,6 +9,7 @@ require (
 	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/go-cmp v0.6.0
+	github.com/google/uuid v1.6.0
 	github.com/metal-stack/metal-go v0.28.3
 	github.com/metal-stack/metal-lib v0.16.1
 	github.com/metal-stack/updater v1.2.1
@@ -84,7 +83,6 @@ require (
 	github.com/google/go-github/v56 v56.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/nftables v0.2.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/csrf v1.7.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
