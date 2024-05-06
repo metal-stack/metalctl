@@ -13,6 +13,13 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
+// MachinesAndIssues is used for combining issues with more data on machines.
+type MachinesAndIssues struct {
+	EvaluationResult []*models.V1MachineIssueResponse `json:"evaluation_result" yaml:"evaluation_result"`
+	Machines         []*models.V1MachineIPMIResponse  `json:"machines" yaml:"machines"`
+	Issues           []*models.V1MachineIssue         `json:"issues" yaml:"issues"`
+}
+
 func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
@@ -204,6 +211,10 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		}
 	}
 
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
+
 	return header, rows, nil
 }
 
@@ -257,7 +268,25 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 	return header, rows, nil
 }
 
-func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineIssuesListTable(data []*models.V1MachineIssue, wide bool) ([]string, [][]string, error) {
+	var (
+		header = []string{"ID", "Severity", "Description", "Reference URL"}
+		rows   [][]string
+	)
+
+	for _, issue := range data {
+		rows = append(rows, []string{
+			pointer.SafeDeref(issue.ID),
+			pointer.SafeDeref(issue.Severity),
+			pointer.SafeDeref(issue.Description),
+			pointer.SafeDeref(issue.RefURL),
+		})
+	}
+
+	return header, rows, nil
+}
+
+func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -267,8 +296,37 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 		header = []string{"ID", "Name", "Partition", "Project", "Power", "State", "Lock Reason", "Last Event", "When", "Issues", "Ref URL", "Details"}
 	}
 
-	for _, machineWithIssues := range data {
-		machine := machineWithIssues.Machine
+	machinesByID := map[string]*models.V1MachineIPMIResponse{}
+	for _, m := range data.Machines {
+		m := m
+
+		if m.ID == nil {
+			continue
+		}
+
+		machinesByID[*m.ID] = m
+	}
+
+	issuesByID := map[string]*models.V1MachineIssue{}
+	for _, issue := range data.Issues {
+		issue := issue
+
+		if issue.ID == nil {
+			continue
+		}
+
+		issuesByID[*issue.ID] = issue
+	}
+
+	for _, issue := range data.EvaluationResult {
+		if issue.Machineid == nil {
+			continue
+		}
+
+		machine := machinesByID[*issue.Machineid]
+		if machine == nil {
+			continue
+		}
 
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
@@ -311,10 +369,24 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 
 		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
-		for _, issue := range machineWithIssues.Issues {
-			text := fmt.Sprintf("%s (%s)", issue.Description, issue.Type)
-			ref := issue.RefURL
-			details := issue.Details
+		for i, id := range issue.Issues {
+			iss, ok := issuesByID[id]
+			if !ok {
+				continue
+			}
+
+			text := fmt.Sprintf("%s (%s)", pointer.SafeDeref(iss.Description), pointer.SafeDeref(iss.ID))
+			ref := pointer.SafeDeref(iss.RefURL)
+			details := pointer.SafeDeref(iss.Details)
+
+			if i != 0 {
+				if wide {
+					rows = append(rows, []string{"", "", "", "", "", "", "", "", "", text, ref, details})
+				} else {
+					rows = append(rows, []string{"", "", "", "", "", "", "", text})
+				}
+				continue
+			}
 
 			if wide {
 				rows = append(rows, []string{pointer.SafeDeref(machine.ID), widename, partition, project, powerText, lockText, lockDescWide, lastEvent, when, text, ref, details})

@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/ip"
@@ -127,8 +126,8 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	if rq.SpecificIP == "" {
 		resp, err := c.client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
 		if err != nil {
-			var r *ip.AllocateIPDefault // FIXME: API should define to return conflict
-			if errors.As(err, &r) && r.Code() == http.StatusUnprocessableEntity {
+			var r *ip.AllocateIPConflict
+			if errors.As(err, &r) {
 				return nil, genericcli.AlreadyExistsError()
 			}
 			return nil, err
@@ -139,8 +138,8 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
-		var r *ip.AllocateSpecificIPDefault // FIXME: API should define to return conflict
-		if errors.As(err, &r) && r.Code() == http.StatusUnprocessableEntity {
+		var r *ip.AllocateSpecificIPConflict
+		if errors.As(err, &r) {
 			return nil, genericcli.AlreadyExistsError()
 		}
 		return nil, err
@@ -247,7 +246,7 @@ func (c *ipCmd) ipIssues() error {
 				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
 					ip.Description = "bound to unallocated machine"
 					ips = append(ips, ip)
-				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
+				} else if m.Allocation != nil && *m.Allocation.Name != ip.Name {
 					ip.Description = "hostname mismatch"
 					ips = append(ips, ip)
 				}

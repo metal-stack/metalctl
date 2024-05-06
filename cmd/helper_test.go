@@ -7,10 +7,12 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_parseNetworks(t *testing.T) {
 	assert := assert.New(t)
+	require := require.New(t)
 
 	tests := []struct {
 		possibleNetworks []string
@@ -84,10 +86,10 @@ func Test_parseNetworks(t *testing.T) {
 	for _, test := range tests {
 		actual, err := parseNetworks(test.possibleNetworks)
 		if test.isError {
-			assert.Error(err, "Name: %s", test.name)
+			require.Error(err, "Name: %s", test.name)
 			assert.Nil(actual, "Name: %s", test.name)
 		} else {
-			assert.NoError(err, "Name: %s", test.name)
+			require.NoError(err, "Name: %s", test.name)
 			assert.NotNil(actual, "Name: %s", test.name)
 			assert.ElementsMatch(actual, test.expected, "Name: %s", test.name)
 		}

@@ -26,6 +26,9 @@ var (
 		Mgmtserviceaddress:         "mgmt",
 		Name:                       "partition-1",
 		Privatenetworkprefixlength: 24,
+		Labels: map[string]string{
+			"a": "b",
+		},
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -68,8 +71,8 @@ ID   NAME          DESCRIPTION
 2    partition-2   partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   LABELS
+1    partition-1   partition 1   a=b
 2    partition-2   partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -191,8 +194,8 @@ ID   NAME          DESCRIPTION
 1    partition-1   partition 1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   LABELS
+1    partition-1   partition 1   a=b
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -267,14 +270,16 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
-										Allocated:      pointer.Pointer(int32(1)),
-										Faulty:         pointer.Pointer(int32(2)),
-										Faultymachines: []string{"abc"},
-										Free:           pointer.Pointer(int32(3)),
-										Other:          pointer.Pointer(int32(4)),
-										Othermachines:  []string{"def"},
-										Size:           pointer.Pointer("size-1"),
-										Total:          pointer.Pointer(int32(5)),
+										Allocated:        pointer.Pointer(int32(1)),
+										Faulty:           pointer.Pointer(int32(2)),
+										Faultymachines:   []string{"abc"},
+										Free:             pointer.Pointer(int32(3)),
+										Other:            pointer.Pointer(int32(4)),
+										Othermachines:    []string{"def"},
+										Size:             pointer.Pointer("size-1"),
+										Total:            pointer.Pointer(int32(5)),
+										Reservations:     pointer.Pointer(int32(3)),
+										Usedreservations: pointer.Pointer(int32(1)),
 									},
 								},
 							},
@@ -289,37 +294,39 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
-							Allocated:      pointer.Pointer(int32(1)),
-							Faulty:         pointer.Pointer(int32(2)),
-							Faultymachines: []string{"abc"},
-							Free:           pointer.Pointer(int32(3)),
-							Other:          pointer.Pointer(int32(4)),
-							Othermachines:  []string{"def"},
-							Size:           pointer.Pointer("size-1"),
-							Total:          pointer.Pointer(int32(5)),
+							Allocated:        pointer.Pointer(int32(1)),
+							Faulty:           pointer.Pointer(int32(2)),
+							Faultymachines:   []string{"abc"},
+							Free:             pointer.Pointer(int32(3)),
+							Other:            pointer.Pointer(int32(4)),
+							Othermachines:    []string{"def"},
+							Size:             pointer.Pointer("size-1"),
+							Total:            pointer.Pointer(int32(5)),
+							Reservations:     pointer.Pointer(int32(3)),
+							Usedreservations: pointer.Pointer(int32(1)),
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   OTHER   FAULTY
-1           size-1   5       3      1           4       2
-Total                5       3      1           4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        4       2
+Total                5       3      1           1/3        4       2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   OTHER   FAULTY
-1           size-1   5       3      1           def     abc
-Total                5       3      1           4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        def     abc
+Total                5       3      1           1/3        4       2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 |     4 |      2 |
-| Total     |        |     5 |    3 |         1 |     4 |      2 |
+| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
+|-----------|--------|-------|------|-----------|----------|-------|--------|
+|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
 `),
 		},
 		{
@@ -342,14 +349,16 @@ Total                5       3      1           4       2
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
-										Allocated:      pointer.Pointer(int32(1)),
-										Faulty:         pointer.Pointer(int32(2)),
-										Faultymachines: []string{"abc"},
-										Free:           pointer.Pointer(int32(3)),
-										Other:          pointer.Pointer(int32(4)),
-										Othermachines:  []string{"def"},
-										Size:           pointer.Pointer("size-1"),
-										Total:          pointer.Pointer(int32(5)),
+										Allocated:        pointer.Pointer(int32(1)),
+										Faulty:           pointer.Pointer(int32(2)),
+										Faultymachines:   []string{"abc"},
+										Free:             pointer.Pointer(int32(3)),
+										Other:            pointer.Pointer(int32(4)),
+										Othermachines:    []string{"def"},
+										Size:             pointer.Pointer("size-1"),
+										Total:            pointer.Pointer(int32(5)),
+										Reservations:     pointer.Pointer(int32(3)),
+										Usedreservations: pointer.Pointer(int32(1)),
 									},
 								},
 							},
@@ -364,37 +373,39 @@ Total                5       3      1           4       2
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
-							Allocated:      pointer.Pointer(int32(1)),
-							Faulty:         pointer.Pointer(int32(2)),
-							Faultymachines: []string{"abc"},
-							Free:           pointer.Pointer(int32(3)),
-							Other:          pointer.Pointer(int32(4)),
-							Othermachines:  []string{"def"},
-							Size:           pointer.Pointer("size-1"),
-							Total:          pointer.Pointer(int32(5)),
+							Allocated:        pointer.Pointer(int32(1)),
+							Faulty:           pointer.Pointer(int32(2)),
+							Faultymachines:   []string{"abc"},
+							Free:             pointer.Pointer(int32(3)),
+							Other:            pointer.Pointer(int32(4)),
+							Othermachines:    []string{"def"},
+							Size:             pointer.Pointer("size-1"),
+							Total:            pointer.Pointer(int32(5)),
+							Reservations:     pointer.Pointer(int32(3)),
+							Usedreservations: pointer.Pointer(int32(1)),
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   OTHER   FAULTY
-1           size-1   5       3      1           4       2
-Total                5       3      1           4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        4       2
+Total                5       3      1           1/3        4       2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   OTHER   FAULTY
-1           size-1   5       3      1           def     abc
-Total                5       3      1           4       2
+PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
+1           size-1   5       3      1           1/3        def     abc
+Total                5       3      1           1/3        4       2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 |     4 |      2 |
-| Total     |        |     5 |    3 |         1 |     4 |      2 |
+| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
+|-----------|--------|-------|------|-----------|----------|-------|--------|
+|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
 `),
 		},
 	}

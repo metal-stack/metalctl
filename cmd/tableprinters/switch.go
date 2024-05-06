@@ -20,7 +20,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		rows [][]string
 	)
 
-	header := []string{"ID", "Partition", "Rack", "OS", "Status"}
+	header := []string{"ID", "Partition", "Rack", "OS", "Status", "Last Sync"}
 	if wide {
 		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
 
@@ -30,19 +30,23 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 	}
 
 	for _, s := range data {
-		id := pointer.SafeDeref(s.ID)
-		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
-		rack := pointer.SafeDeref(s.RackID)
+		var (
+			id        = pointer.SafeDeref(s.ID)
+			partition = pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
+			rack      = pointer.SafeDeref(s.RackID)
 
-		syncAgeStr := ""
-		syncDurStr := ""
-		syncError := ""
-		shortStatus := nbr
-		var syncTime time.Time
+			syncTime    time.Time
+			syncLast    = ""
+			syncDurStr  = ""
+			syncError   = ""
+			shortStatus = nbr
+		)
+
 		if s.LastSync != nil {
 			syncTime = time.Time(*s.LastSync.Time)
 			syncAge := time.Since(syncTime)
 			syncDur := time.Duration(*s.LastSync.Duration).Round(time.Millisecond)
+
 			if syncAge >= time.Minute*10 || syncDur >= 30*time.Second {
 				shortStatus = color.RedString(dot)
 			} else if syncAge >= time.Minute*1 || syncDur >= 20*time.Second {
@@ -51,7 +55,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 				shortStatus = color.GreenString(dot)
 			}
 
-			syncAgeStr = humanizeDuration(syncAge)
+			syncLast = humanizeDuration(syncAge) + " ago"
 			syncDurStr = fmt.Sprintf("%v", syncDur)
 		}
 
@@ -61,7 +65,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
 				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
 
-				if errorTime.After(time.Time(pointer.SafeDeref(s.LastSync.Time))) {
+				if errorTime.After(time.Time(pointer.SafeDeref(pointer.SafeDeref(s.LastSync).Time))) {
 					shortStatus = color.RedString(dot)
 				}
 			}
@@ -98,9 +102,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		}
 
 		if wide {
-			rows = append(rows, []string{id, partition, rack, os, metalCore, s.ManagementIP, mode, syncAgeStr, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, metalCore, s.ManagementIP, mode, syncLast, syncDurStr, syncError})
 		} else {
-			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus})
+			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus, syncLast})
 		}
 	}
 

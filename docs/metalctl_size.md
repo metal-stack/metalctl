@@ -50,6 +50,8 @@ a size matches a machine in terms of cpu cores, ram and storage.
 * [metalctl size edit](metalctl_size_edit.md)	 - edit the size through an editor and update
 * [metalctl size imageconstraint](metalctl_size_imageconstraint.md)	 - manage imageconstraint entities
 * [metalctl size list](metalctl_size_list.md)	 - list all sizes
+* [metalctl size reservations](metalctl_size_reservations.md)	 - manage size reservations
+* [metalctl size suggest](metalctl_size_suggest.md)	 - suggest size from a given machine id
 * [metalctl size try](metalctl_size_try.md)	 - try a specific hardware spec and give the chosen size back
 * [metalctl size update](metalctl_size_update.md)	 - updates the size
 

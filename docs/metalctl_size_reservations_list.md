@@ -1,25 +1,16 @@
-## metalctl firewall list
+## metalctl size reservations list
 
-list all firewalls
+list size reservations
 
 ```
-metalctl firewall list [flags]
+metalctl size reservations list [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help               help for list
-      --hostname string    allocation hostname to filter [optional]
-      --id string          ID to filter [optional]
-      --image string       allocation image to filter [optional]
-      --mac string         mac to filter [optional]
-      --name string        allocation name to filter [optional]
-      --partition string   partition to filter [optional]
-      --project string     allocation project to filter [optional]
-      --size string        size to filter [optional]
-      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|event|id|image|liveliness|partition|project|size|when
-      --tags strings       tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
+  -h, --help              help for list
+      --sort-by strings   sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: partition|project|size|tenant
 ```
 
 ### Options inherited from parent commands
@@ -52,5 +43,5 @@ metalctl firewall list [flags]
 
 ### SEE ALSO
 
-* [metalctl firewall](metalctl_firewall.md)	 - manage firewall entities
+* [metalctl size reservations](metalctl_size_reservations.md)	 - manage size reservations
 

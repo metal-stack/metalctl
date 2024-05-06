@@ -3,13 +3,17 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -71,20 +75,43 @@ func newSizeCmd(c *config) *cobra.Command {
 	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
 	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
 
+	reservationsCmd := &cobra.Command{
+		Use:   "reservations",
+		Short: "manage size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+
+	listReservationsCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "list size reservations",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.listReverations()
+		},
+	}
+
+	genericcli.AddSortFlag(listReservationsCmd, sorters.SizeReservationsSorter())
+
+	reservationsCmd.AddCommand(listReservationsCmd)
+
 	suggestCmd := &cobra.Command{
-		Use:   "suggest",
+		Use:   "suggest <id>",
 		Short: "suggest size from a given machine id",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.suggest()
+			return w.suggest(args)
 		},
 	}
 
 	suggestCmd.Flags().String("machine-id", "", "Machine id used to create the size suggestion. [required]")
-	suggestCmd.Flags().String("id", "my-new-size", "The id of the suggested size")
-	suggestCmd.Flags().String("name", "mysize", "The name of the suggested size")
-	suggestCmd.Flags().String("description", "foo", "The description of the suggested size")
+	suggestCmd.Flags().String("name", "suggested-size", "The name of the suggested size")
+	suggestCmd.Flags().String("description", "a suggested size", "The description of the suggested size")
+	suggestCmd.Flags().StringSlice("labels", []string{}, "labels to add to the size")
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, suggestCmd)
+	must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
+
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, reservationsCmd, suggestCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
@@ -170,10 +197,12 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		})
 	}
 	return &models.V1SizeUpdateRequest{
-		Constraints: constraints,
-		Description: r.Description,
-		ID:          r.ID,
-		Name:        r.Name,
+		Constraints:  constraints,
+		Description:  r.Description,
+		ID:           r.ID,
+		Name:         r.Name,
+		Labels:       r.Labels,
+		Reservations: r.Reservations,
 	}
 }
 
@@ -216,13 +245,34 @@ func (c *sizeCmd) try() error {
 	return c.listPrinter.Print(resp.Payload)
 }
 
-func (c *sizeCmd) suggest() error {
+func (c sizeCmd) listReverations() error {
+	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams().WithBody(emptyBody), nil)
+	if err != nil {
+		return err
+	}
+
+	err = sorters.SizeReservationsSorter().SortBy(resp.Payload)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c *sizeCmd) suggest(args []string) error {
+	sizeid, _ := genericcli.GetExactlyOneArg(args)
+
 	var (
 		machineid   = viper.GetString("machine-id")
-		sizeid      = viper.GetString("id")
 		name        = viper.GetString("name")
 		description = viper.GetString("description")
+		labels      = tag.NewTagMap(viper.GetStringSlice("labels"))
+		now         = time.Now()
 	)
+
+	if sizeid == "" {
+		sizeid = uuid.NewString()
+	}
 
 	if machineid == "" {
 		return fmt.Errorf("machine-id flag is required")
@@ -240,6 +290,8 @@ func (c *sizeCmd) suggest() error {
 		Name:        name,
 		Description: description,
 		Constraints: resp.Payload,
+		Labels:      labels,
+		Changed:     strfmt.DateTime(now),
+		Created:     strfmt.DateTime(now),
 	})
-	//return nil
 }

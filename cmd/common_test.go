@@ -13,7 +13,6 @@ import (
 	"slices"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/markelog/monkey"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
@@ -23,13 +22,17 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/undefinedlabs/go-mpatch"
 	"gopkg.in/yaml.v3"
 )
 
 var testTime = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
 
 func init() {
-	_ = monkey.Patch(time.Now, func() time.Time { return testTime })
+	_, err := mpatch.PatchMethod(time.Now, func() time.Time { return testTime })
+	if err != nil {
+		panic(err)
+	}
 }
 
 type test[R any] struct {
@@ -87,7 +90,7 @@ func (c *test[R]) testCmd(t *testing.T) {
 			os.Args = append(os.Args, format.Args()...)
 
 			err := cmd.Execute()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			format.Validate(t, out.Bytes())
 		})
@@ -138,7 +141,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		if slices.Contains(exclude, f.Name) {
 			return
 		}
-		assert.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+		require.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
 	})
 }
 

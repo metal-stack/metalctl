@@ -1,25 +1,19 @@
-## metalctl firewall list
+## metalctl size suggest
 
-list all firewalls
+suggest size from a given machine id
 
 ```
-metalctl firewall list [flags]
+metalctl size suggest <id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help               help for list
-      --hostname string    allocation hostname to filter [optional]
-      --id string          ID to filter [optional]
-      --image string       allocation image to filter [optional]
-      --mac string         mac to filter [optional]
-      --name string        allocation name to filter [optional]
-      --partition string   partition to filter [optional]
-      --project string     allocation project to filter [optional]
-      --size string        size to filter [optional]
-      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|event|id|image|liveliness|partition|project|size|when
-      --tags strings       tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
+      --description string   The description of the suggested size (default "a suggested size")
+  -h, --help                 help for suggest
+      --labels strings       labels to add to the size
+      --machine-id string    Machine id used to create the size suggestion. [required]
+      --name string          The name of the suggested size (default "suggested-size")
 ```
 
 ### Options inherited from parent commands
@@ -52,5 +46,5 @@ metalctl firewall list [flags]
 
 ### SEE ALSO
 
-* [metalctl firewall](metalctl_firewall.md)	 - manage firewall entities
+* [metalctl size](metalctl_size.md)	 - manage size entities
 

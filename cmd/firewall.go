@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/metal-stack/metal-go/api/client/firewall"
@@ -13,6 +14,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 type firewallCmd struct {
@@ -44,6 +46,53 @@ func newFirewallCmd(c *config) *cobra.Command {
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
+			cmd.Flags().String("firewall-rules-file", "", `firewall rules specified in a yaml file
+		
+Example:
+
+$ metalctl firewall create ..mandatory args.. --firewall-rules-file rules.yaml
+
+rules.yaml
+---
+egress:
+- comment: allow outgoing https
+  ports:
+  - 443
+  protocol: TCP
+  to:
+  - 0.0.0.0/0
+- comment: allow outgoing dns via tcp
+  ports:
+  - 53
+  protocol: TCP
+  to:
+  - 0.0.0.0/0
+- comment: allow outgoing dns and ntp via udp
+  ports:
+  - 53
+  - 123
+  protocol: UDP
+  to:
+  - 0.0.0.0/0
+ingress:
+- comment: allow incoming ssh only to one ip
+  ports:
+  - 22
+  protocol: TCP
+  from:
+  - 0.0.0.0/0
+  - 1.2.3.4/32
+  to:
+  - 212.34.83.19/32
+- comment: allow incoming https to all targets
+  ports:
+  - 80
+  - 433
+  protocol: TCP
+  from:
+  - 0.0.0.0/0
+
+`)
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -53,7 +102,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 			cmd.Flags().String("project", "", "allocation project to filter [optional]")
 			cmd.Flags().String("image", "", "allocation image to filter [optional]")
 			cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-			cmd.Flags().StringSlice("mac", []string{}, "mac to filter [optional]")
+			cmd.Flags().String("mac", "", "mac to filter [optional]")
 			cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
@@ -86,6 +135,11 @@ func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 }
 
 func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	resp, err := c.client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
@@ -94,7 +148,7 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		NicsMacAddresses:   macs,
 		Tags:               viper.GetStringSlice("tags"),
 	}), nil)
 	if err != nil {
@@ -157,11 +211,17 @@ func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCr
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		FirewallRules:      allocation.FirewallRules,
 	}
 }
 
 func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, error) {
 	mcr, err := machineCreateRequest()
+	if err != nil {
+		return nil, fmt.Errorf("firewall create error:%w", err)
+	}
+
+	firewallRules, err := parseFirewallRulesFile()
 	if err != nil {
 		return nil, fmt.Errorf("firewall create error:%w", err)
 	}
@@ -181,7 +241,27 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Tags:               mcr.Tags,
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
+		FirewallRules:      firewallRules,
 	}, nil
+}
+func parseFirewallRulesFile() (*models.V1FirewallRules, error) {
+	if !viper.IsSet("firewall-rules-file") {
+		return nil, nil
+	}
+
+	firewallRulesFile := viper.GetString("firewall-rules-file")
+	if firewallRulesFile == "" {
+		return nil, nil
+	}
+
+	firewallRules, err := os.ReadFile(firewallRulesFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var fwrules models.V1FirewallRules
+	err = yaml.Unmarshal(firewallRules, &fwrules)
+	return &fwrules, err
 }
 
 func (c *firewallCmd) firewallSSH(args []string) (err error) {

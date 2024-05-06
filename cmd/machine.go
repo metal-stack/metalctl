@@ -21,6 +21,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,6 +53,16 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 			models.V1FirewallFindRequestStateValueLOCKED,
 			models.V1MachineFindRequestStateValueRESERVED,
 		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "role", f: cobra.FixedCompletions([]string{
+			models.V1MachineAllocationRoleFirewall,
+			models.V1MachineAllocationRoleMachine,
+		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "manufacturer", f: c.comp.MachineManufacturerCompletion},
+		{flagName: "product-part-number", f: c.comp.MachineProductPartNumberCompletion},
+		{flagName: "product-serial", f: c.comp.MachineProductSerialCompletion},
+		{flagName: "board-part-number", f: c.comp.MachineBoardPartNumberCompletion},
+		{flagName: "network-destination-prefixes", f: c.comp.NetworkDestinationPrefixesCompletion},
+		{flagName: "network-ids", f: c.comp.NetworkListCompletion},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -66,6 +77,16 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("mac", "", "mac to filter [optional]")
 	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+	cmd.Flags().String("role", "", "allocation role to filter [optional]")
+	cmd.Flags().String("board-part-number", "", "fru board part number to filter [optional]")
+	cmd.Flags().String("manufacturer", "", "fru manufacturer to filter [optional]")
+	cmd.Flags().String("product-part-number", "", "fru product part number to filter [optional]")
+	cmd.Flags().String("product-serial", "", "fru product serial to filter [optional]")
+	cmd.Flags().String("bmc-address", "", "bmc ipmi address (needs to include port) to filter [optional]")
+	cmd.Flags().String("bmc-mac", "", "bmc mac address to filter [optional]")
+	cmd.Flags().String("network-destination-prefixes", "", "network destination prefixes to filter [optional]")
+	cmd.Flags().String("network-ids", "", "network ids to filter [optional]")
+	cmd.Flags().String("network-ips", "", "network ips to filter [optional]")
 
 	for _, c := range listFlagCompletions {
 		c := c
@@ -340,9 +361,17 @@ In case the machine did not register properly a direct ipmi console access is av
 		Short: `display machines which are in a potential bad state`,
 		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.machineIssues(args)
+			return w.machineIssuesEvaluate(args)
 		},
 		ValidArgsFunction: c.comp.MachineListCompletion,
+	}
+	machineIssuesListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   `list all machine issues that the metal-api can evaluate`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.machineIssuesList()
+		},
 	}
 	machineLogsCmd := &cobra.Command{
 		Use:     "logs <machine ID>",
@@ -366,35 +395,21 @@ In case the machine did not register properly a direct ipmi console access is av
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
 	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
 
-	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
+	w.listCmdFlags(machineIssuesCmd, 0)
 	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
 
-	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
-	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
+	machineIssuesCmd.AddCommand(machineIssuesListCmd)
+	genericcli.AddSortFlag(machineIssuesListCmd, sorters.MachineIssueSorter())
+
+	machineIssuesCmd.Flags().StringSlice("only", nil, "issue types to include [optional]")
+	machineIssuesCmd.Flags().StringSlice("omit", nil, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
 
-	var severities []string
-	for _, s := range api.AllSevereties() {
-		severities = append(severities, string(s))
-	}
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", cobra.FixedCompletions(severities, cobra.ShellCompDirectiveNoFileComp)))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.comp.IssueSeverityCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.comp.IssueTypeCompletion))
+	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.comp.IssueTypeCompletion))
 
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var shortNames []string
-		for _, i := range api.AllIssues() {
-			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
-		}
-		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	}))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var shortNames []string
-		for _, i := range api.AllIssues() {
-			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
-		}
-		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	}))
-
-	machineLogsCmd.Flags().Duration("last-event-error-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+	machineLogsCmd.Flags().Duration("last-event-error-threshold", 7*24*time.Hour, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
@@ -538,18 +553,33 @@ func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
 }
 
 func machineFindRequestFromCLI() *models.V1MachineFindRequest {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	return &models.V1MachineFindRequest{
-		ID:                 viper.GetString("id"),
-		PartitionID:        viper.GetString("partition"),
-		Sizeid:             viper.GetString("size"),
-		Rackid:             viper.GetString("rack"),
-		Name:               viper.GetString("name"),
-		AllocationProject:  viper.GetString("project"),
-		AllocationImageID:  viper.GetString("image"),
-		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
-		StateValue:         viper.GetString("state"),
-		Tags:               viper.GetStringSlice("tags"),
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         viper.GetString("id"),
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
 	}
 }
 
@@ -1270,69 +1300,109 @@ func (c *machineCmd) machineIpmi(args []string) error {
 	return c.listPrinter.Print(resp.Payload)
 }
 
-func (c *machineCmd) machineIssues(args []string) error {
+func (c *machineCmd) machineIssuesList() error {
+	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
+	if err != nil {
+		return err
+	}
+
 	sortKeys, err := genericcli.ParseSortFlags()
 	if err != nil {
 		return err
 	}
 
-	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	err = sorters.MachineIssueSorter().SortBy(issuesResp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
-	if err != nil {
-		return err
-	}
+	return c.listPrinter.Print(issuesResp.Payload)
+}
 
-	var (
-		severity = api.IssueSeverityMinor
-		only     []api.IssueType
-		omit     []api.IssueType
-	)
-
-	for _, o := range viper.GetStringSlice("only") {
-		only = append(only, api.IssueType(o))
-	}
-	for _, o := range viper.GetStringSlice("omit") {
-		omit = append(omit, api.IssueType(o))
-	}
-
-	if viper.IsSet("severity") {
-		severity, err = api.SeverityFromString(viper.GetString("severity"))
-		if err != nil {
-			return err
-		}
-	}
-
-	issues, err := api.FindIssues(&api.IssueConfig{
-		Machines:           resp.Payload,
-		Severity:           severity,
-		Only:               only,
-		Omit:               omit,
-		LastErrorThreshold: viper.GetDuration("last-event-error-threshold"),
-	})
-	if err != nil {
-		return err
-	}
-
+func (c *machineCmd) machineIssuesEvaluate(args []string) error {
+	var id string
 	if len(args) > 0 {
-		id, err := genericcli.GetExactlyOneArg(args)
+		var err error
+		id, err = genericcli.GetExactlyOneArg(args)
+		if err != nil {
+			return err
+		}
+	}
+
+	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
+	evalResp, err := c.client.Machine().Issues(machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         id,
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
+
+		LastErrorThreshold: pointer.PointerOrNil(int64(viper.GetDuration("last-event-error-threshold"))),
+		Omit:               viper.GetStringSlice("omit"),
+		Only:               viper.GetStringSlice("only"),
+		Severity:           pointer.PointerOrNil(viper.GetString("severity")),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	var machines []*models.V1MachineIPMIResponse
+	if len(args) > 0 {
+		machineResp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
-		mWithIssues := issues.Get(id)
-		if mWithIssues == nil {
-			fmt.Fprintf(c.out, "machine with id %q has no issues\n", id)
-			return nil
+		machines = append(machines, machineResp.Payload)
+	} else {
+		machinesResp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+		if err != nil {
+			return err
 		}
 
-		return c.describePrinter.Print(mWithIssues.Issues)
+		machines = machinesResp.Payload
 	}
 
-	return c.listPrinter.Print(issues)
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineIPMISorter().SortBy(machines, sortKeys...)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(&tableprinters.MachinesAndIssues{
+		Machines:         machines,
+		Issues:           issuesResp.Payload,
+		EvaluationResult: evalResp.Payload,
+	})
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {
