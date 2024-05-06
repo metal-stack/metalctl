@@ -15,12 +15,12 @@ import (
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPU Range"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPUs", "Labels"}
+		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPU Range", "Labels"}
 	}
 
 	for _, size := range data {
@@ -34,7 +34,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			case models.V1SizeConstraintTypeStorage:
 				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
 			case models.V1SizeConstraintTypeGpu:
-				gpu = fmt.Sprintf("%q: %d - %d", c.Identifier, c.Min, c.Max)
+				gpu = fmt.Sprintf("%s: %d - %d", c.Identifier, c.Min, c.Max)
 			}
 
 		}
