@@ -20,19 +20,25 @@ var (
 	size1 = &models.V1SizeResponse{
 		Constraints: []*models.V1SizeConstraint{
 			{
-				Max:  pointer.Pointer(int64(2)),
-				Min:  pointer.Pointer(int64(1)),
-				Type: pointer.Pointer("storage"),
+				Max:  int64(2),
+				Min:  int64(1),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 			},
 			{
-				Max:  pointer.Pointer(int64(4)),
-				Min:  pointer.Pointer(int64(3)),
-				Type: pointer.Pointer("memory"),
+				Max:  int64(4),
+				Min:  int64(3),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 			},
 			{
-				Max:  pointer.Pointer(int64(6)),
-				Min:  pointer.Pointer(int64(5)),
-				Type: pointer.Pointer("cores"),
+				Max:  int64(6),
+				Min:  int64(5),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
+			},
+			{
+				Max:        int64(1),
+				Min:        int64(1),
+				Type:       pointer.Pointer(models.V1SizeConstraintTypeGpu),
+				Identifier: "AD120GL*",
 			},
 		},
 		Reservations: []*models.V1SizeReservation{
@@ -60,19 +66,19 @@ var (
 	size2 = &models.V1SizeResponse{
 		Constraints: []*models.V1SizeConstraint{
 			{
-				Max:  pointer.Pointer(int64(2)),
-				Min:  pointer.Pointer(int64(1)),
-				Type: pointer.Pointer("storage"),
+				Max:  int64(2),
+				Min:  int64(1),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 			},
 			{
-				Max:  pointer.Pointer(int64(4)),
-				Min:  pointer.Pointer(int64(3)),
-				Type: pointer.Pointer("memory"),
+				Max:  int64(4),
+				Min:  int64(3),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 			},
 			{
-				Max:  pointer.Pointer(int64(6)),
-				Min:  pointer.Pointer(int64(5)),
-				Type: pointer.Pointer("cores"),
+				Max:  int64(6),
+				Min:  int64(5),
+				Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
 			},
 		},
 		Description: "size 2",
@@ -103,14 +109,14 @@ func Test_SizeCmd_MultiResult(t *testing.T) {
 				size2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
 2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                      size.metal-stack.io/drive-description=960GB NVMe
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                                        size.metal-stack.io/drive-description=960GB NVMe
 2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -119,10 +125,10 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 2 size-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|--------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
-|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
+|----|--------|-------------|--------------|-----------|--------------|---------------|-----------------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
+|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |                 |
 `),
 		},
 		{
@@ -228,22 +234,22 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 			},
 			want: size1,
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                      size.metal-stack.io/drive-description=960GB NVMe
+ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
+1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                                        size.metal-stack.io/drive-description=960GB NVMe
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 size-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |
-|----|--------|-------------|--------------|-----------|--------------|---------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |
+| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
+|----|--------|-------------|--------------|-----------|--------------|---------------|-----------------|
+|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
 `),
 		},
 		{
@@ -267,8 +273,8 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 					"--id", *want.ID,
 					"--name", want.Name,
 					"--description", want.Description,
-					"--max", strconv.FormatInt(*want.Constraints[0].Max, 10),
-					"--min", strconv.FormatInt(*want.Constraints[0].Min, 10),
+					"--max", strconv.FormatInt(want.Constraints[0].Max, 10),
+					"--min", strconv.FormatInt(want.Constraints[0].Min, 10),
 					"--type", *want.Constraints[0].Type,
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
@@ -307,19 +313,19 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 					})), nil).Return(&size.SuggestOK{
 						Payload: []*models.V1SizeConstraint{
 							{
-								Max:  pointer.Pointer(int64(2)),
-								Min:  pointer.Pointer(int64(1)),
-								Type: pointer.Pointer("storage"),
+								Max:  int64(2),
+								Min:  int64(1),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 							},
 							{
-								Max:  pointer.Pointer(int64(4)),
-								Min:  pointer.Pointer(int64(3)),
-								Type: pointer.Pointer("memory"),
+								Max:  int64(4),
+								Min:  int64(3),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 							},
 							{
-								Max:  pointer.Pointer(int64(6)),
-								Min:  pointer.Pointer(int64(5)),
-								Type: pointer.Pointer("cores"),
+								Max:  int64(6),
+								Min:  int64(5),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
 							},
 						},
 					}, nil)
@@ -328,19 +334,19 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 			want: &models.V1SizeResponse{
 				Constraints: []*models.V1SizeConstraint{
 					{
-						Max:  pointer.Pointer(int64(2)),
-						Min:  pointer.Pointer(int64(1)),
-						Type: pointer.Pointer("storage"),
+						Max:  int64(2),
+						Min:  int64(1),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 					},
 					{
-						Max:  pointer.Pointer(int64(4)),
-						Min:  pointer.Pointer(int64(3)),
-						Type: pointer.Pointer("memory"),
+						Max:  int64(4),
+						Min:  int64(3),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 					},
 					{
-						Max:  pointer.Pointer(int64(6)),
-						Min:  pointer.Pointer(int64(5)),
-						Type: pointer.Pointer("cores"),
+						Max:  int64(6),
+						Min:  int64(5),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
 					},
 				},
 				Description: "foo",

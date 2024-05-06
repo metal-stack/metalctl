@@ -30,8 +30,9 @@ func Test_HealthCmd(t *testing.T) {
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:  rest.HealthStatusHealthy,
-				Message: "ok",
+				Status:   rest.HealthStatusHealthy,
+				Message:  "ok",
+				Services: nil,
 			},
 		},
 		{
@@ -50,8 +51,9 @@ func Test_HealthCmd(t *testing.T) {
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:  rest.HealthStatusUnhealthy,
-				Message: "error",
+				Status:   rest.HealthStatusUnhealthy,
+				Message:  "error",
+				Services: nil,
 			},
 		},
 	}
