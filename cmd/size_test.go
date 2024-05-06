@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/go-openapi/strfmt"
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
@@ -289,6 +290,68 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 				},
 			},
 			want: size1,
+		},
+		{
+			name: "suggest",
+			cmd: func(want *models.V1SizeResponse) []string {
+
+				args := []string{"size", "suggest", "c1-large-x86", "--machine-id=1", "--name=mysize", "--description=foo", "--labels=1=b"}
+
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Size: func(mock *mock.Mock) {
+					mock.On("Suggest", testcommon.MatchIgnoreContext(t, size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
+						MachineID: pointer.Pointer("1"),
+					})), nil).Return(&size.SuggestOK{
+						Payload: []*models.V1SizeConstraint{
+							{
+								Max:  int64(2),
+								Min:  int64(1),
+								Type: pointer.Pointer("storage"),
+							},
+							{
+								Max:  int64(4),
+								Min:  int64(3),
+								Type: pointer.Pointer("memory"),
+							},
+							{
+								Max:  int64(6),
+								Min:  int64(5),
+								Type: pointer.Pointer("cores"),
+							},
+						},
+					}, nil)
+				},
+			},
+			want: &models.V1SizeResponse{
+				Constraints: []*models.V1SizeConstraint{
+					{
+						Max:  int64(2),
+						Min:  int64(1),
+						Type: pointer.Pointer("storage"),
+					},
+					{
+						Max:  int64(4),
+						Min:  int64(3),
+						Type: pointer.Pointer("memory"),
+					},
+					{
+						Max:  int64(6),
+						Min:  int64(5),
+						Type: pointer.Pointer("cores"),
+					},
+				},
+				Description: "foo",
+				ID:          pointer.Pointer("c1-large-x86"),
+				Name:        "mysize",
+				Labels: map[string]string{
+					"1": "b",
+				},
+				Changed: strfmt.DateTime(testTime),
+				Created: strfmt.DateTime(testTime),
+			},
 		},
 	}
 	for _, tt := range tests {

@@ -23,9 +23,8 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(&health.HealthOK{
 						Payload: &models.RestHealthResponse{
-							Status:   pointer.Pointer(string(rest.HealthStatusHealthy)),
-							Message:  pointer.Pointer("ok"),
-							Services: make(map[string]models.RestHealthResult),
+							Status:  pointer.Pointer(string(rest.HealthStatusHealthy)),
+							Message: pointer.Pointer("ok"),
 						},
 					}, nil)
 				},
@@ -45,9 +44,8 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(nil, &health.HealthInternalServerError{
 						Payload: &models.RestHealthResponse{
-							Status:   pointer.Pointer(string(rest.HealthStatusUnhealthy)),
-							Message:  pointer.Pointer("error"),
-							Services: make(map[string]models.RestHealthResult),
+							Status:  pointer.Pointer(string(rest.HealthStatusUnhealthy)),
+							Message: pointer.Pointer("error"),
 						},
 					})
 				},

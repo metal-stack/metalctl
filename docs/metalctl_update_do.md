@@ -9,7 +9,8 @@ metalctl update do [flags]
 ### Options
 
 ```
-  -h, --help   help for do
+  -h, --help             help for do
+  -v, --version string   the version to update to, by default updates to the supported version, use "latest" to update to latest version
 ```
 
 ### Options inherited from parent commands
