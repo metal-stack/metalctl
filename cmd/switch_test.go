@@ -28,9 +28,10 @@ var (
 						Cidrs: []string{"cidr"},
 						Vnis:  []string{"vni"},
 					},
-					Mac:  pointer.Pointer("a-mac"),
-					Name: pointer.Pointer("a-name"),
-					Vrf:  "100",
+					Mac:    pointer.Pointer("a-mac"),
+					Name:   pointer.Pointer("a-name"),
+					Vrf:    "100",
+					Actual: pointer.Pointer("UP"),
 				},
 			},
 		},
@@ -54,9 +55,10 @@ var (
 					Cidrs: []string{"cidr"},
 					Vnis:  []string{"vni"},
 				},
-				Mac:  pointer.Pointer("a-mac"),
-				Name: pointer.Pointer("a-name"),
-				Vrf:  "100",
+				Mac:    pointer.Pointer("a-mac"),
+				Name:   pointer.Pointer("a-name"),
+				Vrf:    "100",
+				Actual: pointer.Pointer("UP"),
 			},
 		},
 		Partition: partition1,
@@ -78,9 +80,10 @@ var (
 						Cidrs: []string{"cidr"},
 						Vnis:  []string{"vni"},
 					},
-					Mac:  pointer.Pointer("a-mac"),
-					Name: pointer.Pointer("a-name"),
-					Vrf:  "100",
+					Mac:    pointer.Pointer("a-mac"),
+					Name:   pointer.Pointer("a-name"),
+					Vrf:    "100",
+					Actual: pointer.Pointer("DOWN"),
 				},
 			},
 		},
@@ -104,9 +107,10 @@ var (
 					Cidrs: []string{"cidr"},
 					Vnis:  []string{"vni"},
 				},
-				Mac:  pointer.Pointer("a-mac"),
-				Name: pointer.Pointer("a-name"),
-				Vrf:  "100",
+				Mac:    pointer.Pointer("a-mac"),
+				Name:   pointer.Pointer("a-name"),
+				Vrf:    "100",
+				Actual: pointer.Pointer("UP"),
 			},
 		},
 		Partition: partition1,
@@ -405,6 +409,59 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 				},
 			},
 			want: switch1,
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_SwitchCmd_ToggleResult(t *testing.T) {
+	sw1Down := *switch1
+	sw1Down.Nics[0].Actual = pointer.Pointer("DOWN")
+
+	tests := []*test[currentSwitchPortStateDump]{
+		{
+			name: "query state",
+			cmd: func(want currentSwitchPortStateDump) []string {
+				return []string{"switch", "toggle", *switch1.ID, *switch1.Nics[0].Name}
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("FindSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.FindSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: currentSwitchPortStateDump{
+				Actual:  *switch1.Connections[0],
+				Desired: *switch1.Nics[0],
+			},
+		},
+		{
+			name: "toggle",
+			cmd: func(want currentSwitchPortStateDump) []string {
+				return []string{"switch", "toggle", *switch1.ID, *switch1.Nics[0].Name, "DOWN"}
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+
+					mock.On("ToggleSwitchPort",
+						testcommon.MatchIgnoreContext(t,
+							switch_operations.NewToggleSwitchPortParams().
+								WithID(*switch1.ID).
+								WithBody(&models.V1SwitchPortToggleRequest{
+									Nic:    switch1.Nics[0].Name,
+									Status: pointer.Pointer("DOWN"),
+								})), nil).Return(&switch_operations.ToggleSwitchPortOK{
+						Payload: &sw1Down,
+					}, nil)
+				},
+			},
+			want: currentSwitchPortStateDump{
+				Actual:  *sw1Down.Connections[0],
+				Desired: *sw1Down.Nics[0],
+			},
 		},
 	}
 	for _, tt := range tests {

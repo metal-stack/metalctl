@@ -426,21 +426,25 @@ func (c *switchCmd) togglePort(args []string) error {
 		response = resp.Payload
 	}
 
-	var actual models.V1SwitchConnection
-	var nic models.V1SwitchNic
+	var state currentSwitchPortStateDump
 
 	for _, con := range response.Connections {
 		if *con.Nic.Name == portid {
-			actual = *con
+			state.Actual = *con
 			break
 		}
 	}
 	for _, desired := range response.Nics {
 		if *desired.Name == portid {
-			nic = *desired
+			state.Desired = *desired
 			break
 		}
 	}
 
-	return c.describePrinter.Print(map[string]any{"desired": nic, "actual": actual})
+	return c.describePrinter.Print(state)
+}
+
+type currentSwitchPortStateDump struct {
+	Actual  models.V1SwitchConnection `json:"actual" yaml:"actual"`
+	Desired models.V1SwitchNic        `json:"desired" yaml:"desired"`
 }
