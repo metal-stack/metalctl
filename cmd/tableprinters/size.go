@@ -63,38 +63,6 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 	return header, rows, nil
 }
 
-func (t *TablePrinter) SizeMatchingLogTable(data []*models.V1SizeMatchingLog, wide bool) ([]string, [][]string, error) {
-	var (
-		header = []string{"Name", "Match", "CPU Constraint", "Memory Constraint", "Storage Constraint"}
-		rows   [][]string
-	)
-
-	for _, d := range data {
-		var cpu, memory, storage string
-		for _, cs := range d.Constraints {
-			c := cs.Constraint
-			switch *c.Type {
-			case "cores": // TODO: should be enums in spec
-				cpu = fmt.Sprintf("%d - %d\n%s\nmatches: %v", c.Min, c.Max, *cs.Log, *cs.Match)
-			case "memory":
-				memory = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
-			case "storage":
-				storage = fmt.Sprintf("%s - %s\n%s\nmatches: %v", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)), *cs.Log, *cs.Match)
-			}
-		}
-		sizeMatch := fmt.Sprintf("%v", *d.Match)
-
-		rows = append(rows, []string{*d.Name, sizeMatch, cpu, memory, storage})
-	}
-
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-		table.SetColMinWidth(3, 40)
-	})
-
-	return header, rows, nil
-}
-
 func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResponse, wide bool) ([]string, [][]string, error) {
 	var (
 		header = []string{"Partition", "Size", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}

@@ -315,17 +315,17 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 							{
 								Max:  int64(2),
 								Min:  int64(1),
-								Type: pointer.Pointer("storage"),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 							},
 							{
 								Max:  int64(4),
 								Min:  int64(3),
-								Type: pointer.Pointer("memory"),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 							},
 							{
 								Max:  int64(6),
 								Min:  int64(5),
-								Type: pointer.Pointer("cores"),
+								Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
 							},
 						},
 					}, nil)
@@ -336,17 +336,17 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 					{
 						Max:  int64(2),
 						Min:  int64(1),
-						Type: pointer.Pointer("storage"),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
 					},
 					{
 						Max:  int64(4),
 						Min:  int64(3),
-						Type: pointer.Pointer("memory"),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
 					},
 					{
 						Max:  int64(6),
 						Min:  int64(5),
-						Type: pointer.Pointer("cores"),
+						Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
 					},
 				},
 				Description: "foo",

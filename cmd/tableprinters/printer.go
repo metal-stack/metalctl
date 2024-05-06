@@ -105,10 +105,6 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SizeTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeResponse:
 		return t.SizeTable(d, wide)
-	case *models.V1SizeMatchingLog:
-		return t.SizeMatchingLogTable(pointer.WrapInSlice(d), wide)
-	case []*models.V1SizeMatchingLog:
-		return t.SizeMatchingLogTable(d, wide)
 	case *models.V1SizeReservationResponse:
 		return t.SizeReservationTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeReservationResponse:

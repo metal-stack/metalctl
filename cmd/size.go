@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/size"
@@ -63,18 +62,6 @@ func newSizeCmd(c *config) *cobra.Command {
 		},
 	}
 
-	tryCmd := &cobra.Command{
-		Use:   "try",
-		Short: "try a specific hardware spec and give the chosen size back",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.try()
-		},
-	}
-
-	tryCmd.Flags().Int32P("cores", "C", 0, "Cores of the hardware to try")
-	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
-	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
-
 	reservationsCmd := &cobra.Command{
 		Use:   "reservations",
 		Short: "manage size reservations",
@@ -111,7 +98,7 @@ func newSizeCmd(c *config) *cobra.Command {
 
 	must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd, reservationsCmd, suggestCmd)
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
 
 func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
@@ -209,43 +196,6 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 }
 
 // non-generic command handling
-
-func (c *sizeCmd) try() error {
-	var (
-		memory int64
-		disks  []*models.V1MachineBlockDevice
-	)
-
-	if viper.IsSet("memory") {
-		m, err := humanize.ParseBytes(viper.GetString("memory"))
-		if err != nil {
-			return err
-		}
-		memory = int64(m)
-	}
-
-	if viper.IsSet("storagesize") {
-		s, err := humanize.ParseBytes(viper.GetString("storagesize"))
-		if err != nil {
-			return err
-		}
-		disks = append(disks, &models.V1MachineBlockDevice{
-			Name: pointer.Pointer("/dev/trydisk"),
-			Size: pointer.Pointer(int64(s)),
-		})
-	}
-
-	resp, err := c.client.Size().FromHardware(size.NewFromHardwareParams().WithBody(&models.V1MachineHardware{
-		CPUCores: pointer.Pointer(viper.GetInt32("cores")),
-		Memory:   &memory,
-		Disks:    disks,
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	return c.listPrinter.Print(resp.Payload)
-}
 
 func (c sizeCmd) listReverations() error {
 	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams().WithBody(emptyBody), nil)
