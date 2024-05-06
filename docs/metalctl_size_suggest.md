@@ -1,11 +1,19 @@
-## metalctl update
+## metalctl size suggest
 
-update the program
+suggest size from a given machine id
+
+```
+metalctl size suggest <id> [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for update
+      --description string   The description of the suggested size (default "a suggested size")
+  -h, --help                 help for suggest
+      --labels strings       labels to add to the size
+      --machine-id string    Machine id used to create the size suggestion. [required]
+      --name string          The name of the suggested size (default "suggested-size")
 ```
 
 ### Options inherited from parent commands
@@ -38,7 +46,5 @@ update the program
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl update check](metalctl_update_check.md)	 - check for update of the program
-* [metalctl update do](metalctl_update_do.md)	 - do the update of the program
+* [metalctl size](metalctl_size.md)	 - manage size entities
 
