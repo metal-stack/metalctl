@@ -90,11 +90,11 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				Sizeimageconstraint: func(mock *mock.Mock) {
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(nil, &sizeimageconstraint.CreateSizeImageConstraintConflict{}).Once()
-					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToCreate(sic1))), nil).Return(nil, &sizeimageconstraint.CreateSizeImageConstraintConflict{}).Once()
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic2))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToCreate(sic2))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic2,
 					}, nil)
 				},
@@ -114,7 +114,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				Sizeimageconstraint: func(mock *mock.Mock) {
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic1,
 					}, nil)
 				},
@@ -133,7 +133,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				Sizeimageconstraint: func(mock *mock.Mock) {
-					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
 				},
@@ -205,7 +205,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				Sizeimageconstraint: func(mock *mock.Mock) {
-					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
+					mock.On("CreateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewCreateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToCreate(sic1))), nil).Return(&sizeimageconstraint.CreateSizeImageConstraintCreated{
 						Payload: sic1,
 					}, nil)
 				},
@@ -222,7 +222,7 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 			},
 			mocks: &client.MetalMockFns{
 				Sizeimageconstraint: func(mock *mock.Mock) {
-					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageContraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
+					mock.On("UpdateSizeImageConstraint", testcommon.MatchIgnoreContext(t, sizeimageconstraint.NewUpdateSizeImageConstraintParams().WithBody(sizeImageConstraintResponseToUpdate(sic1))), nil).Return(&sizeimageconstraint.UpdateSizeImageConstraintOK{
 						Payload: sic1,
 					}, nil)
 				},

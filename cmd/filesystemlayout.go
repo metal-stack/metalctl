@@ -47,10 +47,10 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	tryCmd.Flags().StringP("size", "", "", "size to try")
 	tryCmd.Flags().StringP("image", "", "", "image to try")
-	must(tryCmd.MarkFlagRequired("size"))
-	must(tryCmd.MarkFlagRequired("image"))
-	must(tryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(tryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	genericcli.Must(tryCmd.MarkFlagRequired("size"))
+	genericcli.Must(tryCmd.MarkFlagRequired("image"))
+	genericcli.Must(tryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(tryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
 	matchCmd := &cobra.Command{
 		Use:   "match",
@@ -62,10 +62,10 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	matchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	matchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
-	must(matchCmd.MarkFlagRequired("machine"))
-	must(matchCmd.MarkFlagRequired("filesystemlayout"))
-	must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
-	must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
+	genericcli.Must(matchCmd.MarkFlagRequired("machine"))
+	genericcli.Must(matchCmd.MarkFlagRequired("filesystemlayout"))
+	genericcli.Must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
+	genericcli.Must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
 	return genericcli.NewCmds(cmdsConfig, tryCmd, matchCmd)
 }

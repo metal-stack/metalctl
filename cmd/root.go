@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
@@ -65,12 +66,12 @@ func newRootCmd(c *config) *cobra.Command {
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			viper.SetFs(c.fs)
-			must(viper.BindPFlags(cmd.Flags()))
-			must(viper.BindPFlags(cmd.PersistentFlags()))
+			genericcli.Must(viper.BindPFlags(cmd.Flags()))
+			genericcli.Must(viper.BindPFlags(cmd.PersistentFlags()))
 			// we cannot instantiate the config earlier because
 			// cobra flags do not work so early in the game
-			must(readConfigFile())
-			must(initConfigWithViperCtx(c))
+			genericcli.Must(readConfigFile())
+			genericcli.Must(initConfigWithViperCtx(c))
 		},
 	}
 
@@ -112,7 +113,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 
-	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
+	genericcli.Must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
 	rootCmd.AddCommand(newAuditCmd(c))
 	rootCmd.AddCommand(newFirmwareCmd(c))

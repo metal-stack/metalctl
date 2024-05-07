@@ -49,9 +49,9 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network from where the IP should be allocated.")
 			cmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
-			must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
@@ -62,11 +62,11 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network to filter [optional]")
 			cmd.Flags().StringP("name", "", "", "name to filter [optional]")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to filter [optional]")
-			must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
-			must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
 		},
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Aliases = append(cmd.Aliases, "free")

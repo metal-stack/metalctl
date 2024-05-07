@@ -47,7 +47,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
 			cmd.Flags().String("firewall-rules-file", "", `firewall rules specified in a yaml file
-		
+
 Example:
 
 $ metalctl firewall create ..mandatory args.. --firewall-rules-file rules.yaml
@@ -104,11 +104,11 @@ ingress:
 			cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
 			cmd.Flags().String("mac", "", "mac to filter [optional]")
 			cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
-			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 		},
 	}
 

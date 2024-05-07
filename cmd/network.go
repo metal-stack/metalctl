@@ -54,8 +54,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().BoolP("underlay", "", false, "set underlay flag of network, if set to true, this is used to transport underlay network traffic")
 			cmd.Flags().Int64P("vrf", "", 0, "vrf of this network")
 			cmd.Flags().BoolP("vrfshared", "", false, "vrf shared allows multiple networks to share a vrf")
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -69,8 +69,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().Int64P("vrf", "", 0, "vrf to filter [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes to filter, use it like: --prefixes prefix1,prefix2.")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -140,12 +140,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
-	must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
-	must(allocateCmd.MarkFlagRequired("name"))
-	must(allocateCmd.MarkFlagRequired("project"))
-	must(allocateCmd.MarkFlagRequired("partition"))
+	genericcli.Must(allocateCmd.MarkFlagRequired("name"))
+	genericcli.Must(allocateCmd.MarkFlagRequired("project"))
+	genericcli.Must(allocateCmd.MarkFlagRequired("partition"))
 
 	return genericcli.NewCmds(
 		cmdsConfig,
@@ -283,11 +283,11 @@ type networkChildCRUD struct {
 }
 
 func (c networkChildCRUD) Get(id string) (*models.V1NetworkResponse, error) {
-	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+	return nil, fmt.Errorf("not implemented for child networks, use network update")
 }
 
 func (c networkChildCRUD) List() ([]*models.V1NetworkResponse, error) {
-	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+	return nil, fmt.Errorf("not implemented for child networks, use network update")
 }
 
 func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
@@ -313,7 +313,7 @@ func (c networkChildCRUD) Create(rq *models.V1NetworkAllocateRequest) (*models.V
 }
 
 func (c networkChildCRUD) Update(rq any) (*models.V1NetworkResponse, error) {
-	return nil, fmt.Errorf("not implemented for child netowrks, use network update")
+	return nil, fmt.Errorf("not implemented for child networks, use network update")
 }
 
 func (c networkChildCRUD) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkAllocateRequest, any, error) {

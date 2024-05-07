@@ -46,8 +46,8 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 
 	tryCmd.Flags().StringP("size", "", "", "size to check if allocaltion is possible")
 	tryCmd.Flags().StringP("image", "", "", "image to check if allocaltion is possible")
-	must(tryCmd.MarkFlagRequired("size"))
-	must(tryCmd.MarkFlagRequired("image"))
+	genericcli.Must(tryCmd.MarkFlagRequired("size"))
+	genericcli.Must(tryCmd.MarkFlagRequired("image"))
 
 	return genericcli.NewCmds(cmdsConfig, tryCmd)
 }
@@ -105,10 +105,10 @@ func (c sizeImageConstraintCmd) Convert(r *models.V1SizeImageConstraintResponse)
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}
-	return *r.ID, sizeImageContraintResponseToCreate(r), sizeImageContraintResponseToUpdate(r), nil
+	return *r.ID, sizeImageConstraintResponseToCreate(r), sizeImageConstraintResponseToUpdate(r), nil
 }
 
-func sizeImageContraintResponseToCreate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {
+func sizeImageConstraintResponseToCreate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintCreateRequest {
 	return &models.V1SizeImageConstraintCreateRequest{
 		Constraints: r.Constraints,
 		Description: r.Description,
@@ -117,7 +117,7 @@ func sizeImageContraintResponseToCreate(r *models.V1SizeImageConstraintResponse)
 	}
 }
 
-func sizeImageContraintResponseToUpdate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintUpdateRequest {
+func sizeImageConstraintResponseToUpdate(r *models.V1SizeImageConstraintResponse) *models.V1SizeImageConstraintUpdateRequest {
 	return &models.V1SizeImageConstraintUpdateRequest{
 		Constraints: r.Constraints,
 		Description: r.Description,
