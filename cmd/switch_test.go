@@ -149,7 +149,7 @@ ID   PARTITION   RACK     OS   STATUS   LAST SYNC
 2    1           rack-1   🐢   ●        0s ago
 `),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
 1    1           rack-1   SONiC (1)     1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
 2    1           rack-1   Cumulus (2)                         operational   0s ago      1s              5m ago: error
 `),
@@ -196,7 +196,7 @@ ID   PARTITION   RACK     OS   STATUS   LAST SYNC
 1    1           rack-1   🦔   ●        0s ago
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
 1    1           rack-1   SONiC (1)   1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -321,18 +321,18 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 				},
 			},
 			wantTable: pointer.Pointer(`
-ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
-1                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
-2                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+ID             NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
+1                                           1           rack-1
+└─╴machine-1   a-name          a-mac        1           rack-1   n1-medium-x86   123
+2                                           1           rack-1
+└─╴machine-1   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   123
 `),
 			wantWideTable: pointer.Pointer(`
-ID                  NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL
-1                                           1           rack-1
-└─╴machine-1   ❓   a-name     a-mac        1           rack-1   n1-medium-x86   alloc-1    123
-2                                           1           rack-1
-└─╴machine-1   ❓   a-name     a-mac        1           rack-1   n1-medium-x86   alloc-1    123
+ID                  NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL
+1                                                1           rack-1
+└─╴machine-1   ❓   a-name          a-mac        1           rack-1   n1-medium-x86   alloc-1    123
+2                                                1           rack-1
+└─╴machine-1   ❓   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   alloc-1    123
 `),
 			template: pointer.Pointer(`{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}`),
 			wantTemplate: pointer.Pointer(`
@@ -366,7 +366,7 @@ ID   PARTITION   RACK     OS   STATUS   LAST SYNC
 1    1           rack-1   🦔   ●        0s ago
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
+ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
 1    1           rack-1   SONiC (1)   1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
 					`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
