@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -417,14 +418,19 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 }
 
 func Test_SwitchCmd_ToggleResult(t *testing.T) {
-	sw1Down := *switch1
+	// first create a full copy of the test data so we can change some data
+	data, err := json.Marshal(switch1)
+	require.NoError(t, err)
+	var sw1Down models.V1SwitchResponse
+	err = json.Unmarshal(data, &sw1Down)
+	require.NoError(t, err)
 	sw1Down.Nics[0].Actual = pointer.Pointer("DOWN")
 
 	tests := []*test[currentSwitchPortStateDump]{
 		{
 			name: "query state",
 			cmd: func(want currentSwitchPortStateDump) []string {
-				return []string{"switch", "toggle", *switch1.ID, *switch1.Nics[0].Name}
+				return []string{"switch", "port", "describe", *switch1.ID, "--port", *switch1.Nics[0].Name}
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {
@@ -439,9 +445,9 @@ func Test_SwitchCmd_ToggleResult(t *testing.T) {
 			},
 		},
 		{
-			name: "toggle",
+			name: "toggle down",
 			cmd: func(want currentSwitchPortStateDump) []string {
-				return []string{"switch", "toggle", *switch1.ID, *switch1.Nics[0].Name, "DOWN"}
+				return []string{"switch", "port", "down", *switch1.ID, "--port", *switch1.Nics[0].Name}
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {

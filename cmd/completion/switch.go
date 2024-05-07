@@ -78,7 +78,25 @@ func (c *Completion) SwitchOSVersionListCompletion(cmd *cobra.Command, args []st
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
-func (c *Completion) SwitchListAndPortCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+func (c *Completion) SwitchListPorts(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) == 0 {
+		// there is no switch selected so we cannot get the list of ports
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(args[0]), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, n := range resp.Payload.Nics {
+		if n != nil {
+			names = append(names, *n.Name)
+		}
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (c *Completion) xSwitchListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	var names []string
 	if len(args) == 0 {
 		resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
