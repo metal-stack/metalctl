@@ -156,7 +156,7 @@ Operational steps to replace a switch:
 	togglePortCmd := &cobra.Command{
 		Use:   "toggle <switchID> <portID> [<desiredstate>]",
 		Short: "toggles the given switch port up or down",
-		Long:  "this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port. if no state is given it will toggle the current state.",
+		Long:  "this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port. if no state is given it will show the current state.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.togglePort(args)
 		},
