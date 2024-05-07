@@ -62,12 +62,12 @@ func newImageCmd(c *config) *cobra.Command {
 			cmd.Flags().String("os", "", "OS derivate of this image.")
 			cmd.Flags().String("version", "", "Version of this image.")
 
-			must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
-			must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
-			must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
-			must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
-			must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
 		},
 	}
 

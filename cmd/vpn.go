@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -29,8 +30,8 @@ metalctl vpn key \
 
 	vpnKeyCmd.Flags().String("project", "", "project ID for which auth key should be created")
 	vpnKeyCmd.Flags().Bool("ephemeral", true, "create an ephemeral key")
-	must(vpnKeyCmd.MarkFlagRequired("project"))
-	must(vpnKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(vpnKeyCmd.MarkFlagRequired("project"))
+	genericcli.Must(vpnKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	vpnCmd.AddCommand(vpnKeyCmd)
 
 	return vpnCmd

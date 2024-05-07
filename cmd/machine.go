@@ -90,7 +90,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 
 	for _, c := range listFlagCompletions {
 		c := c
-		must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
+		genericcli.Must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
 
 	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
@@ -405,9 +405,9 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd.Flags().StringSlice("omit", nil, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
 
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.comp.IssueSeverityCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.comp.IssueTypeCompletion))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.comp.IssueTypeCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.comp.IssueSeverityCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.comp.IssueTypeCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.comp.IssueTypeCompletion))
 
 	machineLogsCmd.Flags().Duration("last-event-error-threshold", 7*24*time.Hour, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
@@ -415,12 +415,12 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
+	genericcli.Must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
+	genericcli.Must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
@@ -445,7 +445,7 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
 	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
-	must(machineReinstallCmd.MarkFlagRequired("image"))
+	genericcli.Must(machineReinstallCmd.MarkFlagRequired("image"))
 
 	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
@@ -524,14 +524,14 @@ MODE can be omitted or one of:
 	cmd.MarkFlagsRequiredTogether("size", "partition")
 
 	// Completion for arguments
-	must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
 func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {

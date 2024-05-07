@@ -52,12 +52,12 @@ func newSwitchCmd(c *config) *cobra.Command {
 			cmd.Flags().String("partition", "", "Partition of this switch.")
 			cmd.Flags().String("rack", "", "Rack of this switch.")
 
-			must(cmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
 		},
 	}
 
@@ -77,10 +77,10 @@ func newSwitchCmd(c *config) *cobra.Command {
 	switchDetailCmd.Flags().String("partition", "", "Partition of this switch.")
 	switchDetailCmd.Flags().String("rack", "", "Rack of this switch.")
 
-	must(switchDetailCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
-	must(switchDetailCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
-	must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
 
 	switchMachinesCmd := &cobra.Command{
 		Use:   "connected-machines",
@@ -108,12 +108,12 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 	switchMachinesCmd.Flags().String("size", "", "Size of the connected machines.")
 	switchMachinesCmd.Flags().String("machine-id", "", "The id of the connected machine, ignores size flag if set.")
 
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(switchMachinesCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
 
 	switchReplaceCmd := &cobra.Command{
 		Use:   "replace <switchID>",

@@ -59,14 +59,14 @@ func newAuditCmd(c *config) *cobra.Command {
 
 			cmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
 
-			must(cmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
-			must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 		},
 		DescribeCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
 			cmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
 
-			must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
 		},
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,

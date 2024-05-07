@@ -96,7 +96,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	suggestCmd.Flags().String("description", "a suggested size", "The description of the suggested size")
 	suggestCmd.Flags().StringSlice("labels", []string{}, "labels to add to the size")
 
-	must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
+	genericcli.Must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
 
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
