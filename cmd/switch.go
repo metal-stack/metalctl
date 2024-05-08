@@ -172,7 +172,7 @@ Operational steps to replace a switch:
 	}
 
 	switchPortUpCmd := &cobra.Command{
-		Use:   "up <machine ID>",
+		Use:   "up <switch ID>",
 		Short: "sets the given switch port state up",
 		Long:  "sets the port status to UP so the connected machine will be able to connect to the switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -182,7 +182,7 @@ Operational steps to replace a switch:
 	}
 
 	switchPortDownCmd := &cobra.Command{
-		Use:   "down <machine ID>",
+		Use:   "down <switch ID>",
 		Short: "sets the given switch port state down",
 		Long:  "sets the port status to DOWN so the connected machine will not be able to connect to the switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -480,6 +480,10 @@ func (c *switchCmd) dumpPortState(rsp *models.V1SwitchResponse, portid string) e
 			state.Desired = *desired
 			break
 		}
+	}
+
+	if state.Actual.Nic == nil {
+		return fmt.Errorf("no machine connected to port %s on switch %s", portid, *rsp.ID)
 	}
 
 	return c.describePrinter.Print(state)

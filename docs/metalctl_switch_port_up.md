@@ -7,7 +7,7 @@ sets the given switch port state up
 sets the port status to UP so the connected machine will be able to connect to the switch.
 
 ```
-metalctl switch port up <machine ID> [flags]
+metalctl switch port up <switch ID> [flags]
 ```
 
 ### Options
