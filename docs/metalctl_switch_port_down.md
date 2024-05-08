@@ -7,7 +7,7 @@ sets the given switch port state down
 sets the port status to DOWN so the connected machine will not be able to connect to the switch.
 
 ```
-metalctl switch port down <machine ID> [flags]
+metalctl switch port down <switch ID> [flags]
 ```
 
 ### Options
