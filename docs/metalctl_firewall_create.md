@@ -25,7 +25,7 @@ metalctl firewall create [flags]
                                      	
       --filesystemlayout string      Filesystemlayout to use during machine installation. [optional]
       --firewall-rules-file string   firewall rules specified in a yaml file
-                                     		
+                                     
                                      Example:
                                      
                                      $ metalctl firewall create ..mandatory args.. --firewall-rules-file rules.yaml

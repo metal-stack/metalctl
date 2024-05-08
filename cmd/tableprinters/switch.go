@@ -22,7 +22,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 	header := []string{"ID", "Partition", "Rack", "OS", "Status", "Last Sync"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
 
 		t.t.MutateTable(func(table *tablewriter.Table) {
 			table.SetAutoWrapText(false)
@@ -38,9 +38,30 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			syncTime    time.Time
 			syncLast    = ""
 			syncDurStr  = ""
-			syncError   = ""
+			lastError   = ""
 			shortStatus = nbr
+			allup       = true
 		)
+
+		nicmap := make(map[string]*models.V1SwitchNic)
+		for _, n := range s.Nics {
+			if n.Name != nil {
+				nicmap[*n.Name] = n
+			}
+		}
+		for _, c := range s.Connections {
+			if c.Nic != nil && c.Nic.Actual != nil {
+				allup = allup && *c.Nic.Actual == "UP"
+				if !allup {
+					desired := pointer.SafeDeref(nicmap[pointer.SafeDeref(c.Nic.Name)].Actual)
+					lastError = fmt.Sprintf("%q is %s", pointer.SafeDeref(c.Nic.Name), *c.Nic.Actual)
+					if desired != *c.Nic.Actual {
+						lastError = fmt.Sprintf("%q is %s but should be %s", pointer.SafeDeref(c.Nic.Name), *c.Nic.Actual, desired)
+					}
+					break
+				}
+			}
+		}
 
 		if s.LastSync != nil {
 			syncTime = time.Time(*s.LastSync.Time)
@@ -53,6 +74,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 				shortStatus = color.YellowString(dot)
 			} else {
 				shortStatus = color.GreenString(dot)
+				if !allup {
+					shortStatus = color.YellowString(dot)
+				}
 			}
 
 			syncLast = humanizeDuration(syncAge) + " ago"
@@ -63,7 +87,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 			errorTime := time.Time(*s.LastSyncError.Time)
 			// after 7 days we do not show sync errors anymore
 			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
-				syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+				lastError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
 
 				if errorTime.After(time.Time(pointer.SafeDeref(pointer.SafeDeref(s.LastSync).Time))) {
 					shortStatus = color.RedString(dot)
@@ -102,7 +126,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		}
 
 		if wide {
-			rows = append(rows, []string{id, partition, rack, os, metalCore, s.ManagementIP, mode, syncLast, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, metalCore, s.ManagementIP, mode, syncLast, syncDurStr, lastError})
 		} else {
 			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus, syncLast})
 		}
@@ -125,6 +149,9 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 	if wide {
 		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial"}
 	}
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	for _, s := range data.SS {
 		id := pointer.SafeDeref(s.ID)
@@ -180,13 +207,20 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 				identifier = pointer.SafeDeref(conn.Nic.Mac)
 			}
 
+			nic := pointer.SafeDeref(conn.Nic)
+			nicname := pointer.SafeDeref(nic.Name)
+			nicstate := pointer.SafeDeref(nic.Actual)
+			if nicstate != "UP" {
+				nicname = fmt.Sprintf("%s (%s)", nicname, color.RedString(nicstate))
+			}
+
 			if wide {
 				emojis, _ := t.getMachineStatusEmojis(m.Liveliness, m.Events, m.State, pointer.SafeDeref(m.Allocation).Vpn)
 
 				rows = append(rows, []string{
 					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
 					emojis,
-					pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+					nicname,
 					identifier,
 					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
 					m.Rackid,
@@ -197,7 +231,7 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 			} else {
 				rows = append(rows, []string{
 					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
-					pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
+					nicname,
 					identifier,
 					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
 					m.Rackid,

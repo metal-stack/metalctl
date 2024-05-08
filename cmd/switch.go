@@ -154,7 +154,46 @@ Operational steps to replace a switch:
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
 
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd)
+	switchPortCmd := &cobra.Command{
+		Use:   "port",
+		Short: "sets the given switch port state up or down",
+	}
+	switchPortCmd.PersistentFlags().String("port", "", "the port to be changed.")
+	genericcli.Must(switchPortCmd.RegisterFlagCompletionFunc("port", c.comp.SwitchListPorts))
+
+	switchPortDescribeCmd := &cobra.Command{
+		Use:   "describe <switch ID>",
+		Short: "gets the given switch port state",
+		Long:  "shows the current actual and desired state of the port of the given switch.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.describePort(args)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+
+	switchPortUpCmd := &cobra.Command{
+		Use:   "up <machine ID>",
+		Short: "sets the given switch port state up",
+		Long:  "sets the port status to UP so the connected machine will be able to connect to the switch.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.togglePort(args, models.V1SwitchPortToggleRequestStatusUP)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+
+	switchPortDownCmd := &cobra.Command{
+		Use:   "down <machine ID>",
+		Short: "sets the given switch port state down",
+		Long:  "sets the port status to DOWN so the connected machine will not be able to connect to the switch.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.togglePort(args, models.V1SwitchPortToggleRequestStatusDOWN)
+		},
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+	}
+
+	switchPortCmd.AddCommand(switchPortUpCmd, switchPortDownCmd, switchPortDescribeCmd)
+
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd, switchPortCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -386,4 +425,67 @@ telnet console-server 7008`)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stdout
 	return cmd.Run()
+}
+
+func (c *switchCmd) describePort(args []string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	portid := viper.GetString("port")
+	if portid == "" {
+		return fmt.Errorf("missing port")
+	}
+
+	resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
+	if err != nil {
+		return err
+	}
+	return c.dumpPortState(resp.Payload, portid)
+}
+
+func (c *switchCmd) togglePort(args []string, status string) error {
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return err
+	}
+
+	portid := viper.GetString("port")
+	if portid == "" {
+		return fmt.Errorf("missing port")
+	}
+
+	resp, err := c.client.SwitchOperations().ToggleSwitchPort(switch_operations.NewToggleSwitchPortParams().WithID(id).WithBody(&models.V1SwitchPortToggleRequest{
+		Nic:    &portid,
+		Status: &status,
+	}), nil)
+	if err != nil {
+		return err
+	}
+	return c.dumpPortState(resp.Payload, portid)
+}
+
+func (c *switchCmd) dumpPortState(rsp *models.V1SwitchResponse, portid string) error {
+	var state currentSwitchPortStateDump
+
+	for _, con := range rsp.Connections {
+		if *con.Nic.Name == portid {
+			state.Actual = *con
+			break
+		}
+	}
+	for _, desired := range rsp.Nics {
+		if *desired.Name == portid {
+			state.Desired = *desired
+			break
+		}
+	}
+
+	return c.describePrinter.Print(state)
+}
+
+type currentSwitchPortStateDump struct {
+	Actual  models.V1SwitchConnection `json:"actual" yaml:"actual"`
+	Desired models.V1SwitchNic        `json:"desired" yaml:"desired"`
 }
