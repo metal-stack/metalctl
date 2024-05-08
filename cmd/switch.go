@@ -159,10 +159,10 @@ Operational steps to replace a switch:
 		Short: "sets the given switch port state up or down",
 	}
 	switchPortCmd.PersistentFlags().String("port", "", "the port to be changed.")
-	must(switchPortCmd.RegisterFlagCompletionFunc("port", c.comp.SwitchListPorts))
+	genericcli.Must(switchPortCmd.RegisterFlagCompletionFunc("port", c.comp.SwitchListPorts))
 
 	switchPortDescribeCmd := &cobra.Command{
-		Use:   "describe <machine ID>",
+		Use:   "describe <switch ID>",
 		Short: "gets the given switch port state",
 		Long:  "shows the current actual and desired state of the port of the given switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -176,7 +176,7 @@ Operational steps to replace a switch:
 		Short: "sets the given switch port state up",
 		Long:  "sets the port status to UP so the connected machine will be able to connect to the switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.togglePort(args, "UP")
+			return w.togglePort(args, models.V1SwitchPortToggleRequestStatusUP)
 		},
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
@@ -186,7 +186,7 @@ Operational steps to replace a switch:
 		Short: "sets the given switch port state down",
 		Long:  "sets the port status to DOWN so the connected machine will not be able to connect to the switch.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.togglePort(args, "DOWN")
+			return w.togglePort(args, models.V1SwitchPortToggleRequestStatusDOWN)
 		},
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}

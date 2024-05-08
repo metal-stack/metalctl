@@ -1,19 +1,19 @@
-## metalctl switch toggle
+## metalctl switch port describe
 
-toggles the given switch port up or down
+gets the given switch port state
 
 ### Synopsis
 
-this sets the port status to the desired value (up or down) so you can reconnect/disconnect a machine to/from a switch port. if no state is given it will show the current state.
+shows the current actual and desired state of the port of the given switch.
 
 ```
-metalctl switch toggle <switchID> <portID> [<desiredstate>] [flags]
+metalctl switch port describe <switch ID> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for toggle
+  -h, --help   help for describe
 ```
 
 ### Options inherited from parent commands
@@ -34,6 +34,7 @@ metalctl switch toggle <switchID> <portID> [<desiredstate>] [flags]
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
       --no-headers             do not print headers of table output format (default print headers)
   -o, --output-format string   output format (table|wide|markdown|json|yaml|template), wide is a table with more columns. (default "table")
+      --port string            the port to be changed.
       --template string        output template for template output-format, go template format.
                                For property names inspect the output of -o json or -o yaml for reference.
                                Example for machines:
@@ -46,5 +47,5 @@ metalctl switch toggle <switchID> <portID> [<desiredstate>] [flags]
 
 ### SEE ALSO
 
-* [metalctl switch](metalctl_switch.md)	 - manage switch entities
+* [metalctl switch port](metalctl_switch_port.md)	 - sets the given switch port state up or down
 
