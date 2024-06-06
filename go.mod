@@ -21,8 +21,8 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	github.com/undefinedlabs/go-mpatch v1.0.7
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.30.1
-	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -168,10 +168,10 @@ require (
 	google.golang.org/protobuf v1.34.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gvisor.dev/gvisor v0.0.0-20230928000133-4fe30062272c // indirect
 	inet.af/peercred v0.0.0-20210906144145-0893ea02156a // indirect
 	nhooyr.io/websocket v1.8.10 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 	tailscale.com v1.54.1 // indirect
 )
