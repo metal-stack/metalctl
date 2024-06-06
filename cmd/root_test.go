@@ -40,7 +40,9 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 		_, err := w.Write(mustMarshal(t, &models.RestHealthResponse{
 			Status: pointer.Pointer(string(rest.HealthStatusHealthy)),
 		}))
-		require.NoError(t, err)
+		if err != nil {
+			t.Errorf("error writing response: %s", err)
+		}
 	}))
 	defer ts.Close()
 
