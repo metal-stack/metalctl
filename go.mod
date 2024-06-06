@@ -1,6 +1,6 @@
 module github.com/metal-stack/metalctl
 
-go 1.22.0
+go 1.22
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -22,7 +22,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/undefinedlabs/go-mpatch v1.0.7
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apimachinery v0.30.1
+	k8s.io/apimachinery v0.29.3
 )
 
 require (
