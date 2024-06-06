@@ -45,6 +45,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "partition", f: c.comp.PartitionListCompletion},
 		{flagName: "size", f: c.comp.SizeListCompletion},
 		{flagName: "project", f: c.comp.ProjectListCompletion},
+		{flagName: "rack", f: c.comp.MachineRackListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
 		{flagName: "image", f: c.comp.ImageListCompletion},
 		{flagName: "state", f: cobra.FixedCompletions([]string{

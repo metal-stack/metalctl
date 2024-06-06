@@ -135,3 +135,24 @@ func (c *Completion) IssueSeverityCompletion(cmd *cobra.Command, args []string, 
 
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (c *Completion) MachineRackListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	mfr := &models.V1MachineFindRequest{}
+
+	if cmd.Flag("partition") != nil {
+		if partition := cmd.Flag("partition").Value.String(); partition != "" {
+			mfr.PartitionID = partition
+		}
+	}
+
+	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(mfr), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, m := range resp.Payload {
+		names = append(names, m.Rackid)
+	}
+
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
