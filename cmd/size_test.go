@@ -47,12 +47,18 @@ var (
 				Description:  "for testing",
 				Partitionids: []string{*partition1.ID},
 				Projectid:    pointer.Pointer(project1.Meta.ID),
+				Labels: map[string]string{
+					"size.metal-stack.io/reserved-by": "admin",
+				},
 			},
 			{
 				Amount:       pointer.Pointer(int32(2)),
 				Description:  "for testing",
 				Partitionids: []string{*partition2.ID},
 				Projectid:    pointer.Pointer(project2.Meta.ID),
+				Labels: map[string]string{
+					"size.metal-stack.io/reserved-by": "admin",
+				},
 			},
 		},
 		Labels: map[string]string{
@@ -290,6 +296,7 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 							Type: size1.Constraints[0].Type,
 						},
 					}
+					s.Reservations = nil
 					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size1))), nil).Return(&size.CreateSizeCreated{
 						Payload: size1,
 					}, nil)
@@ -376,6 +383,9 @@ func Test_SizeReservationsCmd_MultiResult(t *testing.T) {
 			Sizeid:             pointer.Pointer("size-1"),
 			Tenant:             pointer.Pointer("tenant-1"),
 			Usedreservations:   pointer.Pointer(int32(5)),
+			Labels: map[string]string{
+				"size.metal-stack.io/reserved-by": "admin",
+			},
 		},
 		{
 			Partitionid:        pointer.Pointer("b"),
@@ -386,6 +396,9 @@ func Test_SizeReservationsCmd_MultiResult(t *testing.T) {
 			Sizeid:             pointer.Pointer("size-2"),
 			Tenant:             pointer.Pointer("tenant-2"),
 			Usedreservations:   pointer.Pointer(int32(1)),
+			Labels: map[string]string{
+				"size.metal-stack.io/reserved-by": "admin",
+			},
 		},
 	}
 
@@ -407,9 +420,9 @@ a           size-1   tenant-1   1         project-1      5/5           10
 b           size-2   tenant-2   2         project-2      1/3           1
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TENANT     PROJECT   PROJECT NAME   USED/AMOUNT   PROJECT ALLOCATIONS
-a           size-1   tenant-1   1         project-1      5/5           10
-b           size-2   tenant-2   2         project-2      1/3           1
+PARTITION   SIZE     TENANT     PROJECT   PROJECT NAME   USED/AMOUNT   PROJECT ALLOCATIONS   LABELS
+a           size-1   tenant-1   1         project-1      5/5           10                    size.metal-stack.io/reserved-by=admin
+b           size-2   tenant-2   2         project-2      1/3           1                     size.metal-stack.io/reserved-by=admin
 `),
 			wantMarkdown: pointer.Pointer(`
 | PARTITION |  SIZE  |  TENANT  | PROJECT | PROJECT NAME | USED/AMOUNT | PROJECT ALLOCATIONS |

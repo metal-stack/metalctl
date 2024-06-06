@@ -168,10 +168,11 @@ func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest 
 		})
 	}
 	return &models.V1SizeCreateRequest{
-		Constraints: constraints,
-		Description: r.Description,
-		ID:          r.ID,
-		Name:        r.Name,
+		Constraints:  constraints,
+		Description:  r.Description,
+		ID:           r.ID,
+		Name:         r.Name,
+		Reservations: r.Reservations,
 	}
 }
 
