@@ -406,11 +406,17 @@ func Test_SizeReservationsCmd_MultiResult(t *testing.T) {
 		{
 			name: "reservation list",
 			cmd: func(want []*models.V1SizeReservationResponse) []string {
-				return []string{"size", "reservations", "list"}
+				args := []string{"size", "reservations", "list", "--project", "project-1", "--size-id", "size-1", "--tenant", "tenant-1"}
+				assertExhaustiveArgs(t, args, "sort-by")
+				return args
 			},
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
-					mock.On("ListSizeReservations", testcommon.MatchIgnoreContext(t, size.NewListSizeReservationsParams().WithBody(emptyBody)), nil).Return(&size.ListSizeReservationsOK{Payload: reservations}, nil)
+					mock.On("ListSizeReservations", testcommon.MatchIgnoreContext(t, size.NewListSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
+						Projectid: "project-1",
+						Sizeid:    "size-1",
+						Tenant:    "tenant-1",
+					})), nil).Return(&size.ListSizeReservationsOK{Payload: reservations}, nil)
 				},
 			},
 			want: reservations,
