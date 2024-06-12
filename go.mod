@@ -11,7 +11,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/metal-stack/metal-go v0.29.0
-	github.com/metal-stack/metal-lib v0.16.2
+	github.com/metal-stack/metal-lib v0.16.4-0.20240612120205-4efe45e13a4e
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77

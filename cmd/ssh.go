@@ -53,13 +53,18 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 }
 
 // sshClient opens an interactive ssh session to the host on port with user, authenticated by the key.
-func sshClient(user, keyfile, host string, port int, idToken *string) error {
+func sshClient(user, keyfile, host string, port int, idToken *string, passwordAuth bool) error {
 	privateKey, err := os.ReadFile(keyfile)
 	if err != nil {
 		return err
 	}
 
-	s, err := metalssh.NewClient(user, host, privateKey, port)
+	var opts []metalssh.ConnectOpt
+	if passwordAuth {
+		opts = append(opts, metalssh.ConnectOptOutputPassword(*idToken))
+	}
+
+	s, err := metalssh.NewClient(user, host, privateKey, port, opts)
 	if err != nil {
 		return err
 	}

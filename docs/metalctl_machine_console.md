@@ -14,6 +14,7 @@ metalctl machine console <machine ID> [flags]
 ### Options
 
 ```
+      --admin                 authenticate as admin (admin only).
   -h, --help                  help for console
       --ipmi                  use ipmitool with direct network access (admin only).
       --ipmipassword string   overwrite ipmi password (admin only).
