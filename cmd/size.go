@@ -82,6 +82,12 @@ func newSizeCmd(c *config) *cobra.Command {
 	listReservationsCmd.Flags().String("size-id", "", "the size-id to filter")
 	listReservationsCmd.Flags().String("project", "", "the project to filter")
 	listReservationsCmd.Flags().String("tenant", "", "the tenant to filter")
+	listReservationsCmd.Flags().String("partition", "", "the partition to filter")
+
+	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
+	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
+	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
 	genericcli.AddSortFlag(listReservationsCmd, sorters.SizeReservationsSorter())
 
@@ -204,9 +210,10 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 
 func (c sizeCmd) listReverations() error {
 	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
-		Projectid: viper.GetString("project"),
-		Sizeid:    viper.GetString("size-id"),
-		Tenant:    viper.GetString("tenant"),
+		Projectid:   viper.GetString("project"),
+		Sizeid:      viper.GetString("size-id"),
+		Tenant:      viper.GetString("tenant"),
+		Partitionid: viper.GetString("partition"),
 	}), nil)
 	if err != nil {
 		return err
