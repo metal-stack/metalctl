@@ -69,10 +69,14 @@ func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResp
 		rows   [][]string
 	)
 
+	if wide {
+		header = append(header, "Labels")
+	}
+
 	for _, d := range data {
 		d := d
 
-		rows = append(rows, []string{
+		row := []string{
 			pointer.SafeDeref(d.Partitionid),
 			pointer.SafeDeref(d.Sizeid),
 			pointer.SafeDeref(d.Tenant),
@@ -80,7 +84,15 @@ func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResp
 			pointer.SafeDeref(d.Projectname),
 			fmt.Sprintf("%d/%d", pointer.SafeDeref(d.Usedreservations), pointer.SafeDeref(d.Reservations)),
 			strconv.Itoa(int(pointer.SafeDeref(d.Projectallocations))),
-		})
+		}
+
+		if wide {
+			labels := genericcli.MapToLabels(d.Labels)
+			sort.Strings(labels)
+			row = append(row, strings.Join(labels, "\n"))
+		}
+
+		rows = append(rows, row)
 	}
 
 	return header, rows, nil
