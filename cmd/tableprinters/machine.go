@@ -254,7 +254,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		if !wide {
 			split := strings.Split(msg, "\n")
 			if len(split) > 1 {
-				msg = split[0] + " " + genericcli.TruncateElipsis
+				msg = split[0] + " " + genericcli.TruncateEllipsis
 			}
 			msg = genericcli.TruncateEnd(msg, 120)
 		}

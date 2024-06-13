@@ -14,11 +14,12 @@ metalctl machine console <machine ID> [flags]
 ### Options
 
 ```
+      --admin                 authenticate as admin (admin only).
   -h, --help                  help for console
       --ipmi                  use ipmitool with direct network access (admin only).
       --ipmipassword string   overwrite ipmi password (admin only).
       --ipmiuser string       overwrite ipmi user (admin only).
-  -p, --sshidentity string    SSH key file, if not given the default ssh key will be used if present [optional].
+  -i, --sshidentity string    SSH key file, if not given the default ssh key will be used if present [optional].
 ```
 
 ### Options inherited from parent commands
