@@ -448,7 +448,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
 	genericcli.Must(machineReinstallCmd.MarkFlagRequired("image"))
 
-	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
+	machineConsoleCmd.Flags().StringP("sshidentity", "i", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
 	machineConsoleCmd.Flags().BoolP("admin", "", false, "authenticate as admin (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")

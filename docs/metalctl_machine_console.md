@@ -19,7 +19,7 @@ metalctl machine console <machine ID> [flags]
       --ipmi                  use ipmitool with direct network access (admin only).
       --ipmipassword string   overwrite ipmi password (admin only).
       --ipmiuser string       overwrite ipmi user (admin only).
-  -p, --sshidentity string    SSH key file, if not given the default ssh key will be used if present [optional].
+  -i, --sshidentity string    SSH key file, if not given the default ssh key will be used if present [optional].
 ```
 
 ### Options inherited from parent commands
