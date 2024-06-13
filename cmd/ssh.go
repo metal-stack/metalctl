@@ -64,7 +64,7 @@ func sshClient(user, keyfile, host string, port int, idToken *string, passwordAu
 		opts = append(opts, metalssh.ConnectOptOutputPassword(*idToken))
 	}
 
-	s, err := metalssh.NewClient(user, host, privateKey, port, opts)
+	s, err := metalssh.NewClient(user, host, privateKey, port, opts...)
 	if err != nil {
 		return err
 	}
