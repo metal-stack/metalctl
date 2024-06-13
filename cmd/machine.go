@@ -1245,14 +1245,6 @@ func (c *machineCmd) machineConsole(args []string) error {
 		return cmd.Run()
 	}
 
-	key := viper.GetString("sshidentity")
-	if key == "" {
-		key, err = searchSSHKey()
-		if err != nil {
-			return fmt.Errorf("machine console error:%w", err)
-		}
-	}
-
 	parsedurl, err := url.Parse(c.driverURL)
 	if err != nil {
 		return err
@@ -1261,7 +1253,8 @@ func (c *machineCmd) machineConsole(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = sshClient(id, key, parsedurl.Host, bmcConsolePort, &authContext.IDToken, viper.GetBool("admin"))
+
+	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &authContext.IDToken, viper.GetBool("admin"))
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
