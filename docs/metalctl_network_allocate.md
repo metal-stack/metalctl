@@ -9,14 +9,16 @@ metalctl network allocate [flags]
 ### Options
 
 ```
-  -d, --description string   description of the network to create. [optional]
-      --dmz                  use this private network as dmz. [optional]
-  -h, --help                 help for allocate
-      --labels strings       labels for this network. [optional]
-  -n, --name string          name of the network to create. [required]
-      --partition string     partition where this network should exist. [required]
-      --project string       partition where this network should exist. [required]
-      --shared               shared allows usage of this private network from other networks
+      --addressfamily string   addressfamily of the network to acquire  [optional] (default "ipv4")
+  -d, --description string     description of the network to create. [optional]
+      --dmz                    use this private network as dmz. [optional]
+  -h, --help                   help for allocate
+      --labels strings         labels for this network. [optional]
+      --length int             bitlength of network to create. [optional] (default 22)
+  -n, --name string            name of the network to create. [required]
+      --partition string       partition where this network should exist. [required]
+      --project string         partition where this network should exist. [required]
+      --shared                 shared allows usage of this private network from other networks
 ```
 
 ### Options inherited from parent commands

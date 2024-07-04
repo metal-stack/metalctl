@@ -21,11 +21,10 @@ var (
 			Imageurl:    "imageurl",
 			Kernelurl:   "kernelurl",
 		},
-		Description:                "partition 1",
-		ID:                         pointer.Pointer("1"),
-		Mgmtserviceaddress:         "mgmt",
-		Name:                       "partition-1",
-		Privatenetworkprefixlength: 24,
+		Description:        "partition 1",
+		ID:                 pointer.Pointer("1"),
+		Mgmtserviceaddress: "mgmt",
+		Name:               "partition-1",
 		Labels: map[string]string{
 			"a": "b",
 		},
@@ -36,11 +35,10 @@ var (
 			Imageurl:    "imageurl",
 			Kernelurl:   "kernelurl",
 		},
-		Description:                "partition 2",
-		ID:                         pointer.Pointer("2"),
-		Mgmtserviceaddress:         "mgmt",
-		Name:                       "partition-2",
-		Privatenetworkprefixlength: 24,
+		Description:        "partition 2",
+		ID:                 pointer.Pointer("2"),
+		Mgmtserviceaddress: "mgmt",
+		Name:               "partition-2",
 	}
 )
 
@@ -239,7 +237,6 @@ ID   NAME          DESCRIPTION   LABELS
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					p := partition1
-					p.Privatenetworkprefixlength = 0
 					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(p))), nil).Return(&partition.CreatePartitionCreated{
 						Payload: partition1,
 					}, nil)

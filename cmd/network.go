@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"slices"
 
@@ -103,6 +104,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 					return err
 				}
 
+				af := viper.GetString("addressfamily")
+				length := viper.GetInt64("length")
+				if strings.ToLower(af) == "ipv6" && !viper.IsSet("length") {
+					length = 64
+				}
+
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
 					Description:         viper.GetString("description"),
 					Name:                viper.GetString("name"),
@@ -112,6 +119,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
+					AddressFamily:       af,
+					Length:              length,
 				}, c.describePrinter)
 			}
 
@@ -140,6 +149,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
+	allocateCmd.Flags().StringP("addressfamily", "", "ipv4", "addressfamily of the network to acquire  [optional]")
+	allocateCmd.Flags().Int64P("length", "", 22, "bitlength of network to create. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 
@@ -233,6 +244,7 @@ func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreat
 		Nat:                 r.Nat,
 		Parentnetworkid:     r.Parentnetworkid,
 		Partitionid:         r.Partitionid,
+		Childprefixlength:   r.Childprefixlength,
 		Prefixes:            r.Prefixes,
 		Privatesuper:        r.Privatesuper,
 		Projectid:           r.Projectid,

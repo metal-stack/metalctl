@@ -10,7 +10,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/metal-stack/metal-go v0.32.0
+	github.com/metal-stack/metal-go v0.32.2-0.20240704124903-f041691ac142
 	github.com/metal-stack/metal-lib v0.17.0
 	github.com/metal-stack/updater v1.2.1
 	github.com/metal-stack/v v1.0.3
