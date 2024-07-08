@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"strings"
 
 	"slices"
 
@@ -104,10 +103,15 @@ func newNetworkCmd(c *config) *cobra.Command {
 					return err
 				}
 
-				af := viper.GetString("addressfamily")
-				length := viper.GetInt64("length")
-				if strings.ToLower(af) == "ipv6" && !viper.IsSet("length") {
-					length = 64
+				var (
+					af     *string
+					length *int64
+				)
+				if viper.IsSet("length") {
+					length = pointer.Pointer(viper.GetInt64("length"))
+				}
+				if viper.IsSet("addressfamily") {
+					af = pointer.Pointer(viper.GetString("addressfamily"))
 				}
 
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
