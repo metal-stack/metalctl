@@ -330,3 +330,26 @@ func appendFromFileCommonArgs(args ...string) []string {
 func commonExcludedFileArgs() []string {
 	return []string{"file", "bulk-output", "skip-security-prompts", "timestamps"}
 }
+
+// This might be helpful if you want to debug metalctl code:
+//
+// func Test_DebugTemplate(t *testing.T) {
+// 	_, client := client.NewMetalMockClient(t, nil)
+
+// 	var (
+// 		out    bytes.Buffer
+// 		config = &config{
+// 			fs:     afero.NewOsFs(),
+// 			client: client,
+// 			out:    &out,
+// 			log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
+// 			comp:   &completion.Completion{},
+// 		}
+// 	)
+
+// 	cmd := newRootCmd(config)
+// 	os.Setenv("KUBECONFIG", "<your-path>")
+// 	os.Args = []string{"metalctl", "machine", "console", "..."}
+// 	err := cmd.Execute()
+// 	require.NoError(t, err)
+// }
