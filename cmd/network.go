@@ -69,8 +69,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().Int64P("vrf", "", 0, "vrf to filter [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes to filter, use it like: --prefixes prefix1,prefix2.")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
+			cmd.Flags().String("addressfamily", "", "addressfamily to filter, either ipv4 or ipv6 [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.AddressFamilyCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -192,6 +194,7 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 		Prefixes:            viper.GetStringSlice("prefixes"),
 		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Parentnetworkid:     viper.GetString("parent"),
+		Addressfamily:       viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -240,22 +243,22 @@ func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1Netw
 
 func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
 	return &models.V1NetworkCreateRequest{
-		Description:         r.Description,
-		Destinationprefixes: r.Destinationprefixes,
-		ID:                  r.ID,
-		Labels:              r.Labels,
-		Name:                r.Name,
-		Nat:                 r.Nat,
-		Parentnetworkid:     r.Parentnetworkid,
-		Partitionid:         r.Partitionid,
-		Childprefixlength:   r.Childprefixlength,
-		Prefixes:            r.Prefixes,
-		Privatesuper:        r.Privatesuper,
-		Projectid:           r.Projectid,
-		Shared:              r.Shared,
-		Underlay:            r.Underlay,
-		Vrf:                 r.Vrf,
-		Vrfshared:           r.Vrfshared,
+		Description:              r.Description,
+		Destinationprefixes:      r.Destinationprefixes,
+		ID:                       r.ID,
+		Labels:                   r.Labels,
+		Name:                     r.Name,
+		Nat:                      r.Nat,
+		Parentnetworkid:          r.Parentnetworkid,
+		Partitionid:              r.Partitionid,
+		Defaultchildprefixlength: r.Defaultchildprefixlength,
+		Prefixes:                 r.Prefixes,
+		Privatesuper:             r.Privatesuper,
+		Projectid:                r.Projectid,
+		Shared:                   r.Shared,
+		Underlay:                 r.Underlay,
+		Vrf:                      r.Vrf,
+		Vrfshared:                r.Vrfshared,
 	}
 }
 

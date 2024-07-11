@@ -2,6 +2,8 @@ package completion
 
 import (
 	"github.com/metal-stack/metal-go/api/client/network"
+	"github.com/metal-stack/metal-go/api/models"
+
 	"github.com/spf13/cobra"
 )
 
@@ -27,4 +29,7 @@ func (c *Completion) NetworkDestinationPrefixesCompletion(cmd *cobra.Command, ar
 		prefixes = append(prefixes, n.Destinationprefixes...)
 	}
 	return prefixes, cobra.ShellCompDirectiveNoFileComp
+}
+func (c *Completion) AddressFamilyCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{models.V1NetworkImmutableAddressfamilyIPV4, models.V1NetworkImmutableAddressfamilyIPV6}, cobra.ShellCompDirectiveNoFileComp
 }

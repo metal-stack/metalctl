@@ -9,6 +9,7 @@ metalctl network list [flags]
 ### Options
 
 ```
+      --addressfamily string           addressfamily to filter, either ipv4 or ipv6 [optional]
       --destination-prefixes strings   destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.
   -h, --help                           help for list
       --id string                      ID to filter [optional]
