@@ -22,6 +22,7 @@ metalctl switch delete <id> [flags]
                                 
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	
+      --force                   forcefully delete the switch accepting the risk that it still has machines connected to it
   -h, --help                    help for delete
       --skip-security-prompts   skips security prompt for bulk operations
       --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
