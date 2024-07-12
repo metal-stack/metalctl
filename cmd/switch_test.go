@@ -239,7 +239,7 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {
-					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
+					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID).WithForce(pointer.Pointer(false))), nil).Return(&switch_operations.DeleteSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},
@@ -387,7 +387,7 @@ ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST S
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {
-					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
+					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID).WithForce(pointer.Pointer(false))), nil).Return(&switch_operations.DeleteSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},
