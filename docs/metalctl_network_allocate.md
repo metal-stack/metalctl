@@ -13,8 +13,9 @@ metalctl network allocate [flags]
   -d, --description string     description of the network to create. [optional]
       --dmz                    use this private network as dmz. [optional]
   -h, --help                   help for allocate
+      --ipv4length int         ipv4 bitlength of network to create. [optional] (default 22)
+      --ipv6length int         ip6 bitlength of network to create. [optional] (default 64)
       --labels strings         labels for this network. [optional]
-      --length int             bitlength of network to create. [optional] (default 22)
   -n, --name string            name of the network to create. [required]
       --partition string       partition where this network should exist. [required]
       --project string         partition where this network should exist. [required]

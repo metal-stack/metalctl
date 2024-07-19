@@ -30,6 +30,6 @@ func (c *Completion) NetworkDestinationPrefixesCompletion(cmd *cobra.Command, ar
 	}
 	return prefixes, cobra.ShellCompDirectiveNoFileComp
 }
-func (c *Completion) AddressFamilyCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{models.V1NetworkImmutableAddressfamilyIPV4, models.V1NetworkImmutableAddressfamilyIPV6}, cobra.ShellCompDirectiveNoFileComp
+func (c *Completion) NetworkAddressFamilyCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	return []string{models.V1NetworkAllocateRequestAddressfamilyIPV4, models.V1NetworkAllocateRequestAddressfamilyIPV6}, cobra.ShellCompDirectiveNoFileComp
 }

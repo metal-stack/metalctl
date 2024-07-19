@@ -64,29 +64,29 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	}
 	privateSuper := fmt.Sprintf("%t", flag)
 	nat := fmt.Sprintf("%t", *n.Nat)
+	// FIXME add ipv6 usage
+	ipv4usage := fmt.Sprintf("IPs:     %v/%v", *n.Usage.UsedIps, *n.Usage.AvailableIps)
 
-	usage := fmt.Sprintf("IPs:     %v/%v", *n.Usage.UsedIps, *n.Usage.AvailableIps)
-
-	ipUse := float64(*n.Usage.UsedIps) / float64(*n.Usage.AvailableIps)
-	shortIPUsage := nbr
-	if ipUse >= 0.9 {
-		shortIPUsage += color.RedString(dot)
-	} else if ipUse >= 0.7 {
-		shortIPUsage += color.YellowString(dot)
+	ipv4Use := float64(*n.Usage.UsedIps) / float64(*n.Usage.AvailableIps)
+	shortIPv4IPUsage := nbr
+	if ipv4Use >= 0.9 {
+		shortIPv4IPUsage += color.RedString(dot)
+	} else if ipv4Use >= 0.7 {
+		shortIPv4IPUsage += color.YellowString(dot)
 	} else {
-		shortIPUsage += color.GreenString(dot)
+		shortIPv4IPUsage += color.GreenString(dot)
 	}
 
-	shortPrefixUsage := ""
+	shortIPv4PrefixUsage := ""
 	if *n.Usage.AvailablePrefixes > 0 {
 		prefixUse := float64(*n.Usage.UsedPrefixes) / float64(*n.Usage.AvailablePrefixes)
 		if prefixUse >= 0.9 {
-			shortPrefixUsage = color.RedString(dot)
+			shortIPv4PrefixUsage = color.RedString(dot)
 		}
-		usage = fmt.Sprintf("%s\nPrefixes:%d/%d", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
+		ipv4usage = fmt.Sprintf("%s\nPrefixes:%d/%d", ipv4usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
 	}
 
-	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper)
+	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, ipv4usage, privateSuper)
 	for i := 0; i < max-1; i++ {
 		id += "\n│"
 	}
@@ -102,9 +102,9 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	annotations := strings.Join(as, "\n")
 
 	if wide {
-		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, usage, privateSuper, annotations}
+		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, ipv4usage, privateSuper, annotations}
 	} else {
-		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, shortPrefixUsage, shortIPUsage}
+		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, shortIPv4PrefixUsage, shortIPv4IPUsage}
 	}
 }
 

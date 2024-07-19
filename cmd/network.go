@@ -72,7 +72,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().String("addressfamily", "", "addressfamily to filter, either ipv4 or ipv6 [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.AddressFamilyCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -107,10 +107,13 @@ func newNetworkCmd(c *config) *cobra.Command {
 
 				var (
 					af     *string
-					length *int64
+					length = make(map[string]int64)
 				)
-				if viper.IsSet("length") {
-					length = pointer.Pointer(viper.GetInt64("length"))
+				if viper.IsSet("ipv4length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV4] = viper.GetInt64("ipv4length")
+				}
+				if viper.IsSet("ipv6length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6length")
 				}
 				if viper.IsSet("addressfamily") {
 					af = pointer.Pointer(viper.GetString("addressfamily"))
@@ -125,7 +128,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
-					AddressFamily:       af,
+					Addressfamily:       af,
 					Length:              length,
 				}, c.describePrinter)
 			}
@@ -156,9 +159,11 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
 	allocateCmd.Flags().StringP("addressfamily", "", "ipv4", "addressfamily of the network to acquire  [optional]")
-	allocateCmd.Flags().Int64P("length", "", 22, "bitlength of network to create. [optional]")
+	allocateCmd.Flags().Int64P("ipv4length", "", 22, "ipv4 bitlength of network to create. [optional]")
+	allocateCmd.Flags().Int64P("ipv6length", "", 64, "ip6 bitlength of network to create. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 
 	genericcli.Must(allocateCmd.MarkFlagRequired("name"))
 	genericcli.Must(allocateCmd.MarkFlagRequired("project"))
@@ -194,7 +199,6 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 		Prefixes:            viper.GetStringSlice("prefixes"),
 		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Parentnetworkid:     viper.GetString("parent"),
-		Addressfamily:       viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
