@@ -2,6 +2,7 @@ package sorters
 
 import (
 	"net/netip"
+	"time"
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/multisort"
@@ -31,6 +32,9 @@ func IPSorter() *multisort.Sorter[*models.V1IPResponse] {
 		},
 		"type": func(a, b *models.V1IPResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(p.SafeDeref(a.Type), p.SafeDeref(b.Type), descending)
+		},
+		"age": func(a, b *models.V1IPResponse, descending bool) multisort.CompareResult {
+			return multisort.Compare(time.Time(a.Created).Unix(), time.Time(b.Created).Unix(), descending)
 		},
 	}, multisort.Keys{{ID: "ipaddress"}})
 }

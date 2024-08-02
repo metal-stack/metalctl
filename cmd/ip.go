@@ -115,6 +115,7 @@ func (c ipCmd) List() ([]*models.V1IPResponse, error) {
 		return nil, err
 	}
 
+	// actually filtered client side because server side would require a reql filter for addressfamilies
 	if viper.IsSet("addressfamily") {
 		af := viper.GetString("addressfamily")
 		var result []*models.V1IPResponse
