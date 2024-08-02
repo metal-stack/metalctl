@@ -69,8 +69,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().Int64P("vrf", "", 0, "vrf to filter [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes to filter, use it like: --prefixes prefix1,prefix2.")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
+			cmd.Flags().String("addressfamily", "", "addressfamily to filter, either ipv4 or ipv6 [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -103,6 +105,20 @@ func newNetworkCmd(c *config) *cobra.Command {
 					return err
 				}
 
+				var (
+					af     *string
+					length = make(map[string]int64)
+				)
+				if viper.IsSet("ipv4length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV4] = viper.GetInt64("ipv4length")
+				}
+				if viper.IsSet("ipv6length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6length")
+				}
+				if viper.IsSet("addressfamily") {
+					af = pointer.Pointer(viper.GetString("addressfamily"))
+				}
+
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
 					Description:         viper.GetString("description"),
 					Name:                viper.GetString("name"),
@@ -112,6 +128,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
+					Addressfamily:       af,
+					Length:              length,
 				}, c.describePrinter)
 			}
 
@@ -140,8 +158,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
+	allocateCmd.Flags().StringP("addressfamily", "", "ipv4", "addressfamily of the network to acquire  [optional]")
+	allocateCmd.Flags().Int64P("ipv4length", "", 22, "ipv4 bitlength of network to create. [optional]")
+	allocateCmd.Flags().Int64P("ipv6length", "", 64, "ip6 bitlength of network to create. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 
 	genericcli.Must(allocateCmd.MarkFlagRequired("name"))
 	genericcli.Must(allocateCmd.MarkFlagRequired("project"))
@@ -225,21 +247,22 @@ func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1Netw
 
 func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
 	return &models.V1NetworkCreateRequest{
-		Description:         r.Description,
-		Destinationprefixes: r.Destinationprefixes,
-		ID:                  r.ID,
-		Labels:              r.Labels,
-		Name:                r.Name,
-		Nat:                 r.Nat,
-		Parentnetworkid:     r.Parentnetworkid,
-		Partitionid:         r.Partitionid,
-		Prefixes:            r.Prefixes,
-		Privatesuper:        r.Privatesuper,
-		Projectid:           r.Projectid,
-		Shared:              r.Shared,
-		Underlay:            r.Underlay,
-		Vrf:                 r.Vrf,
-		Vrfshared:           r.Vrfshared,
+		Description:              r.Description,
+		Destinationprefixes:      r.Destinationprefixes,
+		ID:                       r.ID,
+		Labels:                   r.Labels,
+		Name:                     r.Name,
+		Nat:                      r.Nat,
+		Parentnetworkid:          r.Parentnetworkid,
+		Partitionid:              r.Partitionid,
+		Defaultchildprefixlength: r.Defaultchildprefixlength,
+		Prefixes:                 r.Prefixes,
+		Privatesuper:             r.Privatesuper,
+		Projectid:                r.Projectid,
+		Shared:                   r.Shared,
+		Underlay:                 r.Underlay,
+		Vrf:                      r.Vrf,
+		Vrfshared:                r.Vrfshared,
 	}
 }
 
