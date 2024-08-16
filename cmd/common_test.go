@@ -130,7 +130,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 				return nil
 			}
 		}
-		return fmt.Errorf("not exhaustive: does not contain " + prefix)
+		return fmt.Errorf("not exhaustive: does not contain %s", prefix)
 	}
 
 	root := newRootCmd(&config{comp: &completion.Completion{}})

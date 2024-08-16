@@ -39,8 +39,9 @@ var (
 			UsedIps:           pointer.Pointer(int64(300)),
 			UsedPrefixes:      pointer.Pointer(int64(400)),
 		},
-		Vrf:       50,
-		Vrfshared: true,
+		Vrf:                        50,
+		Vrfshared:                  true,
+		Additionalannouncablecidrs: []string{"10.240.0.0/12"},
 	}
 	network1child = &models.V1NetworkResponse{
 		Description:         "child 1",
@@ -62,8 +63,9 @@ var (
 			UsedIps:           pointer.Pointer(int64(300)),
 			UsedPrefixes:      pointer.Pointer(int64(400)),
 		},
-		Vrf:       50,
-		Vrfshared: true,
+		Vrf:                        50,
+		Vrfshared:                  true,
+		Additionalannouncablecidrs: []string{},
 	}
 	network2 = &models.V1NetworkResponse{
 		Description:         "network 2",
@@ -85,8 +87,9 @@ var (
 			UsedIps:           pointer.Pointer(int64(200)),
 			UsedPrefixes:      pointer.Pointer(int64(100)),
 		},
-		Vrf:       60,
-		Vrfshared: true,
+		Vrf:                        60,
+		Vrfshared:                  true,
+		Additionalannouncablecidrs: []string{},
 	}
 )
 
@@ -297,6 +300,7 @@ nw1 network-1
 					"--underlay", strconv.FormatBool(*want.Underlay),
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
+					"--additionalannouncablecidrs", "10.240.0.0/12",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -322,6 +326,7 @@ nw1 network-1
 					fmt.Sprintf("--shared=%t", want.Shared),
 					"--labels", "a=b",
 					"--name", want.Name,
+					"--additionalannouncablecidrs", "10.240.0.0/12",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -337,13 +342,14 @@ nw1 network-1
 						Payload: networkToUpdate,
 					}, nil)
 					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-						ID:                  network1.ID,
-						Name:                network1.Name,
-						Description:         network1.Description,
-						Destinationprefixes: network1.Destinationprefixes,
-						Prefixes:            network1.Prefixes,
-						Labels:              network1.Labels,
-						Shared:              network1.Shared,
+						ID:                         network1.ID,
+						Name:                       network1.Name,
+						Description:                network1.Description,
+						Destinationprefixes:        network1.Destinationprefixes,
+						Prefixes:                   network1.Prefixes,
+						Labels:                     network1.Labels,
+						Shared:                     network1.Shared,
+						Additionalannouncablecidrs: network1.Additionalannouncablecidrs,
 					})), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)

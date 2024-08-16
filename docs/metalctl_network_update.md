@@ -11,6 +11,7 @@ metalctl network update [flags]
 ```
       --add-destinationprefixes strings      destination prefixes to be added to the network [optional]
       --add-prefixes strings                 prefixes to be added to the network [optional]
+      --additionalannouncablecidrs strings   list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork
       --bulk-output                          when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
       --description string                   the description of the network [optional]
   -f, --file string                          filename of the create or update request in yaml format, or - for stdin.
