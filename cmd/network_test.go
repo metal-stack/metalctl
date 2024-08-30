@@ -41,7 +41,7 @@ var (
 		},
 		Vrf:                        50,
 		Vrfshared:                  true,
-		Additionalannouncablecidrs: []string{"10.240.0.0/12"},
+		AdditionalAnnouncableCIDRs: []string{"10.240.0.0/12"},
 	}
 	network1child = &models.V1NetworkResponse{
 		Description:         "child 1",
@@ -65,7 +65,7 @@ var (
 		},
 		Vrf:                        50,
 		Vrfshared:                  true,
-		Additionalannouncablecidrs: []string{},
+		AdditionalAnnouncableCIDRs: []string{},
 	}
 	network2 = &models.V1NetworkResponse{
 		Description:         "network 2",
@@ -89,7 +89,7 @@ var (
 		},
 		Vrf:                        60,
 		Vrfshared:                  true,
-		Additionalannouncablecidrs: []string{},
+		AdditionalAnnouncableCIDRs: []string{},
 	}
 )
 
@@ -300,7 +300,7 @@ nw1 network-1
 					"--underlay", strconv.FormatBool(*want.Underlay),
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
-					"--additionalannouncablecidrs", "10.240.0.0/12",
+					"--additional-announcable-cidrs", "10.240.0.0/12",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -326,7 +326,7 @@ nw1 network-1
 					fmt.Sprintf("--shared=%t", want.Shared),
 					"--labels", "a=b",
 					"--name", want.Name,
-					"--additionalannouncablecidrs", "10.240.0.0/12",
+					"--additional-announcable-cidrs", "10.240.0.0/12",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -349,7 +349,7 @@ nw1 network-1
 						Prefixes:                   network1.Prefixes,
 						Labels:                     network1.Labels,
 						Shared:                     network1.Shared,
-						Additionalannouncablecidrs: network1.Additionalannouncablecidrs,
+						AdditionalAnnouncableCIDRs: network1.AdditionalAnnouncableCIDRs,
 					}).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)

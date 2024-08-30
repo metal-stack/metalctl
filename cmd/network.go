@@ -49,7 +49,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
 			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes in this network.")
-			cmd.Flags().StringSlice("additionalannouncablecidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
+			cmd.Flags().StringSlice("additional-announcable-cidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
 			cmd.Flags().BoolP("privatesuper", "", false, "set private super flag of network, if set to true, this network is used to start machines there.")
 			cmd.Flags().BoolP("nat", "", false, "set nat flag of network, if set to true, traffic from this network will be natted.")
 			cmd.Flags().BoolP("underlay", "", false, "set underlay flag of network, if set to true, this is used to transport underlay network traffic")
@@ -81,7 +81,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("add-destinationprefixes", []string{}, "destination prefixes to be added to the network [optional]")
 			cmd.Flags().StringSlice("remove-destinationprefixes", []string{}, "destination prefixes to be removed from the network [optional]")
 			cmd.Flags().StringSlice("labels", []string{}, "the labels of the network, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\". [optional]")
-			cmd.Flags().StringSlice("additionalannouncablecidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
+			cmd.Flags().StringSlice("additional-announcable-cidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
 			cmd.Flags().Bool("shared", false, "marks a network as shared or not [optional]")
 		},
 	}
@@ -242,7 +242,7 @@ func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreat
 		Underlay:                   r.Underlay,
 		Vrf:                        r.Vrf,
 		Vrfshared:                  r.Vrfshared,
-		Additionalannouncablecidrs: r.Additionalannouncablecidrs,
+		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
 	}
 }
 
@@ -255,7 +255,7 @@ func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdat
 		Name:                       r.Name,
 		Prefixes:                   r.Prefixes,
 		Shared:                     r.Shared,
-		Additionalannouncablecidrs: r.Additionalannouncablecidrs,
+		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
 	}
 }
 
@@ -279,7 +279,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 		Vrf:                        viper.GetInt64("vrf"),
 		Vrfshared:                  viper.GetBool("vrfshared"),
 		Labels:                     lbs,
-		Additionalannouncablecidrs: viper.GetStringSlice("additionalannouncablecidrs"),
+		AdditionalAnnouncableCIDRs: viper.GetStringSlice("additional-announcable-cidrs"),
 	}, nil
 }
 
@@ -361,9 +361,9 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		shared = viper.GetBool("shared")
 	}
 
-	additionalCidrs := resp.Additionalannouncablecidrs
-	if viper.IsSet("additionalannouncablecidrs") {
-		additionalCidrs = viper.GetStringSlice("additionalannouncablecidrs")
+	additionalCidrs := resp.AdditionalAnnouncableCIDRs
+	if viper.IsSet("additional-announcable-cidrs") {
+		additionalCidrs = viper.GetStringSlice("additional-announcable-cidrs")
 	}
 	var (
 		ur = &models.V1NetworkUpdateRequest{
@@ -374,7 +374,7 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Name:                       viper.GetString("name"),
 			Prefixes:                   nil,
 			Shared:                     shared,
-			Additionalannouncablecidrs: additionalCidrs,
+			AdditionalAnnouncableCIDRs: additionalCidrs,
 		}
 		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)
