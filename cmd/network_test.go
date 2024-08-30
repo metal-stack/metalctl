@@ -159,7 +159,7 @@ nw2 network-2
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
 					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(nil, &network.CreateNetworkConflict{}).Once()
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1)).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network2))), nil).Return(&network.CreateNetworkCreated{
@@ -201,7 +201,7 @@ nw2 network-2
 			},
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1)).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 				},
@@ -350,7 +350,7 @@ nw1 network-1
 						Labels:                     network1.Labels,
 						Shared:                     network1.Shared,
 						Additionalannouncablecidrs: network1.Additionalannouncablecidrs,
-					})), nil).Return(&network.UpdateNetworkOK{
+					}).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 				},

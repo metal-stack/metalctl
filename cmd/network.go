@@ -210,7 +210,7 @@ func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Network
 }
 
 func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq), nil)
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
 	}

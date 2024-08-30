@@ -3,14 +3,14 @@ module github.com/metal-stack/metalctl
 go 1.23
 
 require (
-	github.com/Masterminds/semver/v3 v3.2.1
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/fatih/color v1.17.0
 	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
-	github.com/metal-stack/metal-go v0.33.1-0.20240826073837-338dfec8b9ce
+	github.com/metal-stack/metal-go v0.33.1-0.20240830055435-a72cd861bf93
 	github.com/metal-stack/metal-lib v0.17.1
 	github.com/metal-stack/updater v1.2.2
 	github.com/metal-stack/v v1.0.3
