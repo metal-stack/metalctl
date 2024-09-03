@@ -49,6 +49,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
 			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes in this network.")
+			cmd.Flags().StringSlice("additional-announcable-cidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
 			cmd.Flags().BoolP("privatesuper", "", false, "set private super flag of network, if set to true, this network is used to start machines there.")
 			cmd.Flags().BoolP("nat", "", false, "set nat flag of network, if set to true, traffic from this network will be natted.")
 			cmd.Flags().BoolP("underlay", "", false, "set underlay flag of network, if set to true, this is used to transport underlay network traffic")
@@ -80,6 +81,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("add-destinationprefixes", []string{}, "destination prefixes to be added to the network [optional]")
 			cmd.Flags().StringSlice("remove-destinationprefixes", []string{}, "destination prefixes to be removed from the network [optional]")
 			cmd.Flags().StringSlice("labels", []string{}, "the labels of the network, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\". [optional]")
+			cmd.Flags().StringSlice("additional-announcable-cidrs", []string{}, "list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork")
 			cmd.Flags().Bool("shared", false, "marks a network as shared or not [optional]")
 		},
 	}
@@ -208,7 +210,7 @@ func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Network
 }
 
 func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq), nil)
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -225,33 +227,35 @@ func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1Netw
 
 func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreateRequest {
 	return &models.V1NetworkCreateRequest{
-		Description:         r.Description,
-		Destinationprefixes: r.Destinationprefixes,
-		ID:                  r.ID,
-		Labels:              r.Labels,
-		Name:                r.Name,
-		Nat:                 r.Nat,
-		Parentnetworkid:     r.Parentnetworkid,
-		Partitionid:         r.Partitionid,
-		Prefixes:            r.Prefixes,
-		Privatesuper:        r.Privatesuper,
-		Projectid:           r.Projectid,
-		Shared:              r.Shared,
-		Underlay:            r.Underlay,
-		Vrf:                 r.Vrf,
-		Vrfshared:           r.Vrfshared,
+		Description:                r.Description,
+		Destinationprefixes:        r.Destinationprefixes,
+		ID:                         r.ID,
+		Labels:                     r.Labels,
+		Name:                       r.Name,
+		Nat:                        r.Nat,
+		Parentnetworkid:            r.Parentnetworkid,
+		Partitionid:                r.Partitionid,
+		Prefixes:                   r.Prefixes,
+		Privatesuper:               r.Privatesuper,
+		Projectid:                  r.Projectid,
+		Shared:                     r.Shared,
+		Underlay:                   r.Underlay,
+		Vrf:                        r.Vrf,
+		Vrfshared:                  r.Vrfshared,
+		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
 	}
 }
 
 func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdateRequest {
 	return &models.V1NetworkUpdateRequest{
-		Description:         r.Description,
-		Destinationprefixes: r.Destinationprefixes,
-		ID:                  r.ID,
-		Labels:              r.Labels,
-		Name:                r.Name,
-		Prefixes:            r.Prefixes,
-		Shared:              r.Shared,
+		Description:                r.Description,
+		Destinationprefixes:        r.Destinationprefixes,
+		ID:                         r.ID,
+		Labels:                     r.Labels,
+		Name:                       r.Name,
+		Prefixes:                   r.Prefixes,
+		Shared:                     r.Shared,
+		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
 	}
 }
 
@@ -262,19 +266,20 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 	}
 
 	return &models.V1NetworkCreateRequest{
-		ID:                  pointer.Pointer(viper.GetString("id")),
-		Description:         viper.GetString("description"),
-		Name:                viper.GetString("name"),
-		Partitionid:         viper.GetString("partition"),
-		Projectid:           viper.GetString("project"),
-		Prefixes:            viper.GetStringSlice("prefixes"),
-		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
-		Privatesuper:        pointer.Pointer(viper.GetBool("privatesuper")),
-		Nat:                 pointer.Pointer(viper.GetBool("nat")),
-		Underlay:            pointer.Pointer(viper.GetBool("underlay")),
-		Vrf:                 viper.GetInt64("vrf"),
-		Vrfshared:           viper.GetBool("vrfshared"),
-		Labels:              lbs,
+		ID:                         pointer.Pointer(viper.GetString("id")),
+		Description:                viper.GetString("description"),
+		Name:                       viper.GetString("name"),
+		Partitionid:                viper.GetString("partition"),
+		Projectid:                  viper.GetString("project"),
+		Prefixes:                   viper.GetStringSlice("prefixes"),
+		Destinationprefixes:        viper.GetStringSlice("destination-prefixes"),
+		Privatesuper:               pointer.Pointer(viper.GetBool("privatesuper")),
+		Nat:                        pointer.Pointer(viper.GetBool("nat")),
+		Underlay:                   pointer.Pointer(viper.GetBool("underlay")),
+		Vrf:                        viper.GetInt64("vrf"),
+		Vrfshared:                  viper.GetBool("vrfshared"),
+		Labels:                     lbs,
+		AdditionalAnnouncableCIDRs: viper.GetStringSlice("additional-announcable-cidrs"),
 	}, nil
 }
 
@@ -356,15 +361,20 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		shared = viper.GetBool("shared")
 	}
 
+	additionalCidrs := resp.AdditionalAnnouncableCIDRs
+	if viper.IsSet("additional-announcable-cidrs") {
+		additionalCidrs = viper.GetStringSlice("additional-announcable-cidrs")
+	}
 	var (
 		ur = &models.V1NetworkUpdateRequest{
-			Description:         viper.GetString("description"),
-			Destinationprefixes: nil,
-			ID:                  pointer.Pointer(id),
-			Labels:              labels,
-			Name:                viper.GetString("name"),
-			Prefixes:            nil,
-			Shared:              shared,
+			Description:                viper.GetString("description"),
+			Destinationprefixes:        nil,
+			ID:                         pointer.Pointer(id),
+			Labels:                     labels,
+			Name:                       viper.GetString("name"),
+			Prefixes:                   nil,
+			Shared:                     shared,
+			AdditionalAnnouncableCIDRs: additionalCidrs,
 		}
 		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)
