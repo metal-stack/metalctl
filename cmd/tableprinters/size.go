@@ -30,9 +30,9 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 			case models.V1SizeConstraintTypeCores:
 				cpu = fmt.Sprintf("%d - %d", c.Min, c.Max)
 			case models.V1SizeConstraintTypeMemory:
-				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
+				memory = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max))) // nolint: gosec
 			case models.V1SizeConstraintTypeStorage:
-				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max)))
+				storage = fmt.Sprintf("%s - %s", humanize.Bytes(uint64(c.Min)), humanize.Bytes(uint64(c.Max))) // nolint: gosec
 			case models.V1SizeConstraintTypeGpu:
 				gpu = fmt.Sprintf("%s: %d - %d", c.Identifier, c.Min, c.Max)
 			}
