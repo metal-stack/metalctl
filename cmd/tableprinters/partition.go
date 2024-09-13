@@ -2,6 +2,7 @@ package tableprinters
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -117,6 +118,18 @@ func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity
 			fmt.Sprintf("%d", waitingCount),
 			fmt.Sprintf("%d", otherCount),
 		}...)
+	}
+
+	if t.markdown {
+		// for markdown we already have enough dividers, remove them
+		removeDivider := func(e string) bool {
+			return e == "|"
+		}
+		header = slices.DeleteFunc(header, removeDivider)
+		footerRow = slices.DeleteFunc(footerRow, removeDivider)
+		for i, row := range rows {
+			rows[i] = slices.DeleteFunc(row, removeDivider)
+		}
 	}
 
 	rows = append(rows, footerRow)
