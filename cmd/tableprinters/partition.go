@@ -99,7 +99,7 @@ func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity
 	}
 
 	footerRow := ([]string{
-		"Σ",
+		"Total",
 		"",
 		fmt.Sprintf("%d", allocatedCount),
 		fmt.Sprintf("%d", freeCount),
