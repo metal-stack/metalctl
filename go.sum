@@ -233,10 +233,10 @@ github.com/mdlayher/sdnotify v1.0.0 h1:Ma9XeLVN/l0qpyx1tNeMSeTjCPH6NtuD6/N9XdTlQ
 github.com/mdlayher/sdnotify v1.0.0/go.mod h1:HQUmpM4XgYkhDLtd+Uad8ZFK1T9D5+pNxnXQjCeJlGE=
 github.com/mdlayher/socket v0.5.1 h1:VZaqt6RkGkt2OE9l3GcC6nZkqD3xKeQLyfleW/uBcos=
 github.com/mdlayher/socket v0.5.1/go.mod h1:TjPLHI1UgwEv5J1B5q0zTZq12A/6H7nKmtTanQE37IQ=
-github.com/metal-stack/metal-go v0.34.0 h1:X4Wlt2OAhsu3Lq+rHSWnWeASmX6CYvOxnL6DxmjnzbU=
-github.com/metal-stack/metal-go v0.34.0/go.mod h1:3MJTYCS4YJz8D8oteTKhjpaAKNMMjMKYDrIy9awHGtQ=
-github.com/metal-stack/metal-lib v0.17.1 h1:JLa4wJ62dgxtY9UOLF+QDk10/i/W5vhzrv8RsundDUY=
-github.com/metal-stack/metal-lib v0.17.1/go.mod h1:nyNGI4DZFOcWbSoq2Y6V3SHpFxuXBIqYBZHTb6cy//s=
+github.com/metal-stack/metal-go v0.35.0 h1:Ixj2iB3bc3jvveeCcSSdYosyt7nP2/3Mg6tf8Ks7YmU=
+github.com/metal-stack/metal-go v0.35.0/go.mod h1:3MJTYCS4YJz8D8oteTKhjpaAKNMMjMKYDrIy9awHGtQ=
+github.com/metal-stack/metal-lib v0.18.2 h1:EAmZkZeKpenAvxZRSKsA6gj9Jd8XLR6Z0/QhABFCCDE=
+github.com/metal-stack/metal-lib v0.18.2/go.mod h1:GJjipRpHmpd2vjBtsaw9gGk5ZFan7NlShyjIsTdY1x4=
 github.com/metal-stack/security v0.8.1 h1:4zmVUxZvDWShVvVIxM3XhIv7pTmPe9DvACRIHW6YTsk=
 github.com/metal-stack/security v0.8.1/go.mod h1:OO8ZilZO6fUV5QEmwc7HP/RAjqYrGQxXoYIddJ9TvqE=
 github.com/metal-stack/updater v1.2.2 h1:gnUrnQgfT20QFMDtFBY89opKoBAkdeI/8T2iwMHNdxs=
@@ -274,8 +274,8 @@ github.com/rivo/uniseg v0.1.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJ
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
-github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
-github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
+github.com/rogpeppe/go-internal v1.12.0 h1:exVL4IDcn6na9z1rAb56Vxr+CgyK3nn3O+epU5NdKM8=
+github.com/rogpeppe/go-internal v1.12.0/go.mod h1:E+RYuTGaKKdloAfM02xzb0FW3Paa99yedzYV+kq4uf4=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/safchain/ethtool v0.3.0 h1:gimQJpsI6sc1yIqP/y8GYgiXn/NjgvpM0RNoWLVVmP0=
@@ -433,8 +433,8 @@ inet.af/peercred v0.0.0-20210906144145-0893ea02156a h1:qdkS8Q5/i10xU2ArJMKYhVa1D
 inet.af/peercred v0.0.0-20210906144145-0893ea02156a/go.mod h1:FjawnflS/udxX+SvpsMgZfdqx2aykOlkISeAsADi5IU=
 inet.af/wf v0.0.0-20221017222439-36129f591884 h1:zg9snq3Cpy50lWuVqDYM7AIRVTtU50y5WXETMFohW/Q=
 inet.af/wf v0.0.0-20221017222439-36129f591884/go.mod h1:bSAQ38BYbY68uwpasXOTZo22dKGy9SNvI6PZFeKomZE=
-k8s.io/apimachinery v0.29.3 h1:2tbx+5L7RNvqJjn7RIuIKu9XTsIZ9Z5wX2G22XAa5EU=
-k8s.io/apimachinery v0.29.3/go.mod h1:hx/S4V2PNW4OMg3WizRrHutyB5la0iCUbZym+W0EQIU=
+k8s.io/apimachinery v0.31.1 h1:mhcUBbj7KUjaVhyXILglcVjuS4nYXiwC+KKFBgIVy7U=
+k8s.io/apimachinery v0.31.1/go.mod h1:rsPdaZJfTfLsNJSQzNHQvYoTmxhoOEofxtOsF3rtsMo=
 nhooyr.io/websocket v1.8.10 h1:mv4p+MnGrLDcPlBoWsvPP7XCzTYMXP9F9eIGoKbgx7Q=
 nhooyr.io/websocket v1.8.10/go.mod h1:rN9OFWIUwuxg4fR5tELlYC04bXYowCP9GX47ivo2l+c=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=

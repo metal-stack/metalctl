@@ -13,6 +13,7 @@ import (
 type TablePrinter struct {
 	t                       *printers.TablePrinter
 	lastEventErrorThreshold time.Duration
+	markdown                bool
 }
 
 func New() *TablePrinter {
@@ -25,6 +26,10 @@ func (t *TablePrinter) SetPrinter(printer *printers.TablePrinter) {
 
 func (t *TablePrinter) SetLastEventErrorThreshold(threshold time.Duration) {
 	t.lastEventErrorThreshold = threshold
+}
+
+func (t *TablePrinter) SetMarkdown(markdown bool) {
+	t.markdown = markdown
 }
 
 func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {

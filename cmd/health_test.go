@@ -6,6 +6,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/health"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
+	"github.com/metal-stack/metal-lib/pkg/healthstatus"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metal-lib/rest"
@@ -23,14 +24,14 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(&health.HealthOK{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(rest.HealthStatusHealthy)),
+							Status:  pointer.Pointer(string(healthstatus.HealthStatusHealthy)),
 							Message: pointer.Pointer("ok"),
 						},
 					}, nil)
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:   rest.HealthStatusHealthy,
+				Status:   healthstatus.HealthStatusHealthy,
 				Message:  "ok",
 				Services: nil,
 			},
@@ -44,14 +45,14 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(nil, &health.HealthInternalServerError{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(rest.HealthStatusUnhealthy)),
+							Status:  pointer.Pointer(string(healthstatus.HealthStatusUnhealthy)),
 							Message: pointer.Pointer("error"),
 						},
 					})
 				},
 			},
 			want: &rest.HealthResponse{
-				Status:   rest.HealthStatusUnhealthy,
+				Status:   healthstatus.HealthStatusUnhealthy,
 				Message:  "error",
 				Services: nil,
 			},

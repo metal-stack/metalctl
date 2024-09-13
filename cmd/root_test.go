@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/healthstatus"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/spf13/afero"
@@ -38,7 +39,7 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, err := w.Write(mustMarshal(t, &models.RestHealthResponse{
-			Status: pointer.Pointer(string(rest.HealthStatusHealthy)),
+			Status: pointer.Pointer(string(healthstatus.HealthStatusHealthy)),
 		}))
 		if err != nil {
 			t.Errorf("error writing response: %s", err)
@@ -60,7 +61,7 @@ api-token: "i-am-token"
 			},
 			disableMockClient: true,
 			want: &rest.HealthResponse{
-				Status: rest.HealthStatusHealthy,
+				Status: healthstatus.HealthStatusHealthy,
 			},
 		},
 		{
@@ -76,7 +77,7 @@ api-token: "i-am-token"
 			},
 			disableMockClient: true,
 			want: &rest.HealthResponse{
-				Status: rest.HealthStatusHealthy,
+				Status: healthstatus.HealthStatusHealthy,
 			},
 		},
 		{
@@ -86,7 +87,7 @@ api-token: "i-am-token"
 			},
 			disableMockClient: true,
 			want: &rest.HealthResponse{
-				Status: rest.HealthStatusHealthy,
+				Status: healthstatus.HealthStatusHealthy,
 			},
 		},
 		{
@@ -98,7 +99,7 @@ api-token: "i-am-token"
 			},
 			disableMockClient: true,
 			want: &rest.HealthResponse{
-				Status: rest.HealthStatusHealthy,
+				Status: healthstatus.HealthStatusHealthy,
 			},
 		},
 		{
@@ -109,7 +110,7 @@ api-token: "i-am-token"
 			},
 			disableMockClient: true,
 			want: &rest.HealthResponse{
-				Status: rest.HealthStatusHealthy,
+				Status: healthstatus.HealthStatusHealthy,
 			},
 		},
 	}
