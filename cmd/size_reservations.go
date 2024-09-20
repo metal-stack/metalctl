@@ -127,25 +127,25 @@ func (c sizeReservationsCmd) Convert(r *models.V1SizeReservationResponse) (strin
 
 func sizeReservationResponseToCreate(r *models.V1SizeReservationResponse) *models.V1SizeReservationCreateRequest {
 	return &models.V1SizeReservationCreateRequest{
-		Amount:      r.Amount,
-		Description: r.Description,
-		ID:          r.ID,
-		Labels:      r.Labels,
-		Name:        r.Name,
-		Partitionid: r.Partitionid,
-		Projectid:   r.Projectid,
-		Sizeid:      r.Sizeid,
+		Amount:       r.Amount,
+		Description:  r.Description,
+		ID:           r.ID,
+		Labels:       r.Labels,
+		Name:         r.Name,
+		Partitionids: r.Partitionids,
+		Projectid:    r.Projectid,
+		Sizeid:       r.Sizeid,
 	}
 }
 
 func sizeReservationResponseToUpdate(r *models.V1SizeReservationResponse) *models.V1SizeReservationUpdateRequest {
 	return &models.V1SizeReservationUpdateRequest{
-		Amount:      r.Amount,
-		Description: r.Description,
-		ID:          r.ID,
-		Labels:      r.Labels,
-		Name:        r.Name,
-		Partitionid: r.Partitionid,
+		Amount:       r.Amount,
+		Description:  r.Description,
+		ID:           r.ID,
+		Labels:       r.Labels,
+		Name:         r.Name,
+		Partitionids: r.Partitionids,
 	}
 }
 

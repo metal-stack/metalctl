@@ -149,11 +149,10 @@ func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest 
 		})
 	}
 	return &models.V1SizeCreateRequest{
-		Constraints:  constraints,
-		Description:  r.Description,
-		ID:           r.ID,
-		Name:         r.Name,
-		Reservations: r.Reservations,
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
 	}
 }
 
@@ -168,12 +167,11 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		})
 	}
 	return &models.V1SizeUpdateRequest{
-		Constraints:  constraints,
-		Description:  r.Description,
-		ID:           r.ID,
-		Name:         r.Name,
-		Labels:       r.Labels,
-		Reservations: r.Reservations,
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+		Labels:      r.Labels,
 	}
 }
 

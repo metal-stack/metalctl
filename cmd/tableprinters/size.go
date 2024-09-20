@@ -15,12 +15,12 @@ import (
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPU Range"}
+		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range", "GPU Range"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Reservations", "CPU Range", "Memory Range", "Storage Range", "GPU Range", "Labels"}
+		header = []string{"ID", "Name", "Description", "CPU Range", "Memory Range", "Storage Range", "GPU Range", "Labels"}
 	}
 
 	for _, size := range data {
@@ -39,13 +39,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 
 		}
 
-		reservationCount := 0
-		for _, r := range size.Reservations {
-			r := r
-			reservationCount += int(pointer.SafeDeref(r.Amount))
-		}
-
-		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, strconv.Itoa(reservationCount), cpu, memory, storage, gpu}
+		row := []string{pointer.SafeDeref(size.ID), size.Name, size.Description, cpu, memory, storage, gpu}
 
 		if wide {
 			labels := genericcli.MapToLabels(size.Labels)
@@ -85,7 +79,7 @@ func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResp
 			pointer.SafeDeref(d.ID),
 			pointer.SafeDeref(d.Sizeid),
 			pointer.SafeDeref(d.Projectid),
-			strings.Join(d.Partitionid, ", "),
+			strings.Join(d.Partitionids, ", "),
 			desc,
 			fmt.Sprintf("%d", pointer.SafeDeref(d.Amount)),
 		}

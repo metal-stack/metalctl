@@ -22,10 +22,10 @@ var (
 		Labels: map[string]string{
 			"a": "b",
 		},
-		Name:        "reservation 1",
-		Partitionid: []string{"partition-a", "partition-b"},
-		Projectid:   pointer.Pointer("project-a"),
-		Sizeid:      pointer.Pointer("size-a"),
+		Name:         "reservation 1",
+		Partitionids: []string{"partition-a", "partition-b"},
+		Projectid:    pointer.Pointer("project-a"),
+		Sizeid:       pointer.Pointer("size-a"),
 	}
 	rv2 = &models.V1SizeReservationResponse{
 		Amount:      pointer.Pointer(int32(2)),
@@ -34,10 +34,10 @@ var (
 		Labels: map[string]string{
 			"b": "c",
 		},
-		Name:        "reservation 2",
-		Partitionid: []string{"partition-b"},
-		Projectid:   pointer.Pointer("project-b"),
-		Sizeid:      pointer.Pointer("size-b"),
+		Name:         "reservation 2",
+		Partitionids: []string{"partition-b"},
+		Projectid:    pointer.Pointer("project-b"),
+		Sizeid:       pointer.Pointer("size-b"),
 	}
 )
 

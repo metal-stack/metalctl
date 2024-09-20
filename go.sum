@@ -233,8 +233,8 @@ github.com/mdlayher/sdnotify v1.0.0 h1:Ma9XeLVN/l0qpyx1tNeMSeTjCPH6NtuD6/N9XdTlQ
 github.com/mdlayher/sdnotify v1.0.0/go.mod h1:HQUmpM4XgYkhDLtd+Uad8ZFK1T9D5+pNxnXQjCeJlGE=
 github.com/mdlayher/socket v0.5.1 h1:VZaqt6RkGkt2OE9l3GcC6nZkqD3xKeQLyfleW/uBcos=
 github.com/mdlayher/socket v0.5.1/go.mod h1:TjPLHI1UgwEv5J1B5q0zTZq12A/6H7nKmtTanQE37IQ=
-github.com/metal-stack/metal-go v0.35.3-0.20240920112607-36001cff1c02 h1:UXDKn4Lp5lCWe7WckRmPYyvQHsoz0MnngSdNG9lGqIw=
-github.com/metal-stack/metal-go v0.35.3-0.20240920112607-36001cff1c02/go.mod h1:3MJTYCS4YJz8D8oteTKhjpaAKNMMjMKYDrIy9awHGtQ=
+github.com/metal-stack/metal-go v0.35.3-0.20240920140628-3a1fa9d19d6b h1:yGGrbf+XogxtQalFximzaogC+Mm8dKTQ0e4ehMzGJPg=
+github.com/metal-stack/metal-go v0.35.3-0.20240920140628-3a1fa9d19d6b/go.mod h1:3MJTYCS4YJz8D8oteTKhjpaAKNMMjMKYDrIy9awHGtQ=
 github.com/metal-stack/metal-lib v0.18.3-0.20240919073100-437dee684212 h1:iSJs+4QqUdwhcFH2dvp5CSfa8SIHDVG3M/mM66PhiAE=
 github.com/metal-stack/metal-lib v0.18.3-0.20240919073100-437dee684212/go.mod h1:GJjipRpHmpd2vjBtsaw9gGk5ZFan7NlShyjIsTdY1x4=
 github.com/metal-stack/security v0.8.1 h1:4zmVUxZvDWShVvVIxM3XhIv7pTmPe9DvACRIHW6YTsk=

@@ -27,9 +27,9 @@ func SizeSorter() *multisort.Sorter[*models.V1SizeResponse] {
 func SizeReservationsSorter() *multisort.Sorter[*models.V1SizeReservationResponse] {
 	return multisort.New(multisort.FieldMap[*models.V1SizeReservationResponse]{
 		"partition": func(a, b *models.V1SizeReservationResponse, descending bool) multisort.CompareResult {
-			slices.Sort(a.Partitionid)
-			slices.Sort(b.Partitionid)
-			return multisort.Compare(strings.Join(a.Partitionid, " "), strings.Join(b.Partitionid, " "), descending)
+			slices.Sort(a.Partitionids)
+			slices.Sort(b.Partitionids)
+			return multisort.Compare(strings.Join(a.Partitionids, " "), strings.Join(b.Partitionids, " "), descending)
 		},
 		"size": func(a, b *models.V1SizeReservationResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(pointer.SafeDeref(a.Sizeid), pointer.SafeDeref(b.Sizeid), descending)

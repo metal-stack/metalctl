@@ -41,26 +41,6 @@ var (
 				Identifier: "AD120GL*",
 			},
 		},
-		Reservations: []*models.V1SizeReservation{
-			{
-				Amount:       pointer.Pointer(int32(5)),
-				Description:  "for testing",
-				Partitionids: []string{*partition1.ID},
-				Projectid:    pointer.Pointer(project1.Meta.ID),
-				Labels: map[string]string{
-					"size.metal-stack.io/reserved-by": "admin",
-				},
-			},
-			{
-				Amount:       pointer.Pointer(int32(2)),
-				Description:  "for testing",
-				Partitionids: []string{*partition2.ID},
-				Projectid:    pointer.Pointer(project2.Meta.ID),
-				Labels: map[string]string{
-					"size.metal-stack.io/reserved-by": "admin",
-				},
-			},
-		},
 		Labels: map[string]string{
 			"size.metal-stack.io/cpu-description":   "1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz",
 			"size.metal-stack.io/drive-description": "960GB NVMe",
@@ -115,15 +95,15 @@ func Test_SizeCmd_MultiResult(t *testing.T) {
 				size2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
-2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
+2    size-2   size 2        5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                                        size.metal-stack.io/drive-description=960GB NVMe
-2    size-2   size 2        0              5 - 6       3 B - 4 B      1 B - 2 B
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                            size.metal-stack.io/drive-description=960GB NVMe
+2    size-2   size 2        5 - 6       3 B - 4 B      1 B - 2 B
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -131,10 +111,10 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 2 size-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
-|----|--------|-------------|--------------|-----------|--------------|---------------|-----------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
-|  2 | size-2 | size 2      |            0 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |                 |
+| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
+|----|--------|-------------|-----------|--------------|---------------|-----------------|
+|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
+|  2 | size-2 | size 2      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     |                 |
 `),
 		},
 		{
@@ -240,22 +220,22 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 			},
 			want: size1,
 			wantTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
-1    size-1   size 1        7              5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
-                                                                                                        size.metal-stack.io/drive-description=960GB NVMe
+ID   NAME     DESCRIPTION   CPU RANGE   MEMORY RANGE   STORAGE RANGE   GPU RANGE         LABELS
+1    size-1   size 1        5 - 6       3 B - 4 B      1 B - 2 B       AD120GL*: 1 - 1   size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
+                                                                                         size.metal-stack.io/drive-description=960GB NVMe
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 size-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  NAME  | DESCRIPTION | RESERVATIONS | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
-|----|--------|-------------|--------------|-----------|--------------|---------------|-----------------|
-|  1 | size-1 | size 1      |            7 | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
+| ID |  NAME  | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE |    GPU RANGE    |
+|----|--------|-------------|-----------|--------------|---------------|-----------------|
+|  1 | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
 `),
 		},
 		{
@@ -296,7 +276,6 @@ ID   NAME     DESCRIPTION   RESERVATIONS   CPU RANGE   MEMORY RANGE   STORAGE RA
 							Type: size1.Constraints[0].Type,
 						},
 					}
-					s.Reservations = nil
 					mock.On("CreateSize", testcommon.MatchIgnoreContext(t, size.NewCreateSizeParams().WithBody(sizeResponseToCreate(size1))), nil).Return(&size.CreateSizeCreated{
 						Payload: size1,
 					}, nil)
