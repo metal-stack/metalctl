@@ -1,15 +1,15 @@
-## metalctl size reservations
+## metalctl size reservation describe
 
-manage size reservations
+describes the reservation
 
 ```
-metalctl size reservations [flags]
+metalctl size reservation describe <id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for reservations
+  -h, --help   help for describe
 ```
 
 ### Options inherited from parent commands
@@ -42,6 +42,5 @@ metalctl size reservations [flags]
 
 ### SEE ALSO
 
-* [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl size reservations list](metalctl_size_reservations_list.md)	 - list size reservations
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 

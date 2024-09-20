@@ -1,20 +1,30 @@
-## metalctl size reservations list
+## metalctl size reservation create
 
-list size reservations
+creates the reservation
 
 ```
-metalctl size reservations list [flags]
+metalctl size reservation create [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help               help for list
-      --partition string   the partition to filter
-      --project string     the project to filter
-      --size-id string     the size-id to filter
-      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: partition|project|size|tenant
-      --tenant string      the tenant to filter
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl reservation describe reservation-1 -o yaml > reservation.yaml
+                                $ vi reservation.yaml
+                                $ # either via stdin
+                                $ cat reservation.yaml | metalctl reservation create -f -
+                                $ # or via file
+                                $ metalctl reservation create -f reservation.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for create
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands
@@ -47,5 +57,5 @@ metalctl size reservations list [flags]
 
 ### SEE ALSO
 
-* [metalctl size reservations](metalctl_size_reservations.md)	 - manage size reservations
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 

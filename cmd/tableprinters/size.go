@@ -65,7 +65,46 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 
 func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"Partition", "Size", "Tenant", "Project", "Project Name", "Used/Amount", "Project Allocations"}
+		header = []string{"ID", "Size", "Project", "Partitions", "Description", "Amount"}
+		rows   [][]string
+	)
+
+	if wide {
+		header = append(header, "Labels")
+	}
+
+	for _, d := range data {
+		d := d
+
+		desc := d.Description
+		if !wide {
+			desc = genericcli.TruncateEnd(d.Description, 50)
+		}
+
+		row := []string{
+			pointer.SafeDeref(d.ID),
+			pointer.SafeDeref(d.Sizeid),
+			pointer.SafeDeref(d.Projectid),
+			strings.Join(d.Partitionid, ", "),
+			desc,
+			fmt.Sprintf("%d", pointer.SafeDeref(d.Amount)),
+		}
+
+		if wide {
+			labels := genericcli.MapToLabels(d.Labels)
+			sort.Strings(labels)
+			row = append(row, strings.Join(labels, "\n"))
+		}
+
+		rows = append(rows, row)
+	}
+
+	return header, rows, nil
+}
+
+func (t *TablePrinter) SizeReservationUsageTable(data []*models.V1SizeReservationUsageResponse, wide bool) ([]string, [][]string, error) {
+	var (
+		header = []string{"ID", "Size", "Project", "Partition", "Used/Amount", "Project Allocations"}
 		rows   [][]string
 	)
 
@@ -77,12 +116,11 @@ func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResp
 		d := d
 
 		row := []string{
-			pointer.SafeDeref(d.Partitionid),
+			pointer.SafeDeref(d.ID),
 			pointer.SafeDeref(d.Sizeid),
-			pointer.SafeDeref(d.Tenant),
 			pointer.SafeDeref(d.Projectid),
-			pointer.SafeDeref(d.Projectname),
-			fmt.Sprintf("%d/%d", pointer.SafeDeref(d.Usedreservations), pointer.SafeDeref(d.Reservations)),
+			pointer.SafeDeref(d.Partitionid),
+			fmt.Sprintf("%d/%d", pointer.SafeDeref(d.Usedamount), pointer.SafeDeref(d.Amount)),
 			strconv.Itoa(int(pointer.SafeDeref(d.Projectallocations))),
 		}
 
