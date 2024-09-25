@@ -8,6 +8,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,12 +34,68 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 		ValidArgsFn:     c.comp.SizeReservationsListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
-		ListCmdMutateFn: func(cmd *cobra.Command) {
-			cmd.Flags().String("size-id", "", "the size-id to filter")
-			cmd.Flags().String("project", "", "the project to filter")
-			cmd.Flags().String("partition", "", "the partition to filter")
+		CreateRequestFromCLI: func() (*models.V1SizeReservationCreateRequest, error) {
+			labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+			if err != nil {
+				return nil, err
+			}
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
+			return &models.V1SizeReservationCreateRequest{
+				Amount:       pointer.PointerOrNil(int32(viper.GetInt32("amount"))),
+				Description:  viper.GetString("description"),
+				ID:           pointer.PointerOrNil(viper.GetString("id")),
+				Labels:       labels,
+				Partitionids: viper.GetStringSlice("partitions"),
+				Projectid:    pointer.PointerOrNil(viper.GetString("project")),
+				Sizeid:       pointer.PointerOrNil(viper.GetString("size")),
+			}, nil
+		},
+		CreateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().Int32("amount", 0, "the amount to associate with this reservation")
+			cmd.Flags().String("id", "", "the id to associate with this reservation")
+			cmd.Flags().String("size", "", "the size id to associate with this reservation")
+			cmd.Flags().String("project", "", "the project id to associate with this reservation")
+			cmd.Flags().StringSlice("partitions", nil, "the partition ids to associate with this reservation")
+			cmd.Flags().StringSlice("labels", nil, "the labels to associate with this reservation")
+			cmd.Flags().String("description", "", "the description to associate with this reservation")
+
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
+		},
+		UpdateRequestFromCLI: func(args []string) (*models.V1SizeReservationUpdateRequest, error) {
+			id, err := genericcli.GetExactlyOneArg(args)
+			if err != nil {
+				return nil, err
+			}
+
+			labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+			if err != nil {
+				return nil, err
+			}
+
+			return &models.V1SizeReservationUpdateRequest{ //nolint:exhaustruct
+				Amount:       pointer.PointerOrNil(int32(viper.GetInt32("amount"))),
+				Description:  viper.GetString("description"),
+				ID:           &id,
+				Labels:       labels,
+				Partitionids: viper.GetStringSlice("partitions"),
+			}, nil
+		},
+		UpdateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().Int32("amount", 0, "the amount to associate with this reservation")
+			cmd.Flags().StringSlice("partitions", nil, "the partition ids to associate with this reservation")
+			cmd.Flags().StringSlice("labels", nil, "the labels to associate with this reservation")
+			cmd.Flags().String("description", "", "the description to associate with this reservation")
+
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
+		},
+		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("size", "", "the size id to filter")
+			cmd.Flags().String("project", "", "the project id to filter")
+			cmd.Flags().String("partition", "", "the partition id to filter")
+
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 		},

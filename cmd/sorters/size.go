@@ -43,7 +43,7 @@ func SizeReservationsSorter() *multisort.Sorter[*models.V1SizeReservationRespons
 		"id": func(a, b *models.V1SizeReservationResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(pointer.SafeDeref(a.ID), pointer.SafeDeref(b.ID), descending)
 		},
-	}, multisort.Keys{{ID: "partition"}, {ID: "size"}, {ID: "project"}, {ID: "id"}})
+	}, multisort.Keys{{ID: "project"}, {ID: "size"}, {ID: "partition"}, {ID: "id"}})
 }
 
 func SizeReservationsUsageSorter() *multisort.Sorter[*models.V1SizeReservationUsageResponse] {
@@ -60,5 +60,11 @@ func SizeReservationsUsageSorter() *multisort.Sorter[*models.V1SizeReservationUs
 		"id": func(a, b *models.V1SizeReservationUsageResponse, descending bool) multisort.CompareResult {
 			return multisort.Compare(pointer.SafeDeref(a.ID), pointer.SafeDeref(b.ID), descending)
 		},
-	}, multisort.Keys{{ID: "partition"}, {ID: "size"}, {ID: "project"}, {ID: "id"}})
+		"amount": func(a, b *models.V1SizeReservationUsageResponse, descending bool) multisort.CompareResult {
+			return multisort.Compare(pointer.SafeDeref(a.Amount), pointer.SafeDeref(b.Amount), descending)
+		},
+		"used-amount": func(a, b *models.V1SizeReservationUsageResponse, descending bool) multisort.CompareResult {
+			return multisort.Compare(pointer.SafeDeref(a.Usedamount), pointer.SafeDeref(b.Usedamount), descending)
+		},
+	}, multisort.Keys{{ID: "project"}, {ID: "size"}, {ID: "partition"}, {ID: "id"}})
 }

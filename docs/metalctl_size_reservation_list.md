@@ -10,9 +10,9 @@ metalctl size reservation list [flags]
 
 ```
   -h, --help               help for list
-      --partition string   the partition to filter
-      --project string     the project to filter
-      --size-id string     the size-id to filter
+      --partition string   the partition id to filter
+      --project string     the project id to filter
+      --size string        the size id to filter
       --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: amount|id|partition|project|size
 ```
 

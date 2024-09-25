@@ -9,7 +9,9 @@ metalctl size reservation create [flags]
 ### Options
 
 ```
+      --amount int32            the amount to associate with this reservation
       --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --description string      the description to associate with this reservation
   -f, --file string             filename of the create or update request in yaml format, or - for stdin.
                                 
                                 Example:
@@ -23,6 +25,11 @@ metalctl size reservation create [flags]
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	
   -h, --help                    help for create
+      --id string               the id to associate with this reservation
+      --labels strings          the labels to associate with this reservation
+      --partitions strings      the partition ids to associate with this reservation
+      --project string          the project id to associate with this reservation
+      --size string             the size id to associate with this reservation
       --skip-security-prompts   skips security prompt for bulk operations
       --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```

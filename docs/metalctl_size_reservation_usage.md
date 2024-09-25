@@ -13,7 +13,7 @@ metalctl size reservation usage [flags]
       --partition string   the partition to filter
       --project string     the project to filter
       --size-id string     the size-id to filter
-      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: id|partition|project|size
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: amount|id|partition|project|size|used-amount
 ```
 
 ### Options inherited from parent commands
