@@ -24,7 +24,7 @@ func (c *Completion) SizeReservationsListCompletion(cmd *cobra.Command, args []s
 	}
 	var names []string
 	for _, s := range resp.Payload {
-		names = append(names, *s.ID+"\t"+s.Name)
+		names = append(names, *s.ID)
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
