@@ -10,6 +10,7 @@ metalctl size reservation list [flags]
 
 ```
   -h, --help               help for list
+      --id string          the id to filter
       --partition string   the partition id to filter
       --project string     the project id to filter
       --size string        the size id to filter

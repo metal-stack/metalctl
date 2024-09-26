@@ -91,10 +91,12 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().String("id", "", "the id to filter")
 			cmd.Flags().String("size", "", "the size id to filter")
 			cmd.Flags().String("project", "", "the project id to filter")
 			cmd.Flags().String("partition", "", "the partition id to filter")
 
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.SizeReservationsListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
@@ -133,6 +135,7 @@ func (c sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, 
 
 func (c sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().FindSizeReservations(sizemodel.NewFindSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
+		ID:          viper.GetString("id"),
 		Partitionid: viper.GetString("parition"),
 		Projectid:   viper.GetString("project"),
 		Sizeid:      viper.GetString("size"),
