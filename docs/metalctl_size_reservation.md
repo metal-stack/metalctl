@@ -1,15 +1,15 @@
-## metalctl size
+## metalctl size reservation
 
-manage size entities
+manage reservation entities
 
 ### Synopsis
 
-a size matches a machine in terms of cpu cores, ram and storage.
+manage size reservations
 
 ### Options
 
 ```
-  -h, --help   help for size
+  -h, --help   help for reservation
 ```
 
 ### Options inherited from parent commands
@@ -42,15 +42,13 @@ a size matches a machine in terms of cpu cores, ram and storage.
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl size apply](metalctl_size_apply.md)	 - applies one or more sizes from a given file
-* [metalctl size create](metalctl_size_create.md)	 - creates the size
-* [metalctl size delete](metalctl_size_delete.md)	 - deletes the size
-* [metalctl size describe](metalctl_size_describe.md)	 - describes the size
-* [metalctl size edit](metalctl_size_edit.md)	 - edit the size through an editor and update
-* [metalctl size imageconstraint](metalctl_size_imageconstraint.md)	 - manage imageconstraint entities
-* [metalctl size list](metalctl_size_list.md)	 - list all sizes
-* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
-* [metalctl size suggest](metalctl_size_suggest.md)	 - suggest size from a given machine id
-* [metalctl size update](metalctl_size_update.md)	 - updates the size
+* [metalctl size](metalctl_size.md)	 - manage size entities
+* [metalctl size reservation apply](metalctl_size_reservation_apply.md)	 - applies one or more reservations from a given file
+* [metalctl size reservation create](metalctl_size_reservation_create.md)	 - creates the reservation
+* [metalctl size reservation delete](metalctl_size_reservation_delete.md)	 - deletes the reservation
+* [metalctl size reservation describe](metalctl_size_reservation_describe.md)	 - describes the reservation
+* [metalctl size reservation edit](metalctl_size_reservation_edit.md)	 - edit the reservation through an editor and update
+* [metalctl size reservation list](metalctl_size_reservation_list.md)	 - list all reservations
+* [metalctl size reservation update](metalctl_size_reservation_update.md)	 - updates the reservation
+* [metalctl size reservation usage](metalctl_size_reservation_usage.md)	 - see current usage of size reservations
 

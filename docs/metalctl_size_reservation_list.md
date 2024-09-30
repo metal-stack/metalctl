@@ -1,15 +1,20 @@
-## metalctl size
+## metalctl size reservation list
 
-manage size entities
+list all reservations
 
-### Synopsis
-
-a size matches a machine in terms of cpu cores, ram and storage.
+```
+metalctl size reservation list [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for size
+  -h, --help               help for list
+      --id string          the id to filter
+      --partition string   the partition id to filter
+      --project string     the project id to filter
+      --size string        the size id to filter
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: amount|id|partition|project|size
 ```
 
 ### Options inherited from parent commands
@@ -42,15 +47,5 @@ a size matches a machine in terms of cpu cores, ram and storage.
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl size apply](metalctl_size_apply.md)	 - applies one or more sizes from a given file
-* [metalctl size create](metalctl_size_create.md)	 - creates the size
-* [metalctl size delete](metalctl_size_delete.md)	 - deletes the size
-* [metalctl size describe](metalctl_size_describe.md)	 - describes the size
-* [metalctl size edit](metalctl_size_edit.md)	 - edit the size through an editor and update
-* [metalctl size imageconstraint](metalctl_size_imageconstraint.md)	 - manage imageconstraint entities
-* [metalctl size list](metalctl_size_list.md)	 - list all sizes
 * [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
-* [metalctl size suggest](metalctl_size_suggest.md)	 - suggest size from a given machine id
-* [metalctl size update](metalctl_size_update.md)	 - updates the size
 
