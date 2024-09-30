@@ -29,7 +29,7 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 		Singular:        "reservation",
 		Plural:          "reservations",
 		Description:     "manage size reservations",
-		Aliases:         []string{"rvs"},
+		Aliases:         []string{"rs"},
 		Sorter:          sorters.SizeReservationsSorter(),
 		ValidArgsFn:     c.comp.SizeReservationsListCompletion,
 		DescribePrinter: func() printers.Printer { return c.describePrinter },
