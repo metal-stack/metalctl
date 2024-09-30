@@ -3,7 +3,7 @@
 updates the machine
 
 ```
-metalctl machine update [flags]
+metalctl machine update <id> [flags]
 ```
 
 ### Options
@@ -18,9 +18,9 @@ metalctl machine update [flags]
                                 $ metalctl machine describe machine-1 -o yaml > machine.yaml
                                 $ vi machine.yaml
                                 $ # either via stdin
-                                $ cat machine.yaml | metalctl machine update -f -
+                                $ cat machine.yaml | metalctl machine update <id> -f -
                                 $ # or via file
-                                $ metalctl machine update -f machine.yaml
+                                $ metalctl machine update <id> -f machine.yaml
                                 
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	

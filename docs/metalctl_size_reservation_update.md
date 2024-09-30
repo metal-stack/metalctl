@@ -3,7 +3,7 @@
 updates the reservation
 
 ```
-metalctl size reservation update [flags]
+metalctl size reservation update <id> [flags]
 ```
 
 ### Options
@@ -18,9 +18,9 @@ metalctl size reservation update [flags]
                                 $ metalctl reservation describe reservation-1 -o yaml > reservation.yaml
                                 $ vi reservation.yaml
                                 $ # either via stdin
-                                $ cat reservation.yaml | metalctl reservation update -f -
+                                $ cat reservation.yaml | metalctl reservation update <id> -f -
                                 $ # or via file
-                                $ metalctl reservation update -f reservation.yaml
+                                $ metalctl reservation update <id> -f reservation.yaml
                                 
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	
