@@ -185,6 +185,45 @@ var (
 		State:      machine1.State,
 		Tags:       machine1.Tags,
 	}
+	ipmiMachine2 = &models.V1MachineIPMIResponse{
+		Allocation: machine1.Allocation,
+		Bios: &models.V1MachineBIOS{
+			Version: pointer.Pointer("2.0"),
+		},
+		Changed:     machine1.Changed,
+		Created:     machine1.Created,
+		Description: machine1.Description,
+		Events:      machine1.Events,
+		Hardware:    machine1.Hardware,
+		ID:          machine1.ID,
+		Ipmi: &models.V1MachineIPMI{
+			Address:    pointer.Pointer("1.2.3.4"),
+			Bmcversion: pointer.Pointer("1.1"),
+			Fru: &models.V1MachineFru{
+				BoardPartNumber:   "part123",
+				ChassisPartSerial: "chassis123",
+				ProductSerial:     "product123",
+			},
+			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
+			Mac:         pointer.Pointer("1.2.3.4"),
+			Powermetric: &models.V1PowerMetric{
+				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
+			},
+			Powerstate: pointer.Pointer("ON"),
+			Powersupplies: []*models.V1PowerSupply{
+				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("OK")}},
+				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("NOT-OK")}},
+			},
+		},
+		Ledstate:   &models.V1ChassisIdentifyLEDState{},
+		Liveliness: machine1.Liveliness,
+		Name:       machine1.Name,
+		Partition:  machine1.Partition,
+		Rackid:     machine1.Rackid,
+		Size:       machine1.Size,
+		State:      machine1.State,
+		Tags:       machine1.Tags,
+	}
 
 	machineIssue1 = &models.V1MachineIssue{
 		Description: pointer.Pointer("this is a test issue 1"),
@@ -464,6 +503,47 @@ ID      POWER   IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PART
 			wantWideTable: pointer.Pointer(`
 ID   LAST EVENT    STATUS   POWER    IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED 
 1    Phoned Home            ON 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
+`),
+			template: pointer.Pointer("{{ .id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+1 machine-1
+`),
+			wantMarkdown: pointer.Pointer(`
+| ID |  | POWER |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
+|----|--|-------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
+|  1 |  | ⏻ 16W | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+`),
+		},
+		{
+			name: "machine ipmi with broken powersupply",
+			cmd: func(want []*models.V1MachineIPMIResponse) []string {
+				return []string{"machine", "ipmi"}
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
+					})), nil).Return(&machine.FindIPMIMachinesOK{
+						Payload: []*models.V1MachineIPMIResponse{
+							ipmiMachine2,
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineIPMIResponse{
+				ipmiMachine2,
+			},
+			wantTable: pointer.Pointer(`
+ID      POWER   IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED 
+1       ⏻ 16W   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
+`),
+			wantWideTable: pointer.Pointer(`
+ID   LAST EVENT    STATUS   POWER           IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED 
+1    Phoned Home            ON NOT-OK 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
