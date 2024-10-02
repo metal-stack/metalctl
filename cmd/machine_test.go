@@ -542,8 +542,8 @@ ID      POWER   IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PART
 1       ⏻ 16W   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    STATUS   POWER           IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED 
-1    Phoned Home            ON NOT-OK 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
+ID   LAST EVENT    STATUS   POWER                        IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED 
+1    Phoned Home            ON Power Supply NOT-OK 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`

@@ -245,7 +245,11 @@ func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 		}
 		if *ps.Status.Health != "OK" {
 			short = color.RedString(poweron)
-			wide = wide + nbr + *ps.Status.Health
+			wide = wide + nbr + "Power Supply" + nbr + *ps.Status.Health
+		}
+		if ps.Status.State != nil && *ps.Status.State != "Enabled" {
+			short = color.RedString(powersleep)
+			wide = wide + nbr + *ps.Status.State
 		}
 	}
 
