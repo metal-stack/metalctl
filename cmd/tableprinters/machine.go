@@ -225,24 +225,33 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 
 func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	if ipmi == nil || ipmi.Powerstate == nil {
-		return color.WhiteString(dot), wide
+		return color.WhiteString(poweron), wide
 	}
 
 	state := *ipmi.Powerstate
 	switch state {
 	case "ON":
-		short = color.GreenString(dot)
+		short = color.GreenString(poweron)
 	case "OFF":
-		short = color.RedString(dot)
+		short = color.GreenString(powersleep)
 	default:
-		short = color.WhiteString(dot)
+		short = color.WhiteString(poweron)
 	}
 
 	wide = state
+	for _, ps := range ipmi.Powersupplies {
+		if ps.Status == nil || ps.Status.Health == nil {
+			continue
+		}
+		if *ps.Status.Health != "OK" {
+			short = color.RedString(poweron)
+			wide = wide + nbr + *ps.Status.Health
+		}
+	}
 
 	if ipmi.Powermetric != nil {
-		short = fmt.Sprintf("%s"+nbr+nbr+"(%.1fW)", short, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
-		wide = fmt.Sprintf("%s %.2fW", wide, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
+		short = fmt.Sprintf("%s"+nbr+"%.0fW", short, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
+		wide = fmt.Sprintf("%s %.0fW", wide, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
 	}
 
 	return short, wide
