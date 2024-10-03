@@ -3,7 +3,7 @@
 updates the network
 
 ```
-metalctl network update [flags]
+metalctl network update <id> [flags]
 ```
 
 ### Options
@@ -20,9 +20,9 @@ metalctl network update [flags]
                                                $ metalctl network describe network-1 -o yaml > network.yaml
                                                $ vi network.yaml
                                                $ # either via stdin
-                                               $ cat network.yaml | metalctl network update -f -
+                                               $ cat network.yaml | metalctl network update <id> -f -
                                                $ # or via file
-                                               $ metalctl network update -f network.yaml
+                                               $ metalctl network update <id> -f network.yaml
                                                
                                                the file can also contain multiple documents and perform a bulk operation.
                                                	

@@ -28,6 +28,7 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 			NoHeaders:       viper.GetBool("no-headers"),
 		}).WithOut(out)
 
+		tp.SetMarkdown(format == "markdown")
 		tp.SetPrinter(tablePrinter)
 		tp.SetLastEventErrorThreshold(viper.GetDuration("last-event-error-threshold"))
 

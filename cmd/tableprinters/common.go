@@ -9,8 +9,10 @@ import (
 )
 
 const (
-	dot = "●"
-	nbr = " "
+	dot        = "●"
+	nbr        = " "
+	poweron    = "⏻"
+	powersleep = "⏾"
 )
 
 func depth(path string) uint {

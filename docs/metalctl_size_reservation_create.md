@@ -1,31 +1,35 @@
-## metalctl machine update
+## metalctl size reservation create
 
-updates the machine
+creates the reservation
 
 ```
-metalctl machine update <id> [flags]
+metalctl size reservation create [flags]
 ```
 
 ### Options
 
 ```
-      --add-tags strings        tags to be added to the machine [optional]
+      --amount int32            the amount to associate with this reservation
       --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
-      --description string      the description of the machine [optional]
+      --description string      the description to associate with this reservation
   -f, --file string             filename of the create or update request in yaml format, or - for stdin.
                                 
                                 Example:
-                                $ metalctl machine describe machine-1 -o yaml > machine.yaml
-                                $ vi machine.yaml
+                                $ metalctl reservation describe reservation-1 -o yaml > reservation.yaml
+                                $ vi reservation.yaml
                                 $ # either via stdin
-                                $ cat machine.yaml | metalctl machine update <id> -f -
+                                $ cat reservation.yaml | metalctl reservation create -f -
                                 $ # or via file
-                                $ metalctl machine update <id> -f machine.yaml
+                                $ metalctl reservation create -f reservation.yaml
                                 
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	
-  -h, --help                    help for update
-      --remove-tags strings     tags to be removed from the machine [optional]
+  -h, --help                    help for create
+      --id string               the id to associate with this reservation
+      --labels strings          the labels to associate with this reservation
+      --partitions strings      the partition ids to associate with this reservation
+      --project string          the project id to associate with this reservation
+      --size string             the size id to associate with this reservation
       --skip-security-prompts   skips security prompt for bulk operations
       --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
@@ -60,5 +64,5 @@ metalctl machine update <id> [flags]
 
 ### SEE ALSO
 
-* [metalctl machine](metalctl_machine.md)	 - manage machine entities
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 
