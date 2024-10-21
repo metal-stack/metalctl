@@ -136,7 +136,7 @@ func (c sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, 
 func (c sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().FindSizeReservations(sizemodel.NewFindSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
 		ID:          viper.GetString("id"),
-		Partitionid: viper.GetString("parition"),
+		Partitionid: viper.GetString("partition"),
 		Projectid:   viper.GetString("project"),
 		Sizeid:      viper.GetString("size"),
 	}), nil)
@@ -218,7 +218,7 @@ func (c *sizeReservationsCmd) usage() error {
 	}
 
 	resp, err := c.client.Size().SizeReservationsUsage(sizemodel.NewSizeReservationsUsageParams().WithBody(&models.V1SizeReservationListRequest{
-		Partitionid: viper.GetString("parition"),
+		Partitionid: viper.GetString("partition"),
 		Projectid:   viper.GetString("project"),
 		Sizeid:      viper.GetString("size"),
 	}), nil)
