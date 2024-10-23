@@ -54,6 +54,8 @@ var (
 			SSHPubKeys: []string{"sshpubkey"},
 			Succeeded:  pointer.Pointer(true),
 			UserData:   "---userdata---",
+			DNSServers: []*models.MetalDNSServer{{IP: pointer.Pointer("8.8.8.8")}},
+			NtpServers: []*models.MetalNTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
 			Date:    pointer.Pointer("biosdata"),
@@ -275,12 +277,20 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 			name: "create",
 			cmd: func(want *models.V1FirewallResponse) []string {
 				var (
-					ips      []string
-					networks []string
+					ips        []string
+					networks   []string
+					dnsServers []string
+					ntpservers []string
 				)
 				for _, s := range want.Allocation.Networks {
 					ips = append(ips, s.Ips...)
 					networks = append(networks, *s.Networkid+":noauto")
+				}
+				for _, dns := range want.Allocation.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+				for _, ntp := range want.Allocation.NtpServers {
+					ntpservers = append(ntpservers, *ntp.Address)
 				}
 
 				args := []string{"firewall", "create",
@@ -299,6 +309,8 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
 					"--firewall-rules-file", "",
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpservers, ","),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
