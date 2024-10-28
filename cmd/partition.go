@@ -135,6 +135,8 @@ func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1Partitio
 		Mgmtserviceaddress:         r.Mgmtserviceaddress,
 		Name:                       r.Name,
 		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
+		DNSServers:                 r.DNSServers,
+		NtpServers:                 r.NtpServers,
 	}
 }
 
