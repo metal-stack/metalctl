@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -64,6 +65,8 @@ type test[R any] struct {
 func (c *test[R]) testCmd(t *testing.T) {
 	require.NotEmpty(t, c.name, "test name must not be empty")
 	require.NotEmpty(t, c.cmd, "cmd must not be empty")
+
+	t.Setenv(strings.ToUpper(binaryName)+"_FORCE_COLOR", strconv.FormatBool(false))
 
 	if c.wantErr != nil {
 		_, _, config := c.newMockConfig(t)

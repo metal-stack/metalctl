@@ -1,15 +1,34 @@
-## metalctl size reservations
+## metalctl size reservation update
 
-manage size reservations
+updates the reservation
 
 ```
-metalctl size reservations [flags]
+metalctl size reservation update <id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for reservations
+      --amount int32            the amount to associate with this reservation
+      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --description string      the description to associate with this reservation
+  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
+                                
+                                Example:
+                                $ metalctl reservation describe reservation-1 -o yaml > reservation.yaml
+                                $ vi reservation.yaml
+                                $ # either via stdin
+                                $ cat reservation.yaml | metalctl reservation update <id> -f -
+                                $ # or via file
+                                $ metalctl reservation update <id> -f reservation.yaml
+                                
+                                the file can also contain multiple documents and perform a bulk operation.
+                                	
+  -h, --help                    help for update
+      --labels strings          the labels to associate with this reservation
+      --partitions strings      the partition ids to associate with this reservation
+      --skip-security-prompts   skips security prompt for bulk operations
+      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
 ```
 
 ### Options inherited from parent commands
@@ -42,6 +61,5 @@ metalctl size reservations [flags]
 
 ### SEE ALSO
 
-* [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl size reservations list](metalctl_size_reservations_list.md)	 - list size reservations
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 
