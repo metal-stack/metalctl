@@ -182,12 +182,6 @@ func (c *partitionCmd) partitionCapacity() error {
 }
 
 func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest, error) {
-	pcr := partitionCreateRequest()
-
-	return pcr, nil
-}
-
-func partitionCreateRequest() *models.V1PartitionCreateRequest {
 	var (
 		dnsServers []*models.MetalDNSServer
 		ntpServers []*models.MetalNTPServer
@@ -218,5 +212,5 @@ func partitionCreateRequest() *models.V1PartitionCreateRequest {
 		NtpServers: ntpServers,
 	}
 
-	return pcr
+	return pcr, nil
 }
