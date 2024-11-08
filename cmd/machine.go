@@ -492,6 +492,8 @@ If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picke
 	cmd.Flags().StringSlice("tags", []string{}, "tags to add to the "+name+", use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().StringP("userdata", "", "", `cloud-init.io compatible userdata. [optional]
 Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".`)
+	cmd.Flags().StringSlice("dnsservers", []string{}, "dns servers to add to the machine or firewall. [optional]")
+	cmd.Flags().StringSlice("ntpservers", []string{}, "ntp servers to add to the machine or firewall. [optional]")
 
 	switch name {
 	case "machine":
@@ -637,6 +639,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		ips        []string
 		networks   []*models.V1MachineAllocationNetwork
 		allocation = pointer.SafeDeref(r.Allocation)
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
@@ -644,6 +648,14 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
+	}
+
+	for _, s := range allocation.DNSServers {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: s.IP})
+	}
+
+	for _, s := range allocation.NtpServers {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: s.Address})
 	}
 
 	return &models.V1MachineAllocateRequest{
@@ -661,6 +673,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		DNSServers:         dnsServers,
+		NtpServers:         ntpServers,
 	}
 }
 
@@ -684,7 +698,15 @@ func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, e
 }
 
 func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
+	var (
+		keys       []string
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
+	)
+
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
+	dnsServersArgument := viper.GetStringSlice("dnsservers")
+	ntpServersArgument := viper.GetStringSlice("ntpservers")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
 		var err error
@@ -706,7 +728,6 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		}
 	}
 
-	var keys []string
 	if sshPublicKeyArgument != "" {
 		keys = append(keys, sshPublicKeyArgument)
 	}
@@ -729,6 +750,14 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		return nil, err
 	}
 
+	for _, s := range dnsServersArgument {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+	}
+
+	for _, s := range ntpServersArgument {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+	}
+
 	mcr := &models.V1MachineAllocateRequest{
 		Description: viper.GetString("description"),
 		Partitionid: pointer.Pointer(viper.GetString("partition")),
@@ -743,6 +772,8 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		UserData:    userDataArgument,
 		Networks:    networks,
 		Ips:         viper.GetStringSlice("ips"),
+		DNSServers:  dnsServers,
+		NtpServers:  ntpServers,
 	}
 
 	if viper.IsSet("filesystemlayout") {

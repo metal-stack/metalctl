@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/metal-stack/metal-go/api/client/partition"
@@ -224,6 +225,18 @@ ID   NAME          DESCRIPTION   LABELS
 		{
 			name: "create",
 			cmd: func(want *models.V1PartitionResponse) []string {
+				var (
+					dnsServers []string
+					ntpServers []string
+				)
+				for _, dns := range want.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+
+				for _, ntp := range want.NtpServers {
+					ntpServers = append(ntpServers, *ntp.Address)
+				}
+
 				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
@@ -232,6 +245,8 @@ ID   NAME          DESCRIPTION   LABELS
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpServers, ","),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args

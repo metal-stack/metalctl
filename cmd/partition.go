@@ -26,28 +26,16 @@ func newPartitionCmd(c *config) *cobra.Command {
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
-		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
-		Singular:        "partition",
-		Plural:          "partitions",
-		Description:     "a partition is a failure domain in the data center.",
-		ValidArgsFn:     c.comp.PartitionListCompletion,
-		Sorter:          sorters.PartitionSorter(),
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
-		CreateRequestFromCLI: func() (*models.V1PartitionCreateRequest, error) {
-			return &models.V1PartitionCreateRequest{
-				ID:                 pointer.Pointer(viper.GetString("id")),
-				Description:        viper.GetString("description"),
-				Name:               viper.GetString("name"),
-				Mgmtserviceaddress: viper.GetString("mgmtserver"),
-				Bootconfig: &models.V1PartitionBootConfiguration{
-					Commandline: viper.GetString("cmdline"),
-					Imageurl:    viper.GetString("imageurl"),
-					Kernelurl:   viper.GetString("kernelurl"),
-				},
-			}, nil
-		},
+		BinaryName:           binaryName,
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
+		Singular:             "partition",
+		Plural:               "partitions",
+		Description:          "a partition is a failure domain in the data center.",
+		ValidArgsFn:          c.comp.PartitionListCompletion,
+		Sorter:               sorters.PartitionSorter(),
+		DescribePrinter:      func() printers.Printer { return c.describePrinter },
+		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
 			cmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
@@ -56,6 +44,8 @@ func newPartitionCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
+			cmd.Flags().StringP("dnsservers", "", "", "dns servers for the machines and firewalls in the partition. [optional]")
+			cmd.Flags().StringP("ntpservers", "", "", "ntp servers for the machines and firewalls in the partition. [optional]")
 		},
 	}
 
@@ -145,6 +135,8 @@ func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1Partitio
 		Mgmtserviceaddress:         r.Mgmtserviceaddress,
 		Name:                       r.Name,
 		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
+		DNSServers:                 r.DNSServers,
+		NtpServers:                 r.NtpServers,
 	}
 }
 
@@ -160,6 +152,8 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 		Mgmtserviceaddress: r.Mgmtserviceaddress,
 		Name:               r.Name,
 		Labels:             r.Labels,
+		DNSServers:         r.DNSServers,
+		NtpServers:         r.NtpServers,
 	}
 }
 
@@ -187,4 +181,38 @@ func (c *partitionCmd) partitionCapacity() error {
 	}
 
 	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest, error) {
+	var (
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
+	)
+
+	dnsServersArgument := viper.GetStringSlice("dnsservers")
+	ntpServersArgument := viper.GetStringSlice("ntpservers")
+
+	for _, s := range dnsServersArgument {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+	}
+
+	for _, s := range ntpServersArgument {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+	}
+
+	pcr := &models.V1PartitionCreateRequest{
+		ID:                 pointer.Pointer(viper.GetString("id")),
+		Description:        viper.GetString("description"),
+		Name:               viper.GetString("name"),
+		Mgmtserviceaddress: viper.GetString("mgmtserver"),
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: viper.GetString("cmdline"),
+			Imageurl:    viper.GetString("imageurl"),
+			Kernelurl:   viper.GetString("kernelurl"),
+		},
+		DNSServers: dnsServers,
+		NtpServers: ntpServers,
+	}
+
+	return pcr, nil
 }

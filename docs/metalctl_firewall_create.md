@@ -11,6 +11,7 @@ metalctl firewall create [flags]
 ```
       --bulk-output                  when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string           Description of the firewall to create. [optional]
+      --dnsservers strings           dns servers to add to the machine or firewall. [optional]
   -f, --file string                  filename of the create or update request in yaml format, or - for stdin.
                                      
                                      Example:
@@ -85,6 +86,7 @@ metalctl firewall create [flags]
                                      MODE can be omitted or one of:
                                      	auto	IP address is automatically acquired from the given network
                                      	noauto	No automatic IP address acquisition
+      --ntpservers strings           ntp servers to add to the machine or firewall. [optional]
   -S, --partition string             partition/datacenter where the firewall is created. [required, except for reserved machines]
   -P, --project string               Project where the firewall should belong to. [required]
   -s, --size string                  Size of the firewall. [required, except for reserved machines]
