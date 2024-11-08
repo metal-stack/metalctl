@@ -139,6 +139,14 @@ Operational steps to replace a switch:
 		},
 		ValidArgsFunction: c.comp.SwitchListCompletion,
 	}
+	switchMigrateCmd := &cobra.Command{
+		Use:               "migrate <oldSwitchID> <newSwitchID>",
+		Short:             "migrate machine connections and other configuration from one switch to another",
+		ValidArgsFunction: c.comp.SwitchListCompletion,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.switchMigrate(args)
+		},
+	}
 	switchSSHCmd := &cobra.Command{
 		Use:   "ssh <switchID>",
 		Short: "connect to the switch via ssh",
@@ -197,7 +205,7 @@ Operational steps to replace a switch:
 
 	switchPortCmd.AddCommand(switchPortUpCmd, switchPortDownCmd, switchPortDescribeCmd)
 
-	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchSSHCmd, switchConsoleCmd, switchPortCmd)
+	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchMigrateCmd, switchSSHCmd, switchConsoleCmd, switchPortCmd)
 }
 
 func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
@@ -374,6 +382,21 @@ func (c *switchCmd) switchReplace(args []string) error {
 	}
 
 	return c.describePrinter.Print(uresp)
+}
+
+func (c switchCmd) switchMigrate(args []string) error {
+	if count := len(args); count != 2 {
+		return fmt.Errorf("invalid number of arguments were provided; 2 are required, %d were passed", count)
+	}
+
+	resp, err := c.client.SwitchOperations().MigrateSwitch(switch_operations.NewMigrateSwitchParams().WithBody(&models.V1SwitchMigrateRequest{
+		OldSwitchID: pointer.Pointer(args[0]),
+		NewSwitchID: pointer.Pointer(args[1]),
+	}), nil)
+	if err != nil {
+		return err
+	}
+	return c.describePrinter.Print(resp)
 }
 
 func (c *switchCmd) switchSSH(args []string) error {
