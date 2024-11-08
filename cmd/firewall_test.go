@@ -54,8 +54,8 @@ var (
 			SSHPubKeys: []string{"sshpubkey"},
 			Succeeded:  pointer.Pointer(true),
 			UserData:   "---userdata---",
-			DNSServers: []*models.MetalDNSServer{{IP: pointer.Pointer("8.8.8.8")}},
-			NtpServers: []*models.MetalNTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
+			DNSServers: []*models.V1DNSServer{{IP: pointer.Pointer("8.8.8.8")}},
+			NtpServers: []*models.V1NTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
 			Date:    pointer.Pointer("biosdata"),

@@ -183,19 +183,19 @@ func (c *partitionCmd) partitionCapacity() error {
 
 func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest, error) {
 	var (
-		dnsServers []*models.MetalDNSServer
-		ntpServers []*models.MetalNTPServer
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 
 	dnsServersArgument := viper.GetStringSlice("dnsservers")
 	ntpServersArgument := viper.GetStringSlice("ntpservers")
 
 	for _, s := range dnsServersArgument {
-		dnsServers = append(dnsServers, &models.MetalDNSServer{IP: pointer.Pointer(s)})
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
 	}
 
 	for _, s := range ntpServersArgument {
-		ntpServers = append(ntpServers, &models.MetalNTPServer{Address: pointer.Pointer(s)})
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
 	}
 
 	pcr := &models.V1PartitionCreateRequest{

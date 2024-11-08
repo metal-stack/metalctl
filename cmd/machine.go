@@ -639,8 +639,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		ips        []string
 		networks   []*models.V1MachineAllocationNetwork
 		allocation = pointer.SafeDeref(r.Allocation)
-		dnsServers []*models.MetalDNSServer
-		ntpServers []*models.MetalNTPServer
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
@@ -651,11 +651,11 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 	}
 
 	for _, s := range allocation.DNSServers {
-		dnsServers = append(dnsServers, &models.MetalDNSServer{IP: s.IP})
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: s.IP})
 	}
 
 	for _, s := range allocation.NtpServers {
-		ntpServers = append(ntpServers, &models.MetalNTPServer{Address: s.Address})
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: s.Address})
 	}
 
 	return &models.V1MachineAllocateRequest{
@@ -700,8 +700,8 @@ func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, e
 func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 	var (
 		keys       []string
-		dnsServers []*models.MetalDNSServer
-		ntpServers []*models.MetalNTPServer
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
@@ -751,11 +751,11 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 	}
 
 	for _, s := range dnsServersArgument {
-		dnsServers = append(dnsServers, &models.MetalDNSServer{IP: pointer.Pointer(s)})
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
 	}
 
 	for _, s := range ntpServersArgument {
-		ntpServers = append(ntpServers, &models.MetalNTPServer{Address: pointer.Pointer(s)})
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
 	}
 
 	mcr := &models.V1MachineAllocateRequest{
