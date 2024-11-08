@@ -27,7 +27,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:             "partition",
 		Plural:               "partitions",
 		Description:          "a partition is a failure domain in the data center.",
@@ -152,6 +152,8 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 		Mgmtserviceaddress: r.Mgmtserviceaddress,
 		Name:               r.Name,
 		Labels:             r.Labels,
+		DNSServers:         r.DNSServers,
+		NtpServers:         r.NtpServers,
 	}
 }
 
