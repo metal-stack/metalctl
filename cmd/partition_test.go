@@ -347,15 +347,16 @@ Total                1           3      0             2              |   5      
 		{
 			name: "capacity with filters",
 			cmd: func(want []*models.V1PartitionCapacity) []string {
-				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
+				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1", "--project-id", "123"}
 				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					mock.On("PartitionCapacity", testcommon.MatchIgnoreContext(t, partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
-						ID:     "1",
-						Sizeid: "size-1",
+						ID:        "1",
+						Sizeid:    "size-1",
+						Projectid: pointer.Pointer("123"),
 					})), nil).Return(&partition.PartitionCapacityOK{
 						Payload: []*models.V1PartitionCapacity{
 							{

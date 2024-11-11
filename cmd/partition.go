@@ -59,8 +59,10 @@ func newPartitionCmd(c *config) *cobra.Command {
 
 	partitionCapacityCmd.Flags().StringP("id", "", "", "filter on partition id. [optional]")
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
+	partitionCapacityCmd.Flags().StringP("project-id", "", "", "consider project-specific counts, e.g. size reservations. [optional]")
 	partitionCapacityCmd.Flags().StringSlice("sort-by", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(sorters.PartitionCapacitySorter().AvailableKeys(), "|")))
 	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
+	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("project-id", c.comp.ProjectListCompletion))
 	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("sort-by", cobra.FixedCompletions(sorters.PartitionCapacitySorter().AvailableKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
@@ -161,8 +163,9 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 
 func (c *partitionCmd) partitionCapacity() error {
 	resp, err := c.client.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
-		ID:     viper.GetString("id"),
-		Sizeid: viper.GetString("size"),
+		ID:        viper.GetString("id"),
+		Sizeid:    viper.GetString("size"),
+		Projectid: pointer.PointerOrNil(viper.GetString("project-id")),
 	}), nil)
 	if err != nil {
 		return err
