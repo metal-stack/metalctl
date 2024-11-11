@@ -19,7 +19,7 @@ type projectCmd struct {
 }
 
 func newProjectCmd(c *config) *cobra.Command {
-	w := projectCmd{
+	w := &projectCmd{
 		config: c,
 	}
 
@@ -57,7 +57,7 @@ func newProjectCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig)
 }
 
-func (c projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
+func (c *projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (c projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCmd) List() ([]*models.V1ProjectResponse, error) {
+func (c *projectCmd) List() ([]*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
 		ID:       viper.GetString("id"),
 		Name:     viper.GetString("name"),
@@ -79,7 +79,7 @@ func (c projectCmd) List() ([]*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
+func (c *projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (c projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
+func (c *projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		var r *projectmodel.CreateProjectConflict
@@ -101,7 +101,7 @@ func (c projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1Project
 	return resp.Payload, nil
 }
 
-func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
+func (c *projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
 	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (c projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1Project
 	return updateResp.Payload, nil
 }
 
-func (c projectCmd) Convert(r *models.V1ProjectResponse) (string, *models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, error) {
+func (c *projectCmd) Convert(r *models.V1ProjectResponse) (string, *models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, error) {
 	if r.Meta == nil {
 		return "", nil, nil, fmt.Errorf("meta is nil")
 	}

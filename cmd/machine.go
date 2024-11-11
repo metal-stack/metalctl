@@ -98,7 +98,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 }
 
 func newMachineCmd(c *config) *cobra.Command {
-	w := machineCmd{
+	w := &machineCmd{
 		config: c,
 	}
 
@@ -538,7 +538,7 @@ MODE can be omitted or one of:
 	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -547,7 +547,7 @@ func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
+func (c *machineCmd) List() ([]*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
@@ -587,7 +587,7 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 	}
 }
 
-func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	if viper.GetBool("remove-from-database") {
 		if !viper.GetBool(forceFlag) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
@@ -609,7 +609,7 @@ func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -618,7 +618,7 @@ func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Machi
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -627,7 +627,7 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+func (c *machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("ipaddress is nil")
 	}

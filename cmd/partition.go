@@ -21,7 +21,7 @@ type partitionCmd struct {
 }
 
 func newPartitionCmd(c *config) *cobra.Command {
-	w := partitionCmd{
+	w := &partitionCmd{
 		config: c,
 	}
 
@@ -69,7 +69,7 @@ func newPartitionCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, partitionCapacityCmd)
 }
 
-func (c partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
+func (c *partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (c partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) List() ([]*models.V1PartitionResponse, error) {
+func (c *partitionCmd) List() ([]*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (c partitionCmd) List() ([]*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
+func (c *partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (c partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
+func (c *partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		var r *partition.CreatePartitionConflict
@@ -109,7 +109,7 @@ func (c partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1Par
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
+func (c *partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
 	resp, err := c.client.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (c partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1Par
 	return resp.Payload, nil
 }
 
-func (c partitionCmd) Convert(r *models.V1PartitionResponse) (string, *models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, error) {
+func (c *partitionCmd) Convert(r *models.V1PartitionResponse) (string, *models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

@@ -23,7 +23,7 @@ type networkCmd struct {
 }
 
 func newNetworkCmd(c *config) *cobra.Command {
-	w := networkCmd{
+	w := &networkCmd{
 		config:   c,
 		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}).WithFS(c.fs),
 	}
@@ -157,7 +157,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 	)
 }
 
-func (c networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -166,7 +166,7 @@ func (c networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
+func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
@@ -187,7 +187,7 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -196,7 +196,7 @@ func (c networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.CreateNetworkConflict
@@ -209,7 +209,7 @@ func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
@@ -218,7 +218,7 @@ func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
+func (c *networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

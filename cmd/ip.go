@@ -28,7 +28,7 @@ type ipCmd struct {
 }
 
 func newIPCmd(c *config) *cobra.Command {
-	w := ipCmd{
+	w := &ipCmd{
 		config: c,
 	}
 
@@ -86,7 +86,7 @@ func newIPCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, issuesCmd)
 }
 
-func (c ipCmd) Get(id string) (*models.V1IPResponse, error) {
+func (c *ipCmd) Get(id string) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (c ipCmd) Get(id string) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) List() ([]*models.V1IPResponse, error) {
+func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
 		Ipaddress:     viper.GetString("ipaddress"),
 		Name:          viper.GetString("name"),
@@ -113,7 +113,7 @@ func (c ipCmd) List() ([]*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Delete(id string) (*models.V1IPResponse, error) {
+func (c *ipCmd) Delete(id string) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (c ipCmd) Delete(id string) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
+func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	if rq.SpecificIP == "" {
 		resp, err := c.client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
 		if err != nil {
@@ -148,7 +148,7 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
+func (c *ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Convert(r *models.V1IPResponse) (string, *ipAllocateRequest, *models.V1IPUpdateRequest, error) {
+func (c *ipCmd) Convert(r *models.V1IPResponse) (string, *ipAllocateRequest, *models.V1IPUpdateRequest, error) {
 	if r.Ipaddress == nil {
 		return "", nil, nil, fmt.Errorf("ipaddress is nil")
 	}
