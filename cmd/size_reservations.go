@@ -19,7 +19,7 @@ type sizeReservationsCmd struct {
 }
 
 func newSizeReservationsCmd(c *config) *cobra.Command {
-	w := sizeReservationsCmd{
+	w := &sizeReservationsCmd{
 		config: c,
 	}
 
@@ -124,7 +124,7 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, usageCmd)
 }
 
-func (c sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, error) {
+func (c *sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().GetSizeReservation(sizemodel.NewGetSizeReservationParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -133,7 +133,7 @@ func (c sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, 
 	return resp.Payload, nil
 }
 
-func (c sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error) {
+func (c *sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().FindSizeReservations(sizemodel.NewFindSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
 		ID:          viper.GetString("id"),
 		Partitionid: viper.GetString("partition"),
@@ -147,7 +147,7 @@ func (c sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error)
 	return resp.Payload, nil
 }
 
-func (c sizeReservationsCmd) Delete(id string) (*models.V1SizeReservationResponse, error) {
+func (c *sizeReservationsCmd) Delete(id string) (*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().DeleteSizeReservation(sizemodel.NewDeleteSizeReservationParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func (c sizeReservationsCmd) Delete(id string) (*models.V1SizeReservationRespons
 	return resp.Payload, nil
 }
 
-func (c sizeReservationsCmd) Create(rq *models.V1SizeReservationCreateRequest) (*models.V1SizeReservationResponse, error) {
+func (c *sizeReservationsCmd) Create(rq *models.V1SizeReservationCreateRequest) (*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().CreateSizeReservation(sizemodel.NewCreateSizeReservationParams().WithBody(rq), nil)
 	if err != nil {
 		var r *sizemodel.CreateSizeReservationConflict
@@ -169,7 +169,7 @@ func (c sizeReservationsCmd) Create(rq *models.V1SizeReservationCreateRequest) (
 	return resp.Payload, nil
 }
 
-func (c sizeReservationsCmd) Update(rq *models.V1SizeReservationUpdateRequest) (*models.V1SizeReservationResponse, error) {
+func (c *sizeReservationsCmd) Update(rq *models.V1SizeReservationUpdateRequest) (*models.V1SizeReservationResponse, error) {
 	resp, err := c.client.Size().UpdateSizeReservation(sizemodel.NewUpdateSizeReservationParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -178,7 +178,7 @@ func (c sizeReservationsCmd) Update(rq *models.V1SizeReservationUpdateRequest) (
 	return resp.Payload, nil
 }
 
-func (c sizeReservationsCmd) Convert(r *models.V1SizeReservationResponse) (string, *models.V1SizeReservationCreateRequest, *models.V1SizeReservationUpdateRequest, error) {
+func (c *sizeReservationsCmd) Convert(r *models.V1SizeReservationResponse) (string, *models.V1SizeReservationCreateRequest, *models.V1SizeReservationUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

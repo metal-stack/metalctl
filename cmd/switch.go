@@ -23,7 +23,7 @@ type switchCmd struct {
 }
 
 func newSwitchCmd(c *config) *cobra.Command {
-	w := switchCmd{
+	w := &switchCmd{
 		config: c,
 	}
 
@@ -208,7 +208,7 @@ Operational steps to replace a switch:
 	return genericcli.NewCmds(cmdsConfig, switchDetailCmd, switchMachinesCmd, switchReplaceCmd, switchMigrateCmd, switchSSHCmd, switchConsoleCmd, switchPortCmd)
 }
 
-func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
+func (c *switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().FindSwitch(switch_operations.NewFindSwitchParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -217,7 +217,7 @@ func (c switchCmd) Get(id string) (*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
+func (c *switchCmd) List() ([]*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().FindSwitches(switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{
 		ID:          viper.GetString("id"),
 		Name:        viper.GetString("name"),
@@ -233,7 +233,7 @@ func (c switchCmd) List() ([]*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCmd) Delete(id string) (*models.V1SwitchResponse, error) {
+func (c *switchCmd) Delete(id string) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id).WithForce(pointer.Pointer(viper.GetBool("force"))), nil)
 	if err != nil {
 		return nil, err
@@ -242,11 +242,11 @@ func (c switchCmd) Delete(id string) (*models.V1SwitchResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c switchCmd) Create(rq any) (*models.V1SwitchResponse, error) {
+func (c *switchCmd) Create(rq any) (*models.V1SwitchResponse, error) {
 	return nil, fmt.Errorf("switch entity does not support create operation")
 }
 
-func (c switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
+func (c *switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchResponse, error) {
 	resp, err := c.client.SwitchOperations().UpdateSwitch(switch_operations.NewUpdateSwitchParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -255,7 +255,7 @@ func (c switchCmd) Update(rq *models.V1SwitchUpdateRequest) (*models.V1SwitchRes
 	return resp.Payload, nil
 }
 
-func (c switchCmd) Convert(r *models.V1SwitchResponse) (string, any, *models.V1SwitchUpdateRequest, error) {
+func (c *switchCmd) Convert(r *models.V1SwitchResponse) (string, any, *models.V1SwitchUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}
@@ -384,7 +384,7 @@ func (c *switchCmd) switchReplace(args []string) error {
 	return c.describePrinter.Print(uresp)
 }
 
-func (c switchCmd) switchMigrate(args []string) error {
+func (c *switchCmd) switchMigrate(args []string) error {
 	if count := len(args); count != 2 {
 		return fmt.Errorf("invalid number of arguments were provided; 2 are required, %d were passed", count)
 	}
