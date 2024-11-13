@@ -70,7 +70,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, tryCmd, matchCmd)
 }
 
-func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().GetFilesystemLayout(fsmodel.NewGetFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().DeleteFilesystemLayout(fsmodel.NewDeleteFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (c fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().CreateFilesystemLayout(fsmodel.NewCreateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		var r *fsmodel.CreateFilesystemLayoutConflict
@@ -110,7 +110,7 @@ func (c fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().UpdateFilesystemLayout(fsmodel.NewUpdateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -119,7 +119,7 @@ func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Convert(r *models.V1FilesystemLayoutResponse) (string, *models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, error) {
+func (c *fslCmd) Convert(r *models.V1FilesystemLayoutResponse) (string, *models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

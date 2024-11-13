@@ -19,7 +19,7 @@ type sizeImageConstraintCmd struct {
 }
 
 func newSizeImageConstraintCmd(c *config) *cobra.Command {
-	w := sizeImageConstraintCmd{
+	w := &sizeImageConstraintCmd{
 		config: c,
 	}
 
@@ -52,7 +52,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, tryCmd)
 }
 
-func (c sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintResponse, error) {
+func (c *sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().FindSizeImageConstraint(sizemodel.NewFindSizeImageConstraintParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -61,7 +61,7 @@ func (c sizeImageConstraintCmd) Get(id string) (*models.V1SizeImageConstraintRes
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) List() ([]*models.V1SizeImageConstraintResponse, error) {
+func (c *sizeImageConstraintCmd) List() ([]*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().ListSizeImageConstraints(sizemodel.NewListSizeImageConstraintsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (c sizeImageConstraintCmd) List() ([]*models.V1SizeImageConstraintResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) Delete(id string) (*models.V1SizeImageConstraintResponse, error) {
+func (c *sizeImageConstraintCmd) Delete(id string) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().DeleteSizeImageConstraint(sizemodel.NewDeleteSizeImageConstraintParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -79,7 +79,7 @@ func (c sizeImageConstraintCmd) Delete(id string) (*models.V1SizeImageConstraint
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) Create(rq *models.V1SizeImageConstraintCreateRequest) (*models.V1SizeImageConstraintResponse, error) {
+func (c *sizeImageConstraintCmd) Create(rq *models.V1SizeImageConstraintCreateRequest) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().CreateSizeImageConstraint(sizemodel.NewCreateSizeImageConstraintParams().WithBody(rq), nil)
 	if err != nil {
 		var r *sizemodel.CreateSizeImageConstraintConflict
@@ -92,7 +92,7 @@ func (c sizeImageConstraintCmd) Create(rq *models.V1SizeImageConstraintCreateReq
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateRequest) (*models.V1SizeImageConstraintResponse, error) {
+func (c *sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateRequest) (*models.V1SizeImageConstraintResponse, error) {
 	resp, err := c.client.Sizeimageconstraint().UpdateSizeImageConstraint(sizemodel.NewUpdateSizeImageConstraintParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (c sizeImageConstraintCmd) Update(rq *models.V1SizeImageConstraintUpdateReq
 	return resp.Payload, nil
 }
 
-func (c sizeImageConstraintCmd) Convert(r *models.V1SizeImageConstraintResponse) (string, *models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, error) {
+func (c *sizeImageConstraintCmd) Convert(r *models.V1SizeImageConstraintResponse) (string, *models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

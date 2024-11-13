@@ -22,7 +22,7 @@ type firewallCmd struct {
 }
 
 func newFirewallCmd(c *config) *cobra.Command {
-	w := firewallCmd{
+	w := &firewallCmd{
 		config: c,
 	}
 
@@ -125,7 +125,7 @@ ingress:
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
-func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
+func (c *firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 	var macs []string
 	if viper.IsSet("mac") {
 		macs = pointer.WrapInSlice(viper.GetString("mac"))
@@ -158,11 +158,11 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) Delete(_ string) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Delete(_ string) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support delete operation, use machine delete")
 }
 
-func (c firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
 	resp, err := c.client.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -171,11 +171,11 @@ func (c firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1Firew
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
 }
 
-func (c firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
+func (c *firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

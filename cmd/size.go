@@ -23,7 +23,7 @@ type sizeCmd struct {
 }
 
 func newSizeCmd(c *config) *cobra.Command {
-	w := sizeCmd{
+	w := &sizeCmd{
 		config: c,
 	}
 
@@ -82,7 +82,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
 
-func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
+func (c *sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -109,7 +109,7 @@ func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
@@ -122,7 +122,7 @@ func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -131,7 +131,7 @@ func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
+func (c *sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}

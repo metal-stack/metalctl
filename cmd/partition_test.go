@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/metal-stack/metal-go/api/client/partition"
@@ -222,6 +223,18 @@ ID   NAME          DESCRIPTION   LABELS
 		{
 			name: "create",
 			cmd: func(want *models.V1PartitionResponse) []string {
+				var (
+					dnsServers []string
+					ntpServers []string
+				)
+				for _, dns := range want.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+
+				for _, ntp := range want.NtpServers {
+					ntpServers = append(ntpServers, *ntp.Address)
+				}
+
 				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
@@ -230,6 +243,8 @@ ID   NAME          DESCRIPTION   LABELS
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpServers, ","),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -329,15 +344,16 @@ Total                1           3      0             2              |   5      
 		{
 			name: "capacity with filters",
 			cmd: func(want []*models.V1PartitionCapacity) []string {
-				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
+				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1", "--project-id", "123"}
 				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					mock.On("PartitionCapacity", testcommon.MatchIgnoreContext(t, partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
-						ID:     "1",
-						Sizeid: "size-1",
+						ID:        "1",
+						Sizeid:    "size-1",
+						Projectid: pointer.Pointer("123"),
 					})), nil).Return(&partition.PartitionCapacityOK{
 						Payload: []*models.V1PartitionCapacity{
 							{
