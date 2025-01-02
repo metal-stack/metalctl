@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"slices"
 
@@ -279,6 +280,7 @@ func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdat
 		Prefixes:                   r.Prefixes,
 		Shared:                     r.Shared,
 		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
+		Defaultchildprefixlength:   r.Defaultchildprefixlength,
 	}
 }
 
@@ -388,6 +390,17 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 	if viper.IsSet("additional-announcable-cidrs") {
 		additionalCidrs = viper.GetStringSlice("additional-announcable-cidrs")
 	}
+	defaultchildprefixlength := resp.Defaultchildprefixlength
+	if viper.IsSet("default-child-prefixlength") {
+		defaultchildprefixlengthMap := viper.GetStringMapString("default-child-prefixlength")
+		for af, length := range defaultchildprefixlengthMap {
+			l, err := strconv.Atoi(length)
+			if err != nil {
+				return nil, err
+			}
+			defaultchildprefixlength[af] = int64(l)
+		}
+	}
 	var (
 		ur = &models.V1NetworkUpdateRequest{
 			Description:                viper.GetString("description"),
@@ -398,6 +411,7 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Prefixes:                   nil,
 			Shared:                     shared,
 			AdditionalAnnouncableCIDRs: additionalCidrs,
+			Defaultchildprefixlength:   defaultchildprefixlength,
 		}
 		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)
