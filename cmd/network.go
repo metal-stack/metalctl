@@ -190,6 +190,7 @@ func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
+	// FIXME filter for addressfamiy
 	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
