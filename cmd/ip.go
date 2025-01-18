@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/netip"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/ip"
@@ -110,32 +109,10 @@ func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
 		Machineid:     viper.GetString("machineid"),
 		Networkprefix: viper.GetString("prefix"),
 		Tags:          viper.GetStringSlice("tags"),
+		Addressfamily: viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
-	}
-
-	// actually filtered client side because server side would require a reql filter for addressfamilies
-	if viper.IsSet("addressfamily") {
-		af := viper.GetString("addressfamily")
-		var result []*models.V1IPResponse
-		for _, ipresp := range resp.Payload {
-			if ipresp == nil || ipresp.Ipaddress == nil {
-				continue
-			}
-			parsedIP, err := netip.ParseAddr(*ipresp.Ipaddress)
-			if err != nil {
-				return nil, err
-			}
-			if parsedIP.Is4() && af == models.V1IPAllocateRequestAddressfamilyIPV6 {
-				continue
-			}
-			if parsedIP.Is6() && af == models.V1IPAllocateRequestAddressfamilyIPV4 {
-				continue
-			}
-			result = append(result, ipresp)
-		}
-		return result, nil
 	}
 
 	return resp.Payload, nil

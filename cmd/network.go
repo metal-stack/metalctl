@@ -203,6 +203,7 @@ func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
 		Prefixes:            viper.GetStringSlice("prefixes"),
 		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Parentnetworkid:     viper.GetString("parent"),
+		Addressfamily:       viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
