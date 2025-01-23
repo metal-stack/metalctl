@@ -210,8 +210,18 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 			nic := pointer.SafeDeref(conn.Nic)
 			nicname := pointer.SafeDeref(nic.Name)
 			nicstate := pointer.SafeDeref(nic.Actual)
+			bgpstate := pointer.SafeDeref(nic.BgpPortState)
 			if nicstate != "UP" {
 				nicname = fmt.Sprintf("%s (%s)", nicname, color.RedString(nicstate))
+			}
+			if bgpstate.BgpState != nil && wide {
+				switch *bgpstate.BgpState {
+				case "Established":
+					uptime := time.Since(time.Unix(*bgpstate.BgpTimerUpEstablished, 0)).Round(time.Second)
+					nicname = fmt.Sprintf("%s (BGP:%s(%s))", nicname, *bgpstate.BgpState, uptime)
+				default:
+					nicname = fmt.Sprintf("%s (BGP:%s)", nicname, *bgpstate.BgpState)
+				}
 			}
 
 			if wide {
