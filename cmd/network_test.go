@@ -33,11 +33,13 @@ var (
 		Projectid:           "",
 		Shared:              false,
 		Underlay:            pointer.Pointer(true),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(100)),
-			AvailablePrefixes: pointer.Pointer(int64(200)),
-			UsedIps:           pointer.Pointer(int64(300)),
-			UsedPrefixes:      pointer.Pointer(int64(400)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(100)),
+				AvailablePrefixes: pointer.Pointer(int64(200)),
+				UsedIps:           pointer.Pointer(int64(300)),
+				UsedPrefixes:      pointer.Pointer(int64(400)),
+			},
 		},
 		Vrf:                        50,
 		Vrfshared:                  true,
@@ -57,11 +59,13 @@ var (
 		Projectid:           "project-1",
 		Shared:              false,
 		Underlay:            pointer.Pointer(false),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(100)),
-			AvailablePrefixes: pointer.Pointer(int64(200)),
-			UsedIps:           pointer.Pointer(int64(300)),
-			UsedPrefixes:      pointer.Pointer(int64(400)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(100)),
+				AvailablePrefixes: pointer.Pointer(int64(200)),
+				UsedIps:           pointer.Pointer(int64(300)),
+				UsedPrefixes:      pointer.Pointer(int64(400)),
+			},
 		},
 		Vrf:                        50,
 		Vrfshared:                  true,
@@ -81,11 +85,13 @@ var (
 		Projectid:           "project-1",
 		Shared:              false,
 		Underlay:            pointer.Pointer(false),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(400)),
-			AvailablePrefixes: pointer.Pointer(int64(300)),
-			UsedIps:           pointer.Pointer(int64(200)),
-			UsedPrefixes:      pointer.Pointer(int64(100)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(400)),
+				AvailablePrefixes: pointer.Pointer(int64(300)),
+				UsedIps:           pointer.Pointer(int64(200)),
+				UsedPrefixes:      pointer.Pointer(int64(100)),
+			},
 		},
 		Vrf:                        60,
 		Vrfshared:                  true,
