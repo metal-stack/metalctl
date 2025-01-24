@@ -228,7 +228,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 					"--project", *want.Projectid,
 					"--type", *want.Type,
 					"--tags", strings.Join(want.Tags, ","),
-					"--addressfamily", models.V1IPAllocateRequestAddressfamilyIPV4,
+					"--addressfamily", models.V1IPAllocateRequestAddressfamilyIPV4, // TODO: this is not correct for specificip, but makes the matcher happy.
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args

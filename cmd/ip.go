@@ -141,6 +141,8 @@ func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 		return resp.Payload, nil
 	}
 
+	// FIXME this is a workaround, if specificIP is set, AF must not be set.
+	rq.Addressfamily = nil
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
 		var r *ip.AllocateSpecificIPConflict
@@ -174,16 +176,16 @@ func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
 	if r.Ipaddress != nil {
 		ip = *r.Ipaddress
 	}
+
 	return &ipAllocateRequest{
 		SpecificIP: ip,
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
-			Description:   r.Description,
-			Name:          r.Name,
-			Networkid:     r.Networkid,
-			Projectid:     r.Projectid,
-			Tags:          r.Tags,
-			Type:          r.Type,
-			Addressfamily: pointer.Pointer(models.V1IPAllocateRequestAddressfamilyIPV4),
+			Description: r.Description,
+			Name:        r.Name,
+			Networkid:   r.Networkid,
+			Projectid:   r.Projectid,
+			Tags:        r.Tags,
+			Type:        r.Type,
 		},
 	}
 }
