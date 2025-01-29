@@ -47,6 +47,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("name", "n", "", "name of the network to create. [optional]")
 			cmd.Flags().StringP("partition", "p", "", "partition where this network should exist.")
 			cmd.Flags().StringP("project", "", "", "project of the network to create. [optional]")
+			cmd.Flags().Int64("default-ipv4-child-prefix-length", 0, "default child prefix length for ipv4 prefixes for private super networks.")
+			cmd.Flags().Int64("default-ipv6-child-prefix-length", 0, "default child prefix length for ipv6 prefixes for private super networks.")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
 			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes in this network.")
@@ -190,7 +192,6 @@ func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
-	// FIXME filter for addressfamiy
 	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
@@ -292,6 +293,18 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 		return nil, err
 	}
 
+	var defaultChildPrefixLengths map[string]int64
+	if viper.GetBool("privatesuper") {
+		defaultChildPrefixLengths = map[string]int64{}
+
+		if length := viper.GetInt64("default-ipv4-child-prefix-length"); length > 0 {
+			defaultChildPrefixLengths[models.V1IPAllocateRequestAddressfamilyIPV4] = length
+		}
+		if length := viper.GetInt64("default-ipv6-child-prefix-length"); length > 0 {
+			defaultChildPrefixLengths[models.V1IPAllocateRequestAddressfamilyIPV6] = length
+		}
+	}
+
 	return &models.V1NetworkCreateRequest{
 		ID:                         pointer.Pointer(viper.GetString("id")),
 		Description:                viper.GetString("description"),
@@ -307,6 +320,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 		Vrfshared:                  viper.GetBool("vrfshared"),
 		Labels:                     lbs,
 		AdditionalAnnouncableCIDRs: viper.GetStringSlice("additional-announcable-cidrs"),
+		Defaultchildprefixlength:   defaultChildPrefixLengths,
 	}, nil
 }
 
