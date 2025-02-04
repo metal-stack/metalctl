@@ -87,7 +87,7 @@ contexts:
     client_id: metal_client
     client_secret: 456
     hmac: YOUR_HMAC
-    hmacAuthType: THE_AUTH_TYPE_OF_YOUR_HMAC # Metal-Admin, Metal-Edit or Metal-View
+    hmac_auth_type: THE_AUTH_TYPE_OF_YOUR_HMAC # Metal-Admin, Metal-Edit or Metal-View
 ```
 
 Optional you can specify `issuer_type: generic` if you use other issuers as Dex, e.g. Keycloak (this will request scopes `openid,profile,email`):
