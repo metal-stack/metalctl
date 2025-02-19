@@ -110,17 +110,13 @@ func newNetworkCmd(c *config) *cobra.Command {
 				}
 
 				var (
-					af     string
 					length = make(map[string]int64)
 				)
-				if viper.IsSet("ipv4length") {
-					length[models.V1IPAllocateRequestAddressfamilyIPV4] = viper.GetInt64("ipv4length")
+				if viper.IsSet("ipv4-prefix-length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV4] = viper.GetInt64("ipv4-prefix-length")
 				}
-				if viper.IsSet("ipv6length") {
-					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6length")
-				}
-				if viper.IsSet("addressfamily") {
-					af = viper.GetString("addressfamily")
+				if viper.IsSet("ipv6-prefix-length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6-prefix-length")
 				}
 
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
@@ -132,7 +128,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
-					Addressfamily:       af,
+					Addressfamily:       viper.GetString("addressfamily"),
 					Length:              length,
 				}, c.describePrinter)
 			}
@@ -163,8 +159,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
 	allocateCmd.Flags().StringP("addressfamily", "", "", "addressfamily of the network to acquire, if not specified the network inherits the address families from the parent [optional]")
-	allocateCmd.Flags().Int64P("ipv4-prefix-length", "", 0, "ipv4 prefix bit length of network to create, defaults to default child prefix length of the parent network. [optional]")
-	allocateCmd.Flags().Int64P("ipv6-prefix-length", "", 0, "ipv6 prefix bit length of network to create, defaults to default child prefix length of the parent network. [optional]")
+	allocateCmd.Flags().Int64P("ipv4-prefix-length", "", 0, "ipv4 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
+	allocateCmd.Flags().Int64P("ipv6-prefix-length", "", 0, "ipv6 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
