@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
+	defaultSSHKeys = [...]string{"id_ed25519", "id_ecdsa", "id_rsa", "id_dsa"}
 	// emptyBody is kind of hack because post with "nil" will result into 406 error from the api
 	emptyBody = []string{}
 )
@@ -203,6 +203,11 @@ func initConfigWithViperCtx(c *config) error {
 	if hmacKey == "" && ctx.HMAC != nil {
 		hmacKey = *ctx.HMAC
 	}
+	hmacAuthType := viper.GetString("hmac-auth-type")
+	if hmacAuthType == "" && ctx.HMACAuthType != "" {
+		hmacAuthType = ctx.HMACAuthType
+	}
+
 	apiToken := viper.GetString("api-token")
 
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
@@ -215,7 +220,15 @@ func initConfigWithViperCtx(c *config) error {
 		}
 	}
 
-	client, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	var (
+		client metalgo.Client
+		err    error
+	)
+	if hmacAuthType != "" {
+		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey, metalgo.AuthType(hmacAuthType))
+	} else {
+		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	}
 	if err != nil {
 		return err
 	}

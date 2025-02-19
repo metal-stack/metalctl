@@ -58,6 +58,8 @@ var (
 			SSHPubKeys: []string{"sshpubkey"},
 			Succeeded:  pointer.Pointer(true),
 			UserData:   "---userdata---",
+			DNSServers: []*models.V1DNSServer{{IP: pointer.Pointer("8.8.8.8")}},
+			NtpServers: []*models.V1NTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
 			Date:    pointer.Pointer("biosdata"),
@@ -175,6 +177,45 @@ var (
 				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
 			},
 			Powerstate: pointer.Pointer("ON"),
+		},
+		Ledstate:   &models.V1ChassisIdentifyLEDState{},
+		Liveliness: machine1.Liveliness,
+		Name:       machine1.Name,
+		Partition:  machine1.Partition,
+		Rackid:     machine1.Rackid,
+		Size:       machine1.Size,
+		State:      machine1.State,
+		Tags:       machine1.Tags,
+	}
+	ipmiMachine2 = &models.V1MachineIPMIResponse{
+		Allocation: machine1.Allocation,
+		Bios: &models.V1MachineBIOS{
+			Version: pointer.Pointer("2.0"),
+		},
+		Changed:     machine1.Changed,
+		Created:     machine1.Created,
+		Description: machine1.Description,
+		Events:      machine1.Events,
+		Hardware:    machine1.Hardware,
+		ID:          machine1.ID,
+		Ipmi: &models.V1MachineIPMI{
+			Address:    pointer.Pointer("1.2.3.4"),
+			Bmcversion: pointer.Pointer("1.1"),
+			Fru: &models.V1MachineFru{
+				BoardPartNumber:   "part123",
+				ChassisPartSerial: "chassis123",
+				ProductSerial:     "product123",
+			},
+			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
+			Mac:         pointer.Pointer("1.2.3.4"),
+			Powermetric: &models.V1PowerMetric{
+				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
+			},
+			Powerstate: pointer.Pointer("ON"),
+			Powersupplies: []*models.V1PowerSupply{
+				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("OK")}},
+				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("NOT-OK")}},
+			},
 		},
 		Ledstate:   &models.V1ChassisIdentifyLEDState{},
 		Liveliness: machine1.Liveliness,
@@ -330,22 +371,22 @@ func Test_MachineCmd_SingleResult(t *testing.T) {
 			},
 			want: machine1,
 			wantTable: pointer.Pointer(`
-ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
-1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
-`),
+		ID      LAST EVENT    WHEN   AGE   HOSTNAME             PROJECT     SIZE   IMAGE         PARTITION   RACK
+		1       Phoned Home   7d     14d   machine-hostname-1   project-1   1      debian-name   1           rack-1
+		`),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE
-1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
-`),
+		ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME             PROJECT     IPS       SIZE   IMAGE         PARTITION   RACK     STARTED                TAGS   LOCK/RESERVE
+		1    Phoned Home   7d     14d   machine allocation 1   machine-1   machine-hostname-1   project-1   1.1.1.1   1      debian-name   1           rack-1   2022-05-05T01:02:03Z   a
+		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
-1 machine-1
-`),
+		1 machine-1
+		`),
 			wantMarkdown: pointer.Pointer(`
-| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
-|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
-|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
-`),
+		| ID |  | LAST EVENT  | WHEN | AGE |      HOSTNAME      |  PROJECT  | SIZE |    IMAGE    | PARTITION |  RACK  |
+		|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
+		|  1 |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 |    1 | debian-name |         1 | rack-1 |
+		`),
 		},
 		{
 			name: "delete",
@@ -365,12 +406,20 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 			name: "create",
 			cmd: func(want *models.V1MachineResponse) []string {
 				var (
-					ips      []string
-					networks []string
+					ips        []string
+					networks   []string
+					dnsServers []string
+					ntpservers []string
 				)
 				for _, s := range want.Allocation.Networks {
 					ips = append(ips, s.Ips...)
 					networks = append(networks, *s.Networkid+":noauto")
+				}
+				for _, dns := range want.Allocation.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+				for _, ntp := range want.Allocation.NtpServers {
+					ntpservers = append(ntpservers, *ntp.Address)
 				}
 
 				args := []string{"machine", "create",
@@ -388,6 +437,8 @@ ID   LAST EVENT    WHEN   AGE   DESCRIPTION            NAME        HOSTNAME     
 					"--sshpublickey", pointer.FirstOrZero(want.Allocation.SSHPubKeys),
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpservers, ","),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -458,21 +509,62 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 				ipmiMachine1,
 			},
 			wantTable: pointer.Pointer(`
-ID      POWER        IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED
-1       ●  (16.0W)   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
+ID      POWER   IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED
+1       ⏻ 16W   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
 `),
 			wantWideTable: pointer.Pointer(`
-ID   LAST EVENT    STATUS   POWER       IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED
-1    Phoned Home            ON 16.00W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
+ID   LAST EVENT    STATUS   POWER    IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED
+1    Phoned Home            ON 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 machine-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  |   POWER    |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
-|----|--|------------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
-|  1 |  | ●  (16.0W) | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+| ID |  | POWER |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
+|----|--|-------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
+|  1 |  | ⏻ 16W | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
+`),
+		},
+		{
+			name: "machine ipmi with broken powersupply",
+			cmd: func(want []*models.V1MachineIPMIResponse) []string {
+				return []string{"machine", "ipmi"}
+			},
+			mocks: &client.MetalMockFns{
+				Machine: func(mock *mock.Mock) {
+					mock.On("FindIPMIMachines", testcommon.MatchIgnoreContext(t, machine.NewFindIPMIMachinesParams().WithBody(&models.V1MachineFindRequest{
+						NicsMacAddresses:           nil,
+						NetworkDestinationPrefixes: []string{},
+						NetworkIps:                 []string{},
+						NetworkIds:                 []string{},
+						Tags:                       []string{},
+					})), nil).Return(&machine.FindIPMIMachinesOK{
+						Payload: []*models.V1MachineIPMIResponse{
+							ipmiMachine2,
+						},
+					}, nil)
+				},
+			},
+			want: []*models.V1MachineIPMIResponse{
+				ipmiMachine2,
+			},
+			wantTable: pointer.Pointer(`
+ID      POWER   IP        MAC       BOARD PART NUMBER   BIOS   BMC   SIZE   PARTITION   RACK     UPDATED
+1       ⏻ 16W   1.2.3.4   1.2.3.4   part123             2.0    1.1   1      1           rack-1   5s ago
+`),
+			wantWideTable: pointer.Pointer(`
+ID   LAST EVENT    STATUS   POWER                        IP        MAC       BOARD PART NUMBER   CHASSIS SERIAL   PRODUCT SERIAL   BIOS VERSION   BMC VERSION   SIZE   PARTITION   RACK     UPDATED
+1    Phoned Home            ON Power Supply NOT-OK 16W   1.2.3.4   1.2.3.4   part123             chassis123       product123       2.0            1.1           1      1           rack-1   5s ago
+`),
+			template: pointer.Pointer("{{ .id }} {{ .name }}"),
+			wantTemplate: pointer.Pointer(`
+1 machine-1
+`),
+			wantMarkdown: pointer.Pointer(`
+| ID |  | POWER |   IP    |   MAC   | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION |  RACK  | UPDATED |
+|----|--|-------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
+|  1 |  | ⏻ 16W | 1.2.3.4 | 1.2.3.4 | part123           |  2.0 | 1.1 |    1 |         1 | rack-1 | 5s ago  |
 `),
 		},
 	}
@@ -586,21 +678,21 @@ func Test_MachineIssuesCmd(t *testing.T) {
 			},
 			want: machineWithIssues,
 			wantTable: pointer.Pointer(`
-ID   POWER        ALLOCATED      LOCK REASON   LAST EVENT    WHEN   ISSUES
-1    ●  (16.0W)   yes            state         Phoned Home   7d     this is a test issue 1 (issue-1-id)
-																	this is a test issue 2 (issue-2-id)
+ID   POWER   ALLOCATED      LOCK REASON   LAST EVENT    WHEN   ISSUES
+1    ⏻ 16W   yes            state         Phoned Home   7d     this is a test issue 1 (issue-1-id)
+																this is a test issue 2 (issue-2-id)
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME        PARTITION   PROJECT     POWER       STATE   LOCK REASON   LAST EVENT    WHEN   ISSUES                                REF URL         DETAILS
-1    machine-1   1           project-1   ON 16.00W           state         Phoned Home   7d     this is a test issue 1 (issue-1-id)   https://url-1   more details 1
+ID   NAME        PARTITION   PROJECT     POWER    STATE   LOCK REASON   LAST EVENT    WHEN   ISSUES                                REF URL         DETAILS
+1    machine-1   1           project-1   ON 16W           state         Phoned Home   7d     this is a test issue 1 (issue-1-id)   https://url-1   more details 1
 																								this is a test issue 2 (issue-2-id)   https://url-2   more details 2
 
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |   POWER    | ALLOCATED |  | LOCK REASON | LAST EVENT  | WHEN |               ISSUES                |
-|----|------------|-----------|--|-------------|-------------|------|-------------------------------------|
-|  1 | ●  (16.0W) | yes       |  | state       | Phoned Home | 7d   | this is a test issue 1 (issue-1-id) |
-|    |            |           |  |             |             |      | this is a test issue 2 (issue-2-id) |
+| ID | POWER | ALLOCATED |  | LOCK REASON | LAST EVENT  | WHEN |               ISSUES                |
+|----|-------|-----------|--|-------------|-------------|------|-------------------------------------|
+|  1 | ⏻ 16W | yes       |  | state       | Phoned Home | 7d   | this is a test issue 1 (issue-1-id) |
+|    |       |           |  |             |             |      | this is a test issue 2 (issue-2-id) |
 `),
 		},
 	}

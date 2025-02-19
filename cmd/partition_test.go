@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/metal-stack/metal-go/api/client/partition"
@@ -21,11 +22,10 @@ var (
 			Imageurl:    "imageurl",
 			Kernelurl:   "kernelurl",
 		},
-		Description:                "partition 1",
-		ID:                         pointer.Pointer("1"),
-		Mgmtserviceaddress:         "mgmt",
-		Name:                       "partition-1",
-		Privatenetworkprefixlength: 24,
+		Description:        "partition 1",
+		ID:                 pointer.Pointer("1"),
+		Mgmtserviceaddress: "mgmt",
+		Name:               "partition-1",
 		Labels: map[string]string{
 			"a": "b",
 		},
@@ -36,11 +36,10 @@ var (
 			Imageurl:    "imageurl",
 			Kernelurl:   "kernelurl",
 		},
-		Description:                "partition 2",
-		ID:                         pointer.Pointer("2"),
-		Mgmtserviceaddress:         "mgmt",
-		Name:                       "partition-2",
-		Privatenetworkprefixlength: 24,
+		Description:        "partition 2",
+		ID:                 pointer.Pointer("2"),
+		Mgmtserviceaddress: "mgmt",
+		Name:               "partition-2",
 	}
 )
 
@@ -224,6 +223,18 @@ ID   NAME          DESCRIPTION   LABELS
 		{
 			name: "create",
 			cmd: func(want *models.V1PartitionResponse) []string {
+				var (
+					dnsServers []string
+					ntpServers []string
+				)
+				for _, dns := range want.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+
+				for _, ntp := range want.NtpServers {
+					ntpServers = append(ntpServers, *ntp.Address)
+				}
+
 				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
@@ -232,6 +243,8 @@ ID   NAME          DESCRIPTION   LABELS
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--mgmtserver", want.Mgmtserviceaddress,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpServers, ","),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -239,7 +252,6 @@ ID   NAME          DESCRIPTION   LABELS
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					p := partition1
-					p.Privatenetworkprefixlength = 0
 					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(p))), nil).Return(&partition.CreatePartitionCreated{
 						Payload: partition1,
 					}, nil)
@@ -270,16 +282,16 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
-										Allocated:        pointer.Pointer(int32(1)),
-										Faulty:           pointer.Pointer(int32(2)),
+										Allocated:        1,
+										Faulty:           2,
 										Faultymachines:   []string{"abc"},
-										Free:             pointer.Pointer(int32(3)),
-										Other:            pointer.Pointer(int32(4)),
+										Free:             3,
+										Other:            4,
 										Othermachines:    []string{"def"},
 										Size:             pointer.Pointer("size-1"),
-										Total:            pointer.Pointer(int32(5)),
-										Reservations:     pointer.Pointer(int32(3)),
-										Usedreservations: pointer.Pointer(int32(1)),
+										Total:            5,
+										Reservations:     3,
+										Usedreservations: 1,
 									},
 								},
 							},
@@ -294,53 +306,54 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
-							Allocated:        pointer.Pointer(int32(1)),
-							Faulty:           pointer.Pointer(int32(2)),
+							Allocated:        1,
+							Faulty:           2,
 							Faultymachines:   []string{"abc"},
-							Free:             pointer.Pointer(int32(3)),
-							Other:            pointer.Pointer(int32(4)),
+							Free:             3,
+							Other:            4,
 							Othermachines:    []string{"def"},
 							Size:             pointer.Pointer("size-1"),
-							Total:            pointer.Pointer(int32(5)),
-							Reservations:     pointer.Pointer(int32(3)),
-							Usedreservations: pointer.Pointer(int32(1)),
+							Total:            5,
+							Reservations:     3,
+							Usedreservations: 1,
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
-1           size-1   5       3      1           1/3        4       2
-Total                5       3      1           1/3        4       2
+PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY
+1           size-1   1           3      0             2 (1/3 used)   |   5       |   2
+Total                1           3      0             2              |   5       |   2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
-1           size-1   5       3      1           1/3        def     abc
-Total                5       3      1           1/3        4       2
+PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY   PHONED HOME   WAITING   OTHER
+1           size-1   1           3      0             2 (1/3 used)   |   5       |   2        0             0         4
+Total                1           3      0             2              |   5       |   2        0             0         4
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|----------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
-| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| PARTITION |  SIZE  | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
+|-----------|--------|-----------|------|-------------|--------------|-------|--------|
+|         1 | size-1 |         1 |    3 |           0 | 2 (1/3 used) |     5 |      2 |
+| Total     |        |         1 |    3 |           0 |            2 |     5 |      2 |
 `),
 		},
 		{
 			name: "capacity with filters",
 			cmd: func(want []*models.V1PartitionCapacity) []string {
-				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1"}
+				args := []string{"partition", "capacity", "--id", "1", "--size", "size-1", "--project-id", "123"}
 				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
 			mocks: &client.MetalMockFns{
 				Partition: func(mock *mock.Mock) {
 					mock.On("PartitionCapacity", testcommon.MatchIgnoreContext(t, partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
-						ID:     "1",
-						Sizeid: "size-1",
+						ID:        "1",
+						Sizeid:    "size-1",
+						Projectid: pointer.Pointer("123"),
 					})), nil).Return(&partition.PartitionCapacityOK{
 						Payload: []*models.V1PartitionCapacity{
 							{
@@ -349,16 +362,16 @@ Total                5       3      1           1/3        4       2
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
-										Allocated:        pointer.Pointer(int32(1)),
-										Faulty:           pointer.Pointer(int32(2)),
+										Allocated:        1,
+										Faulty:           2,
 										Faultymachines:   []string{"abc"},
-										Free:             pointer.Pointer(int32(3)),
-										Other:            pointer.Pointer(int32(4)),
+										Free:             3,
+										Other:            4,
 										Othermachines:    []string{"def"},
 										Size:             pointer.Pointer("size-1"),
-										Total:            pointer.Pointer(int32(5)),
-										Reservations:     pointer.Pointer(int32(3)),
-										Usedreservations: pointer.Pointer(int32(1)),
+										Total:            5,
+										Reservations:     3,
+										Usedreservations: 1,
 									},
 								},
 							},
@@ -373,39 +386,39 @@ Total                5       3      1           1/3        4       2
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
-							Allocated:        pointer.Pointer(int32(1)),
-							Faulty:           pointer.Pointer(int32(2)),
+							Allocated:        1,
+							Faulty:           2,
 							Faultymachines:   []string{"abc"},
-							Free:             pointer.Pointer(int32(3)),
-							Other:            pointer.Pointer(int32(4)),
+							Free:             3,
+							Other:            4,
 							Othermachines:    []string{"def"},
 							Size:             pointer.Pointer("size-1"),
-							Total:            pointer.Pointer(int32(5)),
-							Reservations:     pointer.Pointer(int32(3)),
-							Usedreservations: pointer.Pointer(int32(1)),
+							Total:            5,
+							Reservations:     3,
+							Usedreservations: 1,
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
-1           size-1   5       3      1           1/3        4       2
-Total                5       3      1           1/3        4       2
+PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY
+1           size-1   1           3      0             2 (1/3 used)   |   5       |   2
+Total                1           3      0             2              |   5       |   2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     TOTAL   FREE   ALLOCATED   RESERVED   OTHER   FAULTY
-1           size-1   5       3      1           1/3        def     abc
-Total                5       3      1           1/3        4       2
+PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY   PHONED HOME   WAITING   OTHER
+1           size-1   1           3      0             2 (1/3 used)   |   5       |   2        0             0         4
+Total                1           3      0             2              |   5       |   2        0             0         4
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | TOTAL | FREE | ALLOCATED | RESERVED | OTHER | FAULTY |
-|-----------|--------|-------|------|-----------|----------|-------|--------|
-|         1 | size-1 |     5 |    3 |         1 | 1/3      |     4 |      2 |
-| Total     |        |     5 |    3 |         1 | 1/3      |     4 |      2 |
+| PARTITION |  SIZE  | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
+|-----------|--------|-----------|------|-------------|--------------|-------|--------|
+|         1 | size-1 |         1 |    3 |           0 | 2 (1/3 used) |     5 |      2 |
+| Total     |        |         1 |    3 |           0 |            2 |     5 |      2 |
 `),
 		},
 	}

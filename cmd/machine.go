@@ -98,7 +98,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 }
 
 func newMachineCmd(c *config) *cobra.Command {
-	w := machineCmd{
+	w := &machineCmd{
 		config: c,
 	}
 
@@ -492,6 +492,8 @@ If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picke
 	cmd.Flags().StringSlice("tags", []string{}, "tags to add to the "+name+", use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().StringP("userdata", "", "", `cloud-init.io compatible userdata. [optional]
 Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".`)
+	cmd.Flags().StringSlice("dnsservers", []string{}, "dns servers to add to the machine or firewall. [optional]")
+	cmd.Flags().StringSlice("ntpservers", []string{}, "ntp servers to add to the machine or firewall. [optional]")
 
 	switch name {
 	case "machine":
@@ -536,7 +538,7 @@ MODE can be omitted or one of:
 	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -545,7 +547,7 @@ func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
+func (c *machineCmd) List() ([]*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
@@ -585,7 +587,7 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 	}
 }
 
-func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	if viper.GetBool("remove-from-database") {
 		if !viper.GetBool(forceFlag) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
@@ -607,7 +609,7 @@ func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -616,7 +618,7 @@ func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Machi
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -625,7 +627,7 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+func (c *machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("ipaddress is nil")
 	}
@@ -637,6 +639,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		ips        []string
 		networks   []*models.V1MachineAllocationNetwork
 		allocation = pointer.SafeDeref(r.Allocation)
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
@@ -644,6 +648,14 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
+	}
+
+	for _, s := range allocation.DNSServers {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: s.IP})
+	}
+
+	for _, s := range allocation.NtpServers {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: s.Address})
 	}
 
 	return &models.V1MachineAllocateRequest{
@@ -661,6 +673,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		DNSServers:         dnsServers,
+		NtpServers:         ntpServers,
 	}
 }
 
@@ -684,7 +698,15 @@ func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, e
 }
 
 func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
+	var (
+		keys       []string
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
+	)
+
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
+	dnsServersArgument := viper.GetStringSlice("dnsservers")
+	ntpServersArgument := viper.GetStringSlice("ntpservers")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
 		var err error
@@ -706,7 +728,6 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		}
 	}
 
-	var keys []string
 	if sshPublicKeyArgument != "" {
 		keys = append(keys, sshPublicKeyArgument)
 	}
@@ -729,6 +750,14 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		return nil, err
 	}
 
+	for _, s := range dnsServersArgument {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+	}
+
+	for _, s := range ntpServersArgument {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+	}
+
 	mcr := &models.V1MachineAllocateRequest{
 		Description: viper.GetString("description"),
 		Partitionid: pointer.Pointer(viper.GetString("partition")),
@@ -743,6 +772,8 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		UserData:    userDataArgument,
 		Networks:    networks,
 		Ips:         viper.GetStringSlice("ips"),
+		DNSServers:  dnsServers,
+		NtpServers:  ntpServers,
 	}
 
 	if viper.IsSet("filesystemlayout") {

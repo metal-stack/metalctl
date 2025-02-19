@@ -23,7 +23,7 @@ type sizeCmd struct {
 }
 
 func newSizeCmd(c *config) *cobra.Command {
-	w := sizeCmd{
+	w := &sizeCmd{
 		config: c,
 	}
 
@@ -62,36 +62,7 @@ func newSizeCmd(c *config) *cobra.Command {
 		},
 	}
 
-	reservationsCmd := &cobra.Command{
-		Use:   "reservations",
-		Short: "manage size reservations",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.listReverations()
-		},
-	}
-
-	listReservationsCmd := &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "list size reservations",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.listReverations()
-		},
-	}
-
-	listReservationsCmd.Flags().String("size-id", "", "the size-id to filter")
-	listReservationsCmd.Flags().String("project", "", "the project to filter")
-	listReservationsCmd.Flags().String("tenant", "", "the tenant to filter")
-	listReservationsCmd.Flags().String("partition", "", "the partition to filter")
-
-	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
-	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("tenant", c.comp.TenantListCompletion))
-	genericcli.Must(listReservationsCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-
-	genericcli.AddSortFlag(listReservationsCmd, sorters.SizeReservationsSorter())
-
-	reservationsCmd.AddCommand(listReservationsCmd)
+	reservationsCmd := newSizeReservationsCmd(c)
 
 	suggestCmd := &cobra.Command{
 		Use:   "suggest <id>",
@@ -111,7 +82,7 @@ func newSizeCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
 
-func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -120,7 +91,7 @@ func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
+func (c *sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
@@ -129,7 +100,7 @@ func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -138,7 +109,7 @@ func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
@@ -151,7 +122,7 @@ func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -160,7 +131,7 @@ func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
+func (c *sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}
@@ -178,11 +149,10 @@ func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest 
 		})
 	}
 	return &models.V1SizeCreateRequest{
-		Constraints:  constraints,
-		Description:  r.Description,
-		ID:           r.ID,
-		Name:         r.Name,
-		Reservations: r.Reservations,
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
 	}
 }
 
@@ -197,35 +167,15 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		})
 	}
 	return &models.V1SizeUpdateRequest{
-		Constraints:  constraints,
-		Description:  r.Description,
-		ID:           r.ID,
-		Name:         r.Name,
-		Labels:       r.Labels,
-		Reservations: r.Reservations,
+		Constraints: constraints,
+		Description: r.Description,
+		ID:          r.ID,
+		Name:        r.Name,
+		Labels:      r.Labels,
 	}
 }
 
 // non-generic command handling
-
-func (c sizeCmd) listReverations() error {
-	resp, err := c.client.Size().ListSizeReservations(size.NewListSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
-		Projectid:   viper.GetString("project"),
-		Sizeid:      viper.GetString("size-id"),
-		Tenant:      viper.GetString("tenant"),
-		Partitionid: viper.GetString("partition"),
-	}), nil)
-	if err != nil {
-		return err
-	}
-
-	err = sorters.SizeReservationsSorter().SortBy(resp.Payload)
-	if err != nil {
-		return err
-	}
-
-	return c.listPrinter.Print(resp.Payload)
-}
 
 func (c *sizeCmd) suggest(args []string) error {
 	sizeid, _ := genericcli.GetExactlyOneArg(args)

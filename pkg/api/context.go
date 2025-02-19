@@ -25,11 +25,13 @@ type Context struct {
 	ClientID     string  `yaml:"client_id"`
 	ClientSecret string  `yaml:"client_secret"`
 	HMAC         *string `yaml:"hmac"`
+	HMACAuthType string  `yaml:"hmac_auth_type,omitempty"`
 }
 
 var defaultCtx = Context{
-	ApiURL:    "http://localhost:8080/cloud",
-	IssuerURL: "http://localhost:8080/",
+	ApiURL:       "http://localhost:8080/cloud",
+	IssuerURL:    "http://localhost:8080/",
+	HMACAuthType: "Metal-Admin",
 }
 
 func GetContexts() (*Contexts, error) {

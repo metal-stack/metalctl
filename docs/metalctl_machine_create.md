@@ -51,6 +51,7 @@ Once created the machine installation can not be modified anymore.
 ```
       --bulk-output               when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
   -d, --description string        Description of the machine to create. [optional]
+      --dnsservers strings        dns servers to add to the machine or firewall. [optional]
   -f, --file string               filename of the create or update request in yaml format, or - for stdin.
                                   
                                   Example:
@@ -77,6 +78,7 @@ Once created the machine installation can not be modified anymore.
                                   MODE cane be omitted or one of:
                                   	auto	IP address is automatically acquired from the given network
                                   	noauto	IP address for the given network must be provided via --ips
+      --ntpservers strings        ntp servers to add to the machine or firewall. [optional]
   -S, --partition string          partition/datacenter where the machine is created. [required, except for reserved machines]
   -P, --project string            Project where the machine should belong to. [required]
   -s, --size string               Size of the machine. [required, except for reserved machines]

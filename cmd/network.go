@@ -23,7 +23,7 @@ type networkCmd struct {
 }
 
 func newNetworkCmd(c *config) *cobra.Command {
-	w := networkCmd{
+	w := &networkCmd{
 		config:   c,
 		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}).WithFS(c.fs),
 	}
@@ -46,6 +46,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("name", "n", "", "name of the network to create. [optional]")
 			cmd.Flags().StringP("partition", "p", "", "partition where this network should exist.")
 			cmd.Flags().StringP("project", "", "", "project of the network to create. [optional]")
+			cmd.Flags().Int64("default-ipv4-child-prefix-length", 0, "default child prefix length for ipv4 prefixes for private super networks.")
+			cmd.Flags().Int64("default-ipv6-child-prefix-length", 0, "default child prefix length for ipv6 prefixes for private super networks.")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes in this network.")
 			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes in this network.")
@@ -70,8 +72,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().Int64P("vrf", "", 0, "vrf to filter [optional]")
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes to filter, use it like: --prefixes prefix1,prefix2.")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
+			cmd.Flags().String("addressfamily", "", "addressfamily to filter, either ipv4 or ipv6 [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -105,6 +109,16 @@ func newNetworkCmd(c *config) *cobra.Command {
 					return err
 				}
 
+				var (
+					length = make(map[string]int64)
+				)
+				if viper.IsSet("ipv4-prefix-length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV4] = viper.GetInt64("ipv4-prefix-length")
+				}
+				if viper.IsSet("ipv6-prefix-length") {
+					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6-prefix-length")
+				}
+
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
 					Description:         viper.GetString("description"),
 					Name:                viper.GetString("name"),
@@ -114,6 +128,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Labels:              labels,
 					Destinationprefixes: destinationPrefixes,
 					Nat:                 nat,
+					Addressfamily:       viper.GetString("addressfamily"),
+					Length:              length,
 				}, c.describePrinter)
 			}
 
@@ -142,8 +158,12 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
+	allocateCmd.Flags().StringP("addressfamily", "", "", "addressfamily of the network to acquire, if not specified the network inherits the address families from the parent [optional]")
+	allocateCmd.Flags().Int64P("ipv4-prefix-length", "", 0, "ipv4 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
+	allocateCmd.Flags().Int64P("ipv6-prefix-length", "", 0, "ipv6 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
 
 	genericcli.Must(allocateCmd.MarkFlagRequired("name"))
 	genericcli.Must(allocateCmd.MarkFlagRequired("project"))
@@ -157,7 +177,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 	)
 }
 
-func (c networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -166,7 +186,7 @@ func (c networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
+func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
@@ -179,6 +199,7 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 		Prefixes:            viper.GetStringSlice("prefixes"),
 		Destinationprefixes: viper.GetStringSlice("destination-prefixes"),
 		Parentnetworkid:     viper.GetString("parent"),
+		Addressfamily:       viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -187,7 +208,7 @@ func (c networkCmd) List() ([]*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -196,7 +217,7 @@ func (c networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.CreateNetworkConflict
@@ -209,7 +230,7 @@ func (c networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
+func (c *networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
 	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
@@ -218,7 +239,7 @@ func (c networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1Network
 	return resp.Payload, nil
 }
 
-func (c networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
+func (c *networkCmd) Convert(r *models.V1NetworkResponse) (string, *models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, error) {
 	if r.ID == nil {
 		return "", nil, nil, fmt.Errorf("id is nil")
 	}
@@ -235,6 +256,7 @@ func networkResponseToCreate(r *models.V1NetworkResponse) *models.V1NetworkCreat
 		Nat:                        r.Nat,
 		Parentnetworkid:            r.Parentnetworkid,
 		Partitionid:                r.Partitionid,
+		Defaultchildprefixlength:   r.Defaultchildprefixlength,
 		Prefixes:                   r.Prefixes,
 		Privatesuper:               r.Privatesuper,
 		Projectid:                  r.Projectid,
@@ -256,6 +278,7 @@ func networkResponseToUpdate(r *models.V1NetworkResponse) *models.V1NetworkUpdat
 		Prefixes:                   r.Prefixes,
 		Shared:                     r.Shared,
 		AdditionalAnnouncableCIDRs: r.AdditionalAnnouncableCIDRs,
+		Defaultchildprefixlength:   r.Defaultchildprefixlength,
 	}
 }
 
@@ -263,6 +286,18 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 	lbs, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
 	if err != nil {
 		return nil, err
+	}
+
+	var defaultChildPrefixLengths map[string]int64
+	if viper.GetBool("privatesuper") {
+		defaultChildPrefixLengths = map[string]int64{}
+
+		if length := viper.GetInt64("default-ipv4-child-prefix-length"); length > 0 {
+			defaultChildPrefixLengths[models.V1IPAllocateRequestAddressfamilyIPV4] = length
+		}
+		if length := viper.GetInt64("default-ipv6-child-prefix-length"); length > 0 {
+			defaultChildPrefixLengths[models.V1IPAllocateRequestAddressfamilyIPV6] = length
+		}
 	}
 
 	return &models.V1NetworkCreateRequest{
@@ -280,6 +315,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 		Vrfshared:                  viper.GetBool("vrfshared"),
 		Labels:                     lbs,
 		AdditionalAnnouncableCIDRs: viper.GetStringSlice("additional-announcable-cidrs"),
+		Defaultchildprefixlength:   defaultChildPrefixLengths,
 	}, nil
 }
 
@@ -375,6 +411,7 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Prefixes:                   nil,
 			Shared:                     shared,
 			AdditionalAnnouncableCIDRs: additionalCidrs,
+			Defaultchildprefixlength:   resp.Defaultchildprefixlength,
 		}
 		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)

@@ -1,15 +1,19 @@
-## metalctl size reservations
+## metalctl size reservation usage
 
-manage size reservations
+see current usage of size reservations
 
 ```
-metalctl size reservations [flags]
+metalctl size reservation usage [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for reservations
+  -h, --help               help for usage
+      --partition string   the partition to filter
+      --project string     the project to filter
+      --size-id string     the size-id to filter
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: amount|id|partition|project|size|used-amount
 ```
 
 ### Options inherited from parent commands
@@ -42,6 +46,5 @@ metalctl size reservations [flags]
 
 ### SEE ALSO
 
-* [metalctl size](metalctl_size.md)	 - manage size entities
-* [metalctl size reservations list](metalctl_size_reservations_list.md)	 - list size reservations
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 

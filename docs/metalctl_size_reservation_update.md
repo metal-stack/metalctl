@@ -1,38 +1,34 @@
-## metalctl network ip create
+## metalctl size reservation update
 
-creates the ip
+updates the reservation
 
 ```
-metalctl network ip create [flags]
+metalctl size reservation update <id> [flags]
 ```
 
 ### Options
 
 ```
-      --addressfamily string    addressfamily of the ip to acquire, defaults to IPv4 [optional]
+      --amount int32            the amount to associate with this reservation
       --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
-  -d, --description string      description of the IP to allocate. [optional]
+      --description string      the description to associate with this reservation
   -f, --file string             filename of the create or update request in yaml format, or - for stdin.
                                 
                                 Example:
-                                $ metalctl ip describe ip-1 -o yaml > ip.yaml
-                                $ vi ip.yaml
+                                $ metalctl reservation describe reservation-1 -o yaml > reservation.yaml
+                                $ vi reservation.yaml
                                 $ # either via stdin
-                                $ cat ip.yaml | metalctl ip create -f -
+                                $ cat reservation.yaml | metalctl reservation update <id> -f -
                                 $ # or via file
-                                $ metalctl ip create -f ip.yaml
+                                $ metalctl reservation update <id> -f reservation.yaml
                                 
                                 the file can also contain multiple documents and perform a bulk operation.
                                 	
-  -h, --help                    help for create
-      --ipaddress string        a specific ip address to allocate. [optional]
-  -n, --name string             name of the IP to allocate. [optional]
-      --network string          network from where the IP should be allocated.
-      --project string          project for which the IP should be allocated.
+  -h, --help                    help for update
+      --labels strings          the labels to associate with this reservation
+      --partitions strings      the partition ids to associate with this reservation
       --skip-security-prompts   skips security prompt for bulk operations
-      --tags strings            tags to attach to the IP.
       --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
-      --type string             type of the IP to allocate: ephemeral|static [optional] (default "ephemeral")
 ```
 
 ### Options inherited from parent commands
@@ -65,5 +61,5 @@ metalctl network ip create [flags]
 
 ### SEE ALSO
 
-* [metalctl network ip](metalctl_network_ip.md)	 - manage ip entities
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 

@@ -21,9 +21,9 @@ func (t *TablePrinter) NetworkTable(data []*models.V1NetworkResponse, wide bool)
 		rows [][]string
 	)
 
-	header := []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "", "IPs"}
+	header := []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "", "Prefixes", "IP Usage"}
 	if wide {
-		header = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
+		header = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "PrivateSuper", "Annotations"}
 	}
 
 	nn := &networks{}
@@ -65,28 +65,50 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	privateSuper := fmt.Sprintf("%t", flag)
 	nat := fmt.Sprintf("%t", *n.Nat)
 
-	usage := fmt.Sprintf("IPs:     %v/%v", *n.Usage.UsedIps, *n.Usage.AvailableIps)
-
-	ipUse := float64(*n.Usage.UsedIps) / float64(*n.Usage.AvailableIps)
 	shortIPUsage := nbr
-	if ipUse >= 0.9 {
-		shortIPUsage += color.RedString(dot)
-	} else if ipUse >= 0.7 {
-		shortIPUsage += color.YellowString(dot)
-	} else {
-		shortIPUsage += color.GreenString(dot)
-	}
+	shortPrefixUsage := nbr
+	ipv4Use := 0.0
+	ipv4PrefixUse := 0.0
+	ipv6Use := 0.0
+	ipv6PrefixUse := 0.0
 
-	shortPrefixUsage := ""
-	if *n.Usage.AvailablePrefixes > 0 {
-		prefixUse := float64(*n.Usage.UsedPrefixes) / float64(*n.Usage.AvailablePrefixes)
-		if prefixUse >= 0.9 {
-			shortPrefixUsage = color.RedString(dot)
+	if n.Consumption != nil {
+		consumption := *n.Consumption
+		if consumption.IPV4 != nil {
+			ipv4Consumption := *consumption.IPV4
+			ipv4Use = float64(*ipv4Consumption.UsedIps) / float64(*ipv4Consumption.AvailableIps)
+
+			if *ipv4Consumption.AvailablePrefixes > 0 {
+				ipv4PrefixUse = float64(*ipv4Consumption.UsedPrefixes) / float64(*ipv4Consumption.AvailablePrefixes)
+			}
 		}
-		usage = fmt.Sprintf("%s\nPrefixes:%d/%d", usage, *n.Usage.UsedPrefixes, *n.Usage.AvailablePrefixes)
+		if consumption.IPV6 != nil {
+			ipv6Consumption := *consumption.IPV6
+			ipv6Use = float64(*ipv6Consumption.UsedIps) / float64(*ipv6Consumption.AvailableIps)
+
+			if *ipv6Consumption.AvailablePrefixes > 0 {
+				ipv6PrefixUse = float64(*ipv6Consumption.UsedPrefixes) / float64(*ipv6Consumption.AvailablePrefixes)
+			}
+		}
+
+		if ipv4Use >= 0.9 || ipv6Use >= 0.9 {
+			shortIPUsage = color.RedString(threequarterpie)
+		} else if ipv4Use >= 0.7 || ipv6Use >= 0.7 {
+			shortIPUsage += color.YellowString(halfpie)
+		} else {
+			shortIPUsage += color.GreenString(dot)
+		}
+
+		if ipv4PrefixUse >= 0.9 || ipv6PrefixUse >= 0.9 {
+			shortPrefixUsage = color.RedString(threequarterpie)
+		} else if ipv4PrefixUse >= 0.7 || ipv6PrefixUse >= 0.7 {
+			shortPrefixUsage = color.YellowString(halfpie)
+		} else {
+			shortPrefixUsage = color.GreenString(dot)
+		}
 	}
 
-	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, usage, privateSuper)
+	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortIPUsage, privateSuper)
 	for i := 0; i < max-1; i++ {
 		id += "\n│"
 	}
@@ -102,9 +124,9 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	annotations := strings.Join(as, "\n")
 
 	if wide {
-		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, usage, privateSuper, annotations}
+		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, privateSuper, annotations}
 	} else {
-		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, shortPrefixUsage, shortIPUsage}
+		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, shortPrefixUsage, prefixes, shortIPUsage}
 	}
 }
 

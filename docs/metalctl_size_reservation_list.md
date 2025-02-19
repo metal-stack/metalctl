@@ -1,15 +1,20 @@
-## metalctl switch
+## metalctl size reservation list
 
-manage switch entities
+list all reservations
 
-### Synopsis
-
-switch are the leaf switches in the data center that are controlled by metal-stack.
+```
+metalctl size reservation list [flags]
+```
 
 ### Options
 
 ```
-  -h, --help   help for switch
+  -h, --help               help for list
+      --id string          the id to filter
+      --partition string   the partition id to filter
+      --project string     the project id to filter
+      --size string        the size id to filter
+      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: amount|id|partition|project|size
 ```
 
 ### Options inherited from parent commands
@@ -42,17 +47,5 @@ switch are the leaf switches in the data center that are controlled by metal-sta
 
 ### SEE ALSO
 
-* [metalctl](metalctl.md)	 - a cli to manage entities in the metal-stack api
-* [metalctl switch connected-machines](metalctl_switch_connected-machines.md)	 - shows switches with their connected machines
-* [metalctl switch console](metalctl_switch_console.md)	 - connect to the switch console
-* [metalctl switch delete](metalctl_switch_delete.md)	 - deletes the switch
-* [metalctl switch describe](metalctl_switch_describe.md)	 - describes the switch
-* [metalctl switch detail](metalctl_switch_detail.md)	 - switch details
-* [metalctl switch edit](metalctl_switch_edit.md)	 - edit the switch through an editor and update
-* [metalctl switch list](metalctl_switch_list.md)	 - list all switches
-* [metalctl switch migrate](metalctl_switch_migrate.md)	 - migrate machine connections and other configuration from one switch to another
-* [metalctl switch port](metalctl_switch_port.md)	 - sets the given switch port state up or down
-* [metalctl switch replace](metalctl_switch_replace.md)	 - put a leaf switch into replace mode in preparation for physical replacement. For a description of the steps involved see the long help.
-* [metalctl switch ssh](metalctl_switch_ssh.md)	 - connect to the switch via ssh
-* [metalctl switch update](metalctl_switch_update.md)	 - updates the switch
+* [metalctl size reservation](metalctl_size_reservation.md)	 - manage reservation entities
 

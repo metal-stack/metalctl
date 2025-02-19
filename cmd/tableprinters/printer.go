@@ -13,6 +13,7 @@ import (
 type TablePrinter struct {
 	t                       *printers.TablePrinter
 	lastEventErrorThreshold time.Duration
+	markdown                bool
 }
 
 func New() *TablePrinter {
@@ -25,6 +26,10 @@ func (t *TablePrinter) SetPrinter(printer *printers.TablePrinter) {
 
 func (t *TablePrinter) SetLastEventErrorThreshold(threshold time.Duration) {
 	t.lastEventErrorThreshold = threshold
+}
+
+func (t *TablePrinter) SetMarkdown(markdown bool) {
+	t.markdown = markdown
 }
 
 func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {
@@ -97,6 +102,7 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.FSLTable(d, wide)
 	case *api.Contexts:
 		return t.ContextTable(d, wide)
+
 	case *models.V1SizeImageConstraintResponse:
 		return t.SizeImageConstraintTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeImageConstraintResponse:
@@ -109,6 +115,11 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SizeReservationTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeReservationResponse:
 		return t.SizeReservationTable(d, wide)
+	case *models.V1SizeReservationUsageResponse:
+		return t.SizeReservationUsageTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1SizeReservationUsageResponse:
+		return t.SizeReservationUsageTable(d, wide)
+
 	default:
 		return nil, nil, fmt.Errorf("unknown table printer for type: %T", d)
 	}

@@ -19,7 +19,7 @@ type tenantCmd struct {
 }
 
 func newTenantCmd(c *config) *cobra.Command {
-	w := tenantCmd{
+	w := &tenantCmd{
 		config: c,
 	}
 
@@ -57,7 +57,7 @@ func newTenantCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig)
 }
 
-func (c tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
+func (c *tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
 	resp, err := c.client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func (c tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c tenantCmd) List() ([]*models.V1TenantResponse, error) {
+func (c *tenantCmd) List() ([]*models.V1TenantResponse, error) {
 	var annotations map[string]string
 	if viper.IsSet("annotations") {
 		var err error
@@ -88,7 +88,7 @@ func (c tenantCmd) List() ([]*models.V1TenantResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c tenantCmd) Delete(id string) (*models.V1TenantResponse, error) {
+func (c *tenantCmd) Delete(id string) (*models.V1TenantResponse, error) {
 	resp, err := c.client.Tenant().DeleteTenant(tenantmodel.NewDeleteTenantParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (c tenantCmd) Delete(id string) (*models.V1TenantResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantResponse, error) {
+func (c *tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantResponse, error) {
 	resp, err := c.client.Tenant().CreateTenant(tenantmodel.NewCreateTenantParams().WithBody(rq), nil)
 	if err != nil {
 		var r *tenantmodel.CreateTenantConflict
@@ -110,7 +110,7 @@ func (c tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantRes
 	return resp.Payload, nil
 }
 
-func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantResponse, error) {
+func (c *tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantResponse, error) {
 	if rq.Meta == nil {
 		return nil, fmt.Errorf("tenant meta is nil")
 	}
@@ -130,7 +130,7 @@ func (c tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantRes
 	return updateResp.Payload, nil
 }
 
-func (c tenantCmd) Convert(r *models.V1TenantResponse) (string, *models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, error) {
+func (c *tenantCmd) Convert(r *models.V1TenantResponse) (string, *models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, error) {
 	if r.Meta == nil {
 		return "", nil, nil, fmt.Errorf("meta is nil")
 	}
