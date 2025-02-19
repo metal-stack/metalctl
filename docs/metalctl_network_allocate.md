@@ -9,17 +9,17 @@ metalctl network allocate [flags]
 ### Options
 
 ```
-      --addressfamily string   addressfamily of the network to acquire  [optional] (default "ipv4")
-  -d, --description string     description of the network to create. [optional]
-      --dmz                    use this private network as dmz. [optional]
-  -h, --help                   help for allocate
-      --ipv4length int         ipv4 bitlength of network to create. [optional] (default 22)
-      --ipv6length int         ip6 bitlength of network to create. [optional] (default 64)
-      --labels strings         labels for this network. [optional]
-  -n, --name string            name of the network to create. [required]
-      --partition string       partition where this network should exist. [required]
-      --project string         partition where this network should exist. [required]
-      --shared                 shared allows usage of this private network from other networks
+      --addressfamily string     addressfamily of the network to acquire  [optional]
+  -d, --description string       description of the network to create. [optional]
+      --dmz                      use this private network as dmz. [optional]
+  -h, --help                     help for allocate
+      --ipv4-prefix-length int   ipv4 prefix bit length of network to create, defaults to default child prefix length of the parent network. [optional]
+      --ipv6-prefix-length int   ipv6 prefix bit length of network to create, defaults to default child prefix length of the parent network. [optional]
+      --labels strings           labels for this network. [optional]
+  -n, --name string              name of the network to create. [required]
+      --partition string         partition where this network should exist. [required]
+      --project string           partition where this network should exist. [required]
+      --shared                   shared allows usage of this private network from other networks
 ```
 
 ### Options inherited from parent commands

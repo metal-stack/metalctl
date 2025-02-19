@@ -141,7 +141,7 @@ func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 		return resp.Payload, nil
 	}
 
-	// FIXME this is a workaround, if specificIP is set, AF must not be set.
+	// if specificIP is set, AF must not be set.
 	rq.Addressfamily = nil
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
