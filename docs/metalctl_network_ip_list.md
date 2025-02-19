@@ -9,16 +9,17 @@ metalctl network ip list [flags]
 ### Options
 
 ```
-  -h, --help               help for list
-      --ipaddress string   ipaddress to filter [optional]
-      --machineid string   machineid to filter [optional]
-      --name string        name to filter [optional]
-      --network string     network to filter [optional]
-      --prefix string      prefix to filter [optional]
-      --project string     project to filter [optional]
-      --sort-by strings    sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|description|id|ipaddress|name|network|type
-      --tags strings       tags to filter [optional]
-      --type string        type to filter [optional]
+      --addressfamily string   addressfamily of the ip to filter, defaults to all addressfamilies [optional]
+  -h, --help                   help for list
+      --ipaddress string       ipaddress to filter [optional]
+      --machineid string       machineid to filter [optional]
+      --name string            name to filter [optional]
+      --network string         network to filter [optional]
+      --prefix string          prefix to filter [optional]
+      --project string         project to filter [optional]
+      --sort-by strings        sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|description|id|ipaddress|name|network|type
+      --tags strings           tags to filter [optional]
+      --type string            type to filter [optional]
 ```
 
 ### Options inherited from parent commands

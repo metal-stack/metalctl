@@ -132,13 +132,12 @@ func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1Partitio
 			Imageurl:    r.Bootconfig.Imageurl,
 			Kernelurl:   r.Bootconfig.Kernelurl,
 		},
-		Description:                r.Description,
-		ID:                         r.ID,
-		Mgmtserviceaddress:         r.Mgmtserviceaddress,
-		Name:                       r.Name,
-		Privatenetworkprefixlength: r.Privatenetworkprefixlength,
-		DNSServers:                 r.DNSServers,
-		NtpServers:                 r.NtpServers,
+		Description:        r.Description,
+		ID:                 r.ID,
+		Mgmtserviceaddress: r.Mgmtserviceaddress,
+		Name:               r.Name,
+		DNSServers:         r.DNSServers,
+		NtpServers:         r.NtpServers,
 	}
 }
 

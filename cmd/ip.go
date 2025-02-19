@@ -49,9 +49,11 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network from where the IP should be allocated.")
 			cmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
+			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to acquire, defaults to IPv4 [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
@@ -62,11 +64,13 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network to filter [optional]")
 			cmd.Flags().StringP("name", "", "", "name to filter [optional]")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to filter [optional]")
+			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to filter, defaults to all addressfamilies [optional]")
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
 		},
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Aliases = append(cmd.Aliases, "free")
@@ -105,6 +109,7 @@ func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
 		Machineid:     viper.GetString("machineid"),
 		Networkprefix: viper.GetString("prefix"),
 		Tags:          viper.GetStringSlice("tags"),
+		Addressfamily: viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -169,6 +174,7 @@ func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
 	if r.Ipaddress != nil {
 		ip = *r.Ipaddress
 	}
+
 	return &ipAllocateRequest{
 		SpecificIP: ip,
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
@@ -196,12 +202,13 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 	return &ipAllocateRequest{
 		SpecificIP: viper.GetString("ipaddress"),
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
-			Description: viper.GetString("description"),
-			Name:        viper.GetString("name"),
-			Networkid:   pointer.Pointer(viper.GetString("network")),
-			Projectid:   pointer.Pointer(viper.GetString("project")),
-			Type:        pointer.Pointer(viper.GetString("type")),
-			Tags:        viper.GetStringSlice("tags"),
+			Description:   viper.GetString("description"),
+			Name:          viper.GetString("name"),
+			Networkid:     pointer.Pointer(viper.GetString("network")),
+			Projectid:     pointer.Pointer(viper.GetString("project")),
+			Type:          pointer.Pointer(viper.GetString("type")),
+			Tags:          viper.GetStringSlice("tags"),
+			Addressfamily: viper.GetString("addressfamily"),
 		},
 	}, nil
 }
