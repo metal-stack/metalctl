@@ -163,7 +163,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringSlice("labels", []string{}, "labels for this network. [optional]")
 	allocateCmd.Flags().BoolP("dmz", "", false, "use this private network as dmz. [optional]")
 	allocateCmd.Flags().BoolP("shared", "", false, "shared allows usage of this private network from other networks")
-	allocateCmd.Flags().StringP("addressfamily", "", "ipv4", "addressfamily of the network to acquire  [optional]")
+	allocateCmd.Flags().StringP("addressfamily", "", "", "addressfamily of the network to acquire  [optional]")
 	allocateCmd.Flags().Int64P("ipv4length", "", 22, "ipv4 bitlength of network to create. [optional]")
 	allocateCmd.Flags().Int64P("ipv6length", "", 64, "ip6 bitlength of network to create. [optional]")
 	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
