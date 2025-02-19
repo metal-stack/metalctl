@@ -21,9 +21,9 @@ func (t *TablePrinter) NetworkTable(data []*models.V1NetworkResponse, wide bool)
 		rows [][]string
 	)
 
-	header := []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "", "IPs"}
+	header := []string{"ID", "Name", "Project", "Partition", "Nat", "Shared", "", "Prefixes", "IP Usage"}
 	if wide {
-		header = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "Usage", "PrivateSuper", "Annotations"}
+		header = []string{"ID", "Description", "Name", "Project", "Partition", "Nat", "Shared", "Prefixes", "PrivateSuper", "Annotations"}
 	}
 
 	nn := &networks{}
@@ -64,62 +64,51 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	}
 	privateSuper := fmt.Sprintf("%t", flag)
 	nat := fmt.Sprintf("%t", *n.Nat)
-	shortIPv4IPUsage := nbr
-	shortIPv4PrefixUsage := ""
-	ipv4usage := ""
 
-	// TODO activate
-	// shortIPv6IPUsage := nbr
-	// shortIPv6PrefixUsage := ""
-	// ipv6usage := ""
+	shortIPUsage := nbr
+	shortPrefixUsage := nbr
+	ipv4Use := 0.0
+	ipv4PrefixUse := 0.0
+	ipv6Use := 0.0
+	ipv6PrefixUse := 0.0
+
 	if n.Consumption != nil {
 		consumption := *n.Consumption
 		if consumption.IPV4 != nil {
 			ipv4Consumption := *consumption.IPV4
-			ipv4usage = fmt.Sprintf("IPs:     %v/%v", *ipv4Consumption.UsedIps, *ipv4Consumption.AvailableIps)
-
-			ipv4Use := float64(*ipv4Consumption.UsedIps) / float64(*ipv4Consumption.AvailableIps)
-			if ipv4Use >= 0.9 {
-				shortIPv4IPUsage += color.RedString(dot)
-			} else if ipv4Use >= 0.7 {
-				shortIPv4IPUsage += color.YellowString(dot)
-			} else {
-				shortIPv4IPUsage += color.GreenString(dot)
-			}
+			ipv4Use = float64(*ipv4Consumption.UsedIps) / float64(*ipv4Consumption.AvailableIps)
 
 			if *ipv4Consumption.AvailablePrefixes > 0 {
-				prefixUse := float64(*ipv4Consumption.UsedPrefixes) / float64(*ipv4Consumption.AvailablePrefixes)
-				if prefixUse >= 0.9 {
-					shortIPv4PrefixUsage = color.RedString(dot)
-				}
-				ipv4usage = fmt.Sprintf("%s\nPrefixes:%d/%d", ipv4usage, *ipv4Consumption.UsedPrefixes, *ipv4Consumption.AvailablePrefixes)
+				ipv4PrefixUse = float64(*ipv4Consumption.UsedPrefixes) / float64(*ipv4Consumption.AvailablePrefixes)
 			}
 		}
-		// TODO activate
-		// if consumption.IPV6 != nil {
-		// 	ipv6Consumption := *consumption.IPV6
-		// 	ipv6usage = fmt.Sprintf("IPs:     %v/%v", *ipv6Consumption.UsedIps, *ipv6Consumption.AvailableIps)
+		if consumption.IPV6 != nil {
+			ipv6Consumption := *consumption.IPV6
+			ipv6Use = float64(*ipv6Consumption.UsedIps) / float64(*ipv6Consumption.AvailableIps)
 
-		// 	ipv6Use := float64(*ipv6Consumption.UsedIps) / float64(*ipv6Consumption.AvailableIps)
-		// 	if ipv6Use >= 0.9 {
-		// 		shortIPv6IPUsage += color.RedString(dot)
-		// 	} else if ipv6Use >= 0.7 {
-		// 		shortIPv6IPUsage += color.YellowString(dot)
-		// 	} else {
-		// 		shortIPv6IPUsage += color.GreenString(dot)
-		// 	}
+			if *ipv6Consumption.AvailablePrefixes > 0 {
+				ipv6PrefixUse = float64(*ipv6Consumption.UsedPrefixes) / float64(*ipv6Consumption.AvailablePrefixes)
+			}
+		}
 
-		// 	if *ipv6Consumption.AvailablePrefixes > 0 {
-		// 		prefixUse := float64(*ipv6Consumption.UsedPrefixes) / float64(*ipv6Consumption.AvailablePrefixes)
-		// 		if prefixUse >= 0.9 {
-		// 			shortIPv6PrefixUsage = color.RedString(dot)
-		// 		}
-		// 		ipv6usage = fmt.Sprintf("%s\nPrefixes:%d/%d", ipv6usage, *ipv6Consumption.UsedPrefixes, *ipv6Consumption.AvailablePrefixes)
-		// 	}
-		// }
+		if ipv4Use >= 0.9 || ipv6Use >= 0.9 {
+			shortIPUsage = color.RedString(threequarterpie)
+		} else if ipv4Use >= 0.7 || ipv6Use >= 0.7 {
+			shortIPUsage += color.YellowString(halfpie)
+		} else {
+			shortIPUsage += color.GreenString(dot)
+		}
+
+		if ipv4PrefixUse >= 0.9 || ipv6PrefixUse >= 0.9 {
+			shortPrefixUsage = color.RedString(threequarterpie)
+		} else if ipv4PrefixUse >= 0.7 || ipv6PrefixUse >= 0.7 {
+			shortPrefixUsage = color.YellowString(halfpie)
+		} else {
+			shortPrefixUsage = color.GreenString(dot)
+		}
 	}
 
-	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, ipv4usage, privateSuper)
+	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortIPUsage, privateSuper)
 	for i := 0; i < max-1; i++ {
 		id += "\n│"
 	}
@@ -135,9 +124,9 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	annotations := strings.Join(as, "\n")
 
 	if wide {
-		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, ipv4usage, privateSuper, annotations}
+		return []string{id, n.Description, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, privateSuper, annotations}
 	} else {
-		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, prefixes, shortIPv4PrefixUsage, shortIPv4IPUsage}
+		return []string{id, n.Name, n.Projectid, n.Partitionid, nat, shared, shortPrefixUsage, prefixes, shortIPUsage}
 	}
 }
 

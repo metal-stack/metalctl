@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	"slices"
 
@@ -111,7 +110,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 				}
 
 				var (
-					af     *string
+					af     string
 					length = make(map[string]int64)
 				)
 				if viper.IsSet("ipv4length") {
@@ -121,7 +120,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 					length[models.V1IPAllocateRequestAddressfamilyIPV6] = viper.GetInt64("ipv6length")
 				}
 				if viper.IsSet("addressfamily") {
-					af = pointer.Pointer(viper.GetString("addressfamily"))
+					af = viper.GetString("addressfamily")
 				}
 
 				return w.childCLI.CreateAndPrint(&models.V1NetworkAllocateRequest{
@@ -406,17 +405,6 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 	if viper.IsSet("additional-announcable-cidrs") {
 		additionalCidrs = viper.GetStringSlice("additional-announcable-cidrs")
 	}
-	defaultchildprefixlength := resp.Defaultchildprefixlength
-	if viper.IsSet("default-child-prefixlength") {
-		defaultchildprefixlengthMap := viper.GetStringMapString("default-child-prefixlength")
-		for af, length := range defaultchildprefixlengthMap {
-			l, err := strconv.Atoi(length)
-			if err != nil {
-				return nil, err
-			}
-			defaultchildprefixlength[af] = int64(l)
-		}
-	}
 	var (
 		ur = &models.V1NetworkUpdateRequest{
 			Description:                viper.GetString("description"),
@@ -427,7 +415,7 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 			Prefixes:                   nil,
 			Shared:                     shared,
 			AdditionalAnnouncableCIDRs: additionalCidrs,
-			Defaultchildprefixlength:   defaultchildprefixlength,
+			Defaultchildprefixlength:   resp.Defaultchildprefixlength,
 		}
 		addPrefixes                = sets.New(viper.GetStringSlice("add-prefixes")...)
 		removePrefixes             = sets.New(viper.GetStringSlice("remove-prefixes")...)

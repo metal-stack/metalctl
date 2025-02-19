@@ -130,19 +130,16 @@ func Test_NetworkCmd_MultiResult(t *testing.T) {
 				network2,
 			},
 			wantTable: pointer.Pointer(`
-ID          NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES       IPS
-nw1         network-1               partition-1   true    false    prefix     ●   ●
-└─╴child1   network-1   project-1   partition-1   true    false    prefix     ●   ●
-nw2         network-2   project-1   partition-1   false   false    prefix         ●
+ID          NAME        PROJECT     PARTITION     NAT     SHARED       PREFIXES   IP USAGE 
+nw1         network-1               partition-1   true    false    ◕   prefix     ◕          
+└─╴child1   network-1   project-1   partition-1   true    false    ◕   prefix     ◕          
+nw2         network-2   project-1   partition-1   false   false    ●   prefix     ●
 `),
 			wantWideTable: pointer.Pointer(`
-ID          DESCRIPTION   NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES   USAGE              PRIVATESUPER   ANNOTATIONS
-nw1         network 1     network-1               partition-1   true    false    prefix     IPs: 300/100       true           a=b
-																							Prefixes:400/200
-└─╴child1   child 1       network-1   project-1   partition-1   true    false    prefix     IPs: 300/100       false          e=f
-																							Prefixes:400/200
-nw2         network 2     network-2   project-1   partition-1   false   false    prefix     IPs: 200/400       false          c=d
-																							Prefixes:100/300
+ID          DESCRIPTION   NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES   PRIVATESUPER   ANNOTATIONS 
+nw1         network 1     network-1               partition-1   true    false    prefix     true           a=b           
+└─╴child1   child 1       network-1   project-1   partition-1   true    false    prefix     false          e=f           
+nw2         network 2     network-2   project-1   partition-1   false   false    prefix     false          c=d
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -151,11 +148,11 @@ nw1 network-1
 nw2 network-2
 `),
 			wantMarkdown: pointer.Pointer(`
-|    ID     |   NAME    |  PROJECT  |  PARTITION  |  NAT  | SHARED | PREFIXES |   | IPS |
-|-----------|-----------|-----------|-------------|-------|--------|----------|---|-----|
-| nw1       | network-1 |           | partition-1 | true  | false  | prefix   | ● | ●   |
-| └─╴child1 | network-1 | project-1 | partition-1 | true  | false  | prefix   | ● | ●   |
-| nw2       | network-2 | project-1 | partition-1 | false | false  | prefix   |   | ●   |
+|    ID     |   NAME    |  PROJECT  |  PARTITION  |  NAT  | SHARED |   | PREFIXES | IP USAGE |
+|-----------|-----------|-----------|-------------|-------|--------|---|----------|----------|
+| nw1       | network-1 |           | partition-1 | true  | false  | ◕ | prefix   | ◕        |
+| └─╴child1 | network-1 | project-1 | partition-1 | true  | false  | ◕ | prefix   | ◕        |
+| nw2       | network-2 | project-1 | partition-1 | false | false  | ● | prefix   | ●        |
 `),
 		},
 		{
@@ -261,22 +258,21 @@ func Test_NetworkCmd_SingleResult(t *testing.T) {
 			},
 			want: network1,
 			wantTable: pointer.Pointer(`
-ID    NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES       IPS
-nw1   network-1             partition-1   true   false    prefix     ●    ●
+ID    NAME        PROJECT   PARTITION     NAT    SHARED       PREFIXES   IP USAGE 
+nw1   network-1             partition-1   true   false    ◕   prefix     ◕
 		`),
 			wantWideTable: pointer.Pointer(`
-ID    DESCRIPTION   NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES   USAGE              PRIVATESUPER   ANNOTATIONS
-nw1   network 1     network-1             partition-1   true   false    prefix     IPs: 300/100       true           a=b
-																					Prefixes:400/200
+ID    DESCRIPTION   NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES   PRIVATESUPER   ANNOTATIONS 
+nw1   network 1     network-1             partition-1   true   false    prefix     true           a=b
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 nw1 network-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID  |   NAME    | PROJECT |  PARTITION  | NAT  | SHARED | PREFIXES |   | IPS |
-|-----|-----------|---------|-------------|------|--------|----------|---|-----|
-| nw1 | network-1 |         | partition-1 | true | false  | prefix   | ● | ●   |
+| ID  |   NAME    | PROJECT |  PARTITION  | NAT  | SHARED |   | PREFIXES | IP USAGE |
+|-----|-----------|---------|-------------|------|--------|---|----------|----------|
+| nw1 | network-1 |         | partition-1 | true | false  | ◕ | prefix   | ◕        |
 		`),
 		},
 		{

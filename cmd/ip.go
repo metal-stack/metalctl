@@ -142,7 +142,7 @@ func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	}
 
 	// if specificIP is set, AF must not be set.
-	rq.Addressfamily = nil
+	rq.Addressfamily = ""
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
 		var r *ip.AllocateSpecificIPConflict
@@ -202,9 +202,9 @@ func ipResponseToUpdate(r *models.V1IPResponse) *models.V1IPUpdateRequest {
 
 func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 
-	var af *string
+	var af string
 	if viper.IsSet("addressfamily") {
-		af = pointer.Pointer(viper.GetString("addressfamily"))
+		af = viper.GetString("addressfamily")
 	}
 
 	return &ipAllocateRequest{
