@@ -1280,12 +1280,14 @@ func (c *machineCmd) machineConsole(args []string) error {
 	if err != nil {
 		return err
 	}
+
+	var token string
 	authContext, err := getAuthContext(viper.GetString("kubeconfig"))
-	if err != nil {
-		return err
+	if err == nil {
+		token = authContext.IDToken
 	}
 
-	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &authContext.IDToken, viper.GetBool("admin"))
+	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &token, viper.GetBool("admin"))
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
