@@ -44,6 +44,10 @@ var (
 		Vrf:                        50,
 		Vrfshared:                  true,
 		AdditionalAnnouncableCIDRs: []string{"10.240.0.0/12"},
+		Defaultchildprefixlength: map[string]int64{
+			"IPv4": 22,
+			"IPv6": 96,
+		},
 	}
 	network1child = &models.V1NetworkResponse{
 		Description:         "child 1",
@@ -307,6 +311,8 @@ nw1 network-1
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
 					"--additional-announcable-cidrs", "10.240.0.0/12",
+					"--default-ipv4-child-prefix-length", "22",
+					"--default-ipv6-child-prefix-length", "96",
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -356,6 +362,7 @@ nw1 network-1
 						Labels:                     network1.Labels,
 						Shared:                     network1.Shared,
 						AdditionalAnnouncableCIDRs: network1.AdditionalAnnouncableCIDRs,
+						Defaultchildprefixlength:   network1.Defaultchildprefixlength,
 					}).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)

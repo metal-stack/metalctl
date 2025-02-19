@@ -11,6 +11,8 @@ metalctl network create [flags]
 ```
       --additional-announcable-cidrs strings   list of cidrs which are added to the route maps per tenant private network, these are typically pod- and service cidrs, can only be set in a supernetwork
       --bulk-output                            when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --default-ipv4-child-prefix-length int   default child prefix length for ipv4 prefixes for private super networks.
+      --default-ipv6-child-prefix-length int   default child prefix length for ipv6 prefixes for private super networks.
   -d, --description string                     description of the network to create. [optional]
       --destination-prefixes strings           destination prefixes in this network.
   -f, --file string                            filename of the create or update request in yaml format, or - for stdin.
