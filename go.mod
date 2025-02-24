@@ -62,7 +62,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
 	github.com/gaissmai/bart v0.11.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-json-experiment/json v0.0.0-20231102232822-2e55bd4e08b0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
