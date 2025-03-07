@@ -1,13 +1,16 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"strings"
 
+	apiv2client "github.com/metal-stack/api/go/client"
 	metalgo "github.com/metal-stack/metal-go"
+
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
@@ -28,6 +31,7 @@ type config struct {
 	log             *slog.Logger
 	describePrinter printers.Printer
 	listPrinter     printers.Printer
+	apiv2client     apiv2client.Client
 }
 
 const (
@@ -71,7 +75,7 @@ func newRootCmd(c *config) *cobra.Command {
 			// we cannot instantiate the config earlier because
 			// cobra flags do not work so early in the game
 			genericcli.Must(readConfigFile())
-			genericcli.Must(initConfigWithViperCtx(c))
+			initConfigWithViperCtx(c)
 		},
 	}
 
@@ -137,6 +141,8 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newVPNCmd(c))
 	rootCmd.AddCommand(newUpdateCmd(c))
 
+	rootCmd.AddCommand(newV2Cmd(c.apiv2client))
+
 	return rootCmd
 }
 
@@ -176,7 +182,7 @@ func readConfigFile() error {
 	return nil
 }
 
-func initConfigWithViperCtx(c *config) error {
+func initConfigWithViperCtx(c *config) {
 	ctx := api.MustDefaultContext()
 
 	c.listPrinter = newPrinterFromCLI(c.out)
@@ -192,7 +198,7 @@ func initConfigWithViperCtx(c *config) error {
 	}
 
 	if c.client != nil {
-		return nil
+		return
 	}
 
 	driverURL := viper.GetString("api-url")
@@ -230,14 +236,22 @@ func initConfigWithViperCtx(c *config) error {
 		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey)
 	}
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	c.comp.SetClient(client)
 	c.driverURL = driverURL
 	c.client = client
 
-	return nil
+	apiv2c, err := getAPIV2Client()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("init api client:%#v", apiv2c)
+
+	c.apiv2client = apiv2c
+
+	return
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {
@@ -245,4 +259,18 @@ func recursiveAutoGenDisable(cmd *cobra.Command) {
 	for _, child := range cmd.Commands() {
 		recursiveAutoGenDisable(child)
 	}
+}
+
+func getAPIV2Client() (apiv2client.Client, error) {
+	ctx := api.MustDefaultContext()
+	if ctx.V2Config == nil || ctx.V2Config.ApiURL == nil {
+		return nil, errors.New("no proper v2 config found, please ensure your current context contains v2/api-url")
+	}
+
+	apiv2c := apiv2client.New(apiv2client.DialConfig{
+		BaseURL:   *ctx.V2Config.ApiURL,
+		Token:     ctx.V2Config.Token,
+		UserAgent: "metalctl",
+	})
+	return apiv2c, nil
 }

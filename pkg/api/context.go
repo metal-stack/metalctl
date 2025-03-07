@@ -18,14 +18,20 @@ type Contexts struct {
 
 // Context configure metalctl behaviour
 type Context struct {
-	ApiURL       string  `yaml:"url"`
-	IssuerURL    string  `yaml:"issuer_url"`
-	IssuerType   string  `yaml:"issuer_type"`
-	CustomScopes string  `yaml:"custom_scopes"`
-	ClientID     string  `yaml:"client_id"`
-	ClientSecret string  `yaml:"client_secret"`
-	HMAC         *string `yaml:"hmac"`
-	HMACAuthType string  `yaml:"hmac_auth_type,omitempty"`
+	ApiURL       string    `yaml:"url"`
+	IssuerURL    string    `yaml:"issuer_url"`
+	IssuerType   string    `yaml:"issuer_type"`
+	CustomScopes string    `yaml:"custom_scopes"`
+	ClientID     string    `yaml:"client_id"`
+	ClientSecret string    `yaml:"client_secret"`
+	HMAC         *string   `yaml:"hmac"`
+	HMACAuthType string    `yaml:"hmac_auth_type,omitempty"`
+	V2Config     *V2Config `yaml:"v2,omitempty"`
+}
+
+type V2Config struct {
+	ApiURL *string `yaml:"api-url,omitempty"`
+	Token  string  `yaml:"api-token"`
 }
 
 var defaultCtx = Context{
@@ -43,6 +49,16 @@ func GetContexts() (*Contexts, error) {
 	}
 	err = yaml.Unmarshal(c, &ctxs)
 	return &ctxs, err
+}
+
+func (cs *Contexts) Get(name string) (*Context, bool) {
+	for contextName, context := range cs.Contexts {
+		if contextName == name {
+			return &context, true
+		}
+	}
+
+	return nil, false
 }
 
 func WriteContexts(ctxs *Contexts) error {
