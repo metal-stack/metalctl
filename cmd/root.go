@@ -1,9 +1,13 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"strings"
 
@@ -220,14 +224,31 @@ func initConfigWithViperCtx(c *config) error {
 		}
 	}
 
+	certificateAuthorityData := viper.GetString("certificate-authority-data")
+
 	var (
-		client metalgo.Client
-		err    error
+		client    metalgo.Client
+		err       error
+		transport *http.Transport
 	)
-	if hmacAuthType != "" {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey, metalgo.AuthType(hmacAuthType))
+
+	if certificateAuthorityData == "" {
+		if hmacAuthType == "" {
+			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, "Metal-Admin"))
+		} else {
+			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, hmacAuthType))
+		}
 	} else {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey)
+		transport, err = createTLSTransport(certificateAuthorityData)
+		if err != nil {
+			return err
+		}
+
+		if hmacAuthType == "" {
+			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, "Metal-Admin"), metalgo.Transport(transport))
+		} else {
+			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, hmacAuthType), metalgo.Transport(transport))
+		}
 	}
 	if err != nil {
 		return err
@@ -238,6 +259,27 @@ func initConfigWithViperCtx(c *config) error {
 	c.client = client
 
 	return nil
+}
+
+func createTLSTransport(certificateAuthorityData string) (transport *http.Transport, err error) {
+	var (
+		certificateAuthorityDataHex []byte
+		caCertPool                  x509.CertPool
+	)
+
+	certificateAuthorityDataHex, err = hex.DecodeString(certificateAuthorityData)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool.AppendCertsFromPEM(certificateAuthorityDataHex)
+	transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			RootCAs: &caCertPool,
+		},
+	}
+
+	return transport, nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {

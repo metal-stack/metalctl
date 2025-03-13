@@ -18,14 +18,15 @@ type Contexts struct {
 
 // Context configure metalctl behaviour
 type Context struct {
-	ApiURL       string  `yaml:"url"`
-	IssuerURL    string  `yaml:"issuer_url"`
-	IssuerType   string  `yaml:"issuer_type"`
-	CustomScopes string  `yaml:"custom_scopes"`
-	ClientID     string  `yaml:"client_id"`
-	ClientSecret string  `yaml:"client_secret"`
-	HMAC         *string `yaml:"hmac"`
-	HMACAuthType string  `yaml:"hmac_auth_type,omitempty"`
+	ApiURL                   string  `yaml:"url"`
+	IssuerURL                string  `yaml:"issuer_url"`
+	IssuerType               string  `yaml:"issuer_type"`
+	CustomScopes             string  `yaml:"custom_scopes"`
+	ClientID                 string  `yaml:"client_id"`
+	ClientSecret             string  `yaml:"client_secret"`
+	HMAC                     *string `yaml:"hmac"`
+	HMACAuthType             string  `yaml:"hmac_auth_type,omitempty"`
+	CertificateAuthorityData string  `yaml:"certificate_authority_data,omitempty"`
 }
 
 var defaultCtx = Context{
