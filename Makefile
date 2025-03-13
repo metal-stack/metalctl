@@ -35,7 +35,8 @@ build:
 		-o bin/$(BINARY) \
 		github.com/metal-stack/metalctl
 
-	sha512sum bin/$(BINARY) > bin/$(BINARY).sha512
+	cd bin/; \
+	sha512sum $(BINARY) > $(BINARY).sha512
 
 .PHONY: test
 test: build
