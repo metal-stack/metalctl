@@ -227,29 +227,30 @@ func initConfigWithViperCtx(c *config) error {
 	certificateAuthorityData := viper.GetString("certificate-authority-data")
 
 	var (
-		client    metalgo.Client
-		err       error
-		transport *http.Transport
+		client        metalgo.Client
+		clientOptions []metalgo.ClientOption
+		err           error
+		transport     *http.Transport
 	)
 
-	if certificateAuthorityData == "" {
-		if hmacAuthType == "" {
-			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, "Metal-Admin"))
-		} else {
-			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, hmacAuthType))
-		}
-	} else {
+	clientOptions = append(clientOptions, metalgo.BearerToken(apiToken))
+
+	if certificateAuthorityData != "" {
 		transport, err = createTLSTransport(certificateAuthorityData)
 		if err != nil {
 			return err
 		}
 
-		if hmacAuthType == "" {
-			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, "Metal-Admin"), metalgo.Transport(transport))
-		} else {
-			client, err = metalgo.NewClient(driverURL, metalgo.BearerToken(apiToken), metalgo.HMACAuth(hmacKey, hmacAuthType), metalgo.Transport(transport))
-		}
+		clientOptions = append(clientOptions, metalgo.Transport(transport))
 	}
+
+	if hmacAuthType != "" {
+		clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, hmacAuthType))
+	} else {
+		clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, "Metal-Admin"))
+	}
+
+	client, err = metalgo.NewClient(driverURL, clientOptions...)
 	if err != nil {
 		return err
 	}
