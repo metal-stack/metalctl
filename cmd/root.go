@@ -203,6 +203,12 @@ func initConfigWithViperCtx(c *config) error {
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}
+
+	var (
+		clientOptions []metalgo.ClientOption
+		err           error
+	)
+
 	hmacKey := viper.GetString("hmac")
 	if hmacKey == "" && ctx.HMAC != nil {
 		hmacKey = *ctx.HMAC
@@ -211,9 +217,9 @@ func initConfigWithViperCtx(c *config) error {
 	if hmacAuthType == "" && ctx.HMACAuthType != "" {
 		hmacAuthType = ctx.HMACAuthType
 	}
+	clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, hmacAuthType))
 
 	apiToken := viper.GetString("api-token")
-
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
 		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
@@ -223,32 +229,22 @@ func initConfigWithViperCtx(c *config) error {
 			apiToken = authContext.IDToken
 		}
 	}
-
-	certificateAuthorityData := []byte(ctx.CertificateAuthorityData)
-
-	var (
-		client        metalgo.Client
-		clientOptions []metalgo.ClientOption
-		err           error
-		transport     *http.Transport
-	)
-
 	clientOptions = append(clientOptions, metalgo.BearerToken(apiToken))
 
-	if len(certificateAuthorityData) > 0 {
-		certificateAuthority := make([]byte, base64.StdEncoding.DecodedLen(len(certificateAuthorityData)))
-		base64.StdEncoding.Decode(certificateAuthority, certificateAuthorityData)
-		transport = createTLSTransport(certificateAuthority)
+	certificateAuthorityData := viper.GetString("certificate-authority-data")
+	if certificateAuthorityData == "" && ctx.CertificateAuthorityData != "" {
+		certificateAuthorityData = ctx.CertificateAuthorityData
+	}
+	if certificateAuthorityData != "" {
+		transport, err := createTLSTransport([]byte(certificateAuthorityData))
+		if err != nil {
+			return err
+		}
+
 		clientOptions = append(clientOptions, metalgo.Transport(transport))
 	}
 
-	if hmacAuthType != "" {
-		clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, hmacAuthType))
-	} else {
-		clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, "Metal-Admin"))
-	}
-
-	client, err = metalgo.NewClient(driverURL, clientOptions...)
+	client, err := metalgo.NewClient(driverURL, clientOptions...)
 	if err != nil {
 		return err
 	}
@@ -260,17 +256,23 @@ func initConfigWithViperCtx(c *config) error {
 	return nil
 }
 
-func createTLSTransport(caCert []byte) (transport *http.Transport) {
+func createTLSTransport(caData []byte) (*http.Transport, error) {
+	caCert := make([]byte, base64.StdEncoding.DecodedLen(len(caData)))
+	_, err := base64.StdEncoding.Decode(caCert, caData)
+	if err != nil {
+		return nil, err
+	}
+
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
-	transport = &http.Transport{
+	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			RootCAs:    caCertPool,
 			MinVersion: tls.VersionTLS12,
 		},
 	}
 
-	return transport
+	return transport, nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {
