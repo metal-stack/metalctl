@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"strings"
 
@@ -236,12 +235,12 @@ func initConfigWithViperCtx(c *config) error {
 		certificateAuthorityData = ctx.CertificateAuthorityData
 	}
 	if certificateAuthorityData != "" {
-		transport, err := createTLSTransport([]byte(certificateAuthorityData))
+		tlsClientConfig, err := createTLSClientConfig([]byte(certificateAuthorityData))
 		if err != nil {
 			return err
 		}
 
-		clientOptions = append(clientOptions, metalgo.Transport(transport))
+		clientOptions = append(clientOptions, metalgo.TLSClientConfig(tlsClientConfig))
 	}
 
 	client, err := metalgo.NewClient(driverURL, clientOptions...)
@@ -256,7 +255,7 @@ func initConfigWithViperCtx(c *config) error {
 	return nil
 }
 
-func createTLSTransport(caData []byte) (*http.Transport, error) {
+func createTLSClientConfig(caData []byte) (*tls.Config, error) {
 	caCert := make([]byte, base64.StdEncoding.DecodedLen(len(caData)))
 	_, err := base64.StdEncoding.Decode(caCert, caData)
 	if err != nil {
@@ -265,13 +264,12 @@ func createTLSTransport(caData []byte) (*http.Transport, error) {
 
 	caCertPool := x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM(caCert)
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.TLSClientConfig = &tls.Config{
+	tlsClientConfig := tls.Config{
 		RootCAs:    caCertPool,
 		MinVersion: tls.VersionTLS12,
 	}
 
-	return transport, nil
+	return &tlsClientConfig, nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {

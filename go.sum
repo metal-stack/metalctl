@@ -250,6 +250,10 @@ github.com/metal-stack/metal-go v0.40.5-0.20250307164026-7ca4478eda1e h1:m13vaYr
 github.com/metal-stack/metal-go v0.40.5-0.20250307164026-7ca4478eda1e/go.mod h1:ltItf/Md/z588c7Dr3X6iemCeOFh3rJ8nDL5Dpb9zFQ=
 github.com/metal-stack/metal-go v0.40.5-0.20250313114338-fa345040acf7 h1:Wkt5JRTXIRlFOJ+Fs5L4XeVQEVWNaL7txuzEHG+Po60=
 github.com/metal-stack/metal-go v0.40.5-0.20250313114338-fa345040acf7/go.mod h1:ltItf/Md/z588c7Dr3X6iemCeOFh3rJ8nDL5Dpb9zFQ=
+github.com/metal-stack/metal-go v0.40.5-0.20250319140250-101c36895aff h1:fDl0gPamU7sW2MDlRQgcyUAyipXAndR559rM1yE6D/M=
+github.com/metal-stack/metal-go v0.40.5-0.20250319140250-101c36895aff/go.mod h1:ltItf/Md/z588c7Dr3X6iemCeOFh3rJ8nDL5Dpb9zFQ=
+github.com/metal-stack/metal-go v0.40.5-0.20250321125111-5354e282aab3 h1:ukM/evoSp09u7ykTkH5/Y3lCzBZNdrvq+kraiRoRVeU=
+github.com/metal-stack/metal-go v0.40.5-0.20250321125111-5354e282aab3/go.mod h1:ltItf/Md/z588c7Dr3X6iemCeOFh3rJ8nDL5Dpb9zFQ=
 github.com/metal-stack/metal-lib v0.20.1 h1:gxNg512dS5yzDebELtPZjmoWond0Gw0HHEkSVIAOWRE=
 github.com/metal-stack/metal-lib v0.20.1/go.mod h1:zYzXYpNA4nQ+ANx19s/+1Yb/Q6xhS1nQK2yK2/ryXZM=
 github.com/metal-stack/security v0.9.3 h1:ZF5rGeZ4fIFe0DFFQWkXsUDCzODyjdrpvKmeaLOz9lo=
