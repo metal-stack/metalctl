@@ -69,5 +69,8 @@ func MustDefaultContext() Context {
 	if !ok {
 		return defaultCtx
 	}
+	if ctx.HMACAuthType == "" {
+		ctx.HMACAuthType = defaultCtx.HMACAuthType
+	}
 	return ctx
 }
