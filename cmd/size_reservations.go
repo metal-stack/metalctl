@@ -10,30 +10,31 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type sizeReservationsCmd struct {
-	*config
+	*api.Config
 }
 
-func newSizeReservationsCmd(c *config) *cobra.Command {
+func newSizeReservationsCmd(c *api.Config) *cobra.Command {
 	w := &sizeReservationsCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeReservationCreateRequest, *models.V1SizeReservationUpdateRequest, *models.V1SizeReservationResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.FS),
 		Singular:        "reservation",
 		Plural:          "reservations",
 		Description:     "manage size reservations",
 		Aliases:         []string{"rs"},
 		Sorter:          sorters.SizeReservationsSorter(),
-		ValidArgsFn:     c.comp.SizeReservationsListCompletion,
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:     c.Comp.SizeReservationsListCompletion,
+		DescribePrinter: func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:     func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: func() (*models.V1SizeReservationCreateRequest, error) {
 			labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
 			if err != nil {
@@ -59,9 +60,9 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("labels", nil, "the labels to associate with this reservation")
 			cmd.Flags().String("description", "", "the description to associate with this reservation")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.Comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.Comp.PartitionListCompletion))
 		},
 		UpdateRequestFromCLI: func(args []string) (*models.V1SizeReservationUpdateRequest, error) {
 			id, err := genericcli.GetExactlyOneArg(args)
@@ -88,7 +89,7 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("labels", nil, "the labels to associate with this reservation")
 			cmd.Flags().String("description", "", "the description to associate with this reservation")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partitions", c.Comp.PartitionListCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "the id to filter")
@@ -96,10 +97,10 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 			cmd.Flags().String("project", "", "the project id to filter")
 			cmd.Flags().String("partition", "", "the partition id to filter")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.SizeReservationsListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.Comp.SizeReservationsListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.Comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
 		},
 	}
 
@@ -115,9 +116,9 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 	usageCmd.Flags().String("project", "", "the project to filter")
 	usageCmd.Flags().String("partition", "", "the partition to filter")
 
-	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("size-id", c.comp.SizeListCompletion))
-	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("size-id", c.Comp.SizeListCompletion))
+	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+	genericcli.Must(usageCmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
 
 	genericcli.AddSortFlag(usageCmd, sorters.SizeReservationsUsageSorter())
 
@@ -125,7 +126,7 @@ func newSizeReservationsCmd(c *config) *cobra.Command {
 }
 
 func (c *sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse, error) {
-	resp, err := c.client.Size().GetSizeReservation(sizemodel.NewGetSizeReservationParams().WithID(id), nil)
+	resp, err := c.Client.Size().GetSizeReservation(sizemodel.NewGetSizeReservationParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (c *sizeReservationsCmd) Get(id string) (*models.V1SizeReservationResponse,
 }
 
 func (c *sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error) {
-	resp, err := c.client.Size().FindSizeReservations(sizemodel.NewFindSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
+	resp, err := c.Client.Size().FindSizeReservations(sizemodel.NewFindSizeReservationsParams().WithBody(&models.V1SizeReservationListRequest{
 		ID:          viper.GetString("id"),
 		Partitionid: viper.GetString("partition"),
 		Projectid:   viper.GetString("project"),
@@ -148,7 +149,7 @@ func (c *sizeReservationsCmd) List() ([]*models.V1SizeReservationResponse, error
 }
 
 func (c *sizeReservationsCmd) Delete(id string) (*models.V1SizeReservationResponse, error) {
-	resp, err := c.client.Size().DeleteSizeReservation(sizemodel.NewDeleteSizeReservationParams().WithID(id), nil)
+	resp, err := c.Client.Size().DeleteSizeReservation(sizemodel.NewDeleteSizeReservationParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +158,7 @@ func (c *sizeReservationsCmd) Delete(id string) (*models.V1SizeReservationRespon
 }
 
 func (c *sizeReservationsCmd) Create(rq *models.V1SizeReservationCreateRequest) (*models.V1SizeReservationResponse, error) {
-	resp, err := c.client.Size().CreateSizeReservation(sizemodel.NewCreateSizeReservationParams().WithBody(rq), nil)
+	resp, err := c.Client.Size().CreateSizeReservation(sizemodel.NewCreateSizeReservationParams().WithBody(rq), nil)
 	if err != nil {
 		var r *sizemodel.CreateSizeReservationConflict
 		if errors.As(err, &r) {
@@ -170,7 +171,7 @@ func (c *sizeReservationsCmd) Create(rq *models.V1SizeReservationCreateRequest) 
 }
 
 func (c *sizeReservationsCmd) Update(rq *models.V1SizeReservationUpdateRequest) (*models.V1SizeReservationResponse, error) {
-	resp, err := c.client.Size().UpdateSizeReservation(sizemodel.NewUpdateSizeReservationParams().WithBody(rq), nil)
+	resp, err := c.Client.Size().UpdateSizeReservation(sizemodel.NewUpdateSizeReservationParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +218,7 @@ func (c *sizeReservationsCmd) usage() error {
 		return err
 	}
 
-	resp, err := c.client.Size().SizeReservationsUsage(sizemodel.NewSizeReservationsUsageParams().WithBody(&models.V1SizeReservationListRequest{
+	resp, err := c.Client.Size().SizeReservationsUsage(sizemodel.NewSizeReservationsUsageParams().WithBody(&models.V1SizeReservationListRequest{
 		Partitionid: viper.GetString("partition"),
 		Projectid:   viper.GetString("project"),
 		Sizeid:      viper.GetString("size"),
@@ -231,5 +232,5 @@ func (c *sizeReservationsCmd) usage() error {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }

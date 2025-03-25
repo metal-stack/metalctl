@@ -7,13 +7,22 @@ import (
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 // TODO: API responses are much different from the rest and it does not work well with generic cli
 
-func newFirmwareCmd(c *config) *cobra.Command {
+type firmwareCmd struct {
+	c *api.Config
+}
+
+func newFirmwareCmd(c *api.Config) *cobra.Command {
+	w := &firmwareCmd{
+		c: c,
+	}
+
 	firmwareCmd := &cobra.Command{
 		Use:   "firmware",
 		Short: "manage firmwares",
@@ -26,7 +35,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short:   "list firmwares",
 		Long:    "lists all available firmwares matching the given criteria.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareList()
+			return w.firmwareList()
 		},
 	}
 
@@ -40,7 +49,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short: "upload a BIOS firmware",
 		Long:  "the given BIOS firmware file will be uploaded and tagged as given revision.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareUploadBios(args)
+			return w.firmwareUploadBios(args)
 		},
 	}
 
@@ -49,7 +58,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short: "upload a BMC firmware",
 		Long:  "the given BMC firmware file will be uploaded and tagged as given revision.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareUploadBmc(args)
+			return w.firmwareUploadBmc(args)
 		},
 	}
 
@@ -59,7 +68,7 @@ func newFirmwareCmd(c *config) *cobra.Command {
 		Short:   "delete a firmware",
 		Long:    "deletes the specified firmware.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return c.firmwareRemove()
+			return w.firmwareRemove()
 		},
 	}
 
@@ -67,10 +76,10 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	firmwareListCmd.Flags().StringP("vendor", "", "", "the vendor")
 	firmwareListCmd.Flags().StringP("board", "", "", "the board type")
 	firmwareListCmd.Flags().StringP("machineid", "", "", "the machine id (ignores vendor and board flags)")
-	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("kind", c.comp.FirmwareKindCompletion))
-	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
-	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
-	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
+	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("kind", c.Comp.FirmwareKindCompletion))
+	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("vendor", c.Comp.FirmwareVendorCompletion))
+	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("board", c.Comp.FirmwareBoardCompletion))
+	genericcli.Must(firmwareListCmd.RegisterFlagCompletionFunc("machineid", c.Comp.MachineListCompletion))
 	firmwareCmd.AddCommand(firmwareListCmd)
 
 	firmwareUploadBiosCmd.Flags().StringP("vendor", "", "", "the vendor (required)")
@@ -79,8 +88,8 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	genericcli.Must(firmwareUploadBiosCmd.MarkFlagRequired("vendor"))
 	genericcli.Must(firmwareUploadBiosCmd.MarkFlagRequired("board"))
 	genericcli.Must(firmwareUploadBiosCmd.MarkFlagRequired("revision"))
-	genericcli.Must(firmwareUploadBiosCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
-	genericcli.Must(firmwareUploadBiosCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
+	genericcli.Must(firmwareUploadBiosCmd.RegisterFlagCompletionFunc("vendor", c.Comp.FirmwareVendorCompletion))
+	genericcli.Must(firmwareUploadBiosCmd.RegisterFlagCompletionFunc("board", c.Comp.FirmwareBoardCompletion))
 	firmwareUploadCmd.AddCommand(firmwareUploadBiosCmd)
 
 	firmwareUploadBmcCmd.Flags().StringP("vendor", "", "", "the vendor (required)")
@@ -89,8 +98,8 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	genericcli.Must(firmwareUploadBmcCmd.MarkFlagRequired("vendor"))
 	genericcli.Must(firmwareUploadBmcCmd.MarkFlagRequired("board"))
 	genericcli.Must(firmwareUploadBmcCmd.MarkFlagRequired("revision"))
-	genericcli.Must(firmwareUploadBmcCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
-	genericcli.Must(firmwareUploadBmcCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
+	genericcli.Must(firmwareUploadBmcCmd.RegisterFlagCompletionFunc("vendor", c.Comp.FirmwareVendorCompletion))
+	genericcli.Must(firmwareUploadBmcCmd.RegisterFlagCompletionFunc("board", c.Comp.FirmwareBoardCompletion))
 	firmwareUploadCmd.AddCommand(firmwareUploadBmcCmd)
 
 	firmwareCmd.AddCommand(firmwareUploadCmd)
@@ -103,44 +112,44 @@ func newFirmwareCmd(c *config) *cobra.Command {
 	genericcli.Must(firmwareRemoveCmd.MarkFlagRequired("vendor"))
 	genericcli.Must(firmwareRemoveCmd.MarkFlagRequired("board"))
 	genericcli.Must(firmwareRemoveCmd.MarkFlagRequired("revision"))
-	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("kind", c.comp.FirmwareKindCompletion))
-	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("vendor", c.comp.FirmwareVendorCompletion))
-	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("board", c.comp.FirmwareBoardCompletion))
-	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareRevisionCompletion))
+	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("kind", c.Comp.FirmwareKindCompletion))
+	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("vendor", c.Comp.FirmwareVendorCompletion))
+	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("board", c.Comp.FirmwareBoardCompletion))
+	genericcli.Must(firmwareRemoveCmd.RegisterFlagCompletionFunc("revision", c.Comp.FirmwareRevisionCompletion))
 	firmwareCmd.AddCommand(firmwareRemoveCmd)
 
 	return firmwareCmd
 }
 
-func (c *config) firmwareList() error {
+func (c *firmwareCmd) firmwareList() error {
 	kind := viper.GetString("kind")
 	board := viper.GetString("board")
 	vendor := viper.GetString("vendor")
 	id := viper.GetString("machineid")
 
-	resp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind).WithBoard(&board).WithVendor(&vendor).WithMachineID(&id), nil)
+	resp, err := c.c.Client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind).WithBoard(&board).WithVendor(&vendor).WithMachineID(&id), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.c.ListPrinter.Print(resp.Payload)
 }
 
-func (c *config) firmwareUploadBios(args []string) error {
+func (c *firmwareCmd) firmwareUploadBios(args []string) error {
 	return c.uploadFirmware(models.V1MachineUpdateFirmwareRequestKindBios, args)
 }
 
-func (c *config) firmwareUploadBmc(args []string) error {
+func (c *firmwareCmd) firmwareUploadBmc(args []string) error {
 	return c.uploadFirmware(models.V1MachineUpdateFirmwareRequestKindBmc, args)
 }
 
-func (c *config) firmwareRemove() error {
+func (c *firmwareCmd) firmwareRemove() error {
 	kind := viper.GetString("kind")
 	revision := viper.GetString("revision")
 	vendor := viper.GetString("vendor")
 	board := viper.GetString("board")
 
-	_, err := c.client.Firmware().RemoveFirmware(firmware.NewRemoveFirmwareParams().
+	_, err := c.c.Client.Firmware().RemoveFirmware(firmware.NewRemoveFirmwareParams().
 		WithKind(kind).
 		WithBoard(board).
 		WithVendor(vendor).
@@ -152,7 +161,7 @@ func (c *config) firmwareRemove() error {
 	return nil
 }
 
-func (c *config) uploadFirmware(kind string, args []string) error {
+func (c *firmwareCmd) uploadFirmware(kind string, args []string) error {
 	revision := viper.GetString("revision")
 	vendor := viper.GetString("vendor")
 	board := viper.GetString("board")
@@ -170,7 +179,7 @@ func (c *config) uploadFirmware(kind string, args []string) error {
 		return err
 	}
 
-	_, err = c.client.Firmware().UploadFirmware(firmware.NewUploadFirmwareParams().
+	_, err = c.c.Client.Firmware().UploadFirmware(firmware.NewUploadFirmwareParams().
 		WithKind(kind).
 		WithBoard(board).
 		WithVendor(vendor).

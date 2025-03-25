@@ -4,15 +4,16 @@ import (
 	"errors"
 
 	"github.com/metal-stack/metal-go/api/client/health"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 )
 
-func newHealthCmd(c *config) *cobra.Command {
+func newHealthCmd(c *api.Config) *cobra.Command {
 	healthCmd := &cobra.Command{
 		Use:   "health",
 		Short: "shows the server health",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			resp, err := c.client.Health().Health(health.NewHealthParams(), nil)
+			resp, err := c.Client.Health().Health(health.NewHealthParams(), nil)
 			if err != nil {
 				var r *health.HealthInternalServerError
 				if errors.As(err, &r) {
@@ -24,7 +25,7 @@ func newHealthCmd(c *config) *cobra.Command {
 				}
 			}
 
-			return c.describePrinter.Print(resp.Payload)
+			return c.DescribePrinter.Print(resp.Payload)
 		},
 	}
 

@@ -12,29 +12,30 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type partitionCmd struct {
-	*config
+	*api.Config
 }
 
-func newPartitionCmd(c *config) *cobra.Command {
+func newPartitionCmd(c *api.Config) *cobra.Command {
 	w := &partitionCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1PartitionCreateRequest, *models.V1PartitionUpdateRequest, *models.V1PartitionResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.FS),
 		Singular:             "partition",
 		Plural:               "partitions",
 		Description:          "a partition is a failure domain in the data center.",
-		ValidArgsFn:          c.comp.PartitionListCompletion,
+		ValidArgsFn:          c.Comp.PartitionListCompletion,
 		Sorter:               sorters.PartitionSorter(),
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
@@ -61,16 +62,16 @@ func newPartitionCmd(c *config) *cobra.Command {
 	partitionCapacityCmd.Flags().StringP("size", "", "", "filter on size id. [optional]")
 	partitionCapacityCmd.Flags().StringP("project-id", "", "", "consider project-specific counts, e.g. size reservations. [optional]")
 	partitionCapacityCmd.Flags().StringSlice("sort-by", []string{}, fmt.Sprintf("order by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: %s", strings.Join(sorters.PartitionCapacitySorter().AvailableKeys(), "|")))
-	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.comp.PartitionListCompletion))
-	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("project-id", c.comp.ProjectListCompletion))
-	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("id", c.Comp.PartitionListCompletion))
+	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("project-id", c.Comp.ProjectListCompletion))
+	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("size", c.Comp.SizeListCompletion))
 	genericcli.Must(partitionCapacityCmd.RegisterFlagCompletionFunc("sort-by", cobra.FixedCompletions(sorters.PartitionCapacitySorter().AvailableKeys(), cobra.ShellCompDirectiveNoFileComp)))
 
 	return genericcli.NewCmds(cmdsConfig, partitionCapacityCmd)
 }
 
 func (c *partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.client.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
+	resp, err := c.Client.Partition().FindPartition(partition.NewFindPartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +80,7 @@ func (c *partitionCmd) Get(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c *partitionCmd) List() ([]*models.V1PartitionResponse, error) {
-	resp, err := c.client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
+	resp, err := c.Client.Partition().ListPartitions(partition.NewListPartitionsParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func (c *partitionCmd) List() ([]*models.V1PartitionResponse, error) {
 }
 
 func (c *partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
-	resp, err := c.client.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
+	resp, err := c.Client.Partition().DeletePartition(partition.NewDeletePartitionParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (c *partitionCmd) Delete(id string) (*models.V1PartitionResponse, error) {
 }
 
 func (c *partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.client.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
+	resp, err := c.Client.Partition().CreatePartition(partition.NewCreatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		var r *partition.CreatePartitionConflict
 		if errors.As(err, &r) {
@@ -110,7 +111,7 @@ func (c *partitionCmd) Create(rq *models.V1PartitionCreateRequest) (*models.V1Pa
 }
 
 func (c *partitionCmd) Update(rq *models.V1PartitionUpdateRequest) (*models.V1PartitionResponse, error) {
-	resp, err := c.client.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
+	resp, err := c.Client.Partition().UpdatePartition(partition.NewUpdatePartitionParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +162,7 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 // non-generic command handling
 
 func (c *partitionCmd) partitionCapacity() error {
-	resp, err := c.client.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
+	resp, err := c.Client.Partition().PartitionCapacity(partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
 		ID:        viper.GetString("id"),
 		Sizeid:    viper.GetString("size"),
 		Projectid: pointer.PointerOrNil(viper.GetString("project-id")),
@@ -182,7 +183,7 @@ func (c *partitionCmd) partitionCapacity() error {
 		})
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest, error) {

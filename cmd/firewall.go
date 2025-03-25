@@ -12,23 +12,24 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
 
 type firewallCmd struct {
-	*config
+	*api.Config
 }
 
-func newFirewallCmd(c *config) *cobra.Command {
+func newFirewallCmd(c *api.Config) *cobra.Command {
 	w := &firewallCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
 		BinaryName: binaryName,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w).WithFS(c.fs),
+		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w).WithFS(c.FS),
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
 			genericcli.DescribeCmd,
@@ -40,11 +41,11 @@ func newFirewallCmd(c *config) *cobra.Command {
 		Aliases:              []string{"fw"},
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		Sorter:               sorters.FirewallSorter(),
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
-		ValidArgsFn:          c.comp.FirewallListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
+		ValidArgsFn:          c.Comp.FirewallListCompletion,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
-			c.addMachineCreateFlags(cmd, "firewall")
+			addMachineCreateFlags(cmd, "firewall", c.Comp)
 			cmd.Aliases = []string{"allocate"}
 			cmd.Flags().String("firewall-rules-file", "", `firewall rules specified in a yaml file
 
@@ -104,11 +105,11 @@ ingress:
 			cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
 			cmd.Flags().String("mac", "", "mac to filter [optional]")
 			cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.Comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.Comp.FirewallListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.Comp.ImageListCompletion))
 		},
 	}
 
@@ -119,14 +120,14 @@ ingress:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.firewallSSH(args)
 		},
-		ValidArgsFunction: c.comp.FirewallListCompletion,
+		ValidArgsFunction: c.Comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
 func (c *firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
-	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
+	resp, err := c.Client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +141,7 @@ func (c *firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 		macs = pointer.WrapInSlice(viper.GetString("mac"))
 	}
 
-	resp, err := c.client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
+	resp, err := c.Client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
 		Sizeid:             viper.GetString("size"),
@@ -163,7 +164,7 @@ func (c *firewallCmd) Delete(_ string) (*models.V1FirewallResponse, error) {
 }
 
 func (c *firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
-	resp, err := c.client.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
+	resp, err := c.Client.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

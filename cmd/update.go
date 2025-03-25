@@ -6,10 +6,11 @@ import (
 
 	"github.com/metal-stack/metal-go/api/client/version"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/updater"
 )
 
-func newUpdateCmd(c *config) *cobra.Command {
+func newUpdateCmd(c *api.Config) *cobra.Command {
 	updateCmd := &cobra.Command{
 		Use:   "update",
 		Short: "update the program",
@@ -64,8 +65,8 @@ func newUpdateCmd(c *config) *cobra.Command {
 	return updateCmd
 }
 
-func getMinimumClientVersion(c *config) (*string, error) {
-	resp, err := c.client.Version().Info(version.NewInfoParams(), clientNoAuth())
+func getMinimumClientVersion(c *api.Config) (*string, error) {
+	resp, err := c.Client.Version().Info(version.NewInfoParams(), clientNoAuth())
 	if err != nil {
 		return nil, err
 	}

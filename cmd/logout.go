@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newLogoutCmd(c *config) *cobra.Command {
+func newLogoutCmd(c *api.Config) *cobra.Command {
 	logoutCmd := &cobra.Command{
 		Use:   "logout",
 		Short: "logout user from OIDC SSO session",
@@ -17,13 +17,13 @@ func newLogoutCmd(c *config) *cobra.Command {
 
 			err := auth.Logout(&auth.LogoutParams{
 				IssuerURL: ctx.IssuerURL,
-				Logger:    c.log,
+				Logger:    c.Log,
 			})
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(c.out, "OIDC session successfully logged out. Token is not revoked and is valid until expiration.")
+			fmt.Fprintln(c.Out, "OIDC session successfully logged out. Token is not revoked and is valid until expiration.")
 
 			return nil
 		},

@@ -20,8 +20,8 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 		return fmt.Errorf("firewall allocation or allocation.project is nil")
 	}
 	projectID := firewall.Allocation.Project
-	fmt.Fprintf(c.out, "accessing firewall through vpn ")
-	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
+	fmt.Fprintf(c.Out, "accessing firewall through vpn ")
+	authKeyResp, err := c.Client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
 		Ephemeral: pointer.Pointer(true),
 	}), nil)

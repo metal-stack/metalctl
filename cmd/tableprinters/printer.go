@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	apiv2 "github.com/metal-stack/api/go/metalstack/api/v2"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -119,6 +120,13 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SizeReservationUsageTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeReservationUsageResponse:
 		return t.SizeReservationUsageTable(d, wide)
+
+		// V2 Table printers
+
+	case *apiv2.Image:
+		return t.V2ImageTable(pointer.WrapInSlice(d), wide)
+	case []*apiv2.Image:
+		return t.V2ImageTable(d, wide)
 
 	default:
 		return nil, nil, fmt.Errorf("unknown table printer for type: %T", d)

@@ -13,6 +13,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -24,22 +25,22 @@ type ipAllocateRequest struct {
 }
 
 type ipCmd struct {
-	*config
+	*api.Config
 }
 
-func newIPCmd(c *config) *cobra.Command {
+func newIPCmd(c *api.Config) *cobra.Command {
 	w := &ipCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w).WithFS(c.FS),
 		Singular:             "ip",
 		Plural:               "ips",
 		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "a specific ip address to allocate. [optional]")
@@ -50,10 +51,10 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
 			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to acquire, defaults to IPv4 [optional]")
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.Comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.Comp.IPAddressFamilyCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
@@ -65,18 +66,18 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("name", "", "", "name to filter [optional]")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to filter [optional]")
 			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to filter, defaults to all addressfamilies [optional]")
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("ipaddress", c.Comp.IpListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.Comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("machineid", c.Comp.MachineListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.Comp.IPAddressFamilyCompletion))
 		},
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Aliases = append(cmd.Aliases, "free")
 		},
 		Sorter:      sorters.IPSorter(),
-		ValidArgsFn: c.comp.IpListCompletion,
+		ValidArgsFn: c.Comp.IpListCompletion,
 	}
 
 	issuesCmd := &cobra.Command{
@@ -91,7 +92,7 @@ func newIPCmd(c *config) *cobra.Command {
 }
 
 func (c *ipCmd) Get(id string) (*models.V1IPResponse, error) {
-	resp, err := c.client.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
+	resp, err := c.Client.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +101,7 @@ func (c *ipCmd) Get(id string) (*models.V1IPResponse, error) {
 }
 
 func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
-	resp, err := c.client.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
+	resp, err := c.Client.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
 		Ipaddress:     viper.GetString("ipaddress"),
 		Name:          viper.GetString("name"),
 		Type:          viper.GetString("type"),
@@ -119,7 +120,7 @@ func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
 }
 
 func (c *ipCmd) Delete(id string) (*models.V1IPResponse, error) {
-	resp, err := c.client.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
+	resp, err := c.Client.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +130,7 @@ func (c *ipCmd) Delete(id string) (*models.V1IPResponse, error) {
 
 func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	if rq.SpecificIP == "" {
-		resp, err := c.client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
+		resp, err := c.Client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
 		if err != nil {
 			var r *ip.AllocateIPConflict
 			if errors.As(err, &r) {
@@ -141,7 +142,7 @@ func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 		return resp.Payload, nil
 	}
 
-	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
+	resp, err := c.Client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
 		var r *ip.AllocateSpecificIPConflict
 		if errors.As(err, &r) {
@@ -154,7 +155,7 @@ func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 }
 
 func (c *ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
-	resp, err := c.client.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
+	resp, err := c.Client.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +217,7 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 // non-generic command handling
 
 func (c *ipCmd) ipIssues() error {
-	ml, err := c.client.Machine().ListMachines(machine.NewListMachinesParams(), nil)
+	ml, err := c.Client.Machine().ListMachines(machine.NewListMachinesParams(), nil)
 	if err != nil {
 		return fmt.Errorf("machine list error:%w", err)
 	}
@@ -261,5 +262,5 @@ func (c *ipCmd) ipIssues() error {
 		}
 	}
 
-	return c.listPrinter.Print(ips)
+	return c.ListPrinter.Print(ips)
 }

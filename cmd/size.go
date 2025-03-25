@@ -14,29 +14,30 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type sizeCmd struct {
-	*config
+	*api.Config
 }
 
-func newSizeCmd(c *config) *cobra.Command {
+func newSizeCmd(c *api.Config) *cobra.Command {
 	w := &sizeCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.FS),
 		Singular:        "size",
 		Plural:          "sizes",
 		Description:     "a size matches a machine in terms of cpu cores, ram and storage.",
 		Sorter:          sorters.SizeSorter(),
-		ValidArgsFn:     c.comp.SizeListCompletion,
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:     c.Comp.SizeListCompletion,
+		DescribePrinter: func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:     func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -77,13 +78,13 @@ func newSizeCmd(c *config) *cobra.Command {
 	suggestCmd.Flags().String("description", "a suggested size", "The description of the suggested size")
 	suggestCmd.Flags().StringSlice("labels", []string{}, "labels to add to the size")
 
-	genericcli.Must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
+	genericcli.Must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.Comp.MachineListCompletion))
 
 	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
 
 func (c *sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
-	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
+	resp, err := c.Client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +93,7 @@ func (c *sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 }
 
 func (c *sizeCmd) List() ([]*models.V1SizeResponse, error) {
-	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
+	resp, err := c.Client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,7 @@ func (c *sizeCmd) List() ([]*models.V1SizeResponse, error) {
 }
 
 func (c *sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
-	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
+	resp, err := c.Client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (c *sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 }
 
 func (c *sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
-	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
+	resp, err := c.Client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
 		if errors.As(err, &r) {
@@ -123,7 +124,7 @@ func (c *sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse
 }
 
 func (c *sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
-	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
+	resp, err := c.Client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -196,14 +197,14 @@ func (c *sizeCmd) suggest(args []string) error {
 		return fmt.Errorf("machine-id flag is required")
 	}
 
-	resp, err := c.client.Size().Suggest(size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
+	resp, err := c.Client.Size().Suggest(size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
 		MachineID: &machineid,
 	}), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.describePrinter.Print(&models.V1SizeResponse{
+	return c.DescribePrinter.Print(&models.V1SizeResponse{
 		ID:          &sizeid,
 		Name:        name,
 		Description: description,

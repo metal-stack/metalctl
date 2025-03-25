@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newVersionCmd(c *config) *cobra.Command {
+func newVersionCmd(c *api.Config) *cobra.Command {
 	versionCmd := &cobra.Command{
 		Use:   "version",
 		Short: "print the client and server version information",
@@ -18,11 +18,11 @@ func newVersionCmd(c *config) *cobra.Command {
 				Client: v.V.String(),
 			}
 
-			resp, err := c.client.Version().Info(version.NewInfoParams(), nil)
+			resp, err := c.Client.Version().Info(version.NewInfoParams(), nil)
 			if err == nil {
 				v.Server = resp.Payload
 			}
-			if err2 := c.describePrinter.Print(v); err2 != nil {
+			if err2 := c.DescribePrinter.Print(v); err2 != nil {
 				return err2
 			}
 			if err != nil {

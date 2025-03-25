@@ -9,30 +9,31 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type projectCmd struct {
-	*config
+	*api.Config
 }
 
-func newProjectCmd(c *config) *cobra.Command {
+func newProjectCmd(c *api.Config) *cobra.Command {
 	w := &projectCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1ProjectCreateRequest, *models.V1ProjectUpdateRequest, *models.V1ProjectResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.FS),
 		Singular:             "project",
 		Plural:               "projects",
 		Description:          "a project belongs to a tenant and groups together entities in metal-stack.",
 		Sorter:               sorters.ProjectSorter(),
-		ValidArgsFn:          c.comp.ProjectListCompletion,
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:          c.Comp.ProjectListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "name of the project, max 10 characters.")
@@ -58,7 +59,7 @@ func newProjectCmd(c *config) *cobra.Command {
 }
 
 func (c *projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
-	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
+	resp, err := c.Client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func (c *projectCmd) Get(id string) (*models.V1ProjectResponse, error) {
 }
 
 func (c *projectCmd) List() ([]*models.V1ProjectResponse, error) {
-	resp, err := c.client.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
+	resp, err := c.Client.Project().FindProjects(projectmodel.NewFindProjectsParams().WithBody(&models.V1ProjectFindRequest{
 		ID:       viper.GetString("id"),
 		Name:     viper.GetString("name"),
 		TenantID: viper.GetString("tenant"),
@@ -80,7 +81,7 @@ func (c *projectCmd) List() ([]*models.V1ProjectResponse, error) {
 }
 
 func (c *projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
-	resp, err := c.client.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
+	resp, err := c.Client.Project().DeleteProject(projectmodel.NewDeleteProjectParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +90,7 @@ func (c *projectCmd) Delete(id string) (*models.V1ProjectResponse, error) {
 }
 
 func (c *projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := c.client.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
+	resp, err := c.Client.Project().CreateProject(projectmodel.NewCreateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		var r *projectmodel.CreateProjectConflict
 		if errors.As(err, &r) {
@@ -102,14 +103,14 @@ func (c *projectCmd) Create(rq *models.V1ProjectCreateRequest) (*models.V1Projec
 }
 
 func (c *projectCmd) Update(rq *models.V1ProjectUpdateRequest) (*models.V1ProjectResponse, error) {
-	resp, err := c.client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
+	resp, err := c.Client.Project().FindProject(projectmodel.NewFindProjectParams().WithID(rq.Meta.ID), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	rq.Meta.Version = resp.Payload.Meta.Version
 
-	updateResp, err := c.client.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
+	updateResp, err := c.Client.Project().UpdateProject(projectmodel.NewUpdateProjectParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

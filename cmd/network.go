@@ -12,34 +12,35 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type networkCmd struct {
-	*config
+	*api.Config
 	childCLI *genericcli.GenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse]
 }
 
-func newNetworkCmd(c *config) *cobra.Command {
+func newNetworkCmd(c *api.Config) *cobra.Command {
 	w := &networkCmd{
-		config:   c,
-		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}).WithFS(c.fs),
+		Config:   c,
+		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{Config: c}).WithFS(c.FS),
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w).WithFS(c.FS),
 		Singular:             "network",
 		Plural:               "networks",
 		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		Sorter:               sorters.NetworkSorter(),
-		ValidArgsFn:          c.comp.NetworkListCompletion,
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:          c.Comp.NetworkListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "id of the network to create. [optional]")
 			cmd.Flags().StringP("description", "d", "", "description of the network to create. [optional]")
@@ -57,8 +58,8 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().BoolP("underlay", "", false, "set underlay flag of network, if set to true, this is used to transport underlay network traffic")
 			cmd.Flags().Int64P("vrf", "", 0, "vrf of this network")
 			cmd.Flags().BoolP("vrfshared", "", false, "vrf shared allows multiple networks to share a vrf")
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -73,9 +74,9 @@ func newNetworkCmd(c *config) *cobra.Command {
 			cmd.Flags().StringSlice("prefixes", []string{}, "prefixes to filter, use it like: --prefixes prefix1,prefix2.")
 			cmd.Flags().StringSlice("destination-prefixes", []string{}, "destination prefixes to filter, use it like: --destination-prefixes prefix1,prefix2.")
 			cmd.Flags().String("addressfamily", "", "addressfamily to filter, either ipv4 or ipv6 [optional]")
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.Comp.NetworkAddressFamilyCompletion))
 		},
 		UpdateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("name", "", "the name of the network [optional]")
@@ -130,10 +131,10 @@ func newNetworkCmd(c *config) *cobra.Command {
 					Nat:                 nat,
 					Addressfamily:       viper.GetString("addressfamily"),
 					Length:              length,
-				}, c.describePrinter)
+				}, c.DescribePrinter)
 			}
 
-			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), c.describePrinter)
+			return w.childCLI.CreateFromFileAndPrint(viper.GetString("file"), c.DescribePrinter)
 		},
 	}
 
@@ -146,9 +147,9 @@ func newNetworkCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			return w.childCLI.DeleteAndPrint(id, c.describePrinter)
+			return w.childCLI.DeleteAndPrint(id, c.DescribePrinter)
 		},
-		ValidArgsFunction: c.comp.NetworkListCompletion,
+		ValidArgsFunction: c.Comp.NetworkListCompletion,
 	}
 
 	allocateCmd.Flags().StringP("name", "n", "", "name of the network to create. [required]")
@@ -161,9 +162,9 @@ func newNetworkCmd(c *config) *cobra.Command {
 	allocateCmd.Flags().StringP("addressfamily", "", "", "addressfamily of the network to acquire, if not specified the network inherits the address families from the parent [optional]")
 	allocateCmd.Flags().Int64P("ipv4-prefix-length", "", 0, "ipv4 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
 	allocateCmd.Flags().Int64P("ipv6-prefix-length", "", 0, "ipv6 prefix bit length of the network to create, defaults to default child prefix length of the parent network. [optional]")
-	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.comp.NetworkAddressFamilyCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("project", c.Comp.ProjectListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("partition", c.Comp.PartitionListCompletion))
+	genericcli.Must(allocateCmd.RegisterFlagCompletionFunc("addressfamily", c.Comp.NetworkAddressFamilyCompletion))
 
 	genericcli.Must(allocateCmd.MarkFlagRequired("name"))
 	genericcli.Must(allocateCmd.MarkFlagRequired("project"))
@@ -178,7 +179,7 @@ func newNetworkCmd(c *config) *cobra.Command {
 }
 
 func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
+	resp, err := c.Client.Network().FindNetwork(network.NewFindNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +188,7 @@ func (c *networkCmd) Get(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
+	resp, err := c.Client.Network().FindNetworks(network.NewFindNetworksParams().WithBody(&models.V1NetworkFindRequest{
 		ID:                  viper.GetString("id"),
 		Name:                viper.GetString("name"),
 		Partitionid:         viper.GetString("partition"),
@@ -209,7 +210,7 @@ func (c *networkCmd) List() ([]*models.V1NetworkResponse, error) {
 }
 
 func (c *networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
+	resp, err := c.Client.Network().DeleteNetwork(network.NewDeleteNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +219,7 @@ func (c *networkCmd) Delete(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c *networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
+	resp, err := c.Client.Network().CreateNetwork(network.NewCreateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.CreateNetworkConflict
 		if errors.As(err, &r) {
@@ -231,7 +232,7 @@ func (c *networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Networ
 }
 
 func (c *networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
+	resp, err := c.Client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -320,7 +321,7 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 }
 
 type networkChildCRUD struct {
-	*config
+	*api.Config
 }
 
 func (c networkChildCRUD) Get(id string) (*models.V1NetworkResponse, error) {
@@ -332,7 +333,7 @@ func (c networkChildCRUD) List() ([]*models.V1NetworkResponse, error) {
 }
 
 func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
+	resp, err := c.Client.Network().FreeNetwork(network.NewFreeNetworkParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +342,7 @@ func (c networkChildCRUD) Delete(id string) (*models.V1NetworkResponse, error) {
 }
 
 func (c networkChildCRUD) Create(rq *models.V1NetworkAllocateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().AllocateNetwork(network.NewAllocateNetworkParams().WithBody(rq), nil)
+	resp, err := c.Client.Network().AllocateNetwork(network.NewAllocateNetworkParams().WithBody(rq), nil)
 	if err != nil {
 		var r *network.AllocateNetworkConflict
 		if errors.As(err, &r) {

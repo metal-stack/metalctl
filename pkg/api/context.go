@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
@@ -26,6 +27,9 @@ type Context struct {
 	ClientSecret string  `yaml:"client_secret"`
 	HMAC         *string `yaml:"hmac"`
 	HMACAuthType string  `yaml:"hmac_auth_type,omitempty"`
+
+	ApiV2URL   string `yaml:"v2url"`
+	ApiV2Token string `yaml:"v2token"`
 }
 
 var defaultCtx = Context{
@@ -69,4 +73,16 @@ func MustDefaultContext() Context {
 		return defaultCtx
 	}
 	return ctx
+}
+
+func ContextListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	ctxs, err := GetContexts()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for name := range ctxs.Contexts {
+		names = append(names, name)
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
 }

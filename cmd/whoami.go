@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/metal-stack/metal-lib/jwt/sec"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-func newWhoamiCmd(c *config) *cobra.Command {
+func newWhoamiCmd(c *api.Config) *cobra.Command {
 	whoamiCmd := &cobra.Command{
 		Use:   "whoami",
 		Short: "shows current user",
@@ -30,19 +31,19 @@ func newWhoamiCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(c.out, "UserId: %s\n", user.Name)
+			fmt.Fprintf(c.Out, "UserId: %s\n", user.Name)
 			if user.Tenant != "" {
-				fmt.Fprintf(c.out, "Tenant: %s\n", user.Tenant)
+				fmt.Fprintf(c.Out, "Tenant: %s\n", user.Tenant)
 			}
 			if user.Issuer != "" {
-				fmt.Fprintf(c.out, "Issuer: %s\n", user.Issuer)
+				fmt.Fprintf(c.Out, "Issuer: %s\n", user.Issuer)
 			}
-			fmt.Fprintf(c.out, "Groups:\n")
+			fmt.Fprintf(c.Out, "Groups:\n")
 			for _, g := range user.Groups {
-				fmt.Fprintf(c.out, " %s\n", g)
+				fmt.Fprintf(c.Out, " %s\n", g)
 			}
 
-			fmt.Fprintf(c.out, "Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
+			fmt.Fprintf(c.Out, "Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
 
 			return nil
 		},

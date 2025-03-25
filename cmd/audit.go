@@ -12,28 +12,29 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type auditCmd struct {
-	*config
+	*api.Config
 }
 
-func newAuditCmd(c *config) *cobra.Command {
+func newAuditCmd(c *api.Config) *cobra.Command {
 	w := auditCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[any, any, *models.V1AuditResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[any, any, *models.V1AuditResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI[any, any, *models.V1AuditResponse](w).WithFS(c.FS),
 		Singular:        "audit trace",
 		Plural:          "audit traces",
 		Description:     "show audit traces of the api. feature must be enabled on server-side.",
 		Sorter:          sorters.AuditSorter(),
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		DescribePrinter: func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:     func() printers.Printer { return c.ListPrinter },
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("query", "q", "", "filters audit trace body payloads for the given text.")
 
@@ -59,14 +60,14 @@ func newAuditCmd(c *config) *cobra.Command {
 
 			cmd.Flags().Int64("limit", 100, "limit the number of audit traces.")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", c.comp.AuditTypeCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", c.Comp.AuditTypeCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.Comp.AuditPhaseCompletion))
 		},
 		DescribeCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().Bool("prettify-body", false, "attempts to interpret the body as json and prettifies it")
 			cmd.Flags().String("phase", "response", "phase of the audit trace. One of [request, response, single, error, opened, closed]")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.comp.AuditPhaseCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("phase", c.Comp.AuditPhaseCompletion))
 		},
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
@@ -78,7 +79,7 @@ func newAuditCmd(c *config) *cobra.Command {
 }
 
 func (c auditCmd) Get(id string) (*models.V1AuditResponse, error) {
-	traces, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
+	traces, err := c.Client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
 		Rqid:  id,
 		Phase: viper.GetString("phase"),
 	}), nil)
@@ -114,7 +115,7 @@ func (c auditCmd) List() ([]*models.V1AuditResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
+	resp, err := c.Client.Audit().FindAuditTraces(audit.NewFindAuditTracesParams().WithBody(&models.V1AuditFindRequest{
 		Body:         viper.GetString("query"),
 		From:         fromDateTime,
 		To:           toDateTime,

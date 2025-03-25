@@ -10,29 +10,30 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type imageCmd struct {
-	*config
+	*api.Config
 }
 
-func newImageCmd(c *config) *cobra.Command {
+func newImageCmd(c *api.Config) *cobra.Command {
 	w := imageCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.FS),
 		Singular:        "image",
 		Plural:          "images",
 		Description:     "os images available to be installed on machines.",
 		Sorter:          sorters.ImageSorter(),
-		ValidArgsFn:     c.comp.ImageListCompletion,
-		DescribePrinter: func() printers.Printer { return c.describePrinter },
-		ListPrinter:     func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:     c.Comp.ImageListCompletion,
+		DescribePrinter: func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:     func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
 				ID:          pointer.Pointer(viper.GetString("id")),
@@ -62,12 +63,12 @@ func newImageCmd(c *config) *cobra.Command {
 			cmd.Flags().String("os", "", "OS derivate of this image.")
 			cmd.Flags().String("version", "", "Version of this image.")
 
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
-			genericcli.Must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.Comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.Comp.ImageNameCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("classification", c.Comp.ImageClassificationCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("features", c.Comp.ImageFeatureCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("os", c.Comp.ImageOSCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("version", c.Comp.ImageVersionCompletion))
 		},
 	}
 
@@ -75,7 +76,7 @@ func newImageCmd(c *config) *cobra.Command {
 }
 
 func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
+	resp, err := c.Client.Image().FindImage(image.NewFindImageParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +85,7 @@ func (c imageCmd) Get(id string) (*models.V1ImageResponse, error) {
 }
 
 func (c imageCmd) List() ([]*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().FindImages(image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
+	resp, err := c.Client.Image().FindImages(image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
 		Classification: viper.GetString("classification"),
 		Features:       viper.GetStringSlice("features"),
 		ID:             viper.GetString("id"),
@@ -100,7 +101,7 @@ func (c imageCmd) List() ([]*models.V1ImageResponse, error) {
 }
 
 func (c imageCmd) Delete(id string) (*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().DeleteImage(image.NewDeleteImageParams().WithID(id), nil)
+	resp, err := c.Client.Image().DeleteImage(image.NewDeleteImageParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +110,7 @@ func (c imageCmd) Delete(id string) (*models.V1ImageResponse, error) {
 }
 
 func (c imageCmd) Create(rq *models.V1ImageCreateRequest) (*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().CreateImage(image.NewCreateImageParams().WithBody(rq), nil)
+	resp, err := c.Client.Image().CreateImage(image.NewCreateImageParams().WithBody(rq), nil)
 	if err != nil {
 		var r *image.CreateImageConflict
 		if errors.As(err, &r) {
@@ -122,7 +123,7 @@ func (c imageCmd) Create(rq *models.V1ImageCreateRequest) (*models.V1ImageRespon
 }
 
 func (c imageCmd) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageResponse, error) {
-	resp, err := c.client.Image().UpdateImage(image.NewUpdateImageParams().WithBody(rq), nil)
+	resp, err := c.Client.Image().UpdateImage(image.NewUpdateImageParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

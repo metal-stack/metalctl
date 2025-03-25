@@ -2,33 +2,23 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
+	v2 "github.com/metal-stack/metalctl/cmd/v2"
 	"github.com/metal-stack/metalctl/pkg/api"
+
+	v2client "github.com/metal-stack/api/go/client"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 )
-
-type config struct {
-	fs              afero.Fs
-	out             io.Writer
-	driverURL       string
-	comp            *completion.Completion
-	client          metalgo.Client
-	log             *slog.Logger
-	describePrinter printers.Printer
-	listPrinter     printers.Printer
-}
 
 const (
 	binaryName = "metalctl"
@@ -43,10 +33,10 @@ var (
 func Execute() {
 	// the config will be provided with more values on cobra init
 	// cobra flags do not work so early in the game
-	c := &config{
-		fs:   afero.NewOsFs(),
-		out:  os.Stdout,
-		comp: &completion.Completion{},
+	c := &api.Config{
+		FS:   afero.NewOsFs(),
+		Out:  os.Stdout,
+		Comp: &completion.Completion{},
 	}
 
 	err := newRootCmd(c).Execute()
@@ -58,14 +48,14 @@ func Execute() {
 	}
 }
 
-func newRootCmd(c *config) *cobra.Command {
+func newRootCmd(c *api.Config) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:          binaryName,
 		Aliases:      []string{"m"},
 		Short:        "a cli to manage entities in the metal-stack api",
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			viper.SetFs(c.fs)
+			viper.SetFs(c.FS)
 			genericcli.Must(viper.BindPFlags(cmd.Flags()))
 			genericcli.Must(viper.BindPFlags(cmd.PersistentFlags()))
 			// we cannot instantiate the config earlier because
@@ -95,6 +85,10 @@ apitoken: "alongtoken"
 ...
 
 `)
+
+	rootCmd.PersistentFlags().StringP("api-v2-url", "", "", "api server v2 address. Can be specified with METALCTL_API_V2_URL environment variable.")
+	rootCmd.PersistentFlags().String("api-v2-token", "", "api v2 token to authenticate. Can be specified with METALCTL_API_V2_TOKEN environment variable.")
+
 	rootCmd.PersistentFlags().StringP("api-url", "", "", "api server address. Can be specified with METALCTL_API_URL environment variable.")
 	rootCmd.PersistentFlags().String("api-token", "", "api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.")
 	rootCmd.PersistentFlags().String("kubeconfig", "", "Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.")
@@ -115,6 +109,8 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 
 	genericcli.Must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
+	rootCmd.AddCommand(api.NewContextCmd(c))
+
 	rootCmd.AddCommand(newAuditCmd(c))
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
@@ -133,9 +129,10 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newLoginCmd(c))
 	rootCmd.AddCommand(newLogoutCmd(c))
 	rootCmd.AddCommand(newWhoamiCmd(c))
-	rootCmd.AddCommand(newContextCmd(c))
 	rootCmd.AddCommand(newVPNCmd(c))
 	rootCmd.AddCommand(newUpdateCmd(c))
+
+	v2.AddCmds(rootCmd, c)
 
 	return rootCmd
 }
@@ -176,28 +173,32 @@ func readConfigFile() error {
 	return nil
 }
 
-func initConfigWithViperCtx(c *config) error {
+func initConfigWithViperCtx(c *api.Config) error {
 	ctx := api.MustDefaultContext()
 
-	c.listPrinter = newPrinterFromCLI(c.out)
-	c.describePrinter = defaultToYAMLPrinter(c.out)
+	c.ListPrinter = newPrinterFromCLI(c.Out)
+	c.DescribePrinter = defaultToYAMLPrinter(c.Out)
 
-	if c.log == nil {
+	if c.Log == nil {
 		opts := &slog.HandlerOptions{}
 		if viper.GetBool("debug") {
 			opts.Level = slog.LevelDebug
 		}
 		jsonHandler := slog.NewJSONHandler(os.Stdout, opts)
-		c.log = slog.New(jsonHandler)
+		c.Log = slog.New(jsonHandler)
 	}
 
-	if c.client != nil {
+	if c.Client != nil {
 		return nil
 	}
 
-	driverURL := viper.GetString("api-url")
-	if driverURL == "" && ctx.ApiURL != "" {
-		driverURL = ctx.ApiURL
+	apiURL := viper.GetString("api-url")
+	if apiURL == "" && ctx.ApiURL != "" {
+		apiURL = ctx.ApiURL
+	}
+	apiV2URL := viper.GetString("api-v2-url")
+	if apiV2URL == "" && ctx.ApiV2URL != "" {
+		apiV2URL = ctx.ApiV2URL
 	}
 	hmacKey := viper.GetString("hmac")
 	if hmacKey == "" && ctx.HMAC != nil {
@@ -220,22 +221,38 @@ func initConfigWithViperCtx(c *config) error {
 		}
 	}
 
+	apiV2Token := viper.GetString("api-v2-token")
+	if apiV2Token == "" {
+		if ctx.ApiV2Token != "" {
+			apiV2Token = ctx.ApiV2Token
+		}
+	}
+
+	apiV2Client := v2client.New(v2client.DialConfig{
+		BaseURL:   apiV2URL,
+		Token:     apiV2Token,
+		Debug:     viper.GetBool("debug"),
+		UserAgent: "metalctl",
+	})
+
 	var (
 		client metalgo.Client
 		err    error
 	)
 	if hmacAuthType != "" {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey, metalgo.AuthType(hmacAuthType))
+		client, err = metalgo.NewDriver(apiURL, apiToken, hmacKey, metalgo.AuthType(hmacAuthType))
 	} else {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey)
+		client, err = metalgo.NewDriver(apiURL, apiToken, hmacKey)
 	}
 	if err != nil {
 		return err
 	}
 
-	c.comp.SetClient(client)
-	c.driverURL = driverURL
-	c.client = client
+	c.Comp.SetClient(client)
+	c.ApiURL = apiURL
+	c.ApiV2URL = apiV2URL
+	c.Client = client
+	c.V2Client = apiV2Client
 
 	return nil
 }

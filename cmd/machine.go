@@ -20,6 +20,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
@@ -34,7 +35,7 @@ const (
 )
 
 type machineCmd struct {
-	*config
+	*api.Config
 }
 
 func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDefault time.Duration) {
@@ -42,12 +43,12 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		flagName string
 		f        func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective)
 	}{
-		{flagName: "partition", f: c.comp.PartitionListCompletion},
-		{flagName: "size", f: c.comp.SizeListCompletion},
-		{flagName: "project", f: c.comp.ProjectListCompletion},
-		{flagName: "rack", f: c.comp.MachineRackListCompletion},
-		{flagName: "id", f: c.comp.MachineListCompletion},
-		{flagName: "image", f: c.comp.ImageListCompletion},
+		{flagName: "partition", f: c.Comp.PartitionListCompletion},
+		{flagName: "size", f: c.Comp.SizeListCompletion},
+		{flagName: "project", f: c.Comp.ProjectListCompletion},
+		{flagName: "rack", f: c.Comp.MachineRackListCompletion},
+		{flagName: "id", f: c.Comp.MachineListCompletion},
+		{flagName: "image", f: c.Comp.ImageListCompletion},
 		{flagName: "state", f: cobra.FixedCompletions([]string{
 			// empty does not work:
 			// models.V1FirewallFindRequestStateValueEmpty,
@@ -58,12 +59,12 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 			models.V1MachineAllocationRoleFirewall,
 			models.V1MachineAllocationRoleMachine,
 		}, cobra.ShellCompDirectiveDefault)},
-		{flagName: "manufacturer", f: c.comp.MachineManufacturerCompletion},
-		{flagName: "product-part-number", f: c.comp.MachineProductPartNumberCompletion},
-		{flagName: "product-serial", f: c.comp.MachineProductSerialCompletion},
-		{flagName: "board-part-number", f: c.comp.MachineBoardPartNumberCompletion},
-		{flagName: "network-destination-prefixes", f: c.comp.NetworkDestinationPrefixesCompletion},
-		{flagName: "network-ids", f: c.comp.NetworkListCompletion},
+		{flagName: "manufacturer", f: c.Comp.MachineManufacturerCompletion},
+		{flagName: "product-part-number", f: c.Comp.MachineProductPartNumberCompletion},
+		{flagName: "product-serial", f: c.Comp.MachineProductSerialCompletion},
+		{flagName: "board-part-number", f: c.Comp.MachineBoardPartNumberCompletion},
+		{flagName: "network-destination-prefixes", f: c.Comp.NetworkDestinationPrefixesCompletion},
+		{flagName: "network-ids", f: c.Comp.NetworkListCompletion},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -97,14 +98,14 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
 }
 
-func newMachineCmd(c *config) *cobra.Command {
+func newMachineCmd(c *api.Config) *cobra.Command {
 	w := &machineCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.FS),
 		Singular:             "machine",
 		Plural:               "machines",
 		Description:          "a machine is a bare metal server provisioned through metal-stack that is intended to run user workload.",
@@ -112,11 +113,11 @@ func newMachineCmd(c *config) *cobra.Command {
 		CreateRequestFromCLI: w.createRequestFromCLI,
 		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		Sorter:               sorters.MachineSorter(),
-		ValidArgsFn:          c.comp.MachineListCompletion,
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:          c.Comp.MachineListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
-			c.addMachineCreateFlags(cmd, "machine")
+			addMachineCreateFlags(cmd, "machine", c.Comp)
 			cmd.Aliases = []string{"allocate"}
 			cmd.Example = `machine create can be done in two different ways:
 
@@ -174,7 +175,7 @@ Once created the machine installation can not be modified anymore.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineConsolePassword(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machinePowerCmd := &cobra.Command{
@@ -189,7 +190,7 @@ Once created the machine installation can not be modified anymore.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerOn(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machinePowerOffCmd := &cobra.Command{
@@ -201,7 +202,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerOff(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machinePowerResetCmd := &cobra.Command{
@@ -211,7 +212,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerReset(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machinePowerCycleCmd := &cobra.Command{
@@ -221,7 +222,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machinePowerCycle(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineUpdateFirmwareCmd := &cobra.Command{
@@ -237,7 +238,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineUpdateBios(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineUpdateBmcCmd := &cobra.Command{
@@ -247,7 +248,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineUpdateBmc(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineBootBiosCmd := &cobra.Command{
@@ -257,7 +258,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootBios(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineBootPxeCmd := &cobra.Command{
@@ -267,7 +268,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootPxe(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineBootDiskCmd := &cobra.Command{
@@ -277,7 +278,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineBootDisk(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineIdentifyCmd := &cobra.Command{
@@ -292,7 +293,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIdentifyOn(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineIdentifyOffCmd := &cobra.Command{
@@ -302,7 +303,7 @@ Power on will therefore not work if the machine is in the powering off phase.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIdentifyOff(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineReserveCmd := &cobra.Command{
@@ -314,7 +315,7 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineReserve(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineLockCmd := &cobra.Command{
@@ -324,7 +325,7 @@ should be removed with --remove.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineLock(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineReinstallCmd := &cobra.Command{
@@ -335,7 +336,7 @@ is wiped and the new image will subsequently be installed on that device`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineReinstall(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	machineConsoleCmd := &cobra.Command{
@@ -346,7 +347,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineConsole(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 	machineIpmiCmd := &cobra.Command{
 		Use:   "ipmi [<machine ID>]",
@@ -355,7 +356,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmi(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues [<machine ID>]",
@@ -364,7 +365,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIssuesEvaluate(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 	machineIssuesListCmd := &cobra.Command{
 		Use:     "list",
@@ -381,7 +382,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineLogs(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 	machineIpmiEventsCmd := &cobra.Command{
 		Use:     "events <machine ID>",
@@ -390,7 +391,7 @@ In case the machine did not register properly a direct ipmi console access is av
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return w.machineIpmiEvents(args)
 		},
-		ValidArgsFunction: c.comp.MachineListCompletion,
+		ValidArgsFunction: c.Comp.MachineListCompletion,
 	}
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
@@ -406,9 +407,9 @@ In case the machine did not register properly a direct ipmi console access is av
 	machineIssuesCmd.Flags().StringSlice("omit", nil, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
 
-	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.comp.IssueSeverityCompletion))
-	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.comp.IssueTypeCompletion))
-	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.comp.IssueTypeCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.Comp.IssueSeverityCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.Comp.IssueTypeCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.Comp.IssueTypeCompletion))
 
 	machineLogsCmd.Flags().Duration("last-event-error-threshold", 7*24*time.Hour, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
@@ -416,12 +417,12 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	genericcli.Must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
+	genericcli.Must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.Comp.FirmwareBiosRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	genericcli.Must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
+	genericcli.Must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.Comp.FirmwareBmcRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
@@ -475,7 +476,7 @@ In case the machine did not register properly a direct ipmi console access is av
 	)
 }
 
-func (c *config) addMachineCreateFlags(cmd *cobra.Command, name string) {
+func addMachineCreateFlags(cmd *cobra.Command, name string, comp *completion.Completion) {
 	cmd.Flags().StringP("description", "d", "", "Description of the "+name+" to create. [optional]")
 	cmd.Flags().StringP("partition", "S", "", "partition/datacenter where the "+name+" is created. [required, except for reserved machines]")
 	cmd.Flags().StringP("hostname", "H", "", "Hostname of the "+name+". [required]")
@@ -528,18 +529,18 @@ MODE can be omitted or one of:
 	cmd.MarkFlagsRequiredTogether("size", "partition")
 
 	// Completion for arguments
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
-	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("networks", comp.NetworkListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("ips", comp.IpListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", comp.PartitionListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("size", comp.SizeListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("project", comp.ProjectListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("id", comp.MachineListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("image", comp.ImageListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", comp.FilesystemLayoutListCompletion))
 }
 
 func (c *machineCmd) Get(id string) (*models.V1MachineResponse, error) {
-	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
+	resp, err := c.Client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -548,7 +549,7 @@ func (c *machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c *machineCmd) List() ([]*models.V1MachineResponse, error) {
-	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	resp, err := c.Client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -593,7 +594,7 @@ func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
 		}
 
-		resp, err := c.client.Machine().DeleteMachine(machine.NewDeleteMachineParams().WithID(id), nil)
+		resp, err := c.Client.Machine().DeleteMachine(machine.NewDeleteMachineParams().WithID(id), nil)
 		if err != nil {
 			return nil, err
 		}
@@ -601,7 +602,7 @@ func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 		return resp.Payload, nil
 	}
 
-	resp, err := c.client.Machine().FreeMachine(machine.NewFreeMachineParams().WithID(id), nil)
+	resp, err := c.Client.Machine().FreeMachine(machine.NewFreeMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -610,7 +611,7 @@ func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 }
 
 func (c *machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
-	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
+	resp, err := c.Client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +620,7 @@ func (c *machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Mach
 }
 
 func (c *machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
-	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
+	resp, err := c.Client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -828,7 +829,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().GetMachineConsolePassword(machine.NewGetMachineConsolePasswordParams().WithBody(&models.V1MachineConsolePasswordRequest{
+	resp, err := c.Client.Machine().GetMachineConsolePassword(machine.NewGetMachineConsolePasswordParams().WithBody(&models.V1MachineConsolePasswordRequest{
 		ID:     &id,
 		Reason: pointer.Pointer(viper.GetString("reason")),
 	}), nil)
@@ -836,7 +837,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
+	fmt.Fprintf(c.Out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
 
 	return nil
 }
@@ -847,12 +848,12 @@ func (c *machineCmd) machinePowerOn(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineOn(machine.NewMachineOnParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerOff(args []string) error {
@@ -861,12 +862,12 @@ func (c *machineCmd) machinePowerOff(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineOff(machine.NewMachineOffParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerReset(args []string) error {
@@ -875,12 +876,12 @@ func (c *machineCmd) machinePowerReset(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineReset(machine.NewMachineResetParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machinePowerCycle(args []string) error {
@@ -889,12 +890,12 @@ func (c *machineCmd) machinePowerCycle(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineCycle(machine.NewMachineCycleParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineUpdateBios(args []string) error {
@@ -932,7 +933,7 @@ func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse,
 		return nil, "", "", err
 	}
 
-	resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+	resp, err := c.Client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -950,7 +951,7 @@ func (c *machineCmd) firmwareData(args []string) (*models.V1MachineIPMIResponse,
 }
 
 func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board, revision, currentVersion string) error {
-	firmwareResp, err := c.client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind), nil)
+	firmwareResp, err := c.Client.Firmware().ListFirmwares(firmware.NewListFirmwaresParams().WithKind(&kind), nil)
 	if err != nil {
 		return err
 	}
@@ -977,16 +978,16 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		fmt.Fprintln(c.out, "Available:")
+		fmt.Fprintln(c.Out, "Available:")
 		for _, rev := range rr {
 			if rev == currentVersion {
-				fmt.Fprintf(c.out, "%s (current)\n", rev)
+				fmt.Fprintf(c.Out, "%s (current)\n", rev)
 			} else {
-				fmt.Fprintln(c.out, rev)
+				fmt.Fprintln(c.Out, rev)
 			}
 		}
 		if !containsCurrentVersion {
-			fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
+			fmt.Fprintf(c.Out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}
 
@@ -999,9 +1000,9 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	switch kind {
 	case models.V1MachineUpdateFirmwareRequestKindBios:
-		fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
+		fmt.Fprintln(c.Out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
 	case models.V1MachineUpdateFirmwareRequestKindBmc:
-		fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
+		fmt.Fprintln(c.Out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
 	default:
 		return fmt.Errorf("unsupported firmware kind: %s", kind)
 	}
@@ -1020,7 +1021,7 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	kindString := string(kind)
 
-	resp, err := c.client.Machine().UpdateFirmware(machine.NewUpdateFirmwareParams().WithID(machineID).WithBody(&models.V1MachineUpdateFirmwareRequest{
+	resp, err := c.Client.Machine().UpdateFirmware(machine.NewUpdateFirmwareParams().WithID(machineID).WithBody(&models.V1MachineUpdateFirmwareRequest{
 		Description: &description,
 		Kind:        &kindString,
 		Revision:    &revision,
@@ -1029,7 +1030,7 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootBios(args []string) error {
@@ -1038,12 +1039,12 @@ func (c *machineCmd) machineBootBios(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineBios(machine.NewMachineBiosParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootDisk(args []string) error {
@@ -1052,12 +1053,12 @@ func (c *machineCmd) machineBootDisk(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachineDisk(machine.NewMachineDiskParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineBootPxe(args []string) error {
@@ -1066,12 +1067,12 @@ func (c *machineCmd) machineBootPxe(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id).WithBody(emptyBody), nil)
+	resp, err := c.Client.Machine().MachinePxe(machine.NewMachinePxeParams().WithID(id).WithBody(emptyBody), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOn(args []string) error {
@@ -1081,12 +1082,12 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
+	resp, err := c.Client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIdentifyOff(args []string) error {
@@ -1096,12 +1097,12 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 	}
 
 	description := pointer.Pointer(viper.GetString("description"))
-	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
+	resp, err := c.Client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReserve(args []string) error {
@@ -1111,7 +1112,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 	}
 
 	if viper.GetBool("remove") {
-		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+		resp, err := c.Client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 			Description: pointer.Pointer(""),
 			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
 		}), nil)
@@ -1119,10 +1120,10 @@ func (c *machineCmd) machineReserve(args []string) error {
 			return err
 		}
 
-		return c.listPrinter.Print(resp.Payload)
+		return c.ListPrinter.Print(resp.Payload)
 	}
 
-	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+	resp, err := c.Client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 		Description: pointer.Pointer(viper.GetString("description")),
 		Value:       pointer.Pointer(models.V1MachineStateValueRESERVED),
 	}), nil)
@@ -1130,7 +1131,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLock(args []string) error {
@@ -1140,7 +1141,7 @@ func (c *machineCmd) machineLock(args []string) error {
 	}
 
 	if viper.GetBool("remove") {
-		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+		resp, err := c.Client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 			Description: pointer.Pointer(""),
 			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
 		}), nil)
@@ -1148,10 +1149,10 @@ func (c *machineCmd) machineLock(args []string) error {
 			return err
 		}
 
-		return c.listPrinter.Print(resp.Payload)
+		return c.ListPrinter.Print(resp.Payload)
 	}
 
-	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
+	resp, err := c.Client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 		Description: pointer.Pointer(viper.GetString("description")),
 		Value:       pointer.Pointer(models.V1MachineStateValueLOCKED),
 	}), nil)
@@ -1159,7 +1160,7 @@ func (c *machineCmd) machineLock(args []string) error {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineReinstall(args []string) error {
@@ -1168,7 +1169,7 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().ReinstallMachine(machine.NewReinstallMachineParams().WithID(id).WithBody(&models.V1MachineReinstallRequest{
+	resp, err := c.Client.Machine().ReinstallMachine(machine.NewReinstallMachineParams().WithID(id).WithBody(&models.V1MachineReinstallRequest{
 		ID:          pointer.Pointer(id),
 		Description: viper.GetString("description"),
 		Imageid:     pointer.Pointer(viper.GetString("image")),
@@ -1177,7 +1178,7 @@ func (c *machineCmd) machineReinstall(args []string) error {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineLogs(args []string) error {
@@ -1192,7 +1193,7 @@ func (c *machineCmd) machineLogs(args []string) error {
 		return err
 	}
 
-	err = c.listPrinter.Print(pointer.SafeDeref(resp.Events).Log)
+	err = c.ListPrinter.Print(pointer.SafeDeref(resp.Events).Log)
 	if err != nil {
 		return err
 	}
@@ -1203,11 +1204,11 @@ func (c *machineCmd) machineLogs(args []string) error {
 			return nil
 		}
 
-		fmt.Fprintln(c.out)
-		fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
-		fmt.Fprintln(c.out)
+		fmt.Fprintln(c.Out)
+		fmt.Fprintf(c.Out, "Recent last error (%s ago):\n", timeSince.String())
+		fmt.Fprintln(c.Out)
 
-		return c.listPrinter.Print(resp.Events.LastErrorEvent)
+		return c.ListPrinter.Print(resp.Events.LastErrorEvent)
 	}
 
 	return nil
@@ -1226,7 +1227,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 			return fmt.Errorf("unable to locate ipmitool in path")
 		}
 
-		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+		resp, err := c.Client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
@@ -1243,7 +1244,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		usr := *ipmi.User
 		if *ipmi.User == "" {
-			fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+			fmt.Fprintf(c.Out, "no ipmi user stored, please specify with --ipmiuser\n")
 		}
 		ipmiuser := viper.GetString("ipmiuser")
 		if ipmiuser != "" {
@@ -1251,7 +1252,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		password := *ipmi.Password
 		if *ipmi.Password == "" {
-			fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+			fmt.Fprintf(c.Out, "no ipmi password stored, please specify with --ipmipassword\n")
 		}
 
 		ipmipassword := viper.GetString("ipmipassword")
@@ -1268,7 +1269,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}()
 
 		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-E", "sol", "activate"}
-		fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+		fmt.Fprintf(c.Out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -1276,7 +1277,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		return cmd.Run()
 	}
 
-	parsedurl, err := url.Parse(c.driverURL)
+	parsedurl, err := url.Parse(c.ApiURL)
 	if err != nil {
 		return err
 	}
@@ -1302,12 +1303,12 @@ func (c *machineCmd) machineIpmi(args []string) error {
 			return err
 		}
 
-		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+		resp, err := c.Client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
-		return c.describePrinter.Print(resp.Payload)
+		return c.DescribePrinter.Print(resp.Payload)
 	}
 
 	sortKeys, err := genericcli.ParseSortFlags()
@@ -1315,7 +1316,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+	resp, err := c.Client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return err
 	}
@@ -1325,11 +1326,11 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.ListPrinter.Print(resp.Payload)
 }
 
 func (c *machineCmd) machineIssuesList() error {
-	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
+	issuesResp, err := c.Client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
 	if err != nil {
 		return err
 	}
@@ -1344,7 +1345,7 @@ func (c *machineCmd) machineIssuesList() error {
 		return err
 	}
 
-	return c.listPrinter.Print(issuesResp.Payload)
+	return c.ListPrinter.Print(issuesResp.Payload)
 }
 
 func (c *machineCmd) machineIssuesEvaluate(args []string) error {
@@ -1357,7 +1358,7 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 		}
 	}
 
-	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
+	issuesResp, err := c.Client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1368,7 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 		macs = pointer.WrapInSlice(viper.GetString("mac"))
 	}
 
-	evalResp, err := c.client.Machine().Issues(machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
+	evalResp, err := c.Client.Machine().Issues(machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
 		AllocationHostname:         viper.GetString("hostname"),
 		AllocationImageID:          viper.GetString("image"),
 		AllocationProject:          viper.GetString("project"),
@@ -1401,14 +1402,14 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 
 	var machines []*models.V1MachineIPMIResponse
 	if len(args) > 0 {
-		machineResp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+		machineResp, err := c.Client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
 		machines = append(machines, machineResp.Payload)
 	} else {
-		machinesResp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+		machinesResp, err := c.Client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 		if err != nil {
 			return err
 		}
@@ -1426,7 +1427,7 @@ func (c *machineCmd) machineIssuesEvaluate(args []string) error {
 		return err
 	}
 
-	return c.listPrinter.Print(&tableprinters.MachinesAndIssues{
+	return c.ListPrinter.Print(&tableprinters.MachinesAndIssues{
 		Machines:         machines,
 		Issues:           issuesResp.Payload,
 		EvaluationResult: evalResp.Payload,
@@ -1444,7 +1445,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 		return fmt.Errorf("unable to locate ipmitool in path")
 	}
 
-	resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+	resp, err := c.Client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 	if err != nil {
 		return err
 	}
@@ -1461,7 +1462,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 	}
 	usr := *ipmi.User
 	if *ipmi.User == "" {
-		fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+		fmt.Fprintf(c.Out, "no ipmi user stored, please specify with --ipmiuser\n")
 	}
 	ipmiuser := viper.GetString("ipmiuser")
 	if ipmiuser != "" {
@@ -1470,7 +1471,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 
 	password := *ipmi.Password
 	if *ipmi.Password == "" {
-		fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+		fmt.Fprintf(c.Out, "no ipmi password stored, please specify with --ipmipassword\n")
 	}
 	ipmipassword := viper.GetString("ipmipassword")
 	if ipmipassword != "" {

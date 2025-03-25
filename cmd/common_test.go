@@ -18,6 +18,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metalctl/cmd/completion"
+	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/afero"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -100,7 +101,7 @@ func (c *test[R]) testCmd(t *testing.T) {
 	}
 }
 
-func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.Buffer, *config) {
+func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.Buffer, *api.Config) {
 	mock, client := client.NewMetalMockClient(t, c.mocks)
 
 	fs := afero.NewMemMapFs()
@@ -110,17 +111,17 @@ func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.B
 
 	var (
 		out    bytes.Buffer
-		config = &config{
-			fs:     fs,
-			client: client,
-			out:    &out,
-			log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
-			comp:   &completion.Completion{},
+		config = &api.Config{
+			FS:     fs,
+			Client: client,
+			Out:    &out,
+			Log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
+			Comp:   &completion.Completion{},
 		}
 	)
 
 	if c.disableMockClient {
-		config.client = nil
+		config.Client = nil
 	}
 
 	return mock, &out, config
@@ -136,7 +137,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		return fmt.Errorf("not exhaustive: does not contain %s", prefix)
 	}
 
-	root := newRootCmd(&config{comp: &completion.Completion{}})
+	root := newRootCmd(&api.Config{Comp: &completion.Completion{}})
 	cmd, args, err := root.Find(args)
 	require.NoError(t, err)
 

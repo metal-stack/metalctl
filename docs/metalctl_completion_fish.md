@@ -33,6 +33,8 @@ metalctl completion fish [flags]
 ```
       --api-token string       api token to authenticate. Can be specified with METALCTL_API_TOKEN environment variable.
       --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
+      --api-v2-token string    api v2 token to authenticate. Can be specified with METALCTL_API_V2_TOKEN environment variable.
+      --api-v2-url string      api server v2 address. Can be specified with METALCTL_API_V2_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
                                

@@ -9,30 +9,31 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/pkg/api"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type tenantCmd struct {
-	*config
+	*api.Config
 }
 
-func newTenantCmd(c *config) *cobra.Command {
+func newTenantCmd(c *api.Config) *cobra.Command {
 	w := &tenantCmd{
-		config: c,
+		Config: c,
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, *models.V1TenantResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, *models.V1TenantResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI[*models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, *models.V1TenantResponse](w).WithFS(c.FS),
 		Singular:             "tenant",
 		Plural:               "tenants",
 		Description:          "a tenant belongs to a tenant and groups together entities in metal-stack.",
 		Sorter:               sorters.TenantSorter(),
-		ValidArgsFn:          c.comp.TenantListCompletion,
-		DescribePrinter:      func() printers.Printer { return c.describePrinter },
-		ListPrinter:          func() printers.Printer { return c.listPrinter },
+		ValidArgsFn:          c.Comp.TenantListCompletion,
+		DescribePrinter:      func() printers.Printer { return c.DescribePrinter },
+		ListPrinter:          func() printers.Printer { return c.ListPrinter },
 		CreateRequestFromCLI: w.createFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "id of the tenant, max 10 characters.")
@@ -58,7 +59,7 @@ func newTenantCmd(c *config) *cobra.Command {
 }
 
 func (c *tenantCmd) Get(id string) (*models.V1TenantResponse, error) {
-	resp, err := c.client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(id), nil)
+	resp, err := c.Client.Tenant().GetTenant(tenantmodel.NewGetTenantParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (c *tenantCmd) List() ([]*models.V1TenantResponse, error) {
 		}
 	}
 
-	resp, err := c.client.Tenant().FindTenants(tenantmodel.NewFindTenantsParams().WithBody(&models.V1TenantFindRequest{
+	resp, err := c.Client.Tenant().FindTenants(tenantmodel.NewFindTenantsParams().WithBody(&models.V1TenantFindRequest{
 		ID:          viper.GetString("id"),
 		Name:        viper.GetString("name"),
 		Annotations: annotations,
@@ -89,7 +90,7 @@ func (c *tenantCmd) List() ([]*models.V1TenantResponse, error) {
 }
 
 func (c *tenantCmd) Delete(id string) (*models.V1TenantResponse, error) {
-	resp, err := c.client.Tenant().DeleteTenant(tenantmodel.NewDeleteTenantParams().WithID(id), nil)
+	resp, err := c.Client.Tenant().DeleteTenant(tenantmodel.NewDeleteTenantParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (c *tenantCmd) Delete(id string) (*models.V1TenantResponse, error) {
 }
 
 func (c *tenantCmd) Create(rq *models.V1TenantCreateRequest) (*models.V1TenantResponse, error) {
-	resp, err := c.client.Tenant().CreateTenant(tenantmodel.NewCreateTenantParams().WithBody(rq), nil)
+	resp, err := c.Client.Tenant().CreateTenant(tenantmodel.NewCreateTenantParams().WithBody(rq), nil)
 	if err != nil {
 		var r *tenantmodel.CreateTenantConflict
 		if errors.As(err, &r) {
@@ -122,7 +123,7 @@ func (c *tenantCmd) Update(rq *models.V1TenantUpdateRequest) (*models.V1TenantRe
 
 	rq.Meta.Version = getResp.Meta.Version
 
-	updateResp, err := c.client.Tenant().UpdateTenant(tenantmodel.NewUpdateTenantParams().WithBody(rq), nil)
+	updateResp, err := c.Client.Tenant().UpdateTenant(tenantmodel.NewUpdateTenantParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
 	}

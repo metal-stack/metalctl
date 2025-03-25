@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newLoginCmd(c *config) *cobra.Command {
+func newLoginCmd(c *api.Config) *cobra.Command {
 	loginCmd := &cobra.Command{
 		Use:   "login",
 		Short: "login user and receive token",
@@ -27,7 +27,7 @@ func newLoginCmd(c *config) *cobra.Command {
 			if viper.GetBool("print-only") {
 				// do not print to console
 				handler = func(tokenInfo auth.TokenInfo) error {
-					fmt.Fprintln(c.out, tokenInfo.IDToken)
+					fmt.Fprintln(c.Out, tokenInfo.IDToken)
 					return nil
 				}
 
@@ -60,17 +60,17 @@ func newLoginCmd(c *config) *cobra.Command {
 				TokenHandler: handler,
 				Console:      console,
 				Debug:        viper.GetBool("debug"),
-				Log:          c.log,
+				Log:          c.Log,
 			}
 
-			fmt.Fprintln(c.out)
+			fmt.Fprintln(c.Out)
 
 			err := auth.OIDCFlow(config)
 			if err != nil {
 				return err
 			}
 
-			resp, err := c.client.Version().Info(version.NewInfoParams(), clientNoAuth())
+			resp, err := c.Client.Version().Info(version.NewInfoParams(), clientNoAuth())
 			if err != nil {
 				return err
 			}
@@ -96,9 +96,9 @@ func newLoginCmd(c *config) *cobra.Command {
 				}
 
 				if !thisVersion.Equal(parsedMinVersion) {
-					fmt.Fprintln(c.out)
-					fmt.Fprintf(c.out, "WARNING: Your metalctl version %q might not compatible with the metal-api (supported version is %q). Please run `metalctl update do` to update to the supported version.", thisVersion, minVersion)
-					fmt.Fprintln(c.out)
+					fmt.Fprintln(c.Out)
+					fmt.Fprintf(c.Out, "WARNING: Your metalctl version %q might not compatible with the metal-api (supported version is %q). Please run `metalctl update do` to update to the supported version.", thisVersion, minVersion)
+					fmt.Fprintln(c.Out)
 				}
 			}
 
