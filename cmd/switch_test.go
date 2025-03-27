@@ -279,7 +279,8 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 								},
 								Ipmi: &models.V1MachineIPMI{
 									Fru: &models.V1MachineFru{
-										ProductSerial: "123",
+										ProductSerial:     "123",
+										ChassisPartSerial: "456",
 									},
 								},
 							},
@@ -315,25 +316,26 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 						},
 						Ipmi: &models.V1MachineIPMI{
 							Fru: &models.V1MachineFru{
-								ProductSerial: "123",
+								ProductSerial:     "123",
+								ChassisPartSerial: "456",
 							},
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-ID             NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
+ID             NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL   CHASSIS SERIAL
 1                                           1           rack-1
-└─╴machine-1   a-name          a-mac        1           rack-1   n1-medium-x86   123
+└─╴machine-1   a-name          a-mac        1           rack-1   n1-medium-x86   123              456
 2                                           1           rack-1
-└─╴machine-1   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   123
+└─╴machine-1   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   123              456
 `),
 			wantWideTable: pointer.Pointer(`
-ID                  NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL
+ID                  NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL   CHASSIS SERIAL
 1                                                1           rack-1
-└─╴machine-1   ❓   a-name          a-mac        1           rack-1   n1-medium-x86   alloc-1    123
+└─╴machine-1   ❓   a-name          a-mac        1           rack-1   n1-medium-x86   alloc-1    123              456
 2                                                1           rack-1
-└─╴machine-1   ❓   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   alloc-1    123
+└─╴machine-1   ❓   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   alloc-1    123              456
 `),
 			template: pointer.Pointer(`{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}`),
 			wantTemplate: pointer.Pointer(`
