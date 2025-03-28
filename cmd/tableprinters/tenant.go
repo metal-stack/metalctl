@@ -13,7 +13,7 @@ func (t *TablePrinter) TenantTable(data []*models.V1TenantResponse, wide bool) (
 		rows [][]string
 	)
 
-	header := []string{"ID", "Name", "Description", "Labels", "Annotations"}
+	header := []string{"ID", "Name", "Description"}
 	if wide {
 		header = []string{"ID", "Name", "Description", "Labels", "Annotations", "Quotas"}
 	}
@@ -58,7 +58,7 @@ func (t *TablePrinter) TenantTable(data []*models.V1TenantResponse, wide bool) (
 		if wide {
 			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description, labels, annotations, strings.Join(quotas, "\n")})
 		} else {
-			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description, labels, annotations})
+			rows = append(rows, []string{pr.Meta.ID, pr.Name, pr.Description})
 		}
 	}
 
