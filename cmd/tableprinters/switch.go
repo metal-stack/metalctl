@@ -145,9 +145,9 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 		rows [][]string
 	)
 
-	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial"}
+	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial", "Chassis Serial"}
 	if wide {
-		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial"}
+		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial", "Chassis Serial"}
 	}
 	t.t.MutateTable(func(table *tablewriter.Table) {
 		table.SetAutoWrapText(false)
@@ -237,6 +237,7 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
 					pointer.SafeDeref(pointer.SafeDeref(m.Allocation).Hostname),
 					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartSerial,
 				})
 			} else {
 				rows = append(rows, []string{
@@ -247,6 +248,7 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 					m.Rackid,
 					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
 					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartSerial,
 				})
 			}
 		}

@@ -89,9 +89,9 @@ func Test_TenantCmd_MultiResult(t *testing.T) {
 				tenant2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS
-1    tenant-1   tenant 1      c        a=b
-2    tenant-2   tenant 2      c        a=b
+ID   NAME       DESCRIPTION
+1    tenant-1   tenant 1
+2    tenant-2   tenant 2
 `),
 			wantWideTable: pointer.Pointer(`
 ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
@@ -108,10 +108,10 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 2 tenant-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |   NAME   | DESCRIPTION | LABELS | ANNOTATIONS |
-|----|----------|-------------|--------|-------------|
-|  1 | tenant-1 | tenant 1    | c      | a=b         |
-|  2 | tenant-2 | tenant 2    | c      | a=b         |
+| ID |   NAME   | DESCRIPTION |
+|----|----------|-------------|
+|  1 | tenant-1 | tenant 1    |
+|  2 | tenant-2 | tenant 2    |
 `),
 		},
 		{
@@ -140,24 +140,24 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 				tenant1,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS
-1    tenant-1   tenant 1      c        a=b
-		`),
+ID   NAME       DESCRIPTION
+1    tenant-1   tenant 1
+        `),
 			wantWideTable: pointer.Pointer(`
 ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 1    tenant-1   tenant 1      c        a=b           1 Cluster(s)
                                                      3 Machine(s)
                                                      2 IP(s)
-		`),
+        `),
 			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
-		1 tenant-1
-		`),
+        1 tenant-1
+        `),
 			wantMarkdown: pointer.Pointer(`
-| ID |   NAME   | DESCRIPTION | LABELS | ANNOTATIONS |
-|----|----------|-------------|--------|-------------|
-|  1 | tenant-1 | tenant 1    | c      | a=b         |
-		`),
+| ID |   NAME   | DESCRIPTION |
+|----|----------|-------------|
+|  1 | tenant-1 | tenant 1    |
+        `),
 		},
 		{
 			name: "apply",
@@ -268,8 +268,8 @@ func Test_TenantCmd_SingleResult(t *testing.T) {
 			},
 			want: tenant1,
 			wantTable: pointer.Pointer(`
-ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS
-1    tenant-1   tenant 1      c        a=b
+ID   NAME       DESCRIPTION
+1    tenant-1   tenant 1
 `),
 			wantWideTable: pointer.Pointer(`
 ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
@@ -282,9 +282,9 @@ ID   NAME       DESCRIPTION   LABELS   ANNOTATIONS   QUOTAS
 1 tenant-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |   NAME   | DESCRIPTION | LABELS | ANNOTATIONS |
-|----|----------|-------------|--------|-------------|
-|  1 | tenant-1 | tenant 1    | c      | a=b         |
+| ID |   NAME   | DESCRIPTION |
+|----|----------|-------------|
+|  1 | tenant-1 | tenant 1    |
 `),
 		},
 		{
