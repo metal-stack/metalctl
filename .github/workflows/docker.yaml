@@ -34,9 +34,9 @@ jobs:
         uses: crate-ci/typos@master
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          args: --build-tags integration -p bugs -p unused --timeout=5m
+          args: --build-tags integration --timeout=5m
 
       - name: Test
         run: |
