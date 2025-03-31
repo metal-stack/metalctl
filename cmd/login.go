@@ -27,8 +27,8 @@ func newLoginCmd(c *config) *cobra.Command {
 			if viper.GetBool("print-only") {
 				// do not print to console
 				handler = func(tokenInfo auth.TokenInfo) error {
-					_, err := fmt.Fprintln(c.out, tokenInfo.IDToken)
-					return err
+					_, _ = fmt.Fprintln(c.out, tokenInfo.IDToken)
+					return nil
 				}
 
 			} else {
@@ -63,12 +63,9 @@ func newLoginCmd(c *config) *cobra.Command {
 				Log:          c.log,
 			}
 
-			_, err := fmt.Fprintln(c.out)
-			if err != nil {
-				return err
-			}
+			_, _ = fmt.Fprintln(c.out)
 
-			err = auth.OIDCFlow(config)
+			err := auth.OIDCFlow(config)
 			if err != nil {
 				return err
 			}
