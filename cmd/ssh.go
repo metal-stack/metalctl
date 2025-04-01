@@ -20,7 +20,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 		return fmt.Errorf("firewall allocation or allocation.project is nil")
 	}
 	projectID := firewall.Allocation.Project
-	fmt.Fprintf(c.out, "accessing firewall through vpn ")
+	_, _ = fmt.Fprintf(c.out, "accessing firewall through vpn ")
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
 		Ephemeral: pointer.Pointer(true),
@@ -33,7 +33,9 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	if err != nil {
 		return err
 	}
-	defer v.Close()
+	defer func() {
+		_ = v.Close()
+	}()
 
 	privateKeyFile := viper.GetString("identity")
 	if strings.HasPrefix(privateKeyFile, "~/") {

@@ -30,9 +30,9 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 		fss := bytes.NewBufferString("")
 		w := tabwriter.NewWriter(fss, 0, 0, 0, ' ', 0)
 		for i, fs := range fsls {
-			fmt.Fprintf(w, "%s\t  \t%s", fs.Path, *fs.Device)
+			_, _ = fmt.Fprintf(w, "%s\t  \t%s", fs.Path, *fs.Device)
 			if i != len(fsls)-1 {
-				fmt.Fprintln(w)
+				_, _ = fmt.Fprintln(w)
 			}
 		}
 		err := w.Flush()

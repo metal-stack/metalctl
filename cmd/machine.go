@@ -836,7 +836,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
+	_, _ = fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
 
 	return nil
 }
@@ -977,16 +977,16 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		fmt.Fprintln(c.out, "Available:")
+		_, _ = fmt.Fprintln(c.out, "Available:")
 		for _, rev := range rr {
 			if rev == currentVersion {
-				fmt.Fprintf(c.out, "%s (current)\n", rev)
+				_, _ = fmt.Fprintf(c.out, "%s (current)\n", rev)
 			} else {
-				fmt.Fprintln(c.out, rev)
+				_, _ = fmt.Fprintln(c.out, rev)
 			}
 		}
 		if !containsCurrentVersion {
-			fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
+			_, _ = fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}
 
@@ -999,9 +999,9 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	switch kind {
 	case models.V1MachineUpdateFirmwareRequestKindBios:
-		fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
+		_, _ = fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
 	case models.V1MachineUpdateFirmwareRequestKindBmc:
-		fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
+		_, _ = fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
 	default:
 		return fmt.Errorf("unsupported firmware kind: %s", kind)
 	}
@@ -1203,9 +1203,9 @@ func (c *machineCmd) machineLogs(args []string) error {
 			return nil
 		}
 
-		fmt.Fprintln(c.out)
-		fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
-		fmt.Fprintln(c.out)
+		_, _ = fmt.Fprintln(c.out)
+		_, _ = fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
+		_, _ = fmt.Fprintln(c.out)
 
 		return c.listPrinter.Print(resp.Events.LastErrorEvent)
 	}
@@ -1243,7 +1243,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		usr := *ipmi.User
 		if *ipmi.User == "" {
-			fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+			_, _ = fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 		}
 		ipmiuser := viper.GetString("ipmiuser")
 		if ipmiuser != "" {
@@ -1251,7 +1251,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		password := *ipmi.Password
 		if *ipmi.Password == "" {
-			fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+			_, _ = fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 		}
 
 		ipmipassword := viper.GetString("ipmipassword")
@@ -1268,7 +1268,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}()
 
 		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-E", "sol", "activate"}
-		fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+		_, _ = fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -1461,7 +1461,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 	}
 	usr := *ipmi.User
 	if *ipmi.User == "" {
-		fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+		_, _ = fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 	}
 	ipmiuser := viper.GetString("ipmiuser")
 	if ipmiuser != "" {
@@ -1470,7 +1470,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 
 	password := *ipmi.Password
 	if *ipmi.Password == "" {
-		fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+		_, _ = fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 	}
 	ipmipassword := viper.GetString("ipmipassword")
 	if ipmipassword != "" {
