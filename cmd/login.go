@@ -27,7 +27,7 @@ func newLoginCmd(c *config) *cobra.Command {
 			if viper.GetBool("print-only") {
 				// do not print to console
 				handler = func(tokenInfo auth.TokenInfo) error {
-					fmt.Fprintln(c.out, tokenInfo.IDToken)
+					_, _ = fmt.Fprintln(c.out, tokenInfo.IDToken)
 					return nil
 				}
 
@@ -63,7 +63,7 @@ func newLoginCmd(c *config) *cobra.Command {
 				Log:          c.log,
 			}
 
-			fmt.Fprintln(c.out)
+			_, _ = fmt.Fprintln(c.out)
 
 			err := auth.OIDCFlow(config)
 			if err != nil {
@@ -96,9 +96,9 @@ func newLoginCmd(c *config) *cobra.Command {
 				}
 
 				if !thisVersion.Equal(parsedMinVersion) {
-					fmt.Fprintln(c.out)
-					fmt.Fprintf(c.out, "WARNING: Your metalctl version %q might not compatible with the metal-api (supported version is %q). Please run `metalctl update do` to update to the supported version.", thisVersion, minVersion)
-					fmt.Fprintln(c.out)
+					_, _ = fmt.Fprintln(c.out)
+					_, _ = fmt.Fprintf(c.out, "WARNING: Your metalctl version %q might not compatible with the metal-api (supported version is %q). Please run `metalctl update do` to update to the supported version.", thisVersion, minVersion)
+					_, _ = fmt.Fprintln(c.out)
 				}
 			}
 

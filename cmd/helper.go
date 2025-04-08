@@ -98,8 +98,8 @@ func searchSSHKey() (string, error) {
 	}
 
 	if key == "" {
-		return "", fmt.Errorf("failure to locate a SSH identity in default location (%s). "+
-			"Another identity can be specified with --sshidentity/-p\n", defaultDir)
+		return "", fmt.Errorf("failure to locate a SSH identity in default location (%s), "+
+			"another identity can be specified with --sshidentity/-p", defaultDir)
 	}
 	return key, nil
 }

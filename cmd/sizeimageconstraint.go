@@ -137,7 +137,7 @@ func (c *sizeImageConstraintCmd) try() error {
 		return err
 	}
 
-	fmt.Fprintln(c.out, "allocation is possible")
+	_, _ = fmt.Fprintln(c.out, "allocation is possible")
 
 	return nil
 }
