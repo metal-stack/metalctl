@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log/slog"
@@ -199,6 +202,12 @@ func initConfigWithViperCtx(c *config) error {
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}
+
+	var (
+		clientOptions []metalgo.ClientOption
+		err           error
+	)
+
 	hmacKey := viper.GetString("hmac")
 	if hmacKey == "" && ctx.HMAC != nil {
 		hmacKey = *ctx.HMAC
@@ -207,9 +216,9 @@ func initConfigWithViperCtx(c *config) error {
 	if hmacAuthType == "" && ctx.HMACAuthType != "" {
 		hmacAuthType = ctx.HMACAuthType
 	}
+	clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, hmacAuthType))
 
 	apiToken := viper.GetString("api-token")
-
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
 		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
@@ -219,16 +228,22 @@ func initConfigWithViperCtx(c *config) error {
 			apiToken = authContext.IDToken
 		}
 	}
+	clientOptions = append(clientOptions, metalgo.BearerToken(apiToken))
 
-	var (
-		client metalgo.Client
-		err    error
-	)
-	if hmacAuthType != "" {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey, metalgo.AuthType(hmacAuthType))
-	} else {
-		client, err = metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	certificateAuthorityData := viper.GetString("certificate-authority-data")
+	if certificateAuthorityData == "" && ctx.CertificateAuthorityData != "" {
+		certificateAuthorityData = ctx.CertificateAuthorityData
 	}
+	if certificateAuthorityData != "" {
+		tlsClientConfig, err := createTLSClientConfig([]byte(certificateAuthorityData))
+		if err != nil {
+			return err
+		}
+
+		clientOptions = append(clientOptions, metalgo.TLSClientConfig(tlsClientConfig))
+	}
+
+	client, err := metalgo.NewClient(driverURL, clientOptions...)
 	if err != nil {
 		return err
 	}
@@ -238,6 +253,23 @@ func initConfigWithViperCtx(c *config) error {
 	c.client = client
 
 	return nil
+}
+
+func createTLSClientConfig(caData []byte) (*tls.Config, error) {
+	caCert := make([]byte, base64.StdEncoding.DecodedLen(len(caData)))
+	_, err := base64.StdEncoding.Decode(caCert, caData)
+	if err != nil {
+		return nil, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tlsClientConfig := tls.Config{
+		RootCAs:    caCertPool,
+		MinVersion: tls.VersionTLS12,
+	}
+
+	return &tlsClientConfig, nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {
