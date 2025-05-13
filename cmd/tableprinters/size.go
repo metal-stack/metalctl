@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/olekukonko/tablewriter"
 )
 
 func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]string, [][]string, error) {
@@ -50,9 +49,10 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 		rows = append(rows, row)
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	// TODO: Reintroduce Wrap Text
+	// t.t.MutateTable(func(table *tablewriter.Table) {
+	// 	table.SetAutoWrapText(false)
+	// })
 
 	return header, rows, nil
 }
