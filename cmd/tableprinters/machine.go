@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
-	"github.com/olekukonko/tablewriter"
 )
 
 // MachinesAndIssues is used for combining issues with more data on machines.
@@ -216,9 +215,10 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		}
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	// TODO: Reintroduce Wrap Text
+	// t.t.MutateTable(func(table *tablewriter.Table) {
+	// 	table.SetAutoWrapText(false)
+	// })
 
 	return header, rows, nil
 }
@@ -279,9 +279,10 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		rows = append(rows, []string{time.Time(i.Time).Format(time.RFC1123), pointer.SafeDeref(i.Event), msg})
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	// TODO: Reintroduce Wrap Text
+	// t.t.MutateTable(func(table *tablewriter.Table) {
+	// 	table.SetAutoWrapText(false)
+	// })
 
 	return header, rows, nil
 }
@@ -414,9 +415,10 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 		}
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	// TODO: Reintroduce Wrap Text
+	// t.t.MutateTable(func(table *tablewriter.Table) {
+	// 	table.SetAutoWrapText(false)
+	// })
 
 	return header, rows, nil
 }
