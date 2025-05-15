@@ -139,7 +139,7 @@ debian debian-name
 		{
 			name: "apply",
 			cmd: func(want []*models.V1ImageResponse) []string {
-				return []string{"image", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("image", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -158,6 +158,63 @@ debian debian-name
 			want: []*models.V1ImageResponse{
 				image1,
 				image2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1ImageResponse) []string {
+				return appendFromFileCommonArgs("image", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Image: func(mock *mock.Mock) {
+					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
+						Payload: image1,
+					}, nil)
+				},
+			},
+			want: []*models.V1ImageResponse{
+				image1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1ImageResponse) []string {
+				return appendFromFileCommonArgs("image", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Image: func(mock *mock.Mock) {
+					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(imageResponseToUpdate(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.UpdateImageOK{
+						Payload: image1,
+					}, nil)
+				},
+			},
+			want: []*models.V1ImageResponse{
+				image1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1ImageResponse) []string {
+				return appendFromFileCommonArgs("image", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1ImageResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Image: func(mock *mock.Mock) {
+					mock.On("DeleteImage", testcommon.MatchIgnoreContext(t, image.NewDeleteImageParams().WithID(*image1.ID)), nil).Return(&image.DeleteImageOK{
+						Payload: image1,
+					}, nil)
+				},
+			},
+			want: []*models.V1ImageResponse{
+				image1,
 			},
 		},
 	}
@@ -223,7 +280,7 @@ debian debian-name
 					"--url", want.URL,
 					"--features", want.Features[0],
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -232,40 +289,6 @@ debian debian-name
 					i.Classification = ""
 					i.ExpirationDate = &strfmt.DateTime{}
 					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(i))), nil).Return(&image.CreateImageCreated{
-						Payload: image1,
-					}, nil)
-				},
-			},
-			want: image1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1ImageResponse) []string {
-				return []string{"image", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1ImageResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Image: func(mock *mock.Mock) {
-					mock.On("CreateImage", testcommon.MatchIgnoreContext(t, image.NewCreateImageParams().WithBody(imageResponseToCreate(image1)), testcommon.StrFmtDateComparer()), nil).Return(&image.CreateImageCreated{
-						Payload: image1,
-					}, nil)
-				},
-			},
-			want: image1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1ImageResponse) []string {
-				return []string{"image", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1ImageResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Image: func(mock *mock.Mock) {
-					mock.On("UpdateImage", testcommon.MatchIgnoreContext(t, image.NewUpdateImageParams().WithBody(imageResponseToUpdate(image1))), nil).Return(&image.UpdateImageOK{
 						Payload: image1,
 					}, nil)
 				},

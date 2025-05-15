@@ -1,17 +1,20 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"strings"
 
 	metalgo "github.com/metal-stack/metal-go"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metalctl/cmd/completion"
 	"github.com/metal-stack/metalctl/pkg/api"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
@@ -25,7 +28,7 @@ type config struct {
 	driverURL       string
 	comp            *completion.Completion
 	client          metalgo.Client
-	log             *zap.SugaredLogger
+	log             *slog.Logger
 	describePrinter printers.Printer
 	listPrinter     printers.Printer
 }
@@ -35,7 +38,7 @@ const (
 )
 
 var (
-	defaultSSHKeys = [...]string{"id_ed25519", "id_rsa", "id_dsa"}
+	defaultSSHKeys = [...]string{"id_ed25519", "id_ecdsa", "id_rsa", "id_dsa"}
 	// emptyBody is kind of hack because post with "nil" will result into 406 error from the api
 	emptyBody = []string{}
 )
@@ -66,12 +69,12 @@ func newRootCmd(c *config) *cobra.Command {
 		SilenceUsage: true,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			viper.SetFs(c.fs)
-			must(viper.BindPFlags(cmd.Flags()))
-			must(viper.BindPFlags(cmd.PersistentFlags()))
+			genericcli.Must(viper.BindPFlags(cmd.Flags()))
+			genericcli.Must(viper.BindPFlags(cmd.PersistentFlags()))
 			// we cannot instantiate the config earlier because
 			// cobra flags do not work so early in the game
-			must(readConfigFile())
-			must(initConfigWithViperCtx(c))
+			genericcli.Must(readConfigFile())
+			genericcli.Must(initConfigWithViperCtx(c))
 		},
 	}
 
@@ -113,12 +116,14 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 	rootCmd.PersistentFlags().Bool("force-color", false, "force colored output even without tty")
 
-	must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
+	genericcli.Must(rootCmd.RegisterFlagCompletionFunc("output-format", completion.OutputFormatListCompletion))
 
+	rootCmd.AddCommand(newAuditCmd(c))
 	rootCmd.AddCommand(newFirmwareCmd(c))
 	rootCmd.AddCommand(newMachineCmd(c))
 	rootCmd.AddCommand(newFirewallCmd(c))
 	rootCmd.AddCommand(newProjectCmd(c))
+	rootCmd.AddCommand(newTenantCmd(c))
 	rootCmd.AddCommand(newSizeCmd(c))
 	rootCmd.AddCommand(newFilesystemLayoutCmd(c))
 	rootCmd.AddCommand(newImageCmd(c))
@@ -133,7 +138,7 @@ metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
 	rootCmd.AddCommand(newWhoamiCmd(c))
 	rootCmd.AddCommand(newContextCmd(c))
 	rootCmd.AddCommand(newVPNCmd(c))
-	rootCmd.AddCommand(newUpdateCmd())
+	rootCmd.AddCommand(newUpdateCmd(c))
 
 	return rootCmd
 }
@@ -181,11 +186,12 @@ func initConfigWithViperCtx(c *config) error {
 	c.describePrinter = defaultToYAMLPrinter(c.out)
 
 	if c.log == nil {
-		logger, err := newLogger()
-		if err != nil {
-			return fmt.Errorf("error creating logger: %w", err)
+		opts := &slog.HandlerOptions{}
+		if viper.GetBool("debug") {
+			opts.Level = slog.LevelDebug
 		}
-		c.log = logger
+		jsonHandler := slog.NewJSONHandler(os.Stdout, opts)
+		c.log = slog.New(jsonHandler)
 	}
 
 	if c.client != nil {
@@ -196,12 +202,23 @@ func initConfigWithViperCtx(c *config) error {
 	if driverURL == "" && ctx.ApiURL != "" {
 		driverURL = ctx.ApiURL
 	}
+
+	var (
+		clientOptions []metalgo.ClientOption
+		err           error
+	)
+
 	hmacKey := viper.GetString("hmac")
 	if hmacKey == "" && ctx.HMAC != nil {
 		hmacKey = *ctx.HMAC
 	}
-	apiToken := viper.GetString("api-token")
+	hmacAuthType := viper.GetString("hmac-auth-type")
+	if hmacAuthType == "" && ctx.HMACAuthType != "" {
+		hmacAuthType = ctx.HMACAuthType
+	}
+	clientOptions = append(clientOptions, metalgo.HMACAuth(hmacKey, hmacAuthType))
 
+	apiToken := viper.GetString("api-token")
 	// if there is no api token explicitly specified we try to pull it out of the kubeconfig context
 	if apiToken == "" {
 		authContext, err := getAuthContext(viper.GetString("kubeconfig"))
@@ -211,8 +228,22 @@ func initConfigWithViperCtx(c *config) error {
 			apiToken = authContext.IDToken
 		}
 	}
+	clientOptions = append(clientOptions, metalgo.BearerToken(apiToken))
 
-	client, err := metalgo.NewDriver(driverURL, apiToken, hmacKey)
+	certificateAuthorityData := viper.GetString("certificate-authority-data")
+	if certificateAuthorityData == "" && ctx.CertificateAuthorityData != "" {
+		certificateAuthorityData = ctx.CertificateAuthorityData
+	}
+	if certificateAuthorityData != "" {
+		tlsClientConfig, err := createTLSClientConfig([]byte(certificateAuthorityData))
+		if err != nil {
+			return err
+		}
+
+		clientOptions = append(clientOptions, metalgo.TLSClientConfig(tlsClientConfig))
+	}
+
+	client, err := metalgo.NewClient(driverURL, clientOptions...)
 	if err != nil {
 		return err
 	}
@@ -224,22 +255,21 @@ func initConfigWithViperCtx(c *config) error {
 	return nil
 }
 
-func newLogger() (*zap.SugaredLogger, error) {
-	cfg := zap.NewProductionConfig()
-	if viper.GetBool("debug") {
-		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-	} else {
-		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-	}
-	cfg.EncoderConfig.TimeKey = "timestamp"
-	cfg.EncoderConfig.EncodeTime = zapcore.RFC3339TimeEncoder
-
-	l, err := cfg.Build()
+func createTLSClientConfig(caData []byte) (*tls.Config, error) {
+	caCert := make([]byte, base64.StdEncoding.DecodedLen(len(caData)))
+	_, err := base64.StdEncoding.Decode(caCert, caData)
 	if err != nil {
 		return nil, err
 	}
 
-	return l.Sugar(), nil
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tlsClientConfig := tls.Config{
+		RootCAs:    caCertPool,
+		MinVersion: tls.VersionTLS12,
+	}
+
+	return &tlsClientConfig, nil
 }
 
 func recursiveAutoGenDisable(cmd *cobra.Command) {

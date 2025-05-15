@@ -8,7 +8,7 @@ const (
 	Lock        = "🔒"
 	Question    = "❓"
 	Skull       = "💀"
-	VPN         = "🛡️ "
+	VPN         = "🛡"
 	Sleep       = "💤"
 )
 
@@ -23,7 +23,7 @@ Meaning of the emojis:
 ❓ Machine is in unknown condition. The metal-api does not receive phoned home events anymore or has never booted successfully.
 ⭕ Machine is in a provisioning crash loop. Flag can be reset through an API-triggered reboot or when the machine reaches the phoned home state.
 🚑 Machine reclaim has failed. The machine was deleted but it is not going back into the available machine pool.
-🛡️  Machine is connected to our VPN, ssh access only possible via this VPN.
+🛡  Machine is connected to our VPN, ssh access only possible via this VPN.
 💤 Machine is in shutdown state. The machine was powered off by the pool scaler because the partition's maximum pool size was exceeded.
 `
 }

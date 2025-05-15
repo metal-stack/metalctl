@@ -30,19 +30,19 @@ func newWhoamiCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(c.out, "UserId: %s\n", user.Name)
+			_, _ = fmt.Fprintf(c.out, "UserId: %s\n", user.Name)
 			if user.Tenant != "" {
-				fmt.Fprintf(c.out, "Tenant: %s\n", user.Tenant)
+				_, _ = fmt.Fprintf(c.out, "Tenant: %s\n", user.Tenant)
 			}
 			if user.Issuer != "" {
-				fmt.Fprintf(c.out, "Issuer: %s\n", user.Issuer)
+				_, _ = fmt.Fprintf(c.out, "Issuer: %s\n", user.Issuer)
 			}
-			fmt.Fprintf(c.out, "Groups:\n")
+			_, _ = fmt.Fprintf(c.out, "Groups:\n")
 			for _, g := range user.Groups {
-				fmt.Fprintf(c.out, " %s\n", g)
+				_, _ = fmt.Fprintf(c.out, " %s\n", g)
 			}
 
-			fmt.Fprintf(c.out, "Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
+			_, _ = fmt.Fprintf(c.out, "Expires at %s\n", time.Unix(parsedClaims.ExpiresAt, 0).Format("Mon Jan 2 15:04:05 MST 2006"))
 
 			return nil
 		},

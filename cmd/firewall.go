@@ -1,17 +1,12 @@
 package cmd
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
-	"net/netip"
 	"os"
-	"strings"
 	"time"
 
-	"github.com/avast/retry-go/v4"
 	"github.com/metal-stack/metal-go/api/client/firewall"
-	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
@@ -19,7 +14,7 @@ import (
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"tailscale.com/tsnet"
+	"gopkg.in/yaml.v3"
 )
 
 type firewallCmd struct {
@@ -27,7 +22,7 @@ type firewallCmd struct {
 }
 
 func newFirewallCmd(c *config) *cobra.Command {
-	w := firewallCmd{
+	w := &firewallCmd{
 		config: c,
 	}
 
@@ -51,6 +46,53 @@ func newFirewallCmd(c *config) *cobra.Command {
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			c.addMachineCreateFlags(cmd, "firewall")
 			cmd.Aliases = []string{"allocate"}
+			cmd.Flags().String("firewall-rules-file", "", `firewall rules specified in a yaml file
+
+Example:
+
+$ metalctl firewall create ..mandatory args.. --firewall-rules-file rules.yaml
+
+rules.yaml
+---
+egress:
+- comment: allow outgoing https
+  ports:
+  - 443
+  protocol: TCP
+  to:
+  - 0.0.0.0/0
+- comment: allow outgoing dns via tcp
+  ports:
+  - 53
+  protocol: TCP
+  to:
+  - 0.0.0.0/0
+- comment: allow outgoing dns and ntp via udp
+  ports:
+  - 53
+  - 123
+  protocol: UDP
+  to:
+  - 0.0.0.0/0
+ingress:
+- comment: allow incoming ssh only to one ip
+  ports:
+  - 22
+  protocol: TCP
+  from:
+  - 0.0.0.0/0
+  - 1.2.3.4/32
+  to:
+  - 212.34.83.19/32
+- comment: allow incoming https to all targets
+  ports:
+  - 80
+  - 433
+  protocol: TCP
+  from:
+  - 0.0.0.0/0
+
+`)
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().String("id", "", "ID to filter [optional]")
@@ -60,13 +102,13 @@ func newFirewallCmd(c *config) *cobra.Command {
 			cmd.Flags().String("project", "", "allocation project to filter [optional]")
 			cmd.Flags().String("image", "", "allocation image to filter [optional]")
 			cmd.Flags().String("hostname", "", "allocation hostname to filter [optional]")
-			cmd.Flags().StringSlice("mac", []string{}, "mac to filter [optional]")
+			cmd.Flags().String("mac", "", "mac to filter [optional]")
 			cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
-			must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.FirewallListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 		},
 	}
 
@@ -83,7 +125,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
-func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 	resp, err := c.client.Firewall().FindFirewall(firewall.NewFindFirewallParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -92,7 +134,12 @@ func (c firewallCmd) Get(id string) (*models.V1FirewallResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
+func (c *firewallCmd) List() ([]*models.V1FirewallResponse, error) {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	resp, err := c.client.Firewall().FindFirewalls(firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
 		ID:                 viper.GetString("id"),
 		PartitionID:        viper.GetString("partition"),
@@ -101,7 +148,7 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 		AllocationProject:  viper.GetString("project"),
 		AllocationImageID:  viper.GetString("image"),
 		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
+		NicsMacAddresses:   macs,
 		Tags:               viper.GetStringSlice("tags"),
 	}), nil)
 	if err != nil {
@@ -111,11 +158,11 @@ func (c firewallCmd) List() ([]*models.V1FirewallResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) Delete(_ string) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Delete(_ string) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support delete operation, use machine delete")
 }
 
-func (c firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1FirewallResponse, error) {
 	resp, err := c.client.Firewall().AllocateFirewall(firewall.NewAllocateFirewallParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -124,16 +171,15 @@ func (c firewallCmd) Create(rq *models.V1FirewallCreateRequest) (*models.V1Firew
 	return resp.Payload, nil
 }
 
-func (c firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
+func (c *firewallCmd) Update(rq any) (*models.V1FirewallResponse, error) {
 	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
 }
 
-func (c firewallCmd) ToCreate(r *models.V1FirewallResponse) (*models.V1FirewallCreateRequest, error) {
-	return firewallResponseToCreate(r), nil
-}
-
-func (c firewallCmd) ToUpdate(r *models.V1FirewallResponse) (any, error) {
-	return nil, fmt.Errorf("firewall entity does not support update operation, use machine update")
+func (c *firewallCmd) Convert(r *models.V1FirewallResponse) (string, *models.V1FirewallCreateRequest, any, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, firewallResponseToCreate(r), nil, nil
 }
 
 func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCreateRequest {
@@ -165,11 +211,17 @@ func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCr
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		FirewallRules:      allocation.FirewallRules,
 	}
 }
 
 func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, error) {
 	mcr, err := machineCreateRequest()
+	if err != nil {
+		return nil, fmt.Errorf("firewall create error:%w", err)
+	}
+
+	firewallRules, err := parseFirewallRulesFile()
 	if err != nil {
 		return nil, fmt.Errorf("firewall create error:%w", err)
 	}
@@ -189,7 +241,27 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Tags:               mcr.Tags,
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
+		FirewallRules:      firewallRules,
 	}, nil
+}
+func parseFirewallRulesFile() (*models.V1FirewallRules, error) {
+	if !viper.IsSet("firewall-rules-file") {
+		return nil, nil
+	}
+
+	firewallRulesFile := viper.GetString("firewall-rules-file")
+	if firewallRulesFile == "" {
+		return nil, nil
+	}
+
+	firewallRules, err := os.ReadFile(firewallRulesFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var fwrules models.V1FirewallRules
+	err = yaml.Unmarshal(firewallRules, &fwrules)
+	return &fwrules, err
 }
 
 func (c *firewallCmd) firewallSSH(args []string) (err error) {
@@ -223,7 +295,7 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 		}
 		for _, ip := range nw.Ips {
 			if portOpen(ip, "22", time.Second) {
-				err = SSHClient("metal", viper.GetString("identity"), ip, 22)
+				err = sshClient("metal", viper.GetString("identity"), ip, 22, nil, false)
 				if err != nil {
 					return err
 				}
@@ -234,75 +306,4 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 	}
 
 	return fmt.Errorf("no ip with a open ssh port found")
-}
-
-func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (err error) {
-	if firewall.Allocation == nil || firewall.Allocation.Project == nil {
-		return fmt.Errorf("firewall allocation or allocation.project is nil")
-	}
-	projectID := firewall.Allocation.Project
-	fmt.Fprintf(c.out, "accessing firewall through vpn ")
-	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
-		Pid:       projectID,
-		Ephemeral: pointer.Pointer(true),
-	}), nil)
-	if err != nil {
-		return fmt.Errorf("failed to get VPN auth key: %w", err)
-	}
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-	s := &tsnet.Server{
-		Hostname:   hostname,
-		ControlURL: *authKeyResp.Payload.Address,
-		AuthKey:    *authKeyResp.Payload.AuthKey,
-	}
-	defer s.Close()
-
-	// now disable logging, maybe altogether later
-	if !viper.GetBool("debug") {
-		s.Logf = func(format string, args ...any) {}
-	}
-
-	start := time.Now()
-	lc, err := s.LocalClient()
-	if err != nil {
-		return err
-	}
-	ctx := context.Background()
-
-	var firewallVPNIP netip.Addr
-	err = retry.Do(
-		func() error {
-			fmt.Printf(".")
-			status, err := lc.Status(ctx)
-			if err != nil {
-				return err
-			}
-			if status.Self.Online {
-				for _, peer := range status.Peer {
-					if strings.HasPrefix(peer.HostName, *firewall.ID) && len(peer.TailscaleIPs) > 0 {
-						firewallVPNIP = peer.TailscaleIPs[0]
-						fmt.Printf(" connected to %s (ip %s) took: %s\n", *firewall.ID, firewallVPNIP, time.Since(start))
-						return nil
-					}
-				}
-			}
-			return fmt.Errorf("did not get online")
-		},
-		retry.Attempts(50),
-	)
-	if err != nil {
-		return err
-	}
-	// disable logging after successful connect
-	s.Logf = func(format string, args ...any) {}
-
-	conn, err := lc.DialTCP(ctx, firewallVPNIP.String(), 22)
-	if err != nil {
-		return err
-	}
-
-	return sshClientWithConn("metal", hostname, viper.GetString("identity"), conn)
 }

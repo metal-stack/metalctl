@@ -23,7 +23,7 @@ func newLogoutCmd(c *config) *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintln(c.out, "OIDC session successfully logged out. Token is not revoked and is valid until expiration.")
+			_, _ = fmt.Fprintln(c.out, "OIDC session successfully logged out. Token is not revoked and is valid until expiration.")
 
 			return nil
 		},

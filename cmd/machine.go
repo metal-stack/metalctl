@@ -12,7 +12,7 @@ import (
 
 	"net/url"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
 	"github.com/metal-stack/metal-go/api/client/firmware"
 	"github.com/metal-stack/metal-go/api/client/machine"
@@ -21,6 +21,7 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
+	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,13 +45,32 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "partition", f: c.comp.PartitionListCompletion},
 		{flagName: "size", f: c.comp.SizeListCompletion},
 		{flagName: "project", f: c.comp.ProjectListCompletion},
+		{flagName: "rack", f: c.comp.MachineRackListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
 		{flagName: "image", f: c.comp.ImageListCompletion},
+		{flagName: "state", f: cobra.FixedCompletions([]string{
+			// empty does not work:
+			// models.V1FirewallFindRequestStateValueEmpty,
+			models.V1FirewallFindRequestStateValueLOCKED,
+			models.V1MachineFindRequestStateValueRESERVED,
+		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "role", f: cobra.FixedCompletions([]string{
+			models.V1MachineAllocationRoleFirewall,
+			models.V1MachineAllocationRoleMachine,
+		}, cobra.ShellCompDirectiveDefault)},
+		{flagName: "manufacturer", f: c.comp.MachineManufacturerCompletion},
+		{flagName: "product-part-number", f: c.comp.MachineProductPartNumberCompletion},
+		{flagName: "product-serial", f: c.comp.MachineProductSerialCompletion},
+		{flagName: "board-part-number", f: c.comp.MachineBoardPartNumberCompletion},
+		{flagName: "network-destination-prefixes", f: c.comp.NetworkDestinationPrefixesCompletion},
+		{flagName: "network-ids", f: c.comp.NetworkListCompletion},
 	}
 
 	cmd.Flags().String("id", "", "ID to filter [optional]")
 	cmd.Flags().String("partition", "", "partition to filter [optional]")
 	cmd.Flags().String("size", "", "size to filter [optional]")
+	cmd.Flags().String("rack", "", "rack to filter [optional]")
+	cmd.Flags().String("state", "", "state to filter [optional]")
 	cmd.Flags().String("name", "", "allocation name to filter [optional]")
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
 	cmd.Flags().String("image", "", "allocation image to filter [optional]")
@@ -58,17 +78,27 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("mac", "", "mac to filter [optional]")
 	cmd.Flags().StringSlice("tags", []string{}, "tags to filter, use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().Duration("last-event-error-threshold", lastEventErrorThresholdDefault, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+	cmd.Flags().String("role", "", "allocation role to filter [optional]")
+	cmd.Flags().String("board-part-number", "", "fru board part number to filter [optional]")
+	cmd.Flags().String("manufacturer", "", "fru manufacturer to filter [optional]")
+	cmd.Flags().String("product-part-number", "", "fru product part number to filter [optional]")
+	cmd.Flags().String("product-serial", "", "fru product serial to filter [optional]")
+	cmd.Flags().String("bmc-address", "", "bmc ipmi address (needs to include port) to filter [optional]")
+	cmd.Flags().String("bmc-mac", "", "bmc mac address to filter [optional]")
+	cmd.Flags().String("network-destination-prefixes", "", "network destination prefixes to filter [optional]")
+	cmd.Flags().String("network-ids", "", "network ids to filter [optional]")
+	cmd.Flags().String("network-ips", "", "network ips to filter [optional]")
 
 	for _, c := range listFlagCompletions {
 		c := c
-		must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
+		genericcli.Must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
 
 	cmd.Long = cmd.Short + "\n" + api.EmojiHelpText()
 }
 
 func newMachineCmd(c *config) *cobra.Command {
-	w := machineCmd{
+	w := &machineCmd{
 		config: c,
 	}
 
@@ -332,9 +362,17 @@ In case the machine did not register properly a direct ipmi console access is av
 		Short: `display machines which are in a potential bad state`,
 		Long:  `display machines which are in a potential bad state` + "\n" + api.EmojiHelpText(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.machineIssues(args)
+			return w.machineIssuesEvaluate(args)
 		},
 		ValidArgsFunction: c.comp.MachineListCompletion,
+	}
+	machineIssuesListCmd := &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   `list all machine issues that the metal-api can evaluate`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.machineIssuesList()
+		},
 	}
 	machineLogsCmd := &cobra.Command{
 		Use:     "logs <machine ID>",
@@ -356,45 +394,34 @@ In case the machine did not register properly a direct ipmi console access is av
 	}
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
-	w.listCmdFlags(machineIssuesCmd, api.DefaultLastErrorThreshold())
+	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
 
-	machineIssuesCmd.Flags().StringSlice("only", []string{}, "issue types to include [optional]")
-	machineIssuesCmd.Flags().StringSlice("omit", []string{}, "issue types to omit [optional]")
+	w.listCmdFlags(machineIssuesCmd, 0)
+	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
+
+	machineIssuesCmd.AddCommand(machineIssuesListCmd)
+	genericcli.AddSortFlag(machineIssuesListCmd, sorters.MachineIssueSorter())
+
+	machineIssuesCmd.Flags().StringSlice("only", nil, "issue types to include [optional]")
+	machineIssuesCmd.Flags().StringSlice("omit", nil, "issue types to omit [optional]")
 	machineIssuesCmd.Flags().String("severity", "", "issue severity to include [optional]")
 
-	var severities []string
-	for _, s := range api.AllSevereties() {
-		severities = append(severities, string(s))
-	}
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", cobra.FixedCompletions(severities, cobra.ShellCompDirectiveNoFileComp)))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("severity", c.comp.IssueSeverityCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", c.comp.IssueTypeCompletion))
+	genericcli.Must(machineIssuesCmd.RegisterFlagCompletionFunc("only", c.comp.IssueTypeCompletion))
 
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("omit", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var shortNames []string
-		for _, i := range api.AllIssues() {
-			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
-		}
-		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	}))
-	must(machineIssuesCmd.RegisterFlagCompletionFunc("only", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		var shortNames []string
-		for _, i := range api.AllIssues() {
-			shortNames = append(shortNames, string(i.Type)+"\t"+i.Description)
-		}
-		return shortNames, cobra.ShellCompDirectiveNoFileComp
-	}))
-
-	machineLogsCmd.Flags().Duration("last-event-error-threshold", api.DefaultLastErrorThreshold(), "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
+	machineLogsCmd.Flags().Duration("last-event-error-threshold", 7*24*time.Hour, "the duration up to how long in the past a machine last event error will be counted as an issue [optional]")
 
 	machineConsolePasswordCmd.Flags().StringP("reason", "", "", "a short description why access to the consolepassword is required")
 
 	machineUpdateBiosCmd.Flags().StringP("revision", "", "", "the BIOS revision")
 	machineUpdateBiosCmd.Flags().StringP("description", "", "", "the reason why the BIOS should be updated")
-	must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
+	genericcli.Must(machineUpdateBiosCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBiosRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBiosCmd)
 
 	machineUpdateBmcCmd.Flags().StringP("revision", "", "", "the BMC revision")
 	machineUpdateBmcCmd.Flags().StringP("description", "", "", "the reason why the BMC should be updated")
-	must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
+	genericcli.Must(machineUpdateBmcCmd.RegisterFlagCompletionFunc("revision", c.comp.FirmwareBmcRevisionCompletion))
 	machineUpdateFirmwareCmd.AddCommand(machineUpdateBmcCmd)
 
 	machinePowerCmd.AddCommand(machinePowerOnCmd)
@@ -419,10 +446,11 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineReinstallCmd.Flags().StringP("image", "", "", "id of the image to get installed. [required]")
 	machineReinstallCmd.Flags().StringP("description", "d", "", "description of the reinstallation. [optional]")
-	must(machineReinstallCmd.MarkFlagRequired("image"))
+	genericcli.Must(machineReinstallCmd.MarkFlagRequired("image"))
 
-	machineConsoleCmd.Flags().StringP("sshidentity", "p", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
+	machineConsoleCmd.Flags().StringP("sshidentity", "i", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
+	machineConsoleCmd.Flags().BoolP("admin", "", false, "authenticate as admin (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
 
@@ -464,6 +492,8 @@ If ~/.ssh/[id_ed25519.pub | id_rsa.pub | id_dsa.pub] is present it will be picke
 	cmd.Flags().StringSlice("tags", []string{}, "tags to add to the "+name+", use it like: --tags \"tag1,tag2\" or --tags \"tag3\".")
 	cmd.Flags().StringP("userdata", "", "", `cloud-init.io compatible userdata. [optional]
 Can be either the userdata as string, or pointing to the userdata file to use e.g.: "@/tmp/userdata.cfg".`)
+	cmd.Flags().StringSlice("dnsservers", []string{}, "dns servers to add to the machine or firewall. [optional]")
+	cmd.Flags().StringSlice("ntpservers", []string{}, "ntp servers to add to the machine or firewall. [optional]")
 
 	switch name {
 	case "machine":
@@ -498,17 +528,17 @@ MODE can be omitted or one of:
 	cmd.MarkFlagsRequiredTogether("size", "partition")
 
 	// Completion for arguments
-	must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
-	must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("networks", c.comp.NetworkListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("ips", c.comp.IpListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.MachineListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	genericcli.Must(cmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 }
 
-func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachine(machine.NewFindMachineParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -517,7 +547,7 @@ func (c machineCmd) Get(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
+func (c *machineCmd) List() ([]*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().FindMachines(machine.NewFindMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
 	if err != nil {
 		return nil, err
@@ -527,20 +557,37 @@ func (c machineCmd) List() ([]*models.V1MachineResponse, error) {
 }
 
 func machineFindRequestFromCLI() *models.V1MachineFindRequest {
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
 	return &models.V1MachineFindRequest{
-		ID:                 viper.GetString("id"),
-		PartitionID:        viper.GetString("partition"),
-		Sizeid:             viper.GetString("size"),
-		Name:               viper.GetString("name"),
-		AllocationProject:  viper.GetString("project"),
-		AllocationImageID:  viper.GetString("image"),
-		AllocationHostname: viper.GetString("hostname"),
-		NicsMacAddresses:   viper.GetStringSlice("mac"),
-		Tags:               viper.GetStringSlice("tags"),
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         viper.GetString("id"),
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
 	}
 }
 
-func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	if viper.GetBool("remove-from-database") {
 		if !viper.GetBool(forceFlag) {
 			return nil, fmt.Errorf("remove-from-database is set but you forgot to add --%s", forceFlag)
@@ -562,7 +609,7 @@ func (c machineCmd) Delete(id string) (*models.V1MachineResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().AllocateMachine(machine.NewAllocateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -571,7 +618,7 @@ func (c machineCmd) Create(rq *models.V1MachineAllocateRequest) (*models.V1Machi
 	return resp.Payload, nil
 }
 
-func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
+func (c *machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1MachineResponse, error) {
 	resp, err := c.client.Machine().UpdateMachine(machine.NewUpdateMachineParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -580,12 +627,11 @@ func (c machineCmd) Update(rq *models.V1MachineUpdateRequest) (*models.V1Machine
 	return resp.Payload, nil
 }
 
-func (c machineCmd) ToCreate(r *models.V1MachineResponse) (*models.V1MachineAllocateRequest, error) {
-	return machineResponseToCreate(r), nil
-}
-
-func (c machineCmd) ToUpdate(r *models.V1MachineResponse) (*models.V1MachineUpdateRequest, error) {
-	return machineResponseToUpdate(r), nil
+func (c *machineCmd) Convert(r *models.V1MachineResponse) (string, *models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.ID, machineResponseToCreate(r), machineResponseToUpdate(r), nil
 }
 
 func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAllocateRequest {
@@ -593,6 +639,8 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		ips        []string
 		networks   []*models.V1MachineAllocationNetwork
 		allocation = pointer.SafeDeref(r.Allocation)
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
 	)
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
@@ -600,6 +648,14 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
+	}
+
+	for _, s := range allocation.DNSServers {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: s.IP})
+	}
+
+	for _, s := range allocation.NtpServers {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: s.Address})
 	}
 
 	return &models.V1MachineAllocateRequest{
@@ -617,10 +673,14 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 		Tags:               r.Tags,
 		UserData:           base64.StdEncoding.EncodeToString([]byte(allocation.UserData)),
 		UUID:               pointer.SafeDeref(r.ID),
+		DNSServers:         dnsServers,
+		NtpServers:         ntpServers,
 	}
 }
 
 func machineResponseToUpdate(r *models.V1MachineResponse) *models.V1MachineUpdateRequest {
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		Description: pointer.PointerOrNil(pointer.SafeDeref(r.Allocation).Description),
 		ID:          r.ID,
@@ -638,7 +698,15 @@ func (c *machineCmd) createRequestFromCLI() (*models.V1MachineAllocateRequest, e
 }
 
 func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
+	var (
+		keys       []string
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
+	)
+
 	sshPublicKeyArgument := viper.GetString("sshpublickey")
+	dnsServersArgument := viper.GetStringSlice("dnsservers")
+	ntpServersArgument := viper.GetStringSlice("ntpservers")
 
 	if strings.HasPrefix(sshPublicKeyArgument, "@") {
 		var err error
@@ -660,7 +728,6 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		}
 	}
 
-	var keys []string
 	if sshPublicKeyArgument != "" {
 		keys = append(keys, sshPublicKeyArgument)
 	}
@@ -683,6 +750,14 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		return nil, err
 	}
 
+	for _, s := range dnsServersArgument {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+	}
+
+	for _, s := range ntpServersArgument {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+	}
+
 	mcr := &models.V1MachineAllocateRequest{
 		Description: viper.GetString("description"),
 		Partitionid: pointer.Pointer(viper.GetString("partition")),
@@ -697,6 +772,8 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 		UserData:    userDataArgument,
 		Networks:    networks,
 		Ips:         viper.GetStringSlice("ips"),
+		DNSServers:  dnsServers,
+		NtpServers:  ntpServers,
 	}
 
 	if viper.IsSet("filesystemlayout") {
@@ -734,6 +811,8 @@ func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdat
 		newTags = append(newTags, t)
 	}
 
+	// SSHPublicKeys should can not be updated by metalctl
+	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
 		ID:          pointer.Pointer(id),
 		Description: pointer.Pointer(viper.GetString("description")),
@@ -757,7 +836,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
+	_, _ = fmt.Fprintf(c.out, "%s\n", pointer.SafeDeref(resp.Payload.ConsolePassword))
 
 	return nil
 }
@@ -898,16 +977,16 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	printPlan := revision == "" || !revisionAvailable
 	if printPlan {
-		fmt.Fprintln(c.out, "Available:")
+		_, _ = fmt.Fprintln(c.out, "Available:")
 		for _, rev := range rr {
 			if rev == currentVersion {
-				fmt.Fprintf(c.out, "%s (current)\n", rev)
+				_, _ = fmt.Fprintf(c.out, "%s (current)\n", rev)
 			} else {
-				fmt.Fprintln(c.out, rev)
+				_, _ = fmt.Fprintln(c.out, rev)
 			}
 		}
 		if !containsCurrentVersion {
-			fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
+			_, _ = fmt.Fprintf(c.out, "---\nCurrent %s version: %s\n", strings.ToUpper(string(kind)), currentVersion)
 		}
 	}
 
@@ -920,9 +999,9 @@ func (c *machineCmd) machineUpdateFirmware(kind string, machineID, vendor, board
 
 	switch kind {
 	case models.V1MachineUpdateFirmwareRequestKindBios:
-		fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
+		_, _ = fmt.Fprintln(c.out, "It is recommended to power off the machine before updating the BIOS. This command will power on your machine automatically after the update or trigger a reboot.\n\nThe update may take a couple of minutes (up to ~10 minutes). Please wait until the machine powers on / reboots automatically as otherwise the update is still progressing or an error occurred during the update.")
 	case models.V1MachineUpdateFirmwareRequestKindBmc:
-		fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
+		_, _ = fmt.Fprintln(c.out, "The update may take a couple of minutes (up to ~10 minutes). You can look up the result through the server's BMC interface.")
 	default:
 		return fmt.Errorf("unsupported firmware kind: %s", kind)
 	}
@@ -1124,9 +1203,9 @@ func (c *machineCmd) machineLogs(args []string) error {
 			return nil
 		}
 
-		fmt.Fprintln(c.out)
-		fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
-		fmt.Fprintln(c.out)
+		_, _ = fmt.Fprintln(c.out)
+		_, _ = fmt.Fprintf(c.out, "Recent last error (%s ago):\n", timeSince.String())
+		_, _ = fmt.Fprintln(c.out)
 
 		return c.listPrinter.Print(resp.Events.LastErrorEvent)
 	}
@@ -1164,7 +1243,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		usr := *ipmi.User
 		if *ipmi.User == "" {
-			fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+			_, _ = fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 		}
 		ipmiuser := viper.GetString("ipmiuser")
 		if ipmiuser != "" {
@@ -1172,7 +1251,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}
 		password := *ipmi.Password
 		if *ipmi.Password == "" {
-			fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+			_, _ = fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 		}
 
 		ipmipassword := viper.GetString("ipmipassword")
@@ -1189,7 +1268,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		}()
 
 		args := []string{"-I", intf, "-H", hostAndPort[0], "-p", hostAndPort[1], "-U", usr, "-E", "sol", "activate"}
-		fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
+		_, _ = fmt.Fprintf(c.out, "connecting to console with:\n%s %s\nExit with ~.\n\n", path, strings.Join(args, " "))
 		cmd := exec.Command(path, args...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -1197,27 +1276,18 @@ func (c *machineCmd) machineConsole(args []string) error {
 		return cmd.Run()
 	}
 
-	key := viper.GetString("sshidentity")
-	if key == "" {
-		key, err = searchSSHKey()
-		if err != nil {
-			return fmt.Errorf("machine console error:%w", err)
-		}
-	}
-
 	parsedurl, err := url.Parse(c.driverURL)
 	if err != nil {
 		return err
 	}
+
+	var token string
 	authContext, err := getAuthContext(viper.GetString("kubeconfig"))
-	if err != nil {
-		return err
+	if err == nil {
+		token = authContext.IDToken
 	}
-	err = os.Setenv("LC_METAL_STACK_OIDC_TOKEN", authContext.IDToken)
-	if err != nil {
-		return err
-	}
-	err = SSHClient(id, key, parsedurl.Host, bmcConsolePort)
+
+	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &token, viper.GetBool("admin"))
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}
@@ -1237,10 +1307,12 @@ func (c *machineCmd) machineIpmi(args []string) error {
 			return err
 		}
 
-		hidden := "<hidden>"
-		resp.Payload.Ipmi.Password = &hidden
-
 		return c.describePrinter.Print(resp.Payload)
+	}
+
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
 	}
 
 	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
@@ -1248,7 +1320,7 @@ func (c *machineCmd) machineIpmi(args []string) error {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	err = sorters.MachineIPMISorter().SortBy(resp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
@@ -1256,64 +1328,109 @@ func (c *machineCmd) machineIpmi(args []string) error {
 	return c.listPrinter.Print(resp.Payload)
 }
 
-func (c *machineCmd) machineIssues(args []string) error {
-	resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+func (c *machineCmd) machineIssuesList() error {
+	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
 	if err != nil {
 		return err
 	}
 
-	err = sorters.MachineIPMISorter().SortBy(resp.Payload)
+	sortKeys, err := genericcli.ParseSortFlags()
 	if err != nil {
 		return err
 	}
 
-	var (
-		severity = api.IssueSeverityMinor
-		only     []api.IssueType
-		omit     []api.IssueType
-	)
-
-	for _, o := range viper.GetStringSlice("only") {
-		only = append(only, api.IssueType(o))
-	}
-	for _, o := range viper.GetStringSlice("omit") {
-		omit = append(omit, api.IssueType(o))
-	}
-
-	if viper.IsSet("severity") {
-		severity, err = api.SeverityFromString(viper.GetString("severity"))
-		if err != nil {
-			return err
-		}
-	}
-
-	issues, err := api.FindIssues(&api.IssueConfig{
-		Machines:           resp.Payload,
-		Severity:           severity,
-		Only:               only,
-		Omit:               omit,
-		LastErrorThreshold: viper.GetDuration("last-event-error-threshold"),
-	})
+	err = sorters.MachineIssueSorter().SortBy(issuesResp.Payload, sortKeys...)
 	if err != nil {
 		return err
 	}
 
+	return c.listPrinter.Print(issuesResp.Payload)
+}
+
+func (c *machineCmd) machineIssuesEvaluate(args []string) error {
+	var id string
 	if len(args) > 0 {
-		id, err := genericcli.GetExactlyOneArg(args)
+		var err error
+		id, err = genericcli.GetExactlyOneArg(args)
+		if err != nil {
+			return err
+		}
+	}
+
+	issuesResp, err := c.client.Machine().ListIssues(machine.NewListIssuesParams(), nil)
+	if err != nil {
+		return err
+	}
+
+	var macs []string
+	if viper.IsSet("mac") {
+		macs = pointer.WrapInSlice(viper.GetString("mac"))
+	}
+
+	evalResp, err := c.client.Machine().Issues(machine.NewIssuesParams().WithBody(&models.V1MachineIssuesRequest{
+		AllocationHostname:         viper.GetString("hostname"),
+		AllocationImageID:          viper.GetString("image"),
+		AllocationProject:          viper.GetString("project"),
+		AllocationRole:             viper.GetString("role"),
+		FruBoardPartNumber:         viper.GetString("board-part-number"),
+		FruProductManufacturer:     viper.GetString("manufacturer"),
+		FruProductPartNumber:       viper.GetString("product-part-number"),
+		FruProductSerial:           viper.GetString("product-serial"),
+		ID:                         id,
+		IpmiAddress:                viper.GetString("bmc-address"),
+		IpmiMacAddress:             viper.GetString("bmc-mac"),
+		Name:                       viper.GetString("name"),
+		NetworkDestinationPrefixes: viper.GetStringSlice("network-destination-prefixes"),
+		NetworkIds:                 viper.GetStringSlice("network-ids"),
+		NetworkIps:                 viper.GetStringSlice("network-ips"),
+		NicsMacAddresses:           macs,
+		PartitionID:                viper.GetString("partition"),
+		Rackid:                     viper.GetString("rack"),
+		Sizeid:                     viper.GetString("size"),
+		StateValue:                 viper.GetString("state"),
+		Tags:                       viper.GetStringSlice("tags"),
+
+		LastErrorThreshold: pointer.PointerOrNil(int64(viper.GetDuration("last-event-error-threshold"))),
+		Omit:               viper.GetStringSlice("omit"),
+		Only:               viper.GetStringSlice("only"),
+		Severity:           pointer.PointerOrNil(viper.GetString("severity")),
+	}), nil)
+	if err != nil {
+		return err
+	}
+
+	var machines []*models.V1MachineIPMIResponse
+	if len(args) > 0 {
+		machineResp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
 		if err != nil {
 			return err
 		}
 
-		mWithIssues := issues.Get(id)
-		if mWithIssues == nil {
-			fmt.Fprintf(c.out, "machine with id %q has no issues\n", id)
-			return nil
+		machines = append(machines, machineResp.Payload)
+	} else {
+		machinesResp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+		if err != nil {
+			return err
 		}
 
-		return c.describePrinter.Print(mWithIssues.Issues)
+		machines = machinesResp.Payload
 	}
 
-	return c.listPrinter.Print(issues)
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineIPMISorter().SortBy(machines, sortKeys...)
+	if err != nil {
+		return err
+	}
+
+	return c.listPrinter.Print(&tableprinters.MachinesAndIssues{
+		Machines:         machines,
+		Issues:           issuesResp.Payload,
+		EvaluationResult: evalResp.Payload,
+	})
 }
 
 func (c *machineCmd) machineIpmiEvents(args []string) error {
@@ -1344,7 +1461,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 	}
 	usr := *ipmi.User
 	if *ipmi.User == "" {
-		fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
+		_, _ = fmt.Fprintf(c.out, "no ipmi user stored, please specify with --ipmiuser\n")
 	}
 	ipmiuser := viper.GetString("ipmiuser")
 	if ipmiuser != "" {
@@ -1353,7 +1470,7 @@ func (c *machineCmd) machineIpmiEvents(args []string) error {
 
 	password := *ipmi.Password
 	if *ipmi.Password == "" {
-		fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
+		_, _ = fmt.Fprintf(c.out, "no ipmi password stored, please specify with --ipmipassword\n")
 	}
 	ipmipassword := viper.GetString("ipmipassword")
 	if ipmipassword != "" {

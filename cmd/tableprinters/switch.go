@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
 
@@ -19,40 +20,79 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 		rows [][]string
 	)
 
-	header := []string{"ID", "Partition", "Rack", "OS", "Status"}
+	header := []string{"ID", "Partition", "Rack", "OS", "Status", "Last Sync"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "OS", "IP", "Mode", "Last Sync", "Sync Duration", "Last Sync Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
+
+		t.t.MutateTable(func(table *tablewriter.Table) {
+			table.SetAutoWrapText(false)
+		})
 	}
 
 	for _, s := range data {
-		id := pointer.SafeDeref(s.ID)
-		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
-		rack := pointer.SafeDeref(s.RackID)
+		var (
+			id        = pointer.SafeDeref(s.ID)
+			partition = pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
+			rack      = pointer.SafeDeref(s.RackID)
 
-		syncAgeStr := ""
-		syncDurStr := ""
-		syncError := ""
-		shortStatus := nbr
-		var syncTime time.Time
+			syncTime    time.Time
+			syncLast    = ""
+			syncDurStr  = ""
+			lastError   = ""
+			shortStatus = nbr
+			allup       = true
+		)
+
+		nicmap := make(map[string]*models.V1SwitchNic)
+		for _, n := range s.Nics {
+			if n.Name != nil {
+				nicmap[*n.Name] = n
+			}
+		}
+		for _, c := range s.Connections {
+			if c.Nic != nil && c.Nic.Actual != nil {
+				allup = allup && *c.Nic.Actual == "UP"
+				if !allup {
+					desired := pointer.SafeDeref(nicmap[pointer.SafeDeref(c.Nic.Name)].Actual)
+					lastError = fmt.Sprintf("%q is %s", pointer.SafeDeref(c.Nic.Name), *c.Nic.Actual)
+					if desired != *c.Nic.Actual {
+						lastError = fmt.Sprintf("%q is %s but should be %s", pointer.SafeDeref(c.Nic.Name), *c.Nic.Actual, desired)
+					}
+					break
+				}
+			}
+		}
+
 		if s.LastSync != nil {
 			syncTime = time.Time(*s.LastSync.Time)
 			syncAge := time.Since(syncTime)
 			syncDur := time.Duration(*s.LastSync.Duration).Round(time.Millisecond)
+
 			if syncAge >= time.Minute*10 || syncDur >= 30*time.Second {
-				shortStatus += color.RedString(dot)
+				shortStatus = color.RedString(dot)
 			} else if syncAge >= time.Minute*1 || syncDur >= 20*time.Second {
-				shortStatus += color.YellowString(dot)
+				shortStatus = color.YellowString(dot)
 			} else {
-				shortStatus += color.GreenString(dot)
+				shortStatus = color.GreenString(dot)
+				if !allup {
+					shortStatus = color.YellowString(dot)
+				}
 			}
 
-			syncAgeStr = humanizeDuration(syncAge)
+			syncLast = humanizeDuration(syncAge) + " ago"
 			syncDurStr = fmt.Sprintf("%v", syncDur)
 		}
 
 		if s.LastSyncError != nil {
 			errorTime := time.Time(*s.LastSyncError.Time)
-			syncError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+			// after 7 days we do not show sync errors anymore
+			if !errorTime.IsZero() && time.Since(errorTime) < 7*24*time.Hour {
+				lastError = fmt.Sprintf("%s ago: %s", humanizeDuration(time.Since(errorTime)), s.LastSyncError.Error)
+
+				if errorTime.After(time.Time(pointer.SafeDeref(pointer.SafeDeref(s.LastSync).Time))) {
+					shortStatus = color.RedString(dot)
+				}
+			}
 		}
 
 		var mode string
@@ -66,6 +106,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 		os := ""
 		osIcon := ""
+		metalCore := ""
 		if s.Os != nil {
 			switch strings.ToLower(s.Os.Vendor) {
 			case "cumulus":
@@ -78,14 +119,16 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 			os = s.Os.Vendor
 			if s.Os.Version != "" {
-				os = os + "/" + s.Os.Version
+				os = fmt.Sprintf("%s (%s)", os, s.Os.Version)
 			}
+			// metal core version is very long: v0.9.1 (1d5e42ea), tags/v0.9.1-0-g1d5e42e, go1.20.5
+			metalCore = strings.Split(s.Os.MetalCoreVersion, ",")[0]
 		}
 
 		if wide {
-			rows = append(rows, []string{id, partition, rack, os, s.ManagementIP, mode, syncAgeStr, syncDurStr, syncError})
+			rows = append(rows, []string{id, partition, rack, os, metalCore, s.ManagementIP, mode, syncLast, syncDurStr, lastError})
 		} else {
-			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus})
+			rows = append(rows, []string{id, partition, rack, osIcon, shortStatus, syncLast})
 		}
 	}
 
@@ -102,18 +145,29 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 		rows [][]string
 	)
 
-	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial"}
+	header := []string{"ID", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Product Serial", "Chassis Serial"}
+	if wide {
+		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial", "Chassis Serial"}
+	}
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	for _, s := range data.SS {
 		id := pointer.SafeDeref(s.ID)
 		partition := pointer.SafeDeref(pointer.SafeDeref(s.Partition).ID)
 		rack := pointer.SafeDeref(s.RackID)
 
-		rows = append(rows, []string{id, "", "", partition, rack})
+		if wide {
+			rows = append(rows, []string{id, "", "", "", partition, rack})
+		} else {
+			rows = append(rows, []string{id, "", "", partition, rack})
+		}
 
 		conns := s.Connections
-		if viper.IsSet("size") {
-			conns = []*models.V1SwitchConnection{}
+		if viper.IsSet("size") || viper.IsSet("machine-id") {
+			filteredConns := []*models.V1SwitchConnection{}
+
 			for _, conn := range s.Connections {
 				conn := conn
 
@@ -122,10 +176,16 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 					continue
 				}
 
-				if pointer.SafeDeref(m.Size.ID) == viper.GetString("size") {
-					conns = append(conns, conn)
+				if viper.IsSet("machine-id") && pointer.SafeDeref(m.ID) == viper.GetString("machine-id") {
+					filteredConns = append(filteredConns, conn)
+				}
+
+				if viper.IsSet("size") && pointer.SafeDeref(m.Size.ID) == viper.GetString("size") {
+					filteredConns = append(filteredConns, conn)
 				}
 			}
+
+			conns = filteredConns
 		}
 
 		sort.Slice(conns, switchInterfaceNameLessFunc(conns))
@@ -147,15 +207,50 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 				identifier = pointer.SafeDeref(conn.Nic.Mac)
 			}
 
-			rows = append(rows, []string{
-				fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
-				pointer.SafeDeref(pointer.SafeDeref(conn.Nic).Name),
-				identifier,
-				pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
-				m.Rackid,
-				pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
-				pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
-			})
+			nic := pointer.SafeDeref(conn.Nic)
+			nicname := pointer.SafeDeref(nic.Name)
+			nicstate := pointer.SafeDeref(nic.Actual)
+			bgpstate := pointer.SafeDeref(nic.BgpPortState)
+			if nicstate != "UP" {
+				nicname = fmt.Sprintf("%s (%s)", nicname, color.RedString(nicstate))
+			}
+			if bgpstate.BgpState != nil && wide {
+				switch *bgpstate.BgpState {
+				case "Established":
+					uptime := time.Since(time.Unix(*bgpstate.BgpTimerUpEstablished, 0)).Round(time.Second)
+					nicname = fmt.Sprintf("%s (BGP:%s(%s))", nicname, *bgpstate.BgpState, uptime)
+				default:
+					nicname = fmt.Sprintf("%s (BGP:%s)", nicname, *bgpstate.BgpState)
+				}
+			}
+
+			if wide {
+				emojis, _ := t.getMachineStatusEmojis(m.Liveliness, m.Events, m.State, pointer.SafeDeref(m.Allocation).Vpn)
+
+				rows = append(rows, []string{
+					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+					emojis,
+					nicname,
+					identifier,
+					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+					m.Rackid,
+					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+					pointer.SafeDeref(pointer.SafeDeref(m.Allocation).Hostname),
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartSerial,
+				})
+			} else {
+				rows = append(rows, []string{
+					fmt.Sprintf("%s%s", prefix, pointer.SafeDeref(m.ID)),
+					nicname,
+					identifier,
+					pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID),
+					m.Rackid,
+					pointer.SafeDeref(pointer.SafeDeref(m.Size).ID),
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ProductSerial,
+					pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartSerial,
+				})
+			}
 		}
 	}
 

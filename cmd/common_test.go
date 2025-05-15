@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"golang.org/x/exp/slices"
+	"slices"
 
-	"bou.ke/monkey"
 	"github.com/google/go-cmp/cmp"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -22,14 +23,17 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
+	"github.com/undefinedlabs/go-mpatch"
 	"gopkg.in/yaml.v3"
 )
 
 var testTime = time.Date(2022, time.May, 19, 1, 2, 3, 4, time.UTC)
 
 func init() {
-	_ = monkey.Patch(time.Now, func() time.Time { return testTime })
+	_, err := mpatch.PatchMethod(time.Now, func() time.Time { return testTime })
+	if err != nil {
+		panic(err)
+	}
 }
 
 type test[R any] struct {
@@ -62,6 +66,8 @@ func (c *test[R]) testCmd(t *testing.T) {
 	require.NotEmpty(t, c.name, "test name must not be empty")
 	require.NotEmpty(t, c.cmd, "cmd must not be empty")
 
+	t.Setenv(strings.ToUpper(binaryName)+"_FORCE_COLOR", strconv.FormatBool(false))
+
 	if c.wantErr != nil {
 		_, _, config := c.newMockConfig(t)
 
@@ -87,7 +93,7 @@ func (c *test[R]) testCmd(t *testing.T) {
 			os.Args = append(os.Args, format.Args()...)
 
 			err := cmd.Execute()
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			format.Validate(t, out.Bytes())
 		})
@@ -108,7 +114,7 @@ func (c *test[R]) newMockConfig(t *testing.T) (*client.MetalMockClient, *bytes.B
 			fs:     fs,
 			client: client,
 			out:    &out,
-			log:    zaptest.NewLogger(t).Sugar(),
+			log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
 			comp:   &completion.Completion{},
 		}
 	)
@@ -127,7 +133,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 				return nil
 			}
 		}
-		return fmt.Errorf("not exhaustive: does not contain " + prefix)
+		return fmt.Errorf("not exhaustive: does not contain %s", prefix)
 	}
 
 	root := newRootCmd(&config{comp: &completion.Completion{}})
@@ -138,7 +144,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		if slices.Contains(exclude, f.Name) {
 			return
 		}
-		assert.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+		require.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
 	})
 }
 
@@ -319,3 +325,34 @@ func validateTableRows(t *testing.T, want, got string) {
 		}
 	}
 }
+
+func appendFromFileCommonArgs(args ...string) []string {
+	return append(args, []string{"-f", "/file.yaml", "--skip-security-prompts", "--bulk-output"}...)
+}
+
+func commonExcludedFileArgs() []string {
+	return []string{"file", "bulk-output", "skip-security-prompts", "timestamps"}
+}
+
+// This might be helpful if you want to debug metalctl code:
+//
+// func Test_DebugTemplate(t *testing.T) {
+// 	_, client := client.NewMetalMockClient(t, nil)
+
+// 	var (
+// 		out    bytes.Buffer
+// 		config = &config{
+// 			fs:     afero.NewOsFs(),
+// 			client: client,
+// 			out:    &out,
+// 			log:    slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{})),
+// 			comp:   &completion.Completion{},
+// 		}
+// 	)
+
+// 	cmd := newRootCmd(config)
+// 	os.Setenv("KUBECONFIG", "<your-path>")
+// 	os.Args = []string{"metalctl", "machine", "console", "..."}
+// 	err := cmd.Execute()
+// 	require.NoError(t, err)
+// }

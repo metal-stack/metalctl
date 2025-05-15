@@ -33,14 +33,21 @@ var (
 		Projectid:           "",
 		Shared:              false,
 		Underlay:            pointer.Pointer(true),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(100)),
-			AvailablePrefixes: pointer.Pointer(int64(200)),
-			UsedIps:           pointer.Pointer(int64(300)),
-			UsedPrefixes:      pointer.Pointer(int64(400)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(100)),
+				AvailablePrefixes: pointer.Pointer(int64(200)),
+				UsedIps:           pointer.Pointer(int64(300)),
+				UsedPrefixes:      pointer.Pointer(int64(400)),
+			},
 		},
-		Vrf:       50,
-		Vrfshared: true,
+		Vrf:                        50,
+		Vrfshared:                  true,
+		AdditionalAnnouncableCIDRs: []string{"10.240.0.0/12"},
+		Defaultchildprefixlength: map[string]int64{
+			"IPv4": 22,
+			"IPv6": 96,
+		},
 	}
 	network1child = &models.V1NetworkResponse{
 		Description:         "child 1",
@@ -56,14 +63,17 @@ var (
 		Projectid:           "project-1",
 		Shared:              false,
 		Underlay:            pointer.Pointer(false),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(100)),
-			AvailablePrefixes: pointer.Pointer(int64(200)),
-			UsedIps:           pointer.Pointer(int64(300)),
-			UsedPrefixes:      pointer.Pointer(int64(400)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(100)),
+				AvailablePrefixes: pointer.Pointer(int64(200)),
+				UsedIps:           pointer.Pointer(int64(300)),
+				UsedPrefixes:      pointer.Pointer(int64(400)),
+			},
 		},
-		Vrf:       50,
-		Vrfshared: true,
+		Vrf:                        50,
+		Vrfshared:                  true,
+		AdditionalAnnouncableCIDRs: []string{},
 	}
 	network2 = &models.V1NetworkResponse{
 		Description:         "network 2",
@@ -79,14 +89,17 @@ var (
 		Projectid:           "project-1",
 		Shared:              false,
 		Underlay:            pointer.Pointer(false),
-		Usage: &models.V1NetworkUsage{
-			AvailableIps:      pointer.Pointer(int64(400)),
-			AvailablePrefixes: pointer.Pointer(int64(300)),
-			UsedIps:           pointer.Pointer(int64(200)),
-			UsedPrefixes:      pointer.Pointer(int64(100)),
+		Consumption: &models.V1NetworkConsumption{
+			IPV4: &models.V1NetworkUsage{
+				AvailableIps:      pointer.Pointer(int64(400)),
+				AvailablePrefixes: pointer.Pointer(int64(300)),
+				UsedIps:           pointer.Pointer(int64(200)),
+				UsedPrefixes:      pointer.Pointer(int64(100)),
+			},
 		},
-		Vrf:       60,
-		Vrfshared: true,
+		Vrf:                        60,
+		Vrfshared:                  true,
+		AdditionalAnnouncableCIDRs: []string{},
 	}
 )
 
@@ -117,19 +130,16 @@ func Test_NetworkCmd_MultiResult(t *testing.T) {
 				network2,
 			},
 			wantTable: pointer.Pointer(`
-ID          NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES       IPS
-nw1         network-1               partition-1   true    false    prefix     ●    ●
-└─╴child1   network-1   project-1   partition-1   true    false    prefix     ●    ●
-nw2         network-2   project-1   partition-1   false   false    prefix          ●
+ID          NAME        PROJECT     PARTITION     NAT     SHARED       PREFIXES   IP USAGE 
+nw1         network-1               partition-1   true    false    ◕   prefix     ◕          
+└─╴child1   network-1   project-1   partition-1   true    false    ◕   prefix     ◕          
+nw2         network-2   project-1   partition-1   false   false    ●   prefix     ●
 `),
 			wantWideTable: pointer.Pointer(`
-ID          DESCRIPTION   NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES   USAGE              PRIVATESUPER   ANNOTATIONS
-nw1         network 1     network-1               partition-1   true    false    prefix     IPs:     300/100   true           a=b
-																							Prefixes:400/200
-└─╴child1   child 1       network-1   project-1   partition-1   true    false    prefix     IPs:     300/100   false          e=f
-																							Prefixes:400/200
-nw2         network 2     network-2   project-1   partition-1   false   false    prefix     IPs:     200/400   false          c=d
-																							Prefixes:100/300
+ID          DESCRIPTION   NAME        PROJECT     PARTITION     NAT     SHARED   PREFIXES   PRIVATESUPER   ANNOTATIONS 
+nw1         network 1     network-1               partition-1   true    false    prefix     true           a=b           
+└─╴child1   child 1       network-1   project-1   partition-1   true    false    prefix     false          e=f           
+nw2         network 2     network-2   project-1   partition-1   false   false    prefix     false          c=d
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -138,17 +148,17 @@ nw1 network-1
 nw2 network-2
 `),
 			wantMarkdown: pointer.Pointer(`
-|    ID     |   NAME    |  PROJECT  |  PARTITION  |  NAT  | SHARED | PREFIXES |   | IPS |
-|-----------|-----------|-----------|-------------|-------|--------|----------|---|-----|
-| nw1       | network-1 |           | partition-1 | true  | false  | prefix   | ● |  ●  |
-| └─╴child1 | network-1 | project-1 | partition-1 | true  | false  | prefix   | ● |  ●  |
-| nw2       | network-2 | project-1 | partition-1 | false | false  | prefix   |   |  ●  |
+|    ID     |   NAME    |  PROJECT  |  PARTITION  |  NAT  | SHARED |   | PREFIXES | IP USAGE |
+|-----------|-----------|-----------|-------------|-------|--------|---|----------|----------|
+| nw1       | network-1 |           | partition-1 | true  | false  | ◕ | prefix   | ◕        |
+| └─╴child1 | network-1 | project-1 | partition-1 | true  | false  | ◕ | prefix   | ◕        |
+| nw2       | network-2 | project-1 | partition-1 | false | false  | ● | prefix   | ●        |
 `),
 		},
 		{
 			name: "apply",
 			cmd: func(want []*models.V1NetworkResponse) []string {
-				return []string{"network", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("network", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -156,7 +166,7 @@ nw2 network-2
 			mocks: &client.MetalMockFns{
 				Network: func(mock *mock.Mock) {
 					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(nil, &network.CreateNetworkConflict{}).Once()
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1)).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network2))), nil).Return(&network.CreateNetworkCreated{
@@ -167,6 +177,63 @@ nw2 network-2
 			want: []*models.V1NetworkResponse{
 				network1,
 				network2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return appendFromFileCommonArgs("network", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return appendFromFileCommonArgs("network", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1)).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1NetworkResponse) []string {
+				return appendFromFileCommonArgs("network", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1NetworkResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Network: func(mock *mock.Mock) {
+					mock.On("DeleteNetwork", testcommon.MatchIgnoreContext(t, network.NewDeleteNetworkParams().WithID(*network1.ID)), nil).Return(&network.DeleteNetworkOK{
+						Payload: network1,
+					}, nil)
+				},
+			},
+			want: []*models.V1NetworkResponse{
+				network1,
 			},
 		},
 	}
@@ -191,22 +258,21 @@ func Test_NetworkCmd_SingleResult(t *testing.T) {
 			},
 			want: network1,
 			wantTable: pointer.Pointer(`
-ID    NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES       IPS
-nw1   network-1             partition-1   true   false    prefix     ●    ●
+ID    NAME        PROJECT   PARTITION     NAT    SHARED       PREFIXES   IP USAGE 
+nw1   network-1             partition-1   true   false    ◕   prefix     ◕
 		`),
 			wantWideTable: pointer.Pointer(`
-ID    DESCRIPTION   NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES   USAGE              PRIVATESUPER   ANNOTATIONS
-nw1   network 1     network-1             partition-1   true   false    prefix     IPs:     300/100   true           a=b
-																					Prefixes:400/200
+ID    DESCRIPTION   NAME        PROJECT   PARTITION     NAT    SHARED   PREFIXES   PRIVATESUPER   ANNOTATIONS 
+nw1   network 1     network-1             partition-1   true   false    prefix     true           a=b
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 nw1 network-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID  |   NAME    | PROJECT |  PARTITION  | NAT  | SHARED | PREFIXES |   | IPS |
-|-----|-----------|---------|-------------|------|--------|----------|---|-----|
-| nw1 | network-1 |         | partition-1 | true | false  | prefix   | ● |  ●  |
+| ID  |   NAME    | PROJECT |  PARTITION  | NAT  | SHARED |   | PREFIXES | IP USAGE |
+|-----|-----------|---------|-------------|------|--------|---|----------|----------|
+| nw1 | network-1 |         | partition-1 | true | false  | ◕ | prefix   | ◕        |
 		`),
 		},
 		{
@@ -240,8 +306,11 @@ nw1 network-1
 					"--underlay", strconv.FormatBool(*want.Underlay),
 					"--vrf", strconv.FormatInt(want.Vrf, 10),
 					"--vrfshared", strconv.FormatBool(want.Vrfshared),
+					"--additional-announcable-cidrs", "10.240.0.0/12",
+					"--default-ipv4-child-prefix-length", "22",
+					"--default-ipv6-child-prefix-length", "96",
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -265,8 +334,9 @@ nw1 network-1
 					fmt.Sprintf("--shared=%t", want.Shared),
 					"--labels", "a=b",
 					"--name", want.Name,
+					"--additional-announcable-cidrs", "10.240.0.0/12",
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
@@ -280,48 +350,16 @@ nw1 network-1
 						Payload: networkToUpdate,
 					}, nil)
 					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(&models.V1NetworkUpdateRequest{
-						ID:                  network1.ID,
-						Name:                network1.Name,
-						Description:         network1.Description,
-						Destinationprefixes: network1.Destinationprefixes,
-						Prefixes:            network1.Prefixes,
-						Labels:              network1.Labels,
-						Shared:              network1.Shared,
-					})), nil).Return(&network.UpdateNetworkOK{
-						Payload: network1,
-					}, nil)
-				},
-			},
-			want: network1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1NetworkResponse) []string {
-				return []string{"network", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1NetworkResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Network: func(mock *mock.Mock) {
-					mock.On("CreateNetwork", testcommon.MatchIgnoreContext(t, network.NewCreateNetworkParams().WithBody(networkResponseToCreate(network1))), nil).Return(&network.CreateNetworkCreated{
-						Payload: network1,
-					}, nil)
-				},
-			},
-			want: network1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1NetworkResponse) []string {
-				return []string{"network", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1NetworkResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Network: func(mock *mock.Mock) {
-					mock.On("UpdateNetwork", testcommon.MatchIgnoreContext(t, network.NewUpdateNetworkParams().WithBody(networkResponseToUpdate(network1))), nil).Return(&network.UpdateNetworkOK{
+						ID:                         network1.ID,
+						Name:                       network1.Name,
+						Description:                network1.Description,
+						Destinationprefixes:        network1.Destinationprefixes,
+						Prefixes:                   network1.Prefixes,
+						Labels:                     network1.Labels,
+						Shared:                     network1.Shared,
+						AdditionalAnnouncableCIDRs: network1.AdditionalAnnouncableCIDRs,
+						Defaultchildprefixlength:   network1.Defaultchildprefixlength,
+					}).WithForce(pointer.Pointer(false))), nil).Return(&network.UpdateNetworkOK{
 						Payload: network1,
 					}, nil)
 				},

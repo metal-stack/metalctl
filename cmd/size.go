@@ -2,13 +2,17 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"time"
 
-	"github.com/dustin/go-humanize"
+	"github.com/go-openapi/strfmt"
+	"github.com/google/uuid"
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
+	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,7 +23,7 @@ type sizeCmd struct {
 }
 
 func newSizeCmd(c *config) *cobra.Command {
-	w := sizeCmd{
+	w := &sizeCmd{
 		config: c,
 	}
 
@@ -40,8 +44,8 @@ func newSizeCmd(c *config) *cobra.Command {
 				Description: viper.GetString("description"),
 				Constraints: []*models.V1SizeConstraint{
 					{
-						Max:  pointer.Pointer(viper.GetInt64("max")),
-						Min:  pointer.Pointer(viper.GetInt64("min")),
+						Max:  viper.GetInt64("max"),
+						Min:  viper.GetInt64("min"),
 						Type: pointer.Pointer(viper.GetString("type")),
 					},
 				},
@@ -58,22 +62,27 @@ func newSizeCmd(c *config) *cobra.Command {
 		},
 	}
 
-	tryCmd := &cobra.Command{
-		Use:   "try",
-		Short: "try a specific hardware spec and give the chosen size back",
+	reservationsCmd := newSizeReservationsCmd(c)
+
+	suggestCmd := &cobra.Command{
+		Use:   "suggest <id>",
+		Short: "suggest size from a given machine id",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return w.try()
+			return w.suggest(args)
 		},
 	}
 
-	tryCmd.Flags().Int32P("cores", "C", 0, "Cores of the hardware to try")
-	tryCmd.Flags().StringP("memory", "M", "", "Memory of the hardware to try, can be given in bytes or any human readable size spec")
-	tryCmd.Flags().StringP("storagesize", "S", "", "Total storagesize of the hardware to try, can be given in bytes or any human readable size spec")
+	suggestCmd.Flags().String("machine-id", "", "Machine id used to create the size suggestion. [required]")
+	suggestCmd.Flags().String("name", "suggested-size", "The name of the suggested size")
+	suggestCmd.Flags().String("description", "a suggested size", "The description of the suggested size")
+	suggestCmd.Flags().StringSlice("labels", []string{}, "labels to add to the size")
 
-	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), tryCmd)
+	genericcli.Must(suggestCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
+
+	return genericcli.NewCmds(cmdsConfig, newSizeImageConstraintCmd(c), reservationsCmd, suggestCmd)
 }
 
-func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().FindSize(size.NewFindSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -82,7 +91,7 @@ func (c sizeCmd) Get(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
+func (c *sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().ListSizes(size.NewListSizesParams(), nil)
 	if err != nil {
 		return nil, err
@@ -91,7 +100,7 @@ func (c sizeCmd) List() ([]*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().DeleteSize(size.NewDeleteSizeParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -100,7 +109,7 @@ func (c sizeCmd) Delete(id string) (*models.V1SizeResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().CreateSize(size.NewCreateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		var r *size.CreateSizeConflict
@@ -113,7 +122,7 @@ func (c sizeCmd) Create(rq *models.V1SizeCreateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
+func (c *sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse, error) {
 	resp, err := c.client.Size().UpdateSize(size.NewUpdateSizeParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -122,21 +131,21 @@ func (c sizeCmd) Update(rq *models.V1SizeUpdateRequest) (*models.V1SizeResponse,
 	return resp.Payload, nil
 }
 
-func (c sizeCmd) ToCreate(r *models.V1SizeResponse) (*models.V1SizeCreateRequest, error) {
-	return sizeResponseToCreate(r), nil
-}
-
-func (c sizeCmd) ToUpdate(r *models.V1SizeResponse) (*models.V1SizeUpdateRequest, error) {
-	return sizeResponseToUpdate(r), nil
+func (c *sizeCmd) Convert(r *models.V1SizeResponse) (string, *models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, sizeResponseToCreate(r), sizeResponseToUpdate(r), nil
 }
 
 func sizeResponseToCreate(r *models.V1SizeResponse) *models.V1SizeCreateRequest {
 	var constraints []*models.V1SizeConstraint
 	for i := range r.Constraints {
 		constraints = append(constraints, &models.V1SizeConstraint{
-			Max:  r.Constraints[i].Max,
-			Min:  r.Constraints[i].Min,
-			Type: r.Constraints[i].Type,
+			Max:        r.Constraints[i].Max,
+			Min:        r.Constraints[i].Min,
+			Type:       r.Constraints[i].Type,
+			Identifier: r.Constraints[i].Identifier,
 		})
 	}
 	return &models.V1SizeCreateRequest{
@@ -151,9 +160,10 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 	var constraints []*models.V1SizeConstraint
 	for i := range r.Constraints {
 		constraints = append(constraints, &models.V1SizeConstraint{
-			Max:  r.Constraints[i].Max,
-			Min:  r.Constraints[i].Min,
-			Type: r.Constraints[i].Type,
+			Max:        r.Constraints[i].Max,
+			Min:        r.Constraints[i].Min,
+			Type:       r.Constraints[i].Type,
+			Identifier: r.Constraints[i].Identifier,
 		})
 	}
 	return &models.V1SizeUpdateRequest{
@@ -161,44 +171,45 @@ func sizeResponseToUpdate(r *models.V1SizeResponse) *models.V1SizeUpdateRequest 
 		Description: r.Description,
 		ID:          r.ID,
 		Name:        r.Name,
+		Labels:      r.Labels,
 	}
 }
 
 // non-generic command handling
 
-func (c *sizeCmd) try() error {
+func (c *sizeCmd) suggest(args []string) error {
+	sizeid, _ := genericcli.GetExactlyOneArg(args)
+
 	var (
-		memory int64
-		disks  []*models.V1MachineBlockDevice
+		machineid   = viper.GetString("machine-id")
+		name        = viper.GetString("name")
+		description = viper.GetString("description")
+		labels      = tag.NewTagMap(viper.GetStringSlice("labels"))
+		now         = time.Now()
 	)
 
-	if viper.IsSet("memory") {
-		m, err := humanize.ParseBytes(viper.GetString("memory"))
-		if err != nil {
-			return err
-		}
-		memory = int64(m)
+	if sizeid == "" {
+		sizeid = uuid.NewString()
 	}
 
-	if viper.IsSet("storagesize") {
-		s, err := humanize.ParseBytes(viper.GetString("storagesize"))
-		if err != nil {
-			return err
-		}
-		disks = append(disks, &models.V1MachineBlockDevice{
-			Name: pointer.Pointer("/dev/trydisk"),
-			Size: pointer.Pointer(int64(s)),
-		})
+	if machineid == "" {
+		return fmt.Errorf("machine-id flag is required")
 	}
 
-	resp, err := c.client.Size().FromHardware(size.NewFromHardwareParams().WithBody(&models.V1MachineHardware{
-		CPUCores: pointer.Pointer(viper.GetInt32("cores")),
-		Memory:   &memory,
-		Disks:    disks,
+	resp, err := c.client.Size().Suggest(size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
+		MachineID: &machineid,
 	}), nil)
 	if err != nil {
 		return err
 	}
 
-	return c.listPrinter.Print(resp.Payload)
+	return c.describePrinter.Print(&models.V1SizeResponse{
+		ID:          &sizeid,
+		Name:        name,
+		Description: description,
+		Constraints: resp.Payload,
+		Labels:      labels,
+		Changed:     strfmt.DateTime(now),
+		Created:     strfmt.DateTime(now),
+	})
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
@@ -13,6 +12,13 @@ import (
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/olekukonko/tablewriter"
 )
+
+// MachinesAndIssues is used for combining issues with more data on machines.
+type MachinesAndIssues struct {
+	EvaluationResult []*models.V1MachineIssueResponse `json:"evaluation_result" yaml:"evaluation_result"`
+	Machines         []*models.V1MachineIPMIResponse  `json:"machines" yaml:"machines"`
+	Issues           []*models.V1MachineIssue         `json:"issues" yaml:"issues"`
+}
 
 func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool) ([]string, [][]string, error) {
 	var (
@@ -152,9 +158,9 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		rows [][]string
 	)
 
-	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
+	header := []string{"ID", "", "Power", "IP", "Mac", "Board Part Number", "Bios", "BMC", "Size", "Partition", "Rack", "Updated"}
 	if wide {
-		header = []string{"ID", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack"}
+		header = []string{"ID", "Last Event", "Status", "Power", "IP", "Mac", "Board Part Number", "Chassis Serial", "Product Serial", "Bios Version", "BMC Version", "Size", "Partition", "Rack", "Updated"}
 	}
 
 	for _, machine := range data {
@@ -172,6 +178,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		powerText := ""
 		ipmi := machine.Ipmi
 		rack := machine.Rackid
+		lastUpdated := "never"
 
 		if ipmi != nil {
 			ipAddress = pointer.SafeDeref(ipmi.Address)
@@ -186,6 +193,10 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			}
 
 			power, powerText = extractPowerState(ipmi)
+
+			if ipmi.LastUpdated != nil && !ipmi.LastUpdated.IsZero() {
+				lastUpdated = fmt.Sprintf("%s ago", humanizeDuration(time.Since(time.Time(*ipmi.LastUpdated))))
+			}
 		}
 
 		biosVersion := ""
@@ -194,35 +205,60 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 			biosVersion = pointer.SafeDeref(bios.Version)
 		}
 
+		lastEvent := ""
+		if len(machine.Events.Log) > 0 {
+			lastEvent = *machine.Events.Log[0].Event
+		}
+
 		emojis, wideEmojis := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
 		if wide {
-			rows = append(rows, []string{id, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack})
+			rows = append(rows, []string{id, lastEvent, wideEmojis, powerText, ipAddress, mac, bpn, cs, ps, biosVersion, bmcVersion, size, partition, rack, lastUpdated})
 		} else {
-			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack})
+			rows = append(rows, []string{id, emojis, power, ipAddress, mac, bpn, biosVersion, bmcVersion, size, partition, rack, lastUpdated})
 		}
 	}
+
+	t.t.MutateTable(func(table *tablewriter.Table) {
+		table.SetAutoWrapText(false)
+	})
 
 	return header, rows, nil
 }
 
 func extractPowerState(ipmi *models.V1MachineIPMI) (short, wide string) {
 	if ipmi == nil || ipmi.Powerstate == nil {
-		return color.WhiteString(dot), wide
+		return color.WhiteString(poweron), wide
 	}
 
 	state := *ipmi.Powerstate
 	switch state {
 	case "ON":
-		short = color.GreenString(dot)
+		short = color.GreenString(poweron)
 	case "OFF":
-		short = color.RedString(dot)
+		short = color.GreenString(powersleep)
 	default:
-		short = color.WhiteString(dot)
+		short = color.WhiteString(poweron)
 	}
+
 	wide = state
+	for _, ps := range ipmi.Powersupplies {
+		if ps.Status == nil || ps.Status.Health == nil {
+			continue
+		}
+		if *ps.Status.Health != "OK" {
+			short = color.RedString(poweron)
+			wide = wide + nbr + "Power Supply" + nbr + *ps.Status.Health
+		}
+		if ps.Status.State != nil && *ps.Status.State != "Enabled" {
+			short = color.RedString(powersleep)
+			wide = wide + nbr + *ps.Status.State
+		}
+	}
+
 	if ipmi.Powermetric != nil {
-		wide = wide + " " + humanize.SI(float64(*ipmi.Powermetric.Averageconsumedwatts), "W")
+		short = fmt.Sprintf("%s"+nbr+"%.0fW", short, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
+		wide = fmt.Sprintf("%s %.0fW", wide, pointer.SafeDeref(ipmi.Powermetric.Averageconsumedwatts))
 	}
 
 	return short, wide
@@ -239,7 +275,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		if !wide {
 			split := strings.Split(msg, "\n")
 			if len(split) > 1 {
-				msg = split[0] + " " + genericcli.TruncateElipsis
+				msg = split[0] + " " + genericcli.TruncateEllipsis
 			}
 			msg = genericcli.TruncateEnd(msg, 120)
 		}
@@ -253,7 +289,25 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 	return header, rows, nil
 }
 
-func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]string, [][]string, error) {
+func (t *TablePrinter) MachineIssuesListTable(data []*models.V1MachineIssue, wide bool) ([]string, [][]string, error) {
+	var (
+		header = []string{"ID", "Severity", "Description", "Reference URL"}
+		rows   [][]string
+	)
+
+	for _, issue := range data {
+		rows = append(rows, []string{
+			pointer.SafeDeref(issue.ID),
+			pointer.SafeDeref(issue.Severity),
+			pointer.SafeDeref(issue.Description),
+			pointer.SafeDeref(issue.RefURL),
+		})
+	}
+
+	return header, rows, nil
+}
+
+func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([]string, [][]string, error) {
 	var (
 		rows [][]string
 	)
@@ -263,8 +317,37 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 		header = []string{"ID", "Name", "Partition", "Project", "Power", "State", "Lock Reason", "Last Event", "When", "Issues", "Ref URL", "Details"}
 	}
 
-	for _, machineWithIssues := range data {
-		machine := machineWithIssues.Machine
+	machinesByID := map[string]*models.V1MachineIPMIResponse{}
+	for _, m := range data.Machines {
+		m := m
+
+		if m.ID == nil {
+			continue
+		}
+
+		machinesByID[*m.ID] = m
+	}
+
+	issuesByID := map[string]*models.V1MachineIssue{}
+	for _, issue := range data.Issues {
+		issue := issue
+
+		if issue.ID == nil {
+			continue
+		}
+
+		issuesByID[*issue.ID] = issue
+	}
+
+	for _, issue := range data.EvaluationResult {
+		if issue.Machineid == nil {
+			continue
+		}
+
+		machine := machinesByID[*issue.Machineid]
+		if machine == nil {
+			continue
+		}
 
 		widename := ""
 		if machine.Allocation != nil && machine.Allocation.Name != nil {
@@ -307,10 +390,24 @@ func (t *TablePrinter) MachineIssuesTable(data api.MachineIssues, wide bool) ([]
 
 		emojis, _ := t.getMachineStatusEmojis(machine.Liveliness, machine.Events, machine.State, nil)
 
-		for _, issue := range machineWithIssues.Issues {
-			text := fmt.Sprintf("%s (%s)", issue.Description, issue.Type)
-			ref := issue.RefURL
-			details := issue.Details
+		for i, id := range issue.Issues {
+			iss, ok := issuesByID[id]
+			if !ok {
+				continue
+			}
+
+			text := fmt.Sprintf("%s (%s)", pointer.SafeDeref(iss.Description), pointer.SafeDeref(iss.ID))
+			ref := pointer.SafeDeref(iss.RefURL)
+			details := pointer.SafeDeref(iss.Details)
+
+			if i != 0 {
+				if wide {
+					rows = append(rows, []string{"", "", "", "", "", "", "", "", "", text, ref, details})
+				} else {
+					rows = append(rows, []string{"", "", "", "", "", "", "", text})
+				}
+				continue
+			}
 
 			if wide {
 				rows = append(rows, []string{pointer.SafeDeref(machine.ID), widename, partition, project, powerText, lockText, lockDescWide, lastEvent, when, text, ref, details})

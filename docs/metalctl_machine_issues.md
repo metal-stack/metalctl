@@ -15,9 +15,8 @@ Meaning of the emojis:
 ❓ Machine is in unknown condition. The metal-api does not receive phoned home events anymore or has never booted successfully.
 ⭕ Machine is in a provisioning crash loop. Flag can be reset through an API-triggered reboot or when the machine reaches the phoned home state.
 🚑 Machine reclaim has failed. The machine was deleted but it is not going back into the available machine pool.
-🛡️  Machine is connected to our VPN, ssh access only possible via this VPN.
+🛡 Machine is connected to our VPN, ssh access only possible via this VPN.
 💤 Machine is in shutdown state. The machine was powered off by the pool scaler because the partition's maximum pool size was exceeded.
-
 
 ```
 metalctl machine issues [<machine ID>] [flags]
@@ -26,19 +25,32 @@ metalctl machine issues [<machine ID>] [flags]
 ### Options
 
 ```
+      --bmc-address string                    bmc ipmi address (needs to include port) to filter [optional]
+      --bmc-mac string                        bmc mac address to filter [optional]
+      --board-part-number string              fru board part number to filter [optional]
   -h, --help                                  help for issues
       --hostname string                       allocation hostname to filter [optional]
       --id string                             ID to filter [optional]
       --image string                          allocation image to filter [optional]
-      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional] (default 168h0m0s)
+      --last-event-error-threshold duration   the duration up to how long in the past a machine last event error will be counted as an issue [optional]
       --mac string                            mac to filter [optional]
+      --manufacturer string                   fru manufacturer to filter [optional]
       --name string                           allocation name to filter [optional]
+      --network-destination-prefixes string   network destination prefixes to filter [optional]
+      --network-ids string                    network ids to filter [optional]
+      --network-ips string                    network ips to filter [optional]
       --omit strings                          issue types to omit [optional]
       --only strings                          issue types to include [optional]
       --partition string                      partition to filter [optional]
+      --product-part-number string            fru product part number to filter [optional]
+      --product-serial string                 fru product serial to filter [optional]
       --project string                        allocation project to filter [optional]
+      --rack string                           rack to filter [optional]
+      --role string                           allocation role to filter [optional]
       --severity string                       issue severity to include [optional]
       --size string                           size to filter [optional]
+      --sort-by strings                       sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|bios|bmc|event|id|liveliness|partition|project|rack|size|when
+      --state string                          state to filter [optional]
       --tags strings                          tags to filter, use it like: --tags "tag1,tag2" or --tags "tag3".
 ```
 
@@ -49,12 +61,12 @@ metalctl machine issues [<machine ID>] [flags]
       --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
-                               
+
                                ---
                                apitoken: "alongtoken"
                                ...
-                               
-                               
+
+
       --debug                  debug output
       --force-color            force colored output even without tty
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
@@ -63,14 +75,14 @@ metalctl machine issues [<machine ID>] [flags]
       --template string        output template for template output-format, go template format.
                                For property names inspect the output of -o json or -o yaml for reference.
                                Example for machines:
-                               
+
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
-                               
-                               
+
+
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
-* [metalctl machine](metalctl_machine.md)	 - manage machine entities
-
+- [metalctl machine](metalctl_machine.md) - manage machine entities
+- [metalctl machine issues list](metalctl_machine_issues_list.md) - list all machine issues that the metal-api can evaluate

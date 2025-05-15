@@ -6,3 +6,6 @@ vendor
 .idea
 coverage.out
 metalctl
+result
+tmp
+.DS_Store

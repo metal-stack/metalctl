@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-openapi/runtime"
+	"github.com/go-openapi/strfmt"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/auth"
 	"github.com/metal-stack/metalctl/pkg/api"
@@ -96,8 +98,8 @@ func searchSSHKey() (string, error) {
 	}
 
 	if key == "" {
-		return "", fmt.Errorf("failure to locate a SSH identity in default location (%s). "+
-			"Another identity can be specified with --sshidentity/-p\n", defaultDir)
+		return "", fmt.Errorf("failure to locate a SSH identity in default location (%s), "+
+			"another identity can be specified with --sshidentity/-p", defaultDir)
 	}
 	return key, nil
 }
@@ -142,4 +144,9 @@ func portOpen(ip string, port string, timeout time.Duration) bool {
 		return true
 	}
 	return false
+}
+
+func clientNoAuth() runtime.ClientAuthInfoWriterFunc {
+	noAuth := func(_ runtime.ClientRequest, _ strfmt.Registry) error { return nil }
+	return runtime.ClientAuthInfoWriterFunc(noAuth)
 }

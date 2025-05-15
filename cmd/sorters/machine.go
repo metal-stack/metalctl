@@ -114,3 +114,14 @@ func MachineIPMISorter() *multisort.Sorter[*models.V1MachineIPMIResponse] {
 		},
 	}, multisort.Keys{{ID: "partition"}, {ID: "rack"}, {ID: "size"}, {ID: "bios"}, {ID: "bmc"}, {ID: "id"}})
 }
+
+func MachineIssueSorter() *multisort.Sorter[*models.V1MachineIssue] {
+	return multisort.New(multisort.FieldMap[*models.V1MachineIssue]{
+		"id": func(a, b *models.V1MachineIssue, descending bool) multisort.CompareResult {
+			return multisort.Compare(p.SafeDeref(a.ID), p.SafeDeref(b.ID), descending)
+		},
+		"severity": func(a, b *models.V1MachineIssue, descending bool) multisort.CompareResult {
+			return multisort.Compare(p.SafeDeref(a.Severity), p.SafeDeref(b.Severity), descending)
+		},
+	}, multisort.Keys{{ID: "severity"}, {ID: "id"}})
+}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -28,9 +29,10 @@ var (
 						Cidrs: []string{"cidr"},
 						Vnis:  []string{"vni"},
 					},
-					Mac:  pointer.Pointer("a-mac"),
-					Name: pointer.Pointer("a-name"),
-					Vrf:  "100",
+					Mac:    pointer.Pointer("a-mac"),
+					Name:   pointer.Pointer("a-name"),
+					Vrf:    "100",
+					Actual: pointer.Pointer("UP"),
 				},
 			},
 		},
@@ -54,16 +56,18 @@ var (
 					Cidrs: []string{"cidr"},
 					Vnis:  []string{"vni"},
 				},
-				Mac:  pointer.Pointer("a-mac"),
-				Name: pointer.Pointer("a-name"),
-				Vrf:  "100",
+				Mac:    pointer.Pointer("a-mac"),
+				Name:   pointer.Pointer("a-name"),
+				Vrf:    "100",
+				Actual: pointer.Pointer("UP"),
 			},
 		},
 		Partition: partition1,
 		RackID:    pointer.Pointer("rack-1"),
 		Os: &models.V1SwitchOS{
-			Vendor:  "SONiC",
-			Version: "1",
+			Vendor:           "SONiC",
+			Version:          "1",
+			MetalCoreVersion: "1.2.3",
 		},
 		ManagementIP:   "1.2.3.4",
 		ManagementUser: "root",
@@ -77,9 +81,10 @@ var (
 						Cidrs: []string{"cidr"},
 						Vnis:  []string{"vni"},
 					},
-					Mac:  pointer.Pointer("a-mac"),
-					Name: pointer.Pointer("a-name"),
-					Vrf:  "100",
+					Mac:    pointer.Pointer("a-mac"),
+					Name:   pointer.Pointer("a-name"),
+					Vrf:    "100",
+					Actual: pointer.Pointer("DOWN"),
 				},
 			},
 		},
@@ -103,9 +108,10 @@ var (
 					Cidrs: []string{"cidr"},
 					Vnis:  []string{"vni"},
 				},
-				Mac:  pointer.Pointer("a-mac"),
-				Name: pointer.Pointer("a-name"),
-				Vrf:  "100",
+				Mac:    pointer.Pointer("a-mac"),
+				Name:   pointer.Pointer("a-name"),
+				Vrf:    "100",
+				Actual: pointer.Pointer("UP"),
 			},
 		},
 		Partition: partition1,
@@ -139,14 +145,14 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 				switch2,
 			},
 			wantTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
-2    1           rack-1   🐢    ●
+ID   PARTITION   RACK     OS   STATUS   LAST SYNC
+1    1           rack-1   🦔   ●        0s ago
+2    1           rack-1   🐢   ●        0s ago
 `),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS          IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-1    1           rack-1   SONiC/1     1.2.3.4   operational   0s          1s              5m ago: error
-2    1           rack-1   Cumulus/2             operational   0s          1s              5m ago: error
+ID   PARTITION   RACK     OS            METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
+1    1           rack-1   SONiC (1)     1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
+2    1           rack-1   Cumulus (2)                         operational   0s ago      1s              5m ago: error
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -154,10 +160,10 @@ ID   PARTITION   RACK     OS          IP        MODE          LAST SYNC   SYNC D
 2 switch-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | PARTITION |  RACK  | OS | STATUS |
-|----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
-|  2 |         1 | rack-1 | 🐢 |  ●     |
+| ID | PARTITION |  RACK  | OS | STATUS | LAST SYNC |
+|----|-----------|--------|----|--------|-----------|
+|  1 |         1 | rack-1 | 🦔 | ●      | 0s ago    |
+|  2 |         1 | rack-1 | 🐢 | ●      | 0s ago    |
 `),
 		},
 		{
@@ -187,22 +193,60 @@ ID   PARTITION   RACK     OS          IP        MODE          LAST SYNC   SYNC D
 				switch1,
 			},
 			wantTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
+ID   PARTITION   RACK     OS   STATUS   LAST SYNC
+1    1           rack-1   🦔   ●        0s ago
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-1    1           rack-1   SONiC/1   1.2.3.4   operational   0s          1s              5m ago: error
+ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
+1    1           rack-1   SONiC (1)   1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 switch-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID | PARTITION |  RACK  | OS | STATUS |
-|----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
+| ID | PARTITION |  RACK  | OS | STATUS | LAST SYNC |
+|----|-----------|--------|----|--------|-----------|
+|  1 |         1 | rack-1 | 🦔 | ●      | 0s ago    |
 		`),
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1SwitchResponse) []string {
+				return appendFromFileCommonArgs("switch", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("UpdateSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewUpdateSwitchParams().WithBody(switchResponseToUpdate(switch1))), nil).Return(&switch_operations.UpdateSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SwitchResponse{
+				switch1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1SwitchResponse) []string {
+				return appendFromFileCommonArgs("switch", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1SwitchResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID).WithForce(pointer.Pointer(false))), nil).Return(&switch_operations.DeleteSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: []*models.V1SwitchResponse{
+				switch1,
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -224,6 +268,9 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 							{
 								ID:     pointer.Pointer("machine-1"),
 								Rackid: "rack-1",
+								Allocation: &models.V1MachineAllocation{
+									Hostname: pointer.Pointer("alloc-1"),
+								},
 								Partition: &models.V1PartitionResponse{
 									ID: pointer.Pointer("1"),
 								},
@@ -232,7 +279,8 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 								},
 								Ipmi: &models.V1MachineIPMI{
 									Fru: &models.V1MachineFru{
-										ProductSerial: "123",
+										ProductSerial:     "123",
+										ChassisPartSerial: "456",
 									},
 								},
 							},
@@ -257,6 +305,9 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 					"machine-1": {
 						ID:     pointer.Pointer("machine-1"),
 						Rackid: "rack-1",
+						Allocation: &models.V1MachineAllocation{
+							Hostname: pointer.Pointer("alloc-1"),
+						},
 						Partition: &models.V1PartitionResponse{
 							ID: pointer.Pointer("1"),
 						},
@@ -265,25 +316,26 @@ func Test_SwitchCmd_ConnectedMachinesResult(t *testing.T) {
 						},
 						Ipmi: &models.V1MachineIPMI{
 							Fru: &models.V1MachineFru{
-								ProductSerial: "123",
+								ProductSerial:     "123",
+								ChassisPartSerial: "456",
 							},
 						},
 					},
 				},
 			},
 			wantTable: pointer.Pointer(`
-ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
-1                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
-2                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+ID             NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL   CHASSIS SERIAL
+1                                           1           rack-1
+└─╴machine-1   a-name          a-mac        1           rack-1   n1-medium-x86   123              456
+2                                           1           rack-1
+└─╴machine-1   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   123              456
 `),
 			wantWideTable: pointer.Pointer(`
-ID             NIC NAME   IDENTIFIER   PARTITION   RACK     SIZE            PRODUCT SERIAL
-1                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
-2                                      1           rack-1
-└─╴machine-1   a-name     a-mac        1           rack-1   n1-medium-x86   123
+ID                  NIC NAME        IDENTIFIER   PARTITION   RACK     SIZE            HOSTNAME   PRODUCT SERIAL   CHASSIS SERIAL
+1                                                1           rack-1
+└─╴machine-1   ❓   a-name          a-mac        1           rack-1   n1-medium-x86   alloc-1    123              456
+2                                                1           rack-1
+└─╴machine-1   ❓   a-name (DOWN)   a-mac        1           rack-1   n1-medium-x86   alloc-1    123              456
 `),
 			template: pointer.Pointer(`{{ $machines := .machines }}{{ range .switches }}{{ $switch := . }}{{ range .connections }}{{ $switch.id }},{{ $switch.rack_id }},{{ .nic.name }},{{ .machine_id }},{{ (index $machines .machine_id).ipmi.fru.product_serial }}{{ printf "\n" }}{{ end }}{{ end }}`),
 			wantTemplate: pointer.Pointer(`
@@ -313,21 +365,21 @@ func Test_SwitchCmd_SingleResult(t *testing.T) {
 			},
 			want: switch1,
 			wantTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS   STATUS
-1    1           rack-1   🦔    ●
+ID   PARTITION   RACK     OS   STATUS   LAST SYNC
+1    1           rack-1   🦔   ●        0s ago
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DURATION   LAST SYNC ERROR
-1    1           rack-1   SONiC/1   1.2.3.4   operational   0s          1s              5m ago: error
+ID   PARTITION   RACK     OS          METALCORE   IP        MODE          LAST SYNC   SYNC DURATION   LAST ERROR
+1    1           rack-1   SONiC (1)   1.2.3       1.2.3.4   operational   0s ago      1s              5m ago: error
 					`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 switch-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID | PARTITION |  RACK  | OS | STATUS |
-|----|-----------|--------|----|--------|
-|  1 |         1 | rack-1 | 🦔 |  ●     |
+| ID | PARTITION |  RACK  | OS | STATUS | LAST SYNC |
+|----|-----------|--------|----|--------|-----------|
+|  1 |         1 | rack-1 | 🦔 | ●      | 0s ago    |
 		`),
 		},
 		{
@@ -337,7 +389,7 @@ ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DUR
 			},
 			mocks: &client.MetalMockFns{
 				SwitchOperations: func(mock *mock.Mock) {
-					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.DeleteSwitchOK{
+					mock.On("DeleteSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewDeleteSwitchParams().WithID(*switch1.ID).WithForce(pointer.Pointer(false))), nil).Return(&switch_operations.DeleteSwitchOK{
 						Payload: switch1,
 					}, nil)
 				},
@@ -360,6 +412,64 @@ ID   PARTITION   RACK     OS        IP        MODE          LAST SYNC   SYNC DUR
 				},
 			},
 			want: switch1,
+		},
+	}
+	for _, tt := range tests {
+		tt.testCmd(t)
+	}
+}
+
+func Test_SwitchCmd_ToggleResult(t *testing.T) {
+	// first create a full copy of the test data so we can change some data
+	data, err := json.Marshal(switch1)
+	require.NoError(t, err)
+	var sw1Down models.V1SwitchResponse
+	err = json.Unmarshal(data, &sw1Down)
+	require.NoError(t, err)
+	sw1Down.Nics[0].Actual = pointer.Pointer("DOWN")
+
+	tests := []*test[currentSwitchPortStateDump]{
+		{
+			name: "query state",
+			cmd: func(want currentSwitchPortStateDump) []string {
+				return []string{"switch", "port", "describe", *switch1.ID, "--port", *switch1.Nics[0].Name}
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+					mock.On("FindSwitch", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchParams().WithID(*switch1.ID)), nil).Return(&switch_operations.FindSwitchOK{
+						Payload: switch1,
+					}, nil)
+				},
+			},
+			want: currentSwitchPortStateDump{
+				Actual:  *switch1.Connections[0],
+				Desired: *switch1.Nics[0],
+			},
+		},
+		{
+			name: "toggle down",
+			cmd: func(want currentSwitchPortStateDump) []string {
+				return []string{"switch", "port", "down", *switch1.ID, "--port", *switch1.Nics[0].Name}
+			},
+			mocks: &client.MetalMockFns{
+				SwitchOperations: func(mock *mock.Mock) {
+
+					mock.On("ToggleSwitchPort",
+						testcommon.MatchIgnoreContext(t,
+							switch_operations.NewToggleSwitchPortParams().
+								WithID(*switch1.ID).
+								WithBody(&models.V1SwitchPortToggleRequest{
+									Nic:    switch1.Nics[0].Name,
+									Status: pointer.Pointer("DOWN"),
+								})), nil).Return(&switch_operations.ToggleSwitchPortOK{
+						Payload: &sw1Down,
+					}, nil)
+				},
+			},
+			want: currentSwitchPortStateDump{
+				Actual:  *sw1Down.Connections[0],
+				Desired: *sw1Down.Nics[0],
+			},
 		},
 	}
 	for _, tt := range tests {

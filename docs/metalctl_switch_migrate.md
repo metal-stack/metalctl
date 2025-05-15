@@ -1,18 +1,15 @@
-## metalctl size try
+## metalctl switch migrate
 
-try a specific hardware spec and give the chosen size back
+migrate machine connections and other configuration from one switch to another
 
 ```
-metalctl size try [flags]
+metalctl switch migrate <oldSwitchID> <newSwitchID> [flags]
 ```
 
 ### Options
 
 ```
-  -C, --cores int32          Cores of the hardware to try
-  -h, --help                 help for try
-  -M, --memory string        Memory of the hardware to try, can be given in bytes or any human readable size spec
-  -S, --storagesize string   Total storagesize of the hardware to try, can be given in bytes or any human readable size spec
+  -h, --help   help for migrate
 ```
 
 ### Options inherited from parent commands
@@ -45,5 +42,5 @@ metalctl size try [flags]
 
 ### SEE ALSO
 
-* [metalctl size](metalctl_size.md)	 - manage size entities
+* [metalctl switch](metalctl_switch.md)	 - manage switch entities
 

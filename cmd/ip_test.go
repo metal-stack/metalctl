@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"net/http"
 	"strings"
 	"testing"
 
@@ -87,14 +86,14 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 		{
 			name: "apply",
 			cmd: func(want []*models.V1IPResponse) []string {
-				return []string{"network", "ip", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("network", "ip", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(nil, ip.NewAllocateSpecificIPDefault(http.StatusUnprocessableEntity)).Once()
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(nil, ip.NewAllocateSpecificIPConflict()).Once()
 					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
 						Payload: ip1,
 					}, nil)
@@ -106,6 +105,63 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 			want: []*models.V1IPResponse{
 				ip1,
 				ip2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1IPResponse) []string {
+				return appendFromFileCommonArgs("network", "ip", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				IP: func(mock *mock.Mock) {
+					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
+						Payload: ip1,
+					}, nil)
+				},
+			},
+			want: []*models.V1IPResponse{
+				ip1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1IPResponse) []string {
+				return appendFromFileCommonArgs("network", "ip", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				IP: func(mock *mock.Mock) {
+					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
+						Payload: ip1,
+					}, nil)
+				},
+			},
+			want: []*models.V1IPResponse{
+				ip1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1IPResponse) []string {
+				return appendFromFileCommonArgs("network", "ip", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1IPResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				IP: func(mock *mock.Mock) {
+					mock.On("FreeIP", testcommon.MatchIgnoreContext(t, ip.NewFreeIPParams().WithID(*ip1.Ipaddress)), nil).Return(&ip.FreeIPOK{
+						Payload: ip1,
+					}, nil)
+				},
+			},
+			want: []*models.V1IPResponse{
+				ip1,
 			},
 		},
 	}
@@ -173,46 +229,12 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 					"--type", *want.Type,
 					"--tags", strings.Join(want.Tags, ","),
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, append(commonExcludedFileArgs(), "addressfamily")...)
 				return args
 			},
 			mocks: &client.MetalMockFns{
 				IP: func(mock *mock.Mock) {
 					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
-						Payload: ip1,
-					}, nil)
-				},
-			},
-			want: ip1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1IPResponse) []string {
-				return []string{"network", "ip", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1IPResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				IP: func(mock *mock.Mock) {
-					mock.On("AllocateSpecificIP", testcommon.MatchIgnoreContext(t, ip.NewAllocateSpecificIPParams().WithBody(ipResponseToCreate(ip1).V1IPAllocateRequest).WithIP(*ip1.Ipaddress)), nil).Return(&ip.AllocateSpecificIPCreated{
-						Payload: ip1,
-					}, nil)
-				},
-			},
-			want: ip1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1IPResponse) []string {
-				return []string{"network", "ip", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1IPResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				IP: func(mock *mock.Mock) {
-					mock.On("UpdateIP", testcommon.MatchIgnoreContext(t, ip.NewUpdateIPParams().WithBody(ipResponseToUpdate(ip1))), nil).Return(&ip.UpdateIPOK{
 						Payload: ip1,
 					}, nil)
 				},

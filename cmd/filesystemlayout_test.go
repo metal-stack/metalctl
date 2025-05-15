@@ -176,7 +176,7 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 		{
 			name: "apply",
 			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "apply", "-f", "/file.yaml"}
+				return appendFromFileCommonArgs("fsl", "apply")
 			},
 			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
 				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
@@ -195,6 +195,63 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			want: []*models.V1FilesystemLayoutResponse{
 				fsl1,
 				fsl2,
+			},
+		},
+		{
+			name: "create from file",
+			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
+				return appendFromFileCommonArgs("fsl", "create")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Filesystemlayout: func(mock *mock.Mock) {
+					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToCreate(fsl1))), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
+						Payload: fsl1,
+					}, nil)
+				},
+			},
+			want: []*models.V1FilesystemLayoutResponse{
+				fsl1,
+			},
+		},
+		{
+			name: "update from file",
+			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
+				return appendFromFileCommonArgs("fsl", "update")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Filesystemlayout: func(mock *mock.Mock) {
+					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToUpdate(fsl1))), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
+						Payload: fsl1,
+					}, nil)
+				},
+			},
+			want: []*models.V1FilesystemLayoutResponse{
+				fsl1,
+			},
+		},
+		{
+			name: "delete from file",
+			cmd: func(want []*models.V1FilesystemLayoutResponse) []string {
+				return appendFromFileCommonArgs("fsl", "delete")
+			},
+			fsMocks: func(fs afero.Fs, want []*models.V1FilesystemLayoutResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshalToMultiYAML(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Filesystemlayout: func(mock *mock.Mock) {
+					mock.On("DeleteFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewDeleteFilesystemLayoutParams().WithID(*fsl1.ID)), nil).Return(&fsmodel.DeleteFilesystemLayoutOK{
+						Payload: fsl1,
+					}, nil)
+				},
+			},
+			want: []*models.V1FilesystemLayoutResponse{
+				fsl1,
 			},
 		},
 	}
@@ -247,40 +304,6 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 			mocks: &client.MetalMockFns{
 				Filesystemlayout: func(mock *mock.Mock) {
 					mock.On("DeleteFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewDeleteFilesystemLayoutParams().WithID(*fsl1.ID)), nil).Return(&fsmodel.DeleteFilesystemLayoutOK{
-						Payload: fsl1,
-					}, nil)
-				},
-			},
-			want: fsl1,
-		},
-		{
-			name: "create from file",
-			cmd: func(want *models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "create", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1FilesystemLayoutResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Filesystemlayout: func(mock *mock.Mock) {
-					mock.On("CreateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewCreateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToCreate(fsl1))), nil).Return(&fsmodel.CreateFilesystemLayoutCreated{
-						Payload: fsl1,
-					}, nil)
-				},
-			},
-			want: fsl1,
-		},
-		{
-			name: "update from file",
-			cmd: func(want *models.V1FilesystemLayoutResponse) []string {
-				return []string{"fsl", "update", "-f", "/file.yaml"}
-			},
-			fsMocks: func(fs afero.Fs, want *models.V1FilesystemLayoutResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
-			},
-			mocks: &client.MetalMockFns{
-				Filesystemlayout: func(mock *mock.Mock) {
-					mock.On("UpdateFilesystemLayout", testcommon.MatchIgnoreContext(t, fsmodel.NewUpdateFilesystemLayoutParams().WithBody(filesystemLayoutResponseToUpdate(fsl1))), nil).Return(&fsmodel.UpdateFilesystemLayoutOK{
 						Payload: fsl1,
 					}, nil)
 				},

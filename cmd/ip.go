@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/metal-stack/metal-go/api/client/ip"
@@ -29,7 +28,7 @@ type ipCmd struct {
 }
 
 func newIPCmd(c *config) *cobra.Command {
-	w := ipCmd{
+	w := &ipCmd{
 		config: c,
 	}
 
@@ -50,9 +49,11 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network from where the IP should be allocated.")
 			cmd.Flags().StringP("project", "", "", "project for which the IP should be allocated.")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to attach to the IP.")
-			must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to acquire, defaults to IPv4 [optional]")
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
 		},
 		ListCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("ipaddress", "", "", "ipaddress to filter [optional]")
@@ -63,11 +64,13 @@ func newIPCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("network", "", "", "network to filter [optional]")
 			cmd.Flags().StringP("name", "", "", "name to filter [optional]")
 			cmd.Flags().StringSliceP("tags", "", nil, "tags to filter [optional]")
-			must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
-			must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
+			cmd.Flags().StringP("addressfamily", "", "", "addressfamily of the ip to filter, defaults to all addressfamilies [optional]")
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("ipaddress", c.comp.IpListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("network", c.comp.NetworkListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("type", cobra.FixedCompletions([]string{models.V1IPAllocateRequestTypeEphemeral, models.V1IPAllocateRequestTypeStatic}, cobra.ShellCompDirectiveNoFileComp)))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("machineid", c.comp.MachineListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("addressfamily", c.comp.IPAddressFamilyCompletion))
 		},
 		DeleteCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Aliases = append(cmd.Aliases, "free")
@@ -87,7 +90,7 @@ func newIPCmd(c *config) *cobra.Command {
 	return genericcli.NewCmds(cmdsConfig, issuesCmd)
 }
 
-func (c ipCmd) Get(id string) (*models.V1IPResponse, error) {
+func (c *ipCmd) Get(id string) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FindIP(ip.NewFindIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -96,7 +99,7 @@ func (c ipCmd) Get(id string) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) List() ([]*models.V1IPResponse, error) {
+func (c *ipCmd) List() ([]*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FindIPs(ip.NewFindIPsParams().WithBody(&models.V1IPFindRequest{
 		Ipaddress:     viper.GetString("ipaddress"),
 		Name:          viper.GetString("name"),
@@ -106,6 +109,7 @@ func (c ipCmd) List() ([]*models.V1IPResponse, error) {
 		Machineid:     viper.GetString("machineid"),
 		Networkprefix: viper.GetString("prefix"),
 		Tags:          viper.GetStringSlice("tags"),
+		Addressfamily: viper.GetString("addressfamily"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -114,7 +118,7 @@ func (c ipCmd) List() ([]*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Delete(id string) (*models.V1IPResponse, error) {
+func (c *ipCmd) Delete(id string) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().FreeIP(ip.NewFreeIPParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -123,12 +127,12 @@ func (c ipCmd) Delete(id string) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
+func (c *ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	if rq.SpecificIP == "" {
 		resp, err := c.client.IP().AllocateIP(ip.NewAllocateIPParams().WithBody(rq.V1IPAllocateRequest), nil)
 		if err != nil {
-			var r *ip.AllocateIPDefault // FIXME: API should define to return conflict
-			if errors.As(err, &r) && r.Code() == http.StatusUnprocessableEntity {
+			var r *ip.AllocateIPConflict
+			if errors.As(err, &r) {
 				return nil, genericcli.AlreadyExistsError()
 			}
 			return nil, err
@@ -139,8 +143,8 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 
 	resp, err := c.client.IP().AllocateSpecificIP(ip.NewAllocateSpecificIPParams().WithIP(rq.SpecificIP).WithBody(rq.V1IPAllocateRequest), nil)
 	if err != nil {
-		var r *ip.AllocateSpecificIPDefault // FIXME: API should define to return conflict
-		if errors.As(err, &r) && r.Code() == http.StatusUnprocessableEntity {
+		var r *ip.AllocateSpecificIPConflict
+		if errors.As(err, &r) {
 			return nil, genericcli.AlreadyExistsError()
 		}
 		return nil, err
@@ -149,7 +153,7 @@ func (c ipCmd) Create(rq *ipAllocateRequest) (*models.V1IPResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
+func (c *ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error) {
 	resp, err := c.client.IP().UpdateIP(ip.NewUpdateIPParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -158,12 +162,11 @@ func (c ipCmd) Update(rq *models.V1IPUpdateRequest) (*models.V1IPResponse, error
 	return resp.Payload, nil
 }
 
-func (c ipCmd) ToCreate(r *models.V1IPResponse) (*ipAllocateRequest, error) {
-	return ipResponseToCreate(r), nil
-}
-
-func (c ipCmd) ToUpdate(r *models.V1IPResponse) (*models.V1IPUpdateRequest, error) {
-	return ipResponseToUpdate(r), nil
+func (c *ipCmd) Convert(r *models.V1IPResponse) (string, *ipAllocateRequest, *models.V1IPUpdateRequest, error) {
+	if r.Ipaddress == nil {
+		return "", nil, nil, fmt.Errorf("ipaddress is nil")
+	}
+	return *r.Ipaddress, ipResponseToCreate(r), ipResponseToUpdate(r), nil
 }
 
 func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
@@ -171,6 +174,7 @@ func ipResponseToCreate(r *models.V1IPResponse) *ipAllocateRequest {
 	if r.Ipaddress != nil {
 		ip = *r.Ipaddress
 	}
+
 	return &ipAllocateRequest{
 		SpecificIP: ip,
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
@@ -198,12 +202,13 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 	return &ipAllocateRequest{
 		SpecificIP: viper.GetString("ipaddress"),
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
-			Description: viper.GetString("description"),
-			Name:        viper.GetString("name"),
-			Networkid:   pointer.Pointer(viper.GetString("network")),
-			Projectid:   pointer.Pointer(viper.GetString("project")),
-			Type:        pointer.Pointer(viper.GetString("type")),
-			Tags:        viper.GetStringSlice("tags"),
+			Description:   viper.GetString("description"),
+			Name:          viper.GetString("name"),
+			Networkid:     pointer.Pointer(viper.GetString("network")),
+			Projectid:     pointer.Pointer(viper.GetString("project")),
+			Type:          pointer.Pointer(viper.GetString("type")),
+			Tags:          viper.GetStringSlice("tags"),
+			Addressfamily: viper.GetString("addressfamily"),
 		},
 	}, nil
 }
@@ -248,7 +253,7 @@ func (c *ipCmd) ipIssues() error {
 				if m == nil || *m.Liveliness != "Alive" || m.Allocation == nil || *m.Events.Log[0].Event != "Phoned Home" {
 					ip.Description = "bound to unallocated machine"
 					ips = append(ips, ip)
-				} else if m != nil && m.Allocation != nil && *m.Allocation.Name != ip.Name {
+				} else if m.Allocation != nil && *m.Allocation.Name != ip.Name {
 					ip.Description = "hostname mismatch"
 					ips = append(ips, ip)
 				}

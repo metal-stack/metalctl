@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
@@ -61,12 +62,12 @@ func newImageCmd(c *config) *cobra.Command {
 			cmd.Flags().String("os", "", "OS derivate of this image.")
 			cmd.Flags().String("version", "", "Version of this image.")
 
-			must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
-			must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
-			must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
-			must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
-			must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
-			must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.ImageListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.comp.ImageNameCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("classification", c.comp.ImageClassificationCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("features", c.comp.ImageFeatureCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("os", c.comp.ImageOSCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("version", c.comp.ImageVersionCompletion))
 		},
 	}
 
@@ -129,12 +130,11 @@ func (c imageCmd) Update(rq *models.V1ImageUpdateRequest) (*models.V1ImageRespon
 	return resp.Payload, nil
 }
 
-func (c imageCmd) ToCreate(r *models.V1ImageResponse) (*models.V1ImageCreateRequest, error) {
-	return imageResponseToCreate(r), nil
-}
-
-func (c imageCmd) ToUpdate(r *models.V1ImageResponse) (*models.V1ImageUpdateRequest, error) {
-	return imageResponseToUpdate(r), nil
+func (c imageCmd) Convert(r *models.V1ImageResponse) (string, *models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
+	return *r.ID, imageResponseToCreate(r), imageResponseToUpdate(r), nil
 }
 
 func imageResponseToCreate(r *models.V1ImageResponse) *models.V1ImageCreateRequest {

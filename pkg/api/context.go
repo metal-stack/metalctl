@@ -18,18 +18,21 @@ type Contexts struct {
 
 // Context configure metalctl behaviour
 type Context struct {
-	ApiURL       string  `yaml:"url"`
-	IssuerURL    string  `yaml:"issuer_url"`
-	IssuerType   string  `yaml:"issuer_type"`
-	CustomScopes string  `yaml:"custom_scopes"`
-	ClientID     string  `yaml:"client_id"`
-	ClientSecret string  `yaml:"client_secret"`
-	HMAC         *string `yaml:"hmac"`
+	ApiURL                   string  `yaml:"url"`
+	CertificateAuthorityData string  `yaml:"certificate_authority_data,omitempty"`
+	IssuerURL                string  `yaml:"issuer_url"`
+	IssuerType               string  `yaml:"issuer_type"`
+	CustomScopes             string  `yaml:"custom_scopes"`
+	ClientID                 string  `yaml:"client_id"`
+	ClientSecret             string  `yaml:"client_secret"`
+	HMAC                     *string `yaml:"hmac"`
+	HMACAuthType             string  `yaml:"hmac_auth_type,omitempty"`
 }
 
 var defaultCtx = Context{
-	ApiURL:    "http://localhost:8080/cloud",
-	IssuerURL: "http://localhost:8080/",
+	ApiURL:       "http://localhost:8080/cloud",
+	IssuerURL:    "http://localhost:8080/",
+	HMACAuthType: "Metal-Admin",
 }
 
 func GetContexts() (*Contexts, error) {
@@ -65,6 +68,9 @@ func MustDefaultContext() Context {
 	ctx, ok := ctxs.Contexts[ctxs.CurrentContext]
 	if !ok {
 		return defaultCtx
+	}
+	if ctx.HMACAuthType == "" {
+		ctx.HMACAuthType = defaultCtx.HMACAuthType
 	}
 	return ctx
 }

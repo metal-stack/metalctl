@@ -12,7 +12,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/net"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
-
 	"github.com/stretchr/testify/mock"
 )
 
@@ -55,6 +54,8 @@ var (
 			SSHPubKeys: []string{"sshpubkey"},
 			Succeeded:  pointer.Pointer(true),
 			UserData:   "---userdata---",
+			DNSServers: []*models.V1DNSServer{{IP: pointer.Pointer("8.8.8.8")}},
+			NtpServers: []*models.V1NTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
 			Date:    pointer.Pointer("biosdata"),
@@ -197,7 +198,7 @@ func Test_FirewallCmd_MultiResult(t *testing.T) {
 			mocks: &client.MetalMockFns{
 				Firewall: func(mock *mock.Mock) {
 					mock.On("FindFirewalls", testcommon.MatchIgnoreContext(t, firewall.NewFindFirewallsParams().WithBody(&models.V1FirewallFindRequest{
-						NicsMacAddresses: []string{},
+						NicsMacAddresses: nil,
 						Tags:             []string{},
 					})), nil).Return(&firewall.FindFirewallsOK{
 						Payload: []*models.V1FirewallResponse{
@@ -276,12 +277,20 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 			name: "create",
 			cmd: func(want *models.V1FirewallResponse) []string {
 				var (
-					ips      []string
-					networks []string
+					ips        []string
+					networks   []string
+					dnsServers []string
+					ntpservers []string
 				)
 				for _, s := range want.Allocation.Networks {
 					ips = append(ips, s.Ips...)
 					networks = append(networks, *s.Networkid+":noauto")
+				}
+				for _, dns := range want.Allocation.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+				for _, ntp := range want.Allocation.NtpServers {
+					ntpservers = append(ntpservers, *ntp.Address)
 				}
 
 				args := []string{"firewall", "create",
@@ -299,8 +308,11 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 					"--sshpublickey", pointer.FirstOrZero(want.Allocation.SSHPubKeys),
 					"--tags", strings.Join(want.Tags, ","),
 					"--userdata", want.Allocation.UserData,
+					"--firewall-rules-file", "",
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpservers, ","),
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
@@ -46,10 +47,10 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	tryCmd.Flags().StringP("size", "", "", "size to try")
 	tryCmd.Flags().StringP("image", "", "", "image to try")
-	must(tryCmd.MarkFlagRequired("size"))
-	must(tryCmd.MarkFlagRequired("image"))
-	must(tryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
-	must(tryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
+	genericcli.Must(tryCmd.MarkFlagRequired("size"))
+	genericcli.Must(tryCmd.MarkFlagRequired("image"))
+	genericcli.Must(tryCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
+	genericcli.Must(tryCmd.RegisterFlagCompletionFunc("image", c.comp.ImageListCompletion))
 
 	matchCmd := &cobra.Command{
 		Use:   "match",
@@ -61,15 +62,15 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	matchCmd.Flags().StringP("machine", "", "", "machine id to check for match [required]")
 	matchCmd.Flags().StringP("filesystemlayout", "", "", "filesystemlayout id to check against [required]")
-	must(matchCmd.MarkFlagRequired("machine"))
-	must(matchCmd.MarkFlagRequired("filesystemlayout"))
-	must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
-	must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
+	genericcli.Must(matchCmd.MarkFlagRequired("machine"))
+	genericcli.Must(matchCmd.MarkFlagRequired("filesystemlayout"))
+	genericcli.Must(matchCmd.RegisterFlagCompletionFunc("machine", c.comp.MachineListCompletion))
+	genericcli.Must(matchCmd.RegisterFlagCompletionFunc("filesystemlayout", c.comp.FilesystemLayoutListCompletion))
 
 	return genericcli.NewCmds(cmdsConfig, tryCmd, matchCmd)
 }
 
-func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().GetFilesystemLayout(fsmodel.NewGetFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (c fslCmd) Get(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().ListFilesystemLayouts(fsmodel.NewListFilesystemLayoutsParams(), nil)
 	if err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func (c fslCmd) List() ([]*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().DeleteFilesystemLayout(fsmodel.NewDeleteFilesystemLayoutParams().WithID(id), nil)
 	if err != nil {
 		return nil, err
@@ -96,7 +97,7 @@ func (c fslCmd) Delete(id string) (*models.V1FilesystemLayoutResponse, error) {
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().CreateFilesystemLayout(fsmodel.NewCreateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		var r *fsmodel.CreateFilesystemLayoutConflict
@@ -109,7 +110,7 @@ func (c fslCmd) Create(rq *models.V1FilesystemLayoutCreateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
-func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
+func (c *fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1FilesystemLayoutResponse, error) {
 	resp, err := c.client.Filesystemlayout().UpdateFilesystemLayout(fsmodel.NewUpdateFilesystemLayoutParams().WithBody(rq), nil)
 	if err != nil {
 		return nil, err
@@ -118,12 +119,12 @@ func (c fslCmd) Update(rq *models.V1FilesystemLayoutUpdateRequest) (*models.V1Fi
 	return resp.Payload, nil
 }
 
-func (c fslCmd) ToCreate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutCreateRequest, error) {
-	return filesystemLayoutResponseToCreate(r), nil
-}
+func (c *fslCmd) Convert(r *models.V1FilesystemLayoutResponse) (string, *models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, error) {
+	if r.ID == nil {
+		return "", nil, nil, fmt.Errorf("id is nil")
+	}
 
-func (c fslCmd) ToUpdate(r *models.V1FilesystemLayoutResponse) (*models.V1FilesystemLayoutUpdateRequest, error) {
-	return filesystemLayoutResponseToUpdate(r), nil
+	return *r.ID, filesystemLayoutResponseToCreate(r), filesystemLayoutResponseToUpdate(r), nil
 }
 
 func filesystemLayoutResponseToCreate(r *models.V1FilesystemLayoutResponse) *models.V1FilesystemLayoutCreateRequest {

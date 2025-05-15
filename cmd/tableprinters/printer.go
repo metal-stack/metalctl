@@ -13,6 +13,7 @@ import (
 type TablePrinter struct {
 	t                       *printers.TablePrinter
 	lastEventErrorThreshold time.Duration
+	markdown                bool
 }
 
 func New() *TablePrinter {
@@ -27,14 +28,26 @@ func (t *TablePrinter) SetLastEventErrorThreshold(threshold time.Duration) {
 	t.lastEventErrorThreshold = threshold
 }
 
+func (t *TablePrinter) SetMarkdown(markdown bool) {
+	t.markdown = markdown
+}
+
 func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]string, error) {
 	switch d := data.(type) {
+	case []*models.V1AuditResponse:
+		return t.AuditTable(d, wide)
+	case *models.V1AuditResponse:
+		return t.AuditTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1MachineResponse:
 		return t.MachineTable(d, wide)
 	case *models.V1MachineResponse:
 		return t.MachineTable(pointer.WrapInSlice(d), wide)
-	case api.MachineIssues:
+	case *MachinesAndIssues:
 		return t.MachineIssuesTable(d, wide)
+	case []*models.V1MachineIssue:
+		return t.MachineIssuesListTable(d, wide)
+	case *models.V1MachineIssue:
+		return t.MachineIssuesListTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1FirewallResponse:
 		return t.FirewallTable(d, wide)
 	case *models.V1FirewallResponse:
@@ -69,6 +82,10 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.ProjectTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1ProjectResponse:
 		return t.ProjectTable(d, wide)
+	case *models.V1TenantResponse:
+		return t.TenantTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1TenantResponse:
+		return t.TenantTable(d, wide)
 	case []*models.V1MachineIPMIResponse:
 		return t.MachineIPMITable(d, wide)
 	case *models.V1MachineIPMIResponse:
@@ -85,6 +102,7 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.FSLTable(d, wide)
 	case *api.Contexts:
 		return t.ContextTable(d, wide)
+
 	case *models.V1SizeImageConstraintResponse:
 		return t.SizeImageConstraintTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeImageConstraintResponse:
@@ -93,10 +111,15 @@ func (t *TablePrinter) ToHeaderAndRows(data any, wide bool) ([]string, [][]strin
 		return t.SizeTable(pointer.WrapInSlice(d), wide)
 	case []*models.V1SizeResponse:
 		return t.SizeTable(d, wide)
-	case *models.V1SizeMatchingLog:
-		return t.SizeMatchingLogTable(pointer.WrapInSlice(d), wide)
-	case []*models.V1SizeMatchingLog:
-		return t.SizeMatchingLogTable(d, wide)
+	case *models.V1SizeReservationResponse:
+		return t.SizeReservationTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1SizeReservationResponse:
+		return t.SizeReservationTable(d, wide)
+	case *models.V1SizeReservationUsageResponse:
+		return t.SizeReservationUsageTable(pointer.WrapInSlice(d), wide)
+	case []*models.V1SizeReservationUsageResponse:
+		return t.SizeReservationUsageTable(d, wide)
+
 	default:
 		return nil, nil, fmt.Errorf("unknown table printer for type: %T", d)
 	}
