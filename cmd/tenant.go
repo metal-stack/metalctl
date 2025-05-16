@@ -25,7 +25,7 @@ func newTenantCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, *models.V1TenantResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1TenantCreateRequest, *models.V1TenantUpdateRequest, *models.V1TenantResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:             "tenant",
 		Plural:               "tenants",
 		Description:          "a tenant belongs to a tenant and groups together entities in metal-stack.",

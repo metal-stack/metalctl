@@ -22,7 +22,7 @@ func newUpdateCmd(c *config) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			u, err := updater.New("metal-stack", binaryName, binaryName, desired)
+			u, err := updater.New("metal-stack", binaryName, *desired)
 			if err != nil {
 				return err
 			}
@@ -47,7 +47,7 @@ func newUpdateCmd(c *config) *cobra.Command {
 				desired = pointer.Pointer(viper.GetString("version"))
 			}
 
-			u, err := updater.New("metal-stack", binaryName, binaryName, desired)
+			u, err := updater.New("metal-stack", binaryName, *desired)
 			if err != nil {
 				return err
 			}

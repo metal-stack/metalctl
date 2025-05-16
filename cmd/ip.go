@@ -34,7 +34,7 @@ func newIPCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*ipAllocateRequest, *models.V1IPUpdateRequest, *models.V1IPResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:             "ip",
 		Plural:               "ips",
 		Description:          "an ip address can be attached to a machine or firewall such that network traffic can be routed to these servers.",

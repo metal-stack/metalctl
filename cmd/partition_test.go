@@ -7,6 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
@@ -241,6 +242,7 @@ ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
 				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
+					"--labels", strings.Join(genericcli.MapToLabels(want.Labels), ","),
 					"--description", want.Description,
 					"--cmdline", want.Bootconfig.Commandline,
 					"--kernelurl", want.Bootconfig.Kernelurl,
@@ -284,17 +286,32 @@ ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
 		{
 			name: "update",
 			cmd: func(want *models.V1PartitionResponse) []string {
+				var (
+					dnsServers []string
+					ntpServers []string
+				)
+				for _, dns := range want.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+
+				for _, ntp := range want.NtpServers {
+					ntpServers = append(ntpServers, *ntp.Address)
+				}
+
 				args := []string{"partition", "update", *want.ID,
 					"--name", want.Name,
+					"--labels", strings.Join(genericcli.MapToLabels(want.Labels), ","),
 					"--description", want.Description,
 					"--mgmtserver", want.Mgmtserviceaddress,
 					"--cmdline", want.Bootconfig.Commandline,
 					"--kernelurl", want.Bootconfig.Kernelurl,
 					"--imageurl", want.Bootconfig.Imageurl,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpServers, ","),
 					"--waiting-pool-min-size", want.Waitingpoolminsize,
 					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
 				}
-				assertExhaustiveArgs(t, args, "file")
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
 			},
 			mocks: &client.MetalMockFns{

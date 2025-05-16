@@ -15,8 +15,9 @@ Meaning of the emojis:
 ❓ Machine is in unknown condition. The metal-api does not receive phoned home events anymore or has never booted successfully.
 ⭕ Machine is in a provisioning crash loop. Flag can be reset through an API-triggered reboot or when the machine reaches the phoned home state.
 🚑 Machine reclaim has failed. The machine was deleted but it is not going back into the available machine pool.
-🛡 Machine is connected to our VPN, ssh access only possible via this VPN.
+🛡  Machine is connected to our VPN, ssh access only possible via this VPN.
 💤 Machine is in shutdown state. The machine was powered off by the pool scaler because the partition's maximum pool size was exceeded.
+
 
 ```
 metalctl machine list [flags]
@@ -58,12 +59,12 @@ metalctl machine list [flags]
       --api-url string         api server address. Can be specified with METALCTL_API_URL environment variable.
   -c, --config string          alternative config file path, (default is ~/.metalctl/config.yaml).
                                Example config.yaml:
-
+                               
                                ---
                                apitoken: "alongtoken"
                                ...
-
-
+                               
+                               
       --debug                  debug output
       --force-color            force colored output even without tty
       --kubeconfig string      Path to the kube-config to use for authentication and authorization. Is updated by login. Uses default path if not specified.
@@ -72,13 +73,14 @@ metalctl machine list [flags]
       --template string        output template for template output-format, go template format.
                                For property names inspect the output of -o json or -o yaml for reference.
                                Example for machines:
-
+                               
                                metalctl machine list -o template --template "{{ .id }}:{{ .size.id  }}"
-
-
+                               
+                               
       --yes-i-really-mean-it   skips security prompts (which can be dangerous to set blindly because actions can lead to data loss or additional costs)
 ```
 
 ### SEE ALSO
 
-- [metalctl machine](metalctl_machine.md) - manage machine entities
+* [metalctl machine](metalctl_machine.md)	 - manage machine entities
+

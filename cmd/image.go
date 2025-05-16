@@ -25,7 +25,7 @@ func newImageCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1ImageCreateRequest, *models.V1ImageUpdateRequest, *models.V1ImageResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:        "image",
 		Plural:          "images",
 		Description:     "os images available to be installed on machines.",

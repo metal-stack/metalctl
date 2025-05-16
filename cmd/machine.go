@@ -104,7 +104,7 @@ func newMachineCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1MachineAllocateRequest, *models.V1MachineUpdateRequest, *models.V1MachineResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:             "machine",
 		Plural:               "machines",
 		Description:          "a machine is a bare metal server provisioned through metal-stack that is intended to run user workload.",

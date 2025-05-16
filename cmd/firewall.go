@@ -28,7 +28,7 @@ func newFirewallCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse]{
 		BinaryName: binaryName,
-		GenericCLI: genericcli.NewGenericCLI[*models.V1FirewallCreateRequest, any, *models.V1FirewallResponse](w).WithFS(c.fs),
+		GenericCLI: genericcli.NewGenericCLI(w).WithFS(c.fs),
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
 			genericcli.DescribeCmd,

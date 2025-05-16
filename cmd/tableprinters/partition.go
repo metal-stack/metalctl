@@ -18,7 +18,7 @@ func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide b
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Labels"}
+		header = []string{"ID", "Name", "Description", "MinWait", "MaxWait", "Labels"}
 	}
 
 	for _, p := range data {
