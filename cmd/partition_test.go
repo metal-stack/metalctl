@@ -31,8 +31,8 @@ var (
 		Labels: map[string]string{
 			"a": "b",
 		},
-		Waitingpoolmaxsize: "10%",
-		Waitingpoolminsize: "5%",
+		Waitingpoolmaxsize: pointer.Pointer("10%"),
+		Waitingpoolminsize: pointer.Pointer("5%"),
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -250,8 +250,8 @@ ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
 					"--mgmtserver", want.Mgmtserviceaddress,
 					"--dnsservers", strings.Join(dnsServers, ","),
 					"--ntpservers", strings.Join(ntpServers, ","),
-					"--waiting-pool-min-size", want.Waitingpoolminsize,
-					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
+					"--waiting-pool-min-size", pointer.SafeDeref(want.Waitingpoolminsize),
+					"--waiting-pool-max-size", pointer.SafeDeref(want.Waitingpoolmaxsize),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -308,8 +308,8 @@ ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
 					"--imageurl", want.Bootconfig.Imageurl,
 					"--dnsservers", strings.Join(dnsServers, ","),
 					"--ntpservers", strings.Join(ntpServers, ","),
-					"--waiting-pool-min-size", want.Waitingpoolminsize,
-					"--waiting-pool-max-size", want.Waitingpoolmaxsize,
+					"--waiting-pool-min-size", pointer.SafeDeref(want.Waitingpoolminsize),
+					"--waiting-pool-max-size", pointer.SafeDeref(want.Waitingpoolmaxsize),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args

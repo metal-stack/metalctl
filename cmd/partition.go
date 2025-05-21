@@ -235,8 +235,8 @@ func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest,
 		},
 		DNSServers:         dnsServers,
 		NtpServers:         ntpServers,
-		Waitingpoolmaxsize: viper.GetString("waiting-pool-max-size"),
-		Waitingpoolminsize: viper.GetString("waiting-pool-min-size"),
+		Waitingpoolmaxsize: pointer.Pointer(viper.GetString("waiting-pool-max-size")),
+		Waitingpoolminsize: pointer.Pointer(viper.GetString("waiting-pool-min-size")),
 	}
 
 	return pcr, nil
@@ -282,8 +282,8 @@ func (c *partitionCmd) updateRequestFromCLI(args []string) (*models.V1PartitionU
 		},
 		DNSServers:         dnsServers,
 		NtpServers:         ntpServers,
-		Waitingpoolmaxsize: viper.GetString("waiting-pool-max-size"),
-		Waitingpoolminsize: viper.GetString("waiting-pool-min-size"),
+		Waitingpoolmaxsize: pointer.Pointer(viper.GetString("waiting-pool-max-size")),
+		Waitingpoolminsize: pointer.Pointer(viper.GetString("waiting-pool-min-size")),
 	}
 
 	return pur, nil

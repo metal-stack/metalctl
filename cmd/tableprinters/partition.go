@@ -22,7 +22,7 @@ func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide b
 	}
 
 	for _, p := range data {
-		row := []string{pointer.SafeDeref(p.ID), p.Name, p.Description, p.Waitingpoolminsize, p.Waitingpoolmaxsize}
+		row := []string{pointer.SafeDeref(p.ID), p.Name, p.Description, pointer.SafeDeref(p.Waitingpoolminsize), pointer.SafeDeref(p.Waitingpoolmaxsize)}
 
 		if wide {
 			labels := genericcli.MapToLabels(p.Labels)
