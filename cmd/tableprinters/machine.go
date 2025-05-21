@@ -99,12 +99,15 @@ func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models
 	)
 
 	switch l := pointer.SafeDeref(liveliness); l {
-	case "Alive":
+	case models.V1MachineBaseLivelinessAlive:
 		// noop
-	case "Dead":
+	case models.V1MachineBaseLivelinessDead:
 		emojis = append(emojis, api.Skull)
 		wide = append(wide, l)
-	case "Unknown":
+	case models.V1MachineBaseLivelinessHibernated:
+		emojis = append(emojis, api.Sleep)
+		wide = append(wide, l)
+	case models.V1MachineBaseLivelinessUnknown:
 		emojis = append(emojis, api.Question)
 		wide = append(wide, l)
 	default:
@@ -113,15 +116,15 @@ func (t *TablePrinter) getMachineStatusEmojis(liveliness *string, events *models
 	}
 
 	if state != nil {
-		switch pointer.SafeDeref(state.Value) {
-		case "":
+		switch v := pointer.SafeDeref(state.Value); v {
+		case models.V1MachineStateValueEmpty:
 			// noop
-		case "LOCKED":
+		case models.V1MachineStateValueLOCKED:
 			emojis = append(emojis, api.Lock)
-			wide = append(wide, "Locked")
-		case "RESERVED":
+			wide = append(wide, v)
+		case models.V1MachineStateValueRESERVED:
 			emojis = append(emojis, api.Bark)
-			wide = append(wide, "Reserved")
+			wide = append(wide, v)
 		}
 	}
 

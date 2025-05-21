@@ -26,7 +26,7 @@ func newFilesystemLayoutCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1FilesystemLayoutCreateRequest, *models.V1FilesystemLayoutUpdateRequest, *models.V1FilesystemLayoutResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:        "filesystemlayout",
 		Plural:          "filesystemlayouts",
 		Description:     "a filesystemlayout is a specification how the disks in a machine are partitioned, formatted and mounted.",

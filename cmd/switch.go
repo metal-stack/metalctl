@@ -29,7 +29,7 @@ func newSwitchCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse]{
 		BinaryName: binaryName,
-		GenericCLI: genericcli.NewGenericCLI[any, *models.V1SwitchUpdateRequest, *models.V1SwitchResponse](w).WithFS(c.fs),
+		GenericCLI: genericcli.NewGenericCLI(w).WithFS(c.fs),
 		OnlyCmds: genericcli.OnlyCmds(
 			genericcli.ListCmd,
 			genericcli.DescribeCmd,

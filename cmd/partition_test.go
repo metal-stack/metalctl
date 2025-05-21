@@ -7,6 +7,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
+	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
@@ -22,13 +23,16 @@ var (
 			Imageurl:    "imageurl",
 			Kernelurl:   "kernelurl",
 		},
-		Description:        "partition 1",
-		ID:                 pointer.Pointer("1"),
-		Mgmtserviceaddress: "mgmt",
-		Name:               "partition-1",
+		Description:                "partition 1",
+		ID:                         pointer.Pointer("1"),
+		Mgmtserviceaddress:         "mgmt",
+		Name:                       "partition-1",
+		Privatenetworkprefixlength: 24,
 		Labels: map[string]string{
 			"a": "b",
 		},
+		Waitingpoolmaxsize: pointer.Pointer("10%"),
+		Waitingpoolminsize: pointer.Pointer("5%"),
 	}
 	partition2 = &models.V1PartitionResponse{
 		Bootconfig: &models.V1PartitionBootConfiguration{
@@ -65,13 +69,13 @@ func Test_PartitionCmd_MultiResult(t *testing.T) {
 				partition2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 2    partition-2   partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION   LABELS
-1    partition-1   partition 1   a=b
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
+1    partition-1   partition 1   5%        10%       a=b
 2    partition-2   partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
@@ -80,10 +84,10 @@ ID   NAME          DESCRIPTION   LABELS
 2 partition-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
-|  2 | partition-2 | partition 2 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
+|  2 | partition-2 | partition 2 |         |         |
 `),
 		},
 		{
@@ -189,21 +193,21 @@ func Test_PartitionCmd_SingleResult(t *testing.T) {
 			},
 			want: partition1,
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT
+1    partition-1   partition 1   5%        10%
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION   LABELS
-1    partition-1   partition 1   a=b
+ID   NAME          DESCRIPTION   MINWAIT   MAXWAIT   LABELS
+1    partition-1   partition 1   5%        10%       a=b
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
-|----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
+| ID |    NAME     | DESCRIPTION | MINWAIT | MAXWAIT |
+|----|-------------|-------------|---------|---------|
+|  1 | partition-1 | partition 1 | 5%      | 10%     |
 `),
 		},
 		{
@@ -238,6 +242,7 @@ ID   NAME          DESCRIPTION   LABELS
 				args := []string{"partition", "create",
 					"--id", *want.ID,
 					"--name", want.Name,
+					"--labels", strings.Join(genericcli.MapToLabels(want.Labels), ","),
 					"--description", want.Description,
 					"--cmdline", want.Bootconfig.Commandline,
 					"--kernelurl", want.Bootconfig.Kernelurl,
@@ -245,6 +250,8 @@ ID   NAME          DESCRIPTION   LABELS
 					"--mgmtserver", want.Mgmtserviceaddress,
 					"--dnsservers", strings.Join(dnsServers, ","),
 					"--ntpservers", strings.Join(ntpServers, ","),
+					"--waiting-pool-min-size", pointer.SafeDeref(want.Waitingpoolminsize),
+					"--waiting-pool-max-size", pointer.SafeDeref(want.Waitingpoolmaxsize),
 				}
 				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
 				return args
@@ -253,6 +260,82 @@ ID   NAME          DESCRIPTION   LABELS
 				Partition: func(mock *mock.Mock) {
 					p := partition1
 					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(p))), nil).Return(&partition.CreatePartitionCreated{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: partition1,
+		},
+		{
+			name: "create from file",
+			cmd: func(want *models.V1PartitionResponse) []string {
+				return []string{"partition", "create", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1PartitionResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					mock.On("CreatePartition", testcommon.MatchIgnoreContext(t, partition.NewCreatePartitionParams().WithBody(partitionResponseToCreate(partition1))), nil).Return(&partition.CreatePartitionCreated{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: partition1,
+		},
+		{
+			name: "update",
+			cmd: func(want *models.V1PartitionResponse) []string {
+				var (
+					dnsServers []string
+					ntpServers []string
+				)
+				for _, dns := range want.DNSServers {
+					dnsServers = append(dnsServers, *dns.IP)
+				}
+
+				for _, ntp := range want.NtpServers {
+					ntpServers = append(ntpServers, *ntp.Address)
+				}
+
+				args := []string{"partition", "update", *want.ID,
+					"--name", want.Name,
+					"--labels", strings.Join(genericcli.MapToLabels(want.Labels), ","),
+					"--description", want.Description,
+					"--mgmtserver", want.Mgmtserviceaddress,
+					"--cmdline", want.Bootconfig.Commandline,
+					"--kernelurl", want.Bootconfig.Kernelurl,
+					"--imageurl", want.Bootconfig.Imageurl,
+					"--dnsservers", strings.Join(dnsServers, ","),
+					"--ntpservers", strings.Join(ntpServers, ","),
+					"--waiting-pool-min-size", pointer.SafeDeref(want.Waitingpoolminsize),
+					"--waiting-pool-max-size", pointer.SafeDeref(want.Waitingpoolmaxsize),
+				}
+				assertExhaustiveArgs(t, args, commonExcludedFileArgs()...)
+				return args
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					p := partition1
+					p.Privatenetworkprefixlength = 0
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(p))), nil).Return(&partition.UpdatePartitionOK{
+						Payload: partition1,
+					}, nil)
+				},
+			},
+			want: partition1,
+		},
+		{
+			name: "update from file",
+			cmd: func(want *models.V1PartitionResponse) []string {
+				return []string{"partition", "update", "-f", "/file.yaml"}
+			},
+			fsMocks: func(fs afero.Fs, want *models.V1PartitionResponse) {
+				require.NoError(t, afero.WriteFile(fs, "/file.yaml", mustMarshal(t, want), 0755))
+			},
+			mocks: &client.MetalMockFns{
+				Partition: func(mock *mock.Mock) {
+					mock.On("UpdatePartition", testcommon.MatchIgnoreContext(t, partition.NewUpdatePartitionParams().WithBody(partitionResponseToUpdate(partition1))), nil).Return(&partition.UpdatePartitionOK{
 						Payload: partition1,
 					}, nil)
 				},

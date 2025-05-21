@@ -29,7 +29,7 @@ func newSizeCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeCreateRequest, *models.V1SizeUpdateRequest, *models.V1SizeResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:        "size",
 		Plural:          "sizes",
 		Description:     "a size matches a machine in terms of cpu cores, ram and storage.",

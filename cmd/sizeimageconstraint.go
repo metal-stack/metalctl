@@ -25,7 +25,7 @@ func newSizeImageConstraintCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[*models.V1SizeImageConstraintCreateRequest, *models.V1SizeImageConstraintUpdateRequest, *models.V1SizeImageConstraintResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:        "imageconstraint",
 		Plural:          "imageconstraints",
 		Description:     "if a size has specific requirements regarding the images which must fulfill certain constraints, this can be configured here.",
