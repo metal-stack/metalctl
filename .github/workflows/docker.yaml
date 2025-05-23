@@ -102,6 +102,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
 
       - name: Build and push image
         uses: docker/build-push-action@v6
@@ -111,6 +112,18 @@ jobs:
           sbom: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG_NAME }}
         if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
+
+      - name: Generate SBOM for metalctl binary
+        uses: anchore/sbom-action@v0
+        env:
+          SBOM-NAME: sbom-${{ matrix.os }}-${{ matrix.arch }}.json
+        with:
+          path: ./bin/
+          format: spdx-json
+          artifact-name: ${{ env.SBOM-NAME }}
+          output-file: ./bin/${{ env.SBOM-NAME }}
+          upload-release-assets: true
+        if: ${{ github.event_name == 'release' }}
 
       - name: Prepare upload
         run: |
