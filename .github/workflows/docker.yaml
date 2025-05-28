@@ -122,8 +122,6 @@ jobs:
           format: spdx-json
           artifact-name: ${{ env.SBOM-NAME }}
           output-file: ./bin/${{ env.SBOM-NAME }}
-          upload-release-assets: true
-        if: ${{ github.event_name == 'release' }}
 
       - name: Prepare upload
         run: |
@@ -140,4 +138,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             bin/metalctl-*
+            bin/sbom-*.json
         if: ${{ github.event_name == 'release' }}
