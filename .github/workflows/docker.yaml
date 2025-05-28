@@ -116,12 +116,12 @@ jobs:
       - name: Generate SBOM for metalctl binary
         uses: anchore/sbom-action@v0
         env:
-          SBOM-NAME: sbom-${{ matrix.os }}-${{ matrix.arch }}.json
+          SBOM_NAME: sbom-${{ matrix.os }}-${{ matrix.arch }}.json
         with:
           path: ./bin/
           format: spdx-json
-          artifact-name: ${{ env.SBOM-NAME }}
-          output-file: ./bin/${{ env.SBOM-NAME }}
+          artifact-name: ${{ env.SBOM_NAME }}
+          output-file: ./bin/${{ env.SBOM_NAME }}
 
       - name: Prepare upload
         run: |
