@@ -36,9 +36,11 @@ func newPartitionCmd(c *config) *cobra.Command {
 		DescribePrinter:      func() printers.Printer { return c.describePrinter },
 		ListPrinter:          func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: w.createRequestFromCLI,
+		UpdateRequestFromCLI: w.updateRequestFromCLI,
 		CreateCmdMutateFn: func(cmd *cobra.Command) {
 			cmd.Flags().StringP("id", "", "", "ID of the partition. [required]")
 			cmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
+			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
 			cmd.Flags().StringP("description", "d", "", "Description of the partition. [required]")
 			cmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [required]")
 			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [required]")
@@ -46,6 +48,21 @@ func newPartitionCmd(c *config) *cobra.Command {
 			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [required]")
 			cmd.Flags().StringP("dnsservers", "", "", "dns servers for the machines and firewalls in the partition. [optional]")
 			cmd.Flags().StringP("ntpservers", "", "", "ntp servers for the machines and firewalls in the partition. [optional]")
+			cmd.Flags().String("waiting-pool-min-size", "", "The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]")
+			cmd.Flags().String("waiting-pool-max-size", "", "The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]")
+		},
+		UpdateCmdMutateFn: func(cmd *cobra.Command) {
+			cmd.Flags().StringP("name", "n", "", "Name of the partition. [optional]")
+			cmd.Flags().StringP("description", "d", "", "Description of the partition. [optional]")
+			cmd.Flags().StringSlice("labels", []string{}, "add initial labels, must be in the form of key=value, use it like: --labels \"key1=value1,key2=value2\".")
+			cmd.Flags().StringP("mgmtserver", "", "", "management server address in the partition. [optional]")
+			cmd.Flags().StringP("cmdline", "", "", "kernel commandline for the metal-hammer in the partition. [optional]")
+			cmd.Flags().StringP("imageurl", "", "", "initrd for the metal-hammer in the partition. [optional]")
+			cmd.Flags().StringP("kernelurl", "", "", "kernel url for the metal-hammer in the partition. [optional]")
+			cmd.Flags().StringP("dnsservers", "", "", "dns servers for the machines and firewalls in the partition. [optional]")
+			cmd.Flags().StringP("ntpservers", "", "", "ntp servers for the machines and firewalls in the partition. [optional]")
+			cmd.Flags().String("waiting-pool-min-size", "", "The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]")
+			cmd.Flags().String("waiting-pool-max-size", "", "The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]")
 		},
 	}
 
@@ -138,6 +155,8 @@ func partitionResponseToCreate(r *models.V1PartitionResponse) *models.V1Partitio
 		Name:               r.Name,
 		DNSServers:         r.DNSServers,
 		NtpServers:         r.NtpServers,
+		Waitingpoolmaxsize: r.Waitingpoolmaxsize,
+		Waitingpoolminsize: r.Waitingpoolminsize,
 	}
 }
 
@@ -155,6 +174,8 @@ func partitionResponseToUpdate(r *models.V1PartitionResponse) *models.V1Partitio
 		Labels:             r.Labels,
 		DNSServers:         r.DNSServers,
 		NtpServers:         r.NtpServers,
+		Waitingpoolmaxsize: r.Waitingpoolmaxsize,
+		Waitingpoolminsize: r.Waitingpoolminsize,
 	}
 }
 
@@ -212,9 +233,58 @@ func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest,
 			Imageurl:    viper.GetString("imageurl"),
 			Kernelurl:   viper.GetString("kernelurl"),
 		},
-		DNSServers: dnsServers,
-		NtpServers: ntpServers,
+		DNSServers:         dnsServers,
+		NtpServers:         ntpServers,
+		Waitingpoolmaxsize: pointer.Pointer(viper.GetString("waiting-pool-max-size")),
+		Waitingpoolminsize: pointer.Pointer(viper.GetString("waiting-pool-min-size")),
 	}
 
 	return pcr, nil
+}
+
+func (c *partitionCmd) updateRequestFromCLI(args []string) (*models.V1PartitionUpdateRequest, error) {
+	var (
+		dnsServers []*models.V1DNSServer
+		ntpServers []*models.V1NTPServer
+	)
+
+	id, err := genericcli.GetExactlyOneArg(args)
+	if err != nil {
+		return nil, err
+	}
+
+	dnsServersArgument := viper.GetStringSlice("dnsservers")
+	ntpServersArgument := viper.GetStringSlice("ntpservers")
+
+	for _, s := range dnsServersArgument {
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+	}
+
+	for _, s := range ntpServersArgument {
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+	}
+
+	labels, err := genericcli.LabelsToMap(viper.GetStringSlice("labels"))
+	if err != nil {
+		return nil, err
+	}
+
+	pur := &models.V1PartitionUpdateRequest{
+		ID:                 &id,
+		Description:        viper.GetString("description"),
+		Labels:             labels,
+		Name:               viper.GetString("name"),
+		Mgmtserviceaddress: viper.GetString("mgmtserver"),
+		Bootconfig: &models.V1PartitionBootConfiguration{
+			Commandline: viper.GetString("cmdline"),
+			Imageurl:    viper.GetString("imageurl"),
+			Kernelurl:   viper.GetString("kernelurl"),
+		},
+		DNSServers:         dnsServers,
+		NtpServers:         ntpServers,
+		Waitingpoolmaxsize: pointer.Pointer(viper.GetString("waiting-pool-max-size")),
+		Waitingpoolminsize: pointer.Pointer(viper.GetString("waiting-pool-min-size")),
+	}
+
+	return pur, nil
 }

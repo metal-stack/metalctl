@@ -9,31 +9,34 @@ metalctl partition create [flags]
 ### Options
 
 ```
-      --bulk-output             when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
-      --cmdline string          kernel commandline for the metal-hammer in the partition. [required]
-  -d, --description string      Description of the partition. [required]
-      --dnsservers string       dns servers for the machines and firewalls in the partition. [optional]
-  -f, --file string             filename of the create or update request in yaml format, or - for stdin.
-                                
-                                Example:
-                                $ metalctl partition describe partition-1 -o yaml > partition.yaml
-                                $ vi partition.yaml
-                                $ # either via stdin
-                                $ cat partition.yaml | metalctl partition create -f -
-                                $ # or via file
-                                $ metalctl partition create -f partition.yaml
-                                
-                                the file can also contain multiple documents and perform a bulk operation.
-                                	
-  -h, --help                    help for create
-      --id string               ID of the partition. [required]
-      --imageurl string         initrd for the metal-hammer in the partition. [required]
-      --kernelurl string        kernel url for the metal-hammer in the partition. [required]
-      --mgmtserver string       management server address in the partition. [required]
-  -n, --name string             Name of the partition. [optional]
-      --ntpservers string       ntp servers for the machines and firewalls in the partition. [optional]
-      --skip-security-prompts   skips security prompt for bulk operations
-      --timestamps              when used with --file (bulk operation): prints timestamps in-between the operations
+      --bulk-output                    when used with --file (bulk operation): prints results at the end as a list. default is printing results intermediately during the operation, which causes single entities to be printed in a row.
+      --cmdline string                 kernel commandline for the metal-hammer in the partition. [required]
+  -d, --description string             Description of the partition. [required]
+      --dnsservers string              dns servers for the machines and firewalls in the partition. [optional]
+  -f, --file string                    filename of the create or update request in yaml format, or - for stdin.
+                                       
+                                       Example:
+                                       $ metalctl partition describe partition-1 -o yaml > partition.yaml
+                                       $ vi partition.yaml
+                                       $ # either via stdin
+                                       $ cat partition.yaml | metalctl partition create -f -
+                                       $ # or via file
+                                       $ metalctl partition create -f partition.yaml
+                                       
+                                       the file can also contain multiple documents and perform a bulk operation.
+                                       	
+  -h, --help                           help for create
+      --id string                      ID of the partition. [required]
+      --imageurl string                initrd for the metal-hammer in the partition. [required]
+      --kernelurl string               kernel url for the metal-hammer in the partition. [required]
+      --labels strings                 add initial labels, must be in the form of key=value, use it like: --labels "key1=value1,key2=value2".
+      --mgmtserver string              management server address in the partition. [required]
+  -n, --name string                    Name of the partition. [optional]
+      --ntpservers string              ntp servers for the machines and firewalls in the partition. [optional]
+      --skip-security-prompts          skips security prompt for bulk operations
+      --timestamps                     when used with --file (bulk operation): prints timestamps in-between the operations
+      --waiting-pool-max-size string   The maximum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 70% of the machines should be waiting, the rest will be shutdown). [optional]
+      --waiting-pool-min-size string   The minimum size of the waiting machine pool inside the partition (can be a number or percentage, e.g. 50% of the machines should be waiting, the rest will be shutdown). [optional]
 ```
 
 ### Options inherited from parent commands

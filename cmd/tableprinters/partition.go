@@ -13,16 +13,16 @@ import (
 
 func (t *TablePrinter) PartitionTable(data []*models.V1PartitionResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Name", "Description"}
+		header = []string{"ID", "Name", "Description", "MinWait", "MaxWait"}
 		rows   [][]string
 	)
 
 	if wide {
-		header = []string{"ID", "Name", "Description", "Labels"}
+		header = []string{"ID", "Name", "Description", "MinWait", "MaxWait", "Labels"}
 	}
 
 	for _, p := range data {
-		row := []string{pointer.SafeDeref(p.ID), p.Name, p.Description}
+		row := []string{pointer.SafeDeref(p.ID), p.Name, p.Description, pointer.SafeDeref(p.Waitingpoolminsize), pointer.SafeDeref(p.Waitingpoolmaxsize)}
 
 		if wide {
 			labels := genericcli.MapToLabels(p.Labels)

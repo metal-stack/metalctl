@@ -94,9 +94,9 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 		if ipv4Use >= 0.9 || ipv6Use >= 0.9 {
 			shortIPUsage = color.RedString(threequarterpie)
 		} else if ipv4Use >= 0.7 || ipv6Use >= 0.7 {
-			shortIPUsage += color.YellowString(halfpie)
+			shortIPUsage = color.YellowString(halfpie)
 		} else {
-			shortIPUsage += color.GreenString(dot)
+			shortIPUsage = color.GreenString(dot)
 		}
 
 		if ipv4PrefixUse >= 0.9 || ipv6PrefixUse >= 0.9 {
@@ -109,7 +109,7 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	}
 
 	max := getMaxLineCount(n.Description, n.Name, n.Projectid, n.Partitionid, nat, prefixes, shortIPUsage, privateSuper)
-	for i := 0; i < max-1; i++ {
+	for range max - 1 {
 		id += "\n│"
 	}
 
