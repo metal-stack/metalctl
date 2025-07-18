@@ -27,7 +27,7 @@ func newAuditCmd(c *config) *cobra.Command {
 
 	cmdsConfig := &genericcli.CmdsConfig[any, any, *models.V1AuditResponse]{
 		BinaryName:      binaryName,
-		GenericCLI:      genericcli.NewGenericCLI[any, any, *models.V1AuditResponse](w).WithFS(c.fs),
+		GenericCLI:      genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:        "audit trace",
 		Plural:          "audit traces",
 		Description:     "show audit traces of the api. feature must be enabled on server-side.",

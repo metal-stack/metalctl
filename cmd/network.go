@@ -25,12 +25,12 @@ type networkCmd struct {
 func newNetworkCmd(c *config) *cobra.Command {
 	w := &networkCmd{
 		config:   c,
-		childCLI: genericcli.NewGenericCLI[*models.V1NetworkAllocateRequest, any, *models.V1NetworkResponse](networkChildCRUD{config: c}).WithFS(c.fs),
+		childCLI: genericcli.NewGenericCLI(networkChildCRUD{config: c}).WithFS(c.fs),
 	}
 
 	cmdsConfig := &genericcli.CmdsConfig[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse]{
 		BinaryName:           binaryName,
-		GenericCLI:           genericcli.NewGenericCLI[*models.V1NetworkCreateRequest, *models.V1NetworkUpdateRequest, *models.V1NetworkResponse](w).WithFS(c.fs),
+		GenericCLI:           genericcli.NewGenericCLI(w).WithFS(c.fs),
 		Singular:             "network",
 		Plural:               "networks",
 		Description:          "networks can be attached to a machine or firewall such that they can communicate with each other.",

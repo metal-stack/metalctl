@@ -144,7 +144,7 @@ func assertExhaustiveArgs(t *testing.T, args []string, exclude ...string) {
 		if slices.Contains(exclude, f.Name) {
 			return
 		}
-		require.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure you all available args are used in order to increase coverage or exclude them explicitly")
+		require.NoError(t, assertContainsPrefix(args, "--"+f.Name), "please ensure all available args are used in order to increase coverage or exclude them explicitly")
 	})
 }
 
