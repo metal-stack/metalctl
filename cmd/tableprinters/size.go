@@ -49,10 +49,7 @@ func (t *TablePrinter) SizeTable(data []*models.V1SizeResponse, wide bool) ([]st
 		rows = append(rows, row)
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }

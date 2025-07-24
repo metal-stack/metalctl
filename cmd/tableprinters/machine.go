@@ -215,10 +215,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		}
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }
@@ -279,10 +276,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		rows = append(rows, []string{time.Time(i.Time).Format(time.RFC1123), pointer.SafeDeref(i.Event), msg})
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }
@@ -415,10 +409,7 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 		}
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }

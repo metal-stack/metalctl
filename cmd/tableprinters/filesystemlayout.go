@@ -42,10 +42,7 @@ func (t *TablePrinter) FSLTable(data []*models.V1FilesystemLayoutResponse, wide 
 		rows = append(rows, []string{pointer.SafeDeref(fsl.ID), fsl.Description, fss.String(), strings.Join(fsl.Constraints.Sizes, "\n"), strings.Join(imageConstraints, "\n")})
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }

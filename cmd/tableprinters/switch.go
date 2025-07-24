@@ -23,10 +23,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 	if wide {
 		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
 
-		// TODO: Reintroduce Wrap Text
-		// t.t.MutateTable(func(table *tablewriter.Table) {
-		// 	table.SetAutoWrapText(false)
-		// })
+		t.t.DisableAutoWrap(true)
 	}
 
 	for _, s := range data {
@@ -150,10 +147,7 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial", "Chassis Serial"}
 	}
 
-	// TODO: Reintroduce Wrap Text
-	// t.t.MutateTable(func(table *tablewriter.Table) {
-	// 	table.SetAutoWrapText(false)
-	// })
+	t.t.DisableAutoWrap(true)
 
 	for _, s := range data.SS {
 		id := pointer.SafeDeref(s.ID)

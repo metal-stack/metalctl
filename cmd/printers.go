@@ -26,6 +26,7 @@ func newPrinterFromCLI(out io.Writer) printers.Printer {
 			Wide:            format == "wide",
 			Markdown:        format == "markdown",
 			NoHeaders:       viper.GetBool("no-headers"),
+			DisableAutoWrap: false,
 		}).WithOut(out)
 
 		tp.SetMarkdown(format == "markdown")

@@ -11,7 +11,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/metal-stack/metal-go v0.41.1
-	github.com/metal-stack/metal-lib v0.23.2-0.20250717082417-92cbcc937194
+	github.com/metal-stack/metal-lib v0.23.2-0.20250724083739-ee5d8c8b14a6
 	github.com/metal-stack/updater v1.2.2
 	github.com/metal-stack/v v1.0.3
 	github.com/spf13/afero v1.14.0
