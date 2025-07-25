@@ -244,6 +244,8 @@ github.com/metal-stack/metal-go v0.41.1 h1:f6sc0d5r1a30s1Nd/93C6zAj5j8GBBIUqC8fv
 github.com/metal-stack/metal-go v0.41.1/go.mod h1:T0lbyrc+aHlI/GWAu2Og4Fmj4oaj5RD55736jBG0R8Y=
 github.com/metal-stack/metal-lib v0.23.2-0.20250724083739-ee5d8c8b14a6 h1:mjmkbVJ4ttt5ZpmL47Af69IXpPKYX/NQnvASv0gyNko=
 github.com/metal-stack/metal-lib v0.23.2-0.20250724083739-ee5d8c8b14a6/go.mod h1:Wka8ZamRvQXqi6AEWMVHmwGrZj2Zf1RH/qANmxEPa9o=
+github.com/metal-stack/metal-lib v0.23.3-0.20250725070451-01cc9ec40a86 h1:spNzrsEEe75CyZ+FbmDdyErf8PXhfvviEADj8Ncqaas=
+github.com/metal-stack/metal-lib v0.23.3-0.20250725070451-01cc9ec40a86/go.mod h1:Wka8ZamRvQXqi6AEWMVHmwGrZj2Zf1RH/qANmxEPa9o=
 github.com/metal-stack/security v0.9.3 h1:ZF5rGeZ4fIFe0DFFQWkXsUDCzODyjdrpvKmeaLOz9lo=
 github.com/metal-stack/security v0.9.3/go.mod h1:ENm5kPjqh4uYvn79sAIxd6GZBwtF2GSsGdkLELrB/D4=
 github.com/metal-stack/updater v1.2.2 h1:gnUrnQgfT20QFMDtFBY89opKoBAkdeI/8T2iwMHNdxs=

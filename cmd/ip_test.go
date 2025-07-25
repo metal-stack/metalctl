@@ -62,14 +62,14 @@ func Test_IPCmd_MultiResult(t *testing.T) {
 				ip2,
 			},
 			wantTable: pointer.Pointer(`
-IP        DESCRIPTION   NAME   NETWORK    PROJECT     TYPE        TAGS
-1.1.1.1   ip 1          ip-1   internet   project-1   ephemeral   a
-2.2.2.2   ip 2          ip-2   internet   project-2   static      b
+IP       DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
+1.1.1.1  ip 1         ip-1  internet  project-1  ephemeral  a
+2.2.2.2  ip 2         ip-2  internet  project-2  static     b
 `),
 			wantWideTable: pointer.Pointer(`
-IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE        TAGS
-1.1.1.1   1                 ip 1          ip-1   internet   project-1   ephemeral   a
-2.2.2.2   2                 ip 2          ip-2   internet   project-2   static      b
+IP       ALLOCATION UUID  DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
+1.1.1.1  1                ip 1         ip-1  internet  project-1  ephemeral  a
+2.2.2.2  2                ip 2         ip-2  internet  project-2  static     b
 `),
 			template: pointer.Pointer("{{ .ipaddress }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -77,7 +77,7 @@ IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE    
 2.2.2.2 ip-2
 `),
 			wantMarkdown: pointer.Pointer(`
-|   IP    | DESCRIPTION | NAME | NETWORK  |  PROJECT  |   TYPE    | TAGS |
+| IP      | DESCRIPTION | NAME | NETWORK  | PROJECT   | TYPE      | TAGS |
 |---------|-------------|------|----------|-----------|-----------|------|
 | 1.1.1.1 | ip 1        | ip-1 | internet | project-1 | ephemeral | a    |
 | 2.2.2.2 | ip 2        | ip-2 | internet | project-2 | static    | b    |
@@ -186,19 +186,19 @@ func Test_IPCmd_SingleResult(t *testing.T) {
 			},
 			want: ip1,
 			wantTable: pointer.Pointer(`
-IP        DESCRIPTION   NAME   NETWORK    PROJECT     TYPE        TAGS
-1.1.1.1   ip 1          ip-1   internet   project-1   ephemeral   a
+IP       DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
+1.1.1.1  ip 1         ip-1  internet  project-1  ephemeral  a
 		`),
 			wantWideTable: pointer.Pointer(`
-IP        ALLOCATION UUID   DESCRIPTION   NAME   NETWORK    PROJECT     TYPE        TAGS
-1.1.1.1   1                 ip 1          ip-1   internet   project-1   ephemeral   a
+IP       ALLOCATION UUID  DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
+1.1.1.1  1                ip 1         ip-1  internet  project-1  ephemeral  a
 		`),
 			template: pointer.Pointer("{{ .ipaddress }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1.1.1.1 ip-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-|   IP    | DESCRIPTION | NAME | NETWORK  |  PROJECT  |   TYPE    | TAGS |
+| IP      | DESCRIPTION | NAME | NETWORK  | PROJECT   | TYPE      | TAGS |
 |---------|-------------|------|----------|-----------|-----------|------|
 | 1.1.1.1 | ip 1        | ip-1 | internet | project-1 | ephemeral | a    |
 		`),

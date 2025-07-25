@@ -21,7 +21,7 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 	header := []string{"ID", "Partition", "Rack", "OS", "Status", "Last Sync"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "Metalcore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
 
 		t.t.DisableAutoWrap(true)
 	}

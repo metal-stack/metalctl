@@ -10,7 +10,7 @@ import (
 
 func (t *TablePrinter) FirewallTable(data []*models.V1FirewallResponse, wide bool) ([]string, [][]string, error) {
 	var (
-		header = []string{"ID", "Age", "Hostname", "Project", "Networks", "IPs", "Partition"}
+		header = []string{"ID", "Age", "Hostname", "Project", "Networks", "Ips", "Partition"}
 		rows   [][]string
 	)
 

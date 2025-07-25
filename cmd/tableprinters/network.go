@@ -65,8 +65,8 @@ func addNetwork(prefix string, n *models.V1NetworkResponse, wide bool) []string 
 	privateSuper := fmt.Sprintf("%t", flag)
 	nat := fmt.Sprintf("%t", *n.Nat)
 
-	shortIPUsage := nbr
-	shortPrefixUsage := nbr
+	shortIPUsage := ""
+	shortPrefixUsage := ""
 	ipv4Use := 0.0
 	ipv4PrefixUse := 0.0
 	ipv6Use := 0.0
