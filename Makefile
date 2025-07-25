@@ -36,7 +36,10 @@ build:
 		github.com/metal-stack/metalctl
 
 	cd bin/; \
-	sha512sum $(BINARY) > $(BINARY).sha512
+	sha512sum $(BINARY) > $(BINARY).sha512; \
+	md5sum $(BINARY) > $(BINARY).md5
+	# the md5 sum is kept for backwards compatibility with older clients, which use the hashsum for updating
+	# TODO: can be removed in a future release of metalctl
 
 .PHONY: test
 test: build

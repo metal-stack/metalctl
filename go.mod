@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/metal-stack/metal-go v0.41.1
 	github.com/metal-stack/metal-lib v0.21.0
-	github.com/metal-stack/updater v1.2.2
+	github.com/metal-stack/updater v1.3.1
 	github.com/metal-stack/v v1.0.3
 	github.com/olekukonko/tablewriter v0.0.6-0.20230925090304-df64c4bbad77
 	github.com/spf13/afero v1.14.0

@@ -247,8 +247,8 @@ github.com/metal-stack/metal-lib v0.21.0 h1:oJSexA0czpS4aAUqCgymESWBsqG7BbjSceog
 github.com/metal-stack/metal-lib v0.21.0/go.mod h1:9KdYMPBrTKJFlCmubMgcirUiJHP3MG4FyBny6b/BVII=
 github.com/metal-stack/security v0.9.3 h1:ZF5rGeZ4fIFe0DFFQWkXsUDCzODyjdrpvKmeaLOz9lo=
 github.com/metal-stack/security v0.9.3/go.mod h1:ENm5kPjqh4uYvn79sAIxd6GZBwtF2GSsGdkLELrB/D4=
-github.com/metal-stack/updater v1.2.2 h1:gnUrnQgfT20QFMDtFBY89opKoBAkdeI/8T2iwMHNdxs=
-github.com/metal-stack/updater v1.2.2/go.mod h1:JMFgqDgzbRaoZGYArqbI/L3zoAlipaGJKOvdGFu/kNY=
+github.com/metal-stack/updater v1.3.1 h1:Xdx0khlo6zG9vA5o3L++t6eiqzW4730IppneQXHQTwc=
+github.com/metal-stack/updater v1.3.1/go.mod h1:wOEkiY2AanXELi8zNocmUADt2eW0Ph3KpB31iqrjucs=
 github.com/metal-stack/v v1.0.3 h1:Sh2oBlnxrCUD+mVpzfC8HiqL045YWkxs0gpTvkjppqs=
 github.com/metal-stack/v v1.0.3/go.mod h1:YTahEu7/ishwpYKnp/VaW/7nf8+PInogkfGwLcGPdXg=
 github.com/miekg/dns v1.1.64 h1:wuZgD9wwCE6XMT05UU/mlSko71eRSXEAm2EbjQXLKnQ=
