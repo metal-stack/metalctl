@@ -149,16 +149,16 @@ func Test_FilesystemLayoutCmd_MultiResult(t *testing.T) {
 				fsl2,
 			},
 			wantTable: pointer.Pointer(`
-ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
-1    fsl 1         /tmp       tmpfs       size1   os-image *
-                   /boot/efi  /dev/sda1
-2    fsl 2         /tmp  tmpfs            size1   os-image *
+ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
+1   fsl 1        /tmp       tmpfs      size1  os-image *
+                 /boot/efi  /dev/sda1
+2   fsl 2        /tmp  tmpfs           size1  os-image *
 `),
 			wantWideTable: pointer.Pointer(`
-ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
-1    fsl 1         /tmp       tmpfs       size1   os-image *
-                   /boot/efi  /dev/sda1
-2    fsl 2         /tmp  tmpfs            size1   os-image *
+ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
+1   fsl 1        /tmp       tmpfs      size1  os-image *
+                 /boot/efi  /dev/sda1
+2   fsl 2        /tmp  tmpfs           size1  os-image *
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -166,11 +166,11 @@ ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
 2 fsl2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | DESCRIPTION |     FILESYSTEMS      | SIZES |   IMAGES   |
+| ID | DESCRIPTION | FILESYSTEMS          | SIZES | IMAGES     |
 |----|-------------|----------------------|-------|------------|
-|  1 | fsl 1       | /tmp       tmpfs     | size1 | os-image * |
+| 1  | fsl 1       | /tmp       tmpfs     | size1 | os-image * |
 |    |             | /boot/efi  /dev/sda1 |       |            |
-|  2 | fsl 2       | /tmp  tmpfs          | size1 | os-image * |
+| 2  | fsl 2       | /tmp  tmpfs          | size1 | os-image * |
 `),
 		},
 		{
@@ -276,23 +276,23 @@ func Test_FilesystemLayoutCmd_SingleResult(t *testing.T) {
 			},
 			want: fsl1,
 			wantTable: pointer.Pointer(`
-ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
-1    fsl 1         /tmp       tmpfs       size1   os-image *
-					/boot/efi  /dev/sda1
+ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
+1   fsl 1        /tmp       tmpfs      size1  os-image *
+			/boot/efi  /dev/sda1
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   DESCRIPTION   FILESYSTEMS            SIZES   IMAGES
-1    fsl 1         /tmp       tmpfs       size1   os-image *
-                   /boot/efi  /dev/sda1
+ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
+1   fsl 1        /tmp       tmpfs      size1  os-image *
+            /boot/efi  /dev/sda1
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 fsl1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID | DESCRIPTION |     FILESYSTEMS      | SIZES |   IMAGES   |
+| ID | DESCRIPTION | FILESYSTEMS          | SIZES | IMAGES     |
 |----|-------------|----------------------|-------|------------|
-|  1 | fsl 1       | /tmp       tmpfs     | size1 | os-image * |
+| 1  | fsl 1       | /tmp       tmpfs     | size1 | os-image * |
 |    |             | /boot/efi  /dev/sda1 |       |            |
 		`),
 		},

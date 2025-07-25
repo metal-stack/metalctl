@@ -91,14 +91,14 @@ func Test_ProjectCmd_MultiResult(t *testing.T) {
 				project2,
 			},
 			wantTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     c        a=b
-2     metal-stack   project-2   project 2     c        a=b
+UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    c       a=b
+2    metal-stack  project-2  project 2    c       a=b
 `),
 			wantWideTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/3/2                          c        a=b
-2     metal-stack   project-2   project 2     ∞/∞/∞                          c        a=b
+UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
+2    metal-stack  project-2  project 2    ∞ / ∞ / ∞                         c       a=b
 `),
 			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -106,10 +106,10 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 2 project-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+| UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
-|   2 | metal-stack | project-2 | project 2   | c      | a=b         |
+| 1   | metal-stack | project-1 | project 1   | c      | a=b         |
+| 2   | metal-stack | project-2 | project 2   | c      | a=b         |
 `),
 		},
 		{
@@ -136,21 +136,21 @@ UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LAB
 				project1,
 			},
 			wantTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     c        a=b
+UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    c       a=b
 `),
 			wantWideTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/3/2                          c        a=b
+UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
 `),
 			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 project-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+| UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
+| 1   | metal-stack | project-1 | project 1   | c      | a=b         |
 `),
 		},
 		{
@@ -262,21 +262,21 @@ func Test_ProjectCmd_SingleResult(t *testing.T) {
 			},
 			want: project1,
 			wantTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     c        a=b
+UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    c       a=b
 `),
 			wantWideTable: pointer.Pointer(`
-UID   TENANT        NAME        DESCRIPTION   QUOTAS CLUSTERS/MACHINES/IPS   LABELS   ANNOTATIONS
-1     metal-stack   project-1   project 1     1/3/2                          c        a=b
+UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
+1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
 `),
 			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 project-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| UID |   TENANT    |   NAME    | DESCRIPTION | LABELS | ANNOTATIONS |
+| UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
-|   1 | metal-stack | project-1 | project 1   | c      | a=b         |
+| 1   | metal-stack | project-1 | project 1   | c      | a=b         |
 `),
 		},
 		{

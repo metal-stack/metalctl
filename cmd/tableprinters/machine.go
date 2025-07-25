@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/pkg/api"
-	"github.com/olekukonko/tablewriter"
 )
 
 // MachinesAndIssues is used for combining issues with more data on machines.
@@ -27,7 +26,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 
 	header := []string{"ID", "", "Last Event", "When", "Age", "Hostname", "Project", "Size", "Image", "Partition", "Rack"}
 	if wide {
-		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "IPs", "Size", "Image", "Partition", "Rack", "Started", "Tags", "Lock/Reserve"}
+		header = []string{"ID", "Last Event", "When", "Age", "Description", "Name", "Hostname", "Project", "Ips", "Size", "Image", "Partition", "Rack", "Started", "Tags", "Lock/Reserve"}
 	}
 
 	for _, machine := range data {
@@ -216,9 +215,7 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		}
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }
@@ -279,9 +276,7 @@ func (t *TablePrinter) MachineLogsTable(data []*models.V1MachineProvisioningEven
 		rows = append(rows, []string{time.Time(i.Time).Format(time.RFC1123), pointer.SafeDeref(i.Event), msg})
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }
@@ -414,9 +409,7 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 		}
 	}
 
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+	t.t.DisableAutoWrap(true)
 
 	return header, rows, nil
 }

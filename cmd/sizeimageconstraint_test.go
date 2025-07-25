@@ -59,14 +59,14 @@ func Test_SizeImageConstraintCmd_MultiResult(t *testing.T) {
 				sic2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
-1    sic-1   sic 1         os-image   *
-2    sic-2   sic 2         os-image   *
+ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
+1   sic-1  sic 1        os-image  *
+2   sic-2  sic 2        os-image  *
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
-1    sic-1   sic 1         os-image   *
-2    sic-2   sic 2         os-image   *
+ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
+1   sic-1  sic 1        os-image  *
+2   sic-2  sic 2        os-image  *
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -74,10 +74,10 @@ ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
 2 sic-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | NAME  | DESCRIPTION |  IMAGE   | CONSTRAINT |
+| ID | NAME  | DESCRIPTION | IMAGE    | CONSTRAINT |
 |----|-------|-------------|----------|------------|
-|  1 | sic-1 | sic 1       | os-image | *          |
-|  2 | sic-2 | sic 2       | os-image | *          |
+| 1  | sic-1 | sic 1       | os-image | *          |
+| 2  | sic-2 | sic 2       | os-image | *          |
 `),
 		},
 		{
@@ -164,21 +164,21 @@ func Test_SizeImageConstraintCmd_SingleResult(t *testing.T) {
 			},
 			want: sic1,
 			wantTable: pointer.Pointer(`
-ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
-1    sic-1   sic 1         os-image   *
+ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
+1   sic-1  sic 1        os-image  *
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   NAME    DESCRIPTION   IMAGE      CONSTRAINT
-1    sic-1   sic 1         os-image   *
+ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
+1   sic-1  sic 1        os-image  *
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 sic-1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID | NAME  | DESCRIPTION |  IMAGE   | CONSTRAINT |
+| ID | NAME  | DESCRIPTION | IMAGE    | CONSTRAINT |
 |----|-------|-------------|----------|------------|
-|  1 | sic-1 | sic 1       | os-image | *          |
+| 1  | sic-1 | sic 1       | os-image | *          |
 		`),
 		},
 		{

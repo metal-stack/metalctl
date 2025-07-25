@@ -15,11 +15,11 @@ func (t *TablePrinter) ProjectTable(data []*models.V1ProjectResponse, wide bool)
 
 	header := []string{"UID", "Tenant", "Name", "Description", "Labels", "Annotations"}
 	if wide {
-		header = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/IPs", "Labels", "Annotations"}
+		header = []string{"UID", "Tenant", "Name", "Description", "Quotas Clusters/Machines/Ips", "Labels", "Annotations"}
 	}
 
 	for _, pr := range data {
-		quotas := "∞/∞/∞"
+		quotas := "∞ / ∞ / ∞"
 		if pr.Quotas != nil {
 			clusterQuota := "∞"
 			machineQuota := "∞"
@@ -40,7 +40,7 @@ func (t *TablePrinter) ProjectTable(data []*models.V1ProjectResponse, wide bool)
 					ipQuota = strconv.FormatInt(int64(qs.IP.Quota), 10)
 				}
 			}
-			quotas = fmt.Sprintf("%s/%s/%s", clusterQuota, machineQuota, ipQuota)
+			quotas = fmt.Sprintf("%s / %s / %s", clusterQuota, machineQuota, ipQuota)
 		}
 		labels := strings.Join(pr.Meta.Labels, "\n")
 		as := []string{}

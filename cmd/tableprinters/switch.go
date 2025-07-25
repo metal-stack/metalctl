@@ -11,7 +11,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
-	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/viper"
 )
 
@@ -22,11 +21,9 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 
 	header := []string{"ID", "Partition", "Rack", "OS", "Status", "Last Sync"}
 	if wide {
-		header = []string{"ID", "Partition", "Rack", "OS", "MetalCore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
+		header = []string{"ID", "Partition", "Rack", "OS", "Metalcore", "IP", "Mode", "Last Sync", "Sync Duration", "Last Error"}
 
-		t.t.MutateTable(func(table *tablewriter.Table) {
-			table.SetAutoWrapText(false)
-		})
+		t.t.DisableAutoWrap(true)
 	}
 
 	for _, s := range data {
@@ -149,9 +146,8 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 	if wide {
 		header = []string{"ID", "", "NIC Name", "Identifier", "Partition", "Rack", "Size", "Hostname", "Product Serial", "Chassis Serial"}
 	}
-	t.t.MutateTable(func(table *tablewriter.Table) {
-		table.SetAutoWrapText(false)
-	})
+
+	t.t.DisableAutoWrap(true)
 
 	for _, s := range data.SS {
 		id := pointer.SafeDeref(s.ID)

@@ -80,14 +80,14 @@ func Test_AuditCmd_MultiResult(t *testing.T) {
 				auditTrace1,
 			},
 			wantTable: pointer.Pointer(`
-TIME                  REQUEST ID                             COMPONENT   DETAIL   PATH        CODE   USER   
-2022-05-19 01:03:03   b5817ef7-980a-41ef-9ed3-741a143870b0   test        POST     /v1/audit   403    b-user   
-2022-05-19 01:02:03   c40ad996-e1fd-4511-a7bf-418219cb8d91   example     GET      /v1/audit   200    a-user
+TIME                 REQUEST ID                            COMPONENT  DETAIL  PATH       CODE  USER   
+2022-05-19 01:03:03  b5817ef7-980a-41ef-9ed3-741a143870b0  test       POST    /v1/audit  403   b-user   
+2022-05-19 01:02:03  c40ad996-e1fd-4511-a7bf-418219cb8d91  example    GET     /v1/audit  200   a-user
 `),
 			wantWideTable: pointer.Pointer(`
-TIME                  REQUEST ID                             COMPONENT   DETAIL   PATH        CODE   USER     TENANT     BODY       
-2022-05-19 01:03:03   b5817ef7-980a-41ef-9ed3-741a143870b0   test        POST     /v1/audit   403    b-user   b-tenant   {"c": "d"}
-2022-05-19 01:02:03   c40ad996-e1fd-4511-a7bf-418219cb8d91   example     GET      /v1/audit   200    a-user   a-tenant   {"a": "b"}
+TIME                 REQUEST ID                            COMPONENT  DETAIL  PATH       CODE  USER    TENANT    BODY       
+2022-05-19 01:03:03  b5817ef7-980a-41ef-9ed3-741a143870b0  test       POST    /v1/audit  403   b-user  b-tenant  {"c": "d"}
+2022-05-19 01:02:03  c40ad996-e1fd-4511-a7bf-418219cb8d91  example    GET     /v1/audit  200   a-user  a-tenant  {"a": "b"}
 `),
 			template: pointer.Pointer(`{{ date "02/01/2006" .timestamp }} {{ .rqid }}`),
 			wantTemplate: pointer.Pointer(`
@@ -95,10 +95,10 @@ TIME                  REQUEST ID                             COMPONENT   DETAIL 
 19/05/2022 c40ad996-e1fd-4511-a7bf-418219cb8d91
 `),
 			wantMarkdown: pointer.Pointer(`
-|        TIME         |              REQUEST ID              | COMPONENT | DETAIL |   PATH    | CODE |  USER  |
+| TIME                | REQUEST ID                           | COMPONENT | DETAIL | PATH      | CODE | USER   |
 |---------------------|--------------------------------------|-----------|--------|-----------|------|--------|
-| 2022-05-19 01:03:03 | b5817ef7-980a-41ef-9ed3-741a143870b0 | test      | POST   | /v1/audit |  403 | b-user |
-| 2022-05-19 01:02:03 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | example   | GET    | /v1/audit |  200 | a-user |
+| 2022-05-19 01:03:03 | b5817ef7-980a-41ef-9ed3-741a143870b0 | test      | POST   | /v1/audit | 403  | b-user |
+| 2022-05-19 01:02:03 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | example   | GET    | /v1/audit | 200  | a-user |
 `),
 		},
 		{
@@ -155,21 +155,21 @@ TIME                  REQUEST ID                             COMPONENT   DETAIL 
 				auditTrace1,
 			},
 			wantTable: pointer.Pointer(`
-TIME                  REQUEST ID                             COMPONENT   DETAIL   PATH        CODE   USER   
-2022-05-19 01:02:03   c40ad996-e1fd-4511-a7bf-418219cb8d91   example     GET      /v1/audit   200    a-user
+TIME                 REQUEST ID                            COMPONENT  DETAIL  PATH       CODE  USER   
+2022-05-19 01:02:03  c40ad996-e1fd-4511-a7bf-418219cb8d91  example    GET     /v1/audit  200   a-user
 `),
 			wantWideTable: pointer.Pointer(`
-TIME                  REQUEST ID                             COMPONENT   DETAIL   PATH        CODE   USER     TENANT     BODY       
-2022-05-19 01:02:03   c40ad996-e1fd-4511-a7bf-418219cb8d91   example     GET      /v1/audit   200    a-user   a-tenant   {"a": "b"}
+TIME                 REQUEST ID                            COMPONENT  DETAIL  PATH       CODE  USER    TENANT    BODY       
+2022-05-19 01:02:03  c40ad996-e1fd-4511-a7bf-418219cb8d91  example    GET     /v1/audit  200   a-user  a-tenant  {"a": "b"}
 `),
 			template: pointer.Pointer(`{{ date "02/01/2006" .timestamp }} {{ .rqid }}`),
 			wantTemplate: pointer.Pointer(`
 19/05/2022 c40ad996-e1fd-4511-a7bf-418219cb8d91
 `),
 			wantMarkdown: pointer.Pointer(`
-|        TIME         |              REQUEST ID              | COMPONENT | DETAIL |   PATH    | CODE |  USER  |
+| TIME                | REQUEST ID                           | COMPONENT | DETAIL | PATH      | CODE | USER   |
 |---------------------|--------------------------------------|-----------|--------|-----------|------|--------|
-| 2022-05-19 01:02:03 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | example   | GET    | /v1/audit |  200 | a-user |`),
+| 2022-05-19 01:02:03 | c40ad996-e1fd-4511-a7bf-418219cb8d91 | example   | GET    | /v1/audit | 200  | a-user |`),
 		},
 	}
 	for _, tt := range tests {

@@ -63,14 +63,14 @@ func Test_SizeReservationCmd_MultiResult(t *testing.T) {
 				rv2,
 			},
 			wantTable: pointer.Pointer(`
-ID   SIZE     PROJECT     PARTITIONS                 DESCRIPTION             AMOUNT
-r1   size-a   project-a   partition-a, partition-b   this is reservation 1   3
-r2   size-b   project-b   partition-b                this is reservation 2   2
+ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT
+r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3
+r2  size-b  project-b  partition-b               this is reservation 2  2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   SIZE     PROJECT     PARTITIONS                 DESCRIPTION             AMOUNT   LABELS
-r1   size-a   project-a   partition-a, partition-b   this is reservation 1   3        a=b
-r2   size-b   project-b   partition-b                this is reservation 2   2        b=c
+ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT  LABELS
+r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3       a=b
+r2  size-b  project-b  partition-b               this is reservation 2  2       b=c
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -78,10 +78,10 @@ r1 reservation 1
 r2 reservation 2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |  SIZE  |  PROJECT  |        PARTITIONS        |      DESCRIPTION      | AMOUNT |
+| ID | SIZE   | PROJECT   | PARTITIONS               | DESCRIPTION           | AMOUNT |
 |----|--------|-----------|--------------------------|-----------------------|--------|
-| r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 |      3 |
-| r2 | size-b | project-b | partition-b              | this is reservation 2 |      2 |
+| r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 | 3      |
+| r2 | size-b | project-b | partition-b              | this is reservation 2 | 2      |
 `),
 		},
 		{
@@ -168,21 +168,21 @@ func Test_SizeReservationCmd_SingleResult(t *testing.T) {
 			},
 			want: rv1,
 			wantTable: pointer.Pointer(`
-ID   SIZE     PROJECT     PARTITIONS                 DESCRIPTION             AMOUNT
-r1   size-a   project-a   partition-a, partition-b   this is reservation 1   3
+ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT
+r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3
 		`),
 			wantWideTable: pointer.Pointer(`
-ID   SIZE     PROJECT     PARTITIONS                 DESCRIPTION             AMOUNT   LABELS
-r1   size-a   project-a   partition-a, partition-b   this is reservation 1   3        a=b
+ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT  LABELS
+r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3       a=b
 		`),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 r1 reservation 1
 		`),
 			wantMarkdown: pointer.Pointer(`
-| ID |  SIZE  |  PROJECT  |        PARTITIONS        |      DESCRIPTION      | AMOUNT |
+| ID | SIZE   | PROJECT   | PARTITIONS               | DESCRIPTION           | AMOUNT |
 |----|--------|-----------|--------------------------|-----------------------|--------|
-| r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 |      3 |
+| r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 | 3      |
 		`),
 		},
 		{

@@ -213,14 +213,14 @@ func Test_FirewallCmd_MultiResult(t *testing.T) {
 				firewall2,
 			},
 			wantTable: pointer.Pointer(`
-ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
-1    14d   firewall-hostname-1   project-1   private    1.1.1.1   1
-2    14d   firewall-hostname-2   project-1   private    1.1.1.1   1
+ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
+1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
+2   14d  firewall-hostname-2  project-1  private   1.1.1.1  1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
-1    14d   firewall-hostname-1   project-1   private    1.1.1.1   1
-2    14d   firewall-hostname-2   project-1   private    1.1.1.1   1
+ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
+1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
+2   14d  firewall-hostname-2  project-1  private   1.1.1.1  1
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -228,10 +228,10 @@ ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
 2 firewall-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | AGE |      HOSTNAME       |  PROJECT  | NETWORKS |   IPS   | PARTITION |
+| ID | AGE | HOSTNAME            | PROJECT   | NETWORKS | IPS     | PARTITION |
 |----|-----|---------------------|-----------|----------|---------|-----------|
-|  1 | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 |         1 |
-|  2 | 14d | firewall-hostname-2 | project-1 | private  | 1.1.1.1 |         1 |
+| 1  | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 | 1         |
+| 2  | 14d | firewall-hostname-2 | project-1 | private  | 1.1.1.1 | 1         |
 `),
 		},
 	}
@@ -256,21 +256,21 @@ func Test_FirewallCmd_SingleResult(t *testing.T) {
 			},
 			want: firewall1,
 			wantTable: pointer.Pointer(`
-ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
-1    14d   firewall-hostname-1   project-1   private    1.1.1.1   1
+ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
+1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 `),
 			wantWideTable: pointer.Pointer(`
-	ID   AGE   HOSTNAME              PROJECT     NETWORKS   IPS       PARTITION
-	1    14d   firewall-hostname-1   project-1   private    1.1.1.1   1
+ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
+1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 firewall-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID | AGE |      HOSTNAME       |  PROJECT  | NETWORKS |   IPS   | PARTITION |
+| ID | AGE | HOSTNAME            | PROJECT   | NETWORKS | IPS     | PARTITION |
 |----|-----|---------------------|-----------|----------|---------|-----------|
-|  1 | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 |         1 |
+| 1  | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 | 1         |
 `),
 		},
 		{

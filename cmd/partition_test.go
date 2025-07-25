@@ -65,14 +65,14 @@ func Test_PartitionCmd_MultiResult(t *testing.T) {
 				partition2,
 			},
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
-2    partition-2   partition 2
+ID  NAME         DESCRIPTION
+1   partition-1  partition 1
+2   partition-2  partition 2
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION   LABELS
-1    partition-1   partition 1   a=b
-2    partition-2   partition 2
+ID  NAME         DESCRIPTION  LABELS
+1   partition-1  partition 1  a=b
+2   partition-2  partition 2
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
@@ -80,10 +80,10 @@ ID   NAME          DESCRIPTION   LABELS
 2 partition-2
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
+| ID | NAME        | DESCRIPTION |
 |----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
-|  2 | partition-2 | partition 2 |
+| 1  | partition-1 | partition 1 |
+| 2  | partition-2 | partition 2 |
 `),
 		},
 		{
@@ -189,21 +189,21 @@ func Test_PartitionCmd_SingleResult(t *testing.T) {
 			},
 			want: partition1,
 			wantTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION
-1    partition-1   partition 1
+ID  NAME         DESCRIPTION
+1   partition-1  partition 1
 `),
 			wantWideTable: pointer.Pointer(`
-ID   NAME          DESCRIPTION   LABELS
-1    partition-1   partition 1   a=b
+ID  NAME         DESCRIPTION  LABELS
+1   partition-1  partition 1  a=b
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| ID |    NAME     | DESCRIPTION |
+| ID | NAME        | DESCRIPTION |
 |----|-------------|-------------|
-|  1 | partition-1 | partition 1 |
+| 1  | partition-1 | partition 1 |
 `),
 		},
 		{
@@ -321,24 +321,24 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY
-1           size-1   1           3      0             2 (1/3 used)   |   5       |   2
-Total                1           3      0             2              |   5       |   2
+PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY
+1          size-1  1          3     0            2 (1/3 used)  |  5      |  2
+Total              1          3     0            2             |  5      |  2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY   PHONED HOME   WAITING   OTHER
-1           size-1   1           3      0             2 (1/3 used)   |   5       |   2        0             0         4
-Total                1           3      0             2              |   5       |   2        0             0         4
+PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY  PHONED HOME  WAITING  OTHER
+1          size-1  1          3     0            2 (1/3 used)  |  5      |  2       0            0        4
+Total              1          3     0            2             |  5      |  2       0            0        4
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
+| PARTITION | SIZE   | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
 |-----------|--------|-----------|------|-------------|--------------|-------|--------|
-|         1 | size-1 |         1 |    3 |           0 | 2 (1/3 used) |     5 |      2 |
-| Total     |        |         1 |    3 |           0 |            2 |     5 |      2 |
+| 1         | size-1 | 1         | 3    | 0           | 2 (1/3 used) | 5     | 2      |
+| Total     |        | 1         | 3    | 0           | 2            | 5     | 2      |
 `),
 		},
 		{
@@ -401,24 +401,24 @@ Total                1           3      0             2              |   5      
 				},
 			},
 			wantTable: pointer.Pointer(`
-PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY
-1           size-1   1           3      0             2 (1/3 used)   |   5       |   2
-Total                1           3      0             2              |   5       |   2
+PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY
+1          size-1  1          3     0            2 (1/3 used)  |  5      |  2
+Total              1          3     0            2             |  5      |  2
 `),
 			wantWideTable: pointer.Pointer(`
-PARTITION   SIZE     ALLOCATED   FREE   UNAVAILABLE   RESERVATIONS   |   TOTAL   |   FAULTY   PHONED HOME   WAITING   OTHER
-1           size-1   1           3      0             2 (1/3 used)   |   5       |   2        0             0         4
-Total                1           3      0             2              |   5       |   2        0             0         4
+PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY  PHONED HOME  WAITING  OTHER
+1          size-1  1          3     0            2 (1/3 used)  |  5      |  2       0            0        4
+Total              1          3     0            2             |  5      |  2       0            0        4
 `),
 			template: pointer.Pointer("{{ .id }} {{ .name }}"),
 			wantTemplate: pointer.Pointer(`
 1 partition-1
 `),
 			wantMarkdown: pointer.Pointer(`
-| PARTITION |  SIZE  | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
+| PARTITION | SIZE   | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
 |-----------|--------|-----------|------|-------------|--------------|-------|--------|
-|         1 | size-1 |         1 |    3 |           0 | 2 (1/3 used) |     5 |      2 |
-| Total     |        |         1 |    3 |           0 |            2 |     5 |      2 |
+| 1         | size-1 | 1         | 3    | 0           | 2 (1/3 used) | 5     | 2      |
+| Total     |        | 1         | 3    | 0           | 2            | 5     | 2      |
 `),
 		},
 	}
