@@ -6,12 +6,12 @@ import (
 	"github.com/fatih/color"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/spf13/cobra"
+
+	"github.com/metal-stack/metal-lib/pkg/cmd"
 )
 
 func newContextCmd(c *config) *cobra.Command {
-	contextCmd := &cobra.Command{
-		Use:               "context <name>",
-		Aliases:           []string{"ctx"},
+	contextCmd := cmd.NewContextCmd(&cmd.ContextConfig{
 		Short:             "manage metalctl context",
 		Long:              "context defines the backend to which metalctl talks to. You can switch back and forth with \"-\"",
 		ValidArgsFunction: c.comp.ContextListCompletion,
@@ -41,7 +41,7 @@ contexts:
 			}
 			return nil
 		},
-	}
+	})
 
 	contextShortCmd := &cobra.Command{
 		Use:   "short",
