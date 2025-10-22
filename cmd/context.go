@@ -11,9 +11,15 @@ import (
 )
 
 func newContextCmd(c *config) *cobra.Command {
-	contextCmd := cmd.ContextBaseCmd(&cmd.CmdConfig{
-		ValidArgsFunction: c.comp.ContextListCompletion,
-		Example: `
+	contextShortCmd := &cobra.Command{
+		Use:   "short",
+		Short: "only show the default context name",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return contextShort()
+		},
+	}
+
+	example := `
 ~/.metalctl/config.yaml
 ---
 current: prod
@@ -29,7 +35,11 @@ contexts:
     client_id: metal_client
     client_secret: 123
 ...
-`,
+`
+
+	return cmd.ContextBaseCmd(&cmd.CmdConfig{
+		ValidArgsFunction: c.comp.ContextListCompletion,
+		Example:           example,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 1 {
 				return contextSet(args)
@@ -39,17 +49,10 @@ contexts:
 			}
 			return nil
 		},
-	})
-
-	contextShortCmd := &cobra.Command{
-		Use:   "short",
-		Short: "only show the default context name",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return contextShort()
+		MutateFn: func(cmd *cobra.Command) {
+			cmd.AddCommand(contextShortCmd)
 		},
-	}
-	contextCmd.AddCommand(contextShortCmd)
-	return contextCmd
+	})
 }
 
 func contextShort() error {
