@@ -11,9 +11,7 @@ import (
 )
 
 func newContextCmd(c *config) *cobra.Command {
-	contextCmd := cmd.NewContextCmd(&cmd.ContextConfig{
-		Short:             "manage metalctl context",
-		Long:              "context defines the backend to which metalctl talks to. You can switch back and forth with \"-\"",
+	contextCmd := cmd.ContextBaseCmd(&cmd.CmdConfig{
 		ValidArgsFunction: c.comp.ContextListCompletion,
 		Example: `
 ~/.metalctl/config.yaml
