@@ -30,6 +30,7 @@ metalctl vpn key \
 
 	vpnKeyCmd.Flags().String("project", "", "project ID for which auth key should be created")
 	vpnKeyCmd.Flags().Bool("ephemeral", true, "create an ephemeral key")
+	vpnKeyCmd.Flags().StringP("reason", "", "", "a short description why access to the vpn is required")
 	genericcli.Must(vpnKeyCmd.MarkFlagRequired("project"))
 	genericcli.Must(vpnKeyCmd.RegisterFlagCompletionFunc("project", c.comp.ProjectListCompletion))
 	vpnCmd.AddCommand(vpnKeyCmd)
@@ -44,6 +45,7 @@ func (c *config) vpnAuthKeyCreate() error {
 			&models.V1VPNRequest{
 				Pid:       pointer.Pointer(viper.GetString("project")),
 				Ephemeral: pointer.PointerOrNil(viper.GetBool("ephemeral")),
+				Reason:    pointer.Pointer(viper.GetString("reason")),
 			}), nil,
 	)
 	if err != nil {

@@ -25,6 +25,7 @@ metalctl vpn key \
       --ephemeral        create an ephemeral key (default true)
   -h, --help             help for key
       --project string   project ID for which auth key should be created
+      --reason string    a short description why access to the vpn is required
 ```
 
 ### Options inherited from parent commands
