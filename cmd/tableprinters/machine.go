@@ -433,7 +433,15 @@ func (t *TablePrinter) MachineIpmiChassisTable(data MachineIpmiChassisTable, wid
 	// }
 
 	for _, chassis := range data {
-		rows = append(rows, []string{fmt.Sprintf("%s (%s)", chassis.ChassisPartSerial, chassis.ChassisPartNumber)})
+		chassisID := chassis.ChassisPartSerial
+		if chassisID == "" {
+			chassisID = "<no-chassis-serial-reported>"
+		}
+		if chassis.ChassisPartNumber != "" {
+			chassisID = fmt.Sprintf("%s (%s)", chassisID, chassis.ChassisPartNumber)
+		}
+
+		rows = append(rows, []string{chassisID})
 
 		for i, m := range chassis.Machines {
 			var (
