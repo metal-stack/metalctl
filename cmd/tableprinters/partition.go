@@ -58,8 +58,6 @@ func (t *TablePrinter) PartitionCapacityTable(data []*models.V1PartitionCapacity
 	}
 
 	for _, pc := range data {
-		pc := pc
-
 		for _, c := range pc.Servers {
 			id := pointer.SafeDeref(c.Size)
 

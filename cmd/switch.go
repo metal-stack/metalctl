@@ -334,8 +334,6 @@ func (c *switchCmd) switchMachines() error {
 
 	ms := map[string]*models.V1MachineIPMIResponse{}
 	for _, m := range machines {
-		m := m
-
 		if m.ID == nil {
 			continue
 		}

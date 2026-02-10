@@ -82,7 +82,6 @@ func (c *test[R]) testCmd(t *testing.T) {
 	}
 
 	for _, format := range outputFormats(c) {
-		format := format
 		t.Run(fmt.Sprintf("%v", format.Args()), func(t *testing.T) {
 			_, out, config := c.newMockConfig(t)
 

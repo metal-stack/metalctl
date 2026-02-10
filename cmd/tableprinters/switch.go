@@ -165,8 +165,6 @@ func (t *TablePrinter) SwitchWithConnectedMachinesTable(data *SwitchesWithMachin
 			filteredConns := []*models.V1SwitchConnection{}
 
 			for _, conn := range s.Connections {
-				conn := conn
-
 				m, ok := data.MS[conn.MachineID]
 				if !ok {
 					continue
@@ -298,7 +296,6 @@ func (t *TablePrinter) SwitchDetailTable(data []*SwitchDetail, wide bool) ([]str
 	)
 
 	for _, sw := range data {
-		sw := sw
 		filterBySwp := map[string]models.V1BGPFilter{}
 		for _, n := range sw.Nics {
 			swp := *(n.Name)
