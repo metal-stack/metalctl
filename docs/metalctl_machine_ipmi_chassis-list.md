@@ -1,10 +1,10 @@
-## metalctl machine ipmi
+## metalctl machine ipmi chassis-list
 
-display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.
+display ipmi machines grouped by chassis serial
 
 ### Synopsis
 
-display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.
+display ipmi machines grouped by chassis serial
 
 Meaning of the emojis:
 
@@ -19,7 +19,7 @@ Meaning of the emojis:
 
 
 ```
-metalctl machine ipmi [<machine ID>] [flags]
+metalctl machine ipmi chassis-list [flags]
 ```
 
 ### Options
@@ -28,7 +28,7 @@ metalctl machine ipmi [<machine ID>] [flags]
       --bmc-address string                    bmc ipmi address (needs to include port) to filter [optional]
       --bmc-mac string                        bmc mac address to filter [optional]
       --board-part-number string              fru board part number to filter [optional]
-  -h, --help                                  help for ipmi
+  -h, --help                                  help for chassis-list
       --hostname string                       allocation hostname to filter [optional]
       --id string                             ID to filter [optional]
       --image string                          allocation image to filter [optional]
@@ -81,7 +81,5 @@ metalctl machine ipmi [<machine ID>] [flags]
 
 ### SEE ALSO
 
-* [metalctl machine](metalctl_machine.md)	 - manage machine entities
-* [metalctl machine ipmi chassis-list](metalctl_machine_ipmi_chassis-list.md)	 - display ipmi machines grouped by chassis serial
-* [metalctl machine ipmi events](metalctl_machine_ipmi_events.md)	 - display machine hardware events
+* [metalctl machine ipmi](metalctl_machine_ipmi.md)	 - display ipmi details of the machine, if no machine ID is given all ipmi addresses are returned.
 

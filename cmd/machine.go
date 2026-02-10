@@ -356,6 +356,15 @@ In case the machine did not register properly a direct ipmi console access is av
 		},
 		ValidArgsFunction: c.comp.MachineListCompletion,
 	}
+	machineIpmiChassisCmd := &cobra.Command{
+		Use:   "chassis-list",
+		Short: `display ipmi machines grouped by chassis serial`,
+		Long:  `display ipmi machines grouped by chassis serial.` + "\n" + api.EmojiHelpText(),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return w.machineIpmiChassis(args)
+		},
+		ValidArgsFunction: c.comp.MachineListCompletion,
+	}
 	machineIssuesCmd := &cobra.Command{
 		Use:   "issues [<machine ID>]",
 		Short: `display machines which are in a potential bad state`,
@@ -394,6 +403,10 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	w.listCmdFlags(machineIpmiCmd, 1*time.Hour)
 	genericcli.AddSortFlag(machineIpmiCmd, sorters.MachineIPMISorter())
+
+	w.listCmdFlags(machineIpmiChassisCmd, 1*time.Hour)
+	genericcli.AddSortFlag(machineIpmiChassisCmd, sorters.MachineIPMISorter())
+	machineIpmiCmd.AddCommand(machineIpmiChassisCmd)
 
 	w.listCmdFlags(machineIssuesCmd, 0)
 	genericcli.AddSortFlag(machineIssuesCmd, sorters.MachineIPMISorter())
@@ -1325,6 +1338,65 @@ func (c *machineCmd) machineIpmi(args []string) error {
 	}
 
 	return c.listPrinter.Print(resp.Payload)
+}
+
+func (c *machineCmd) machineIpmiChassis(args []string) error {
+	var machines []*models.V1MachineIPMIResponse
+
+	if len(args) > 0 {
+		id, err := genericcli.GetExactlyOneArg(args)
+		if err != nil {
+			return err
+		}
+
+		resp, err := c.client.Machine().FindIPMIMachine(machine.NewFindIPMIMachineParams().WithID(id), nil)
+		if err != nil {
+			return err
+		}
+
+		machines = pointer.WrapInSlice(resp.Payload)
+	} else {
+		resp, err := c.client.Machine().FindIPMIMachines(machine.NewFindIPMIMachinesParams().WithBody(machineFindRequestFromCLI()), nil)
+		if err != nil {
+			return err
+		}
+
+		machines = append(machines, resp.Payload...)
+	}
+
+	sortKeys, err := genericcli.ParseSortFlags()
+	if err != nil {
+		return err
+	}
+
+	err = sorters.MachineIPMISorter().SortBy(machines, sortKeys...)
+	if err != nil {
+		return err
+	}
+
+	byChassis := tableprinters.MachineIpmiChassisTable{}
+	for _, m := range machines {
+		var (
+			serial = pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartSerial
+			number = pointer.SafeDeref(pointer.SafeDeref(m.Ipmi).Fru).ChassisPartNumber
+
+			idx = slices.IndexFunc(byChassis, func(c *tableprinters.MachineIpmiChassis) bool {
+				return serial == c.ChassisPartSerial
+			})
+		)
+
+		if idx < 0 {
+			byChassis = append(byChassis, &tableprinters.MachineIpmiChassis{
+				ChassisPartNumber: number,
+				ChassisPartSerial: serial,
+				Machines:          []*models.V1MachineIPMIResponse{m},
+			})
+		} else {
+			byChassis[idx].Machines = append(byChassis[idx].Machines, m)
+		}
+	}
+
+	return c.listPrinter.Print(byChassis)
 }
 
 func (c *machineCmd) machineIssuesList() error {
