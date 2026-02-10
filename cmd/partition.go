@@ -176,7 +176,6 @@ func (c *partitionCmd) partitionCapacity() error {
 	}
 
 	for _, pc := range resp.Payload {
-		pc := pc
 		sort.SliceStable(pc.Servers, func(i, j int) bool {
 			return pointer.SafeDeref(pointer.SafeDeref(pc.Servers[i]).Size) < pointer.SafeDeref(pointer.SafeDeref(pc.Servers[j]).Size)
 		})

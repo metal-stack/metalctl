@@ -311,8 +311,6 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 
 	machinesByID := map[string]*models.V1MachineIPMIResponse{}
 	for _, m := range data.Machines {
-		m := m
-
 		if m.ID == nil {
 			continue
 		}
@@ -322,8 +320,6 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 
 	issuesByID := map[string]*models.V1MachineIssue{}
 	for _, issue := range data.Issues {
-		issue := issue
-
 		if issue.ID == nil {
 			continue
 		}

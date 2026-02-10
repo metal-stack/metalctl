@@ -94,8 +94,6 @@ func (c *Completion) IssueTypeCompletion(cmd *cobra.Command, args []string, toCo
 	}
 	var names []string
 	for _, issue := range resp.Payload {
-		issue := issue
-
 		if issue.ID == nil {
 			continue
 		}
@@ -119,8 +117,6 @@ func (c *Completion) IssueSeverityCompletion(cmd *cobra.Command, args []string, 
 
 	severities := map[string]bool{}
 	for _, issue := range resp.Payload {
-		issue := issue
-
 		if issue.Severity == nil {
 			continue
 		}
