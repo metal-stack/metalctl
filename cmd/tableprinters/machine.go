@@ -413,3 +413,64 @@ func (t *TablePrinter) MachineIssuesTable(data *MachinesAndIssues, wide bool) ([
 
 	return header, rows, nil
 }
+
+type MachineIpmiChassisTable []*MachineIpmiChassis
+
+type MachineIpmiChassis struct {
+	ChassisPartNumber string                          `json:"chassis_part_number,omitempty" yaml:"chassis_part_number,omitempty"`
+	ChassisPartSerial string                          `json:"chassis_part_serial,omitempty" yaml:"chassis_part_serial,omitempty"`
+	Machines          []*models.V1MachineIPMIResponse `json:"machines" yaml:"machines"`
+}
+
+func (t *TablePrinter) MachineIpmiChassisTable(data MachineIpmiChassisTable, wide bool) ([]string, [][]string, error) {
+	var (
+		rows [][]string
+	)
+
+	header := []string{"ID", "", "Partition", "Rack", "Size", "Product Serial", "Hostname"}
+	if wide {
+		// no particular wide view
+	}
+
+	for _, chassis := range data {
+		rows = append(rows, []string{fmt.Sprintf("%s (%s)", chassis.ChassisPartSerial, chassis.ChassisPartNumber)})
+
+		for i, m := range chassis.Machines {
+			var (
+				id        = pointer.SafeDeref(m.ID)
+				partition = pointer.SafeDeref(pointer.SafeDeref(m.Partition).ID)
+				size      = pointer.SafeDeref(pointer.SafeDeref(m.Size).ID)
+				ps        = ""
+				ipmi      = m.Ipmi
+				rack      = m.Rackid
+				hostname  = pointer.SafeDeref(pointer.SafeDeref(m.Allocation).Hostname)
+			)
+
+			if ipmi != nil {
+				fru := ipmi.Fru
+
+				if fru != nil {
+					ps = fru.ProductSerial
+				}
+			}
+
+			emojis, wideEmojis := t.getMachineStatusEmojis(m.Liveliness, m.Events, m.State, nil)
+
+			prefix := "├"
+			if i == len(chassis.Machines)-1 {
+				prefix = "└"
+			}
+			prefix += "─╴"
+
+			id = fmt.Sprintf("%s %s", prefix, id)
+
+			if wide {
+				rows = append(rows, []string{id, wideEmojis, partition, rack, size, ps, hostname})
+			} else {
+				rows = append(rows, []string{id, emojis, partition, rack, size, ps, hostname})
+			}
+		}
+	}
+
+	return header, rows, nil
+}
