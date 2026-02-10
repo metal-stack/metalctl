@@ -428,9 +428,9 @@ func (t *TablePrinter) MachineIpmiChassisTable(data MachineIpmiChassisTable, wid
 	)
 
 	header := []string{"ID", "", "Partition", "Rack", "Size", "Product Serial", "Hostname"}
-	if wide {
-		// no particular wide view
-	}
+	// if wide {
+	// no particular wide view yet
+	// }
 
 	for _, chassis := range data {
 		rows = append(rows, []string{fmt.Sprintf("%s (%s)", chassis.ChassisPartSerial, chassis.ChassisPartNumber)})
