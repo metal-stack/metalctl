@@ -90,7 +90,6 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("network-ips", "", "network ips to filter [optional]")
 
 	for _, c := range listFlagCompletions {
-		c := c
 		genericcli.Must(cmd.RegisterFlagCompletionFunc(c.flagName, c.f))
 	}
 

@@ -65,8 +65,6 @@ func (t *TablePrinter) SizeReservationTable(data []*models.V1SizeReservationResp
 	}
 
 	for _, d := range data {
-		d := d
-
 		desc := d.Description
 		if !wide {
 			desc = genericcli.TruncateEnd(d.Description, 50)
@@ -104,8 +102,6 @@ func (t *TablePrinter) SizeReservationUsageTable(data []*models.V1SizeReservatio
 	}
 
 	for _, d := range data {
-		d := d
-
 		row := []string{
 			pointer.SafeDeref(d.ID),
 			pointer.SafeDeref(d.Sizeid),
