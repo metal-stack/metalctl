@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/partition"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -23,7 +22,7 @@ var (
 			Kernelurl:   "kernelurl",
 		},
 		Description:        "partition 1",
-		ID:                 pointer.Pointer("1"),
+		ID:                 new("1"),
 		Mgmtserviceaddress: "mgmt",
 		Name:               "partition-1",
 		Labels: map[string]string{
@@ -37,7 +36,7 @@ var (
 			Kernelurl:   "kernelurl",
 		},
 		Description:        "partition 2",
-		ID:                 pointer.Pointer("2"),
+		ID:                 new("2"),
 		Mgmtserviceaddress: "mgmt",
 		Name:               "partition-2",
 	}
@@ -64,22 +63,22 @@ func Test_PartitionCmd_MultiResult(t *testing.T) {
 				partition1,
 				partition2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME         DESCRIPTION
 1   partition-1  partition 1
 2   partition-2  partition 2
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME         DESCRIPTION  LABELS
 1   partition-1  partition 1  a=b
 2   partition-2  partition 2
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 partition-1
 2 partition-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME        | DESCRIPTION |
 |----|-------------|-------------|
 | 1  | partition-1 | partition 1 |
@@ -188,19 +187,19 @@ func Test_PartitionCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: partition1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME         DESCRIPTION
 1   partition-1  partition 1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME         DESCRIPTION  LABELS
 1   partition-1  partition 1  a=b
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 partition-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME        | DESCRIPTION |
 |----|-------------|-------------|
 | 1  | partition-1 | partition 1 |
@@ -278,7 +277,7 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 						Payload: []*models.V1PartitionCapacity{
 							{
 								Description: "partition 1",
-								ID:          pointer.Pointer("1"),
+								ID:          new("1"),
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
@@ -288,7 +287,7 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 										Free:             3,
 										Other:            4,
 										Othermachines:    []string{"def"},
-										Size:             pointer.Pointer("size-1"),
+										Size:             new("size-1"),
 										Total:            5,
 										Reservations:     3,
 										Usedreservations: 1,
@@ -302,7 +301,7 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 			want: []*models.V1PartitionCapacity{
 				{
 					Description: "partition 1",
-					ID:          pointer.Pointer("1"),
+					ID:          new("1"),
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
@@ -312,7 +311,7 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 							Free:             3,
 							Other:            4,
 							Othermachines:    []string{"def"},
-							Size:             pointer.Pointer("size-1"),
+							Size:             new("size-1"),
 							Total:            5,
 							Reservations:     3,
 							Usedreservations: 1,
@@ -320,21 +319,21 @@ func Test_PartitionCapacityCmd(t *testing.T) {
 					},
 				},
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY
 1          size-1  1          3     0            2 (1/3 used)  |  5      |  2
 Total              1          3     0            2             |  5      |  2
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY  PHONED HOME  WAITING  OTHER
 1          size-1  1          3     0            2 (1/3 used)  |  5      |  2       0            0        4
 Total              1          3     0            2             |  5      |  2       0            0        4
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 partition-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | PARTITION | SIZE   | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
 |-----------|--------|-----------|------|-------------|--------------|-------|--------|
 | 1         | size-1 | 1         | 3    | 0           | 2 (1/3 used) | 5     | 2      |
@@ -353,12 +352,12 @@ Total              1          3     0            2             |  5      |  2   
 					mock.On("PartitionCapacity", testcommon.MatchIgnoreContext(t, partition.NewPartitionCapacityParams().WithBody(&models.V1PartitionCapacityRequest{
 						ID:        "1",
 						Sizeid:    "size-1",
-						Projectid: pointer.Pointer("123"),
+						Projectid: new("123"),
 					})), nil).Return(&partition.PartitionCapacityOK{
 						Payload: []*models.V1PartitionCapacity{
 							{
 								Description: "partition 1",
-								ID:          pointer.Pointer("1"),
+								ID:          new("1"),
 								Name:        "partition-1",
 								Servers: []*models.V1ServerCapacity{
 									{
@@ -368,7 +367,7 @@ Total              1          3     0            2             |  5      |  2   
 										Free:             3,
 										Other:            4,
 										Othermachines:    []string{"def"},
-										Size:             pointer.Pointer("size-1"),
+										Size:             new("size-1"),
 										Total:            5,
 										Reservations:     3,
 										Usedreservations: 1,
@@ -382,7 +381,7 @@ Total              1          3     0            2             |  5      |  2   
 			want: []*models.V1PartitionCapacity{
 				{
 					Description: "partition 1",
-					ID:          pointer.Pointer("1"),
+					ID:          new("1"),
 					Name:        "partition-1",
 					Servers: []*models.V1ServerCapacity{
 						{
@@ -392,7 +391,7 @@ Total              1          3     0            2             |  5      |  2   
 							Free:             3,
 							Other:            4,
 							Othermachines:    []string{"def"},
-							Size:             pointer.Pointer("size-1"),
+							Size:             new("size-1"),
 							Total:            5,
 							Reservations:     3,
 							Usedreservations: 1,
@@ -400,21 +399,21 @@ Total              1          3     0            2             |  5      |  2   
 					},
 				},
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY
 1          size-1  1          3     0            2 (1/3 used)  |  5      |  2
 Total              1          3     0            2             |  5      |  2
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 PARTITION  SIZE    ALLOCATED  FREE  UNAVAILABLE  RESERVATIONS  |  TOTAL  |  FAULTY  PHONED HOME  WAITING  OTHER
 1          size-1  1          3     0            2 (1/3 used)  |  5      |  2       0            0        4
 Total              1          3     0            2             |  5      |  2       0            0        4
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 partition-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | PARTITION | SIZE   | ALLOCATED | FREE | UNAVAILABLE | RESERVATIONS | TOTAL | FAULTY |
 |-----------|--------|-----------|------|-------------|--------------|-------|--------|
 | 1         | size-1 | 1         | 3    | 0           | 2 (1/3 used) | 5     | 2      |

@@ -11,7 +11,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -39,14 +38,14 @@ func newSizeCmd(c *config) *cobra.Command {
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1SizeCreateRequest, error) {
 			return &models.V1SizeCreateRequest{
-				ID:          pointer.Pointer(viper.GetString("id")),
+				ID:          new(viper.GetString("id")),
 				Name:        viper.GetString("name"),
 				Description: viper.GetString("description"),
 				Constraints: []*models.V1SizeConstraint{
 					{
 						Max:  viper.GetInt64("max"),
 						Min:  viper.GetInt64("min"),
-						Type: pointer.Pointer(viper.GetString("type")),
+						Type: new(viper.GetString("type")),
 					},
 				},
 			}, nil

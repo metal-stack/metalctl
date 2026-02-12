@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/metal-stack/metal-go/api/models"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +30,7 @@ func Test_parseNetworks(t *testing.T) {
 			possibleNetworks: []string{"network"},
 			isError:          false,
 			expected: []*models.V1MachineAllocationNetwork{
-				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: new("network"), Autoacquire: new(true)},
 			},
 		},
 		{
@@ -39,8 +38,8 @@ func Test_parseNetworks(t *testing.T) {
 			possibleNetworks: []string{"network1", "network2"},
 			isError:          false,
 			expected: []*models.V1MachineAllocationNetwork{
-				{Networkid: pointer.Pointer("network1"), Autoacquire: pointer.Pointer(true)},
-				{Networkid: pointer.Pointer("network2"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: new("network1"), Autoacquire: new(true)},
+				{Networkid: new("network2"), Autoacquire: new(true)},
 			},
 		},
 		{
@@ -48,7 +47,7 @@ func Test_parseNetworks(t *testing.T) {
 			possibleNetworks: []string{"network:auto"},
 			isError:          false,
 			expected: []*models.V1MachineAllocationNetwork{
-				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: new("network"), Autoacquire: new(true)},
 			},
 		},
 		{
@@ -56,9 +55,9 @@ func Test_parseNetworks(t *testing.T) {
 			possibleNetworks: []string{"network1:auto", "network2:noauto", "network3"},
 			isError:          false,
 			expected: []*models.V1MachineAllocationNetwork{
-				{Networkid: pointer.Pointer("network1"), Autoacquire: pointer.Pointer(true)},
-				{Networkid: pointer.Pointer("network2"), Autoacquire: pointer.Pointer(false)},
-				{Networkid: pointer.Pointer("network3"), Autoacquire: pointer.Pointer(true)},
+				{Networkid: new("network1"), Autoacquire: new(true)},
+				{Networkid: new("network2"), Autoacquire: new(false)},
+				{Networkid: new("network3"), Autoacquire: new(true)},
 			},
 		},
 		{
@@ -78,7 +77,7 @@ func Test_parseNetworks(t *testing.T) {
 			possibleNetworks: []string{"network:noauto"},
 			isError:          false,
 			expected: []*models.V1MachineAllocationNetwork{
-				{Networkid: pointer.Pointer("network"), Autoacquire: pointer.Pointer(false)},
+				{Networkid: new("network"), Autoacquire: new(false)},
 			},
 		},
 	}

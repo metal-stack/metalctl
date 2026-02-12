@@ -46,7 +46,7 @@ var (
 			"size.metal-stack.io/drive-description": "960GB NVMe",
 		},
 		Description: "size 1",
-		ID:          pointer.Pointer("1"),
+		ID:          new("1"),
 		Name:        "size-1",
 	}
 	size2 = &models.V1SizeResponse{
@@ -68,7 +68,7 @@ var (
 			},
 		},
 		Description: "size 2",
-		ID:          pointer.Pointer("2"),
+		ID:          new("2"),
 		Name:        "size-2",
 	}
 )
@@ -94,23 +94,23 @@ func Test_SizeCmd_MultiResult(t *testing.T) {
 				size1,
 				size2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE
 1   size-1  size 1       5 - 6      3 B - 4 B     1 B - 2 B      AD120GL*: 1 - 1
 2   size-2  size 2       5 - 6      3 B - 4 B     1 B - 2 B
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE        LABELS
 1   size-1  size 1       5 - 6      3 B - 4 B     1 B - 2 B      AD120GL*: 1 - 1  size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
                                                                                   size.metal-stack.io/drive-description=960GB NVMe
 2   size-2  size 2       5 - 6      3 B - 4 B     1 B - 2 B
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 size-1
 2 size-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME   | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE | GPU RANGE       |
 |----|--------|-------------|-----------|--------------|---------------|-----------------|
 | 1  | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
@@ -219,20 +219,20 @@ func Test_SizeCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: size1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE
 1   size-1  size 1       5 - 6      3 B - 4 B     1 B - 2 B      AD120GL*: 1 - 1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE        LABELS
 1   size-1  size 1       5 - 6      3 B - 4 B     1 B - 2 B      AD120GL*: 1 - 1  size.metal-stack.io/cpu-description=1x Intel(R) Xeon(R) D-2141I CPU @ 2.20GHz
                                                                                   size.metal-stack.io/drive-description=960GB NVMe
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 size-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME   | DESCRIPTION | CPU RANGE | MEMORY RANGE | STORAGE RANGE | GPU RANGE       |
 |----|--------|-------------|-----------|--------------|---------------|-----------------|
 | 1  | size-1 | size 1      | 5 - 6     | 3 B - 4 B    | 1 B - 2 B     | AD120GL*: 1 - 1 |
@@ -295,7 +295,7 @@ ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE      
 			mocks: &client.MetalMockFns{
 				Size: func(mock *mock.Mock) {
 					mock.On("Suggest", testcommon.MatchIgnoreContext(t, size.NewSuggestParams().WithBody(&models.V1SizeSuggestRequest{
-						MachineID: pointer.Pointer("1"),
+						MachineID: new("1"),
 					})), nil).Return(&size.SuggestOK{
 						Payload: []*models.V1SizeConstraint{
 							{
@@ -336,7 +336,7 @@ ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE      
 					},
 				},
 				Description: "foo",
-				ID:          pointer.Pointer("c1-large-x86"),
+				ID:          new("c1-large-x86"),
 				Name:        "mysize",
 				Labels: map[string]string{
 					"1": "b",

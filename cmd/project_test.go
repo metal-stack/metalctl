@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -90,22 +89,22 @@ func Test_ProjectCmd_MultiResult(t *testing.T) {
 				project1,
 				project2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    c       a=b
 2    metal-stack  project-2  project 2    c       a=b
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
 2    metal-stack  project-2  project 2    ∞ / ∞ / ∞                         c       a=b
 `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
 1 project-1
 2 project-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
 | 1   | metal-stack | project-1 | project 1   | c      | a=b         |
@@ -135,19 +134,19 @@ UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABE
 			want: []*models.V1ProjectResponse{
 				project1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    c       a=b
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
 `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
 1 project-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
 | 1   | metal-stack | project-1 | project 1   | c      | a=b         |
@@ -261,19 +260,19 @@ func Test_ProjectCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: project1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 UID  TENANT       NAME       DESCRIPTION  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    c       a=b
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 UID  TENANT       NAME       DESCRIPTION  QUOTAS CLUSTERS / MACHINES / IPS  LABELS  ANNOTATIONS
 1    metal-stack  project-1  project 1    1 / 3 / 2                         c       a=b
 `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
 1 project-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | UID | TENANT      | NAME      | DESCRIPTION | LABELS | ANNOTATIONS |
 |-----|-------------|-----------|-------------|--------|-------------|
 | 1   | metal-stack | project-1 | project 1   | c      | a=b         |

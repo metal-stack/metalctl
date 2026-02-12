@@ -43,9 +43,9 @@ func (c *config) vpnAuthKeyCreate() error {
 	resp, err := c.client.VPN().GetVPNAuthKey(
 		vpn.NewGetVPNAuthKeyParams().WithBody(
 			&models.V1VPNRequest{
-				Pid:       pointer.Pointer(viper.GetString("project")),
+				Pid:       new(viper.GetString("project")),
 				Ephemeral: pointer.PointerOrNil(viper.GetBool("ephemeral")),
-				Reason:    pointer.Pointer(viper.GetString("reason")),
+				Reason:    new(viper.GetString("reason")),
 			}), nil,
 	)
 	if err != nil {

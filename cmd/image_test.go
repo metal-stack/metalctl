@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/image"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -17,13 +16,13 @@ import (
 )
 
 var (
-	imageExpiration = pointer.Pointer(strfmt.DateTime(testTime.Add(3 * 24 * time.Hour)))
+	imageExpiration = new(strfmt.DateTime(testTime.Add(3 * 24 * time.Hour)))
 	image1          = &models.V1ImageResponse{
 		Classification: models.DatastoreImageSearchQueryClassificationSupported,
 		Description:    "debian-description",
 		ExpirationDate: imageExpiration,
 		Features:       []string{"machine"},
-		ID:             pointer.Pointer("debian"),
+		ID:             new("debian"),
 		Name:           "debian-name",
 		URL:            "debian-url",
 		Usedby:         []string{"abc-def"},
@@ -33,7 +32,7 @@ var (
 		Description:    "ubuntu-description",
 		ExpirationDate: imageExpiration,
 		Features:       []string{"machine"},
-		ID:             pointer.Pointer("ubuntu"),
+		ID:             new("ubuntu"),
 		Name:           "ubuntu-name",
 		URL:            "ubuntu-url",
 		Usedby:         []string{"123"},
@@ -51,7 +50,7 @@ func Test_ImageCmd_MultiResult(t *testing.T) {
 				Image: func(mock *mock.Mock) {
 					mock.On("FindImages", testcommon.MatchIgnoreContext(t, image.NewFindImagesParams().WithBody(&models.V1ImageFindRequest{
 						Features: []string{},
-					}).WithShowUsage(pointer.Pointer(true))), nil).Return(&image.FindImagesOK{
+					}).WithShowUsage(new(true))), nil).Return(&image.FindImagesOK{
 						Payload: []*models.V1ImageResponse{
 							image2,
 							image1,
@@ -63,22 +62,22 @@ func Test_ImageCmd_MultiResult(t *testing.T) {
 				image1,
 				image2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported  1
 ubuntu  ubuntu-name  ubuntu-description  machine   3d          supported  1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported  abc-def
 ubuntu  ubuntu-name  ubuntu-description  machine   3d          supported  123
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 debian debian-name
 ubuntu ubuntu-name
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID     | NAME        | DESCRIPTION        | FEATURES | EXPIRATION | STATUS    | USED BY |
 |--------|-------------|--------------------|----------|------------|-----------|---------|
 | debian | debian-name | debian-description | machine  | 3d         | supported | 1       |
@@ -108,7 +107,7 @@ ubuntu ubuntu-name
 						Name:           image1.Name,
 						Os:             "debian",
 						Version:        "10",
-					}).WithShowUsage(pointer.Pointer(true))), nil).Return(&image.FindImagesOK{
+					}).WithShowUsage(new(true))), nil).Return(&image.FindImagesOK{
 						Payload: []*models.V1ImageResponse{
 							image1,
 						},
@@ -118,19 +117,19 @@ ubuntu ubuntu-name
 			want: []*models.V1ImageResponse{
 				image1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported  1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported  abc-def
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 debian debian-name
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID     | NAME        | DESCRIPTION        | FEATURES | EXPIRATION | STATUS    | USED BY |
 |--------|-------------|--------------------|----------|------------|-----------|---------|
 | debian | debian-name | debian-description | machine  | 3d         | supported | 1       |
@@ -238,19 +237,19 @@ func Test_ImageCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: image1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID      NAME         DESCRIPTION         FEATURES  EXPIRATION  STATUS     USED BY
 debian  debian-name  debian-description  machine   3d          supported
 		`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 debian debian-name
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID     | NAME        | DESCRIPTION        | FEATURES | EXPIRATION | STATUS    | USED BY |
 |--------|-------------|--------------------|----------|------------|-----------|---------|
 | debian | debian-name | debian-description | machine  | 3d         | supported |         |

@@ -231,7 +231,7 @@ func (c *networkCmd) Create(rq *models.V1NetworkCreateRequest) (*models.V1Networ
 }
 
 func (c *networkCmd) Update(rq *models.V1NetworkUpdateRequest) (*models.V1NetworkResponse, error) {
-	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(pointer.Pointer(viper.GetBool(forceFlag))), nil)
+	resp, err := c.client.Network().UpdateNetwork(network.NewUpdateNetworkParams().WithBody(rq).WithForce(new(viper.GetBool(forceFlag))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -301,16 +301,16 @@ func (c *networkCmd) createRequestFromCLI() (*models.V1NetworkCreateRequest, err
 	}
 
 	return &models.V1NetworkCreateRequest{
-		ID:                         pointer.Pointer(viper.GetString("id")),
+		ID:                         new(viper.GetString("id")),
 		Description:                viper.GetString("description"),
 		Name:                       viper.GetString("name"),
 		Partitionid:                viper.GetString("partition"),
 		Projectid:                  viper.GetString("project"),
 		Prefixes:                   viper.GetStringSlice("prefixes"),
 		Destinationprefixes:        viper.GetStringSlice("destination-prefixes"),
-		Privatesuper:               pointer.Pointer(viper.GetBool("privatesuper")),
-		Nat:                        pointer.Pointer(viper.GetBool("nat")),
-		Underlay:                   pointer.Pointer(viper.GetBool("underlay")),
+		Privatesuper:               new(viper.GetBool("privatesuper")),
+		Nat:                        new(viper.GetBool("nat")),
+		Underlay:                   new(viper.GetBool("underlay")),
 		Vrf:                        viper.GetInt64("vrf"),
 		Vrfshared:                  viper.GetBool("vrfshared"),
 		Labels:                     lbs,
@@ -405,7 +405,7 @@ func (c *networkCmd) updateRequestFromCLI(args []string) (*models.V1NetworkUpdat
 		ur = &models.V1NetworkUpdateRequest{
 			Description:                viper.GetString("description"),
 			Destinationprefixes:        nil,
-			ID:                         pointer.Pointer(id),
+			ID:                         new(id),
 			Labels:                     labels,
 			Name:                       viper.GetString("name"),
 			Prefixes:                   nil,
