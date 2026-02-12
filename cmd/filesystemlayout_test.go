@@ -6,7 +6,6 @@ import (
 	fsmodel "github.com/metal-stack/metal-go/api/client/filesystemlayout"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -25,43 +24,43 @@ var (
 		Description: "fsl 1",
 		Disks: []*models.V1Disk{
 			{
-				Device: pointer.Pointer("/dev/sda"),
+				Device: new("/dev/sda"),
 				Partitions: []*models.V1DiskPartition{
 					{
-						Gpttype: pointer.Pointer("ef00"),
+						Gpttype: new("ef00"),
 						Label:   "efi",
-						Number:  pointer.Pointer(int64(1)),
-						Size:    pointer.Pointer(int64(1000)),
+						Number:  new(int64(1)),
+						Size:    new(int64(1000)),
 					},
 				},
-				Wipeonreinstall: pointer.Pointer(true),
+				Wipeonreinstall: new(true),
 			},
 		},
 		Filesystems: []*models.V1Filesystem{
 			{
 				Createoptions: []string{"-F 32"},
-				Device:        pointer.Pointer("/dev/sda1"),
-				Format:        pointer.Pointer("vfat"),
+				Device:        new("/dev/sda1"),
+				Format:        new("vfat"),
 				Label:         "efi",
 				Mountoptions:  []string{"noexec"},
 				Path:          "/boot/efi",
 			},
 			{
 				Createoptions: []string{},
-				Device:        pointer.Pointer("tmpfs"),
-				Format:        pointer.Pointer("tmpfs"),
+				Device:        new("tmpfs"),
+				Format:        new("tmpfs"),
 				Label:         "",
 				Mountoptions:  []string{"noexec"},
 				Path:          "/tmp",
 			},
 		},
-		ID: pointer.Pointer("1"),
+		ID: new("1"),
 		Logicalvolumes: []*models.V1LogicalVolume{
 			{
-				Lvmtype:     pointer.Pointer("linear"),
-				Name:        pointer.Pointer("varlib"),
-				Size:        pointer.Pointer(int64(5000)),
-				Volumegroup: pointer.Pointer("lvm"),
+				Lvmtype:     new("linear"),
+				Name:        new("varlib"),
+				Size:        new(int64(5000)),
+				Volumegroup: new("lvm"),
 			},
 		},
 		Name: "fsl1",
@@ -69,7 +68,7 @@ var (
 		Volumegroups: []*models.V1VolumeGroup{
 			{
 				Devices: []string{"/dev/nvme0n1"},
-				Name:    pointer.Pointer("lvm"),
+				Name:    new("lvm"),
 				Tags:    []string{},
 			},
 		},
@@ -84,35 +83,35 @@ var (
 		Description: "fsl 2",
 		Disks: []*models.V1Disk{
 			{
-				Device: pointer.Pointer("/dev/sda"),
+				Device: new("/dev/sda"),
 				Partitions: []*models.V1DiskPartition{
 					{
-						Gpttype: pointer.Pointer("ef00"),
+						Gpttype: new("ef00"),
 						Label:   "efi",
-						Number:  pointer.Pointer(int64(1)),
-						Size:    pointer.Pointer(int64(1000)),
+						Number:  new(int64(1)),
+						Size:    new(int64(1000)),
 					},
 				},
-				Wipeonreinstall: pointer.Pointer(true),
+				Wipeonreinstall: new(true),
 			},
 		},
 		Filesystems: []*models.V1Filesystem{
 			{
 				Createoptions: []string{},
-				Device:        pointer.Pointer("tmpfs"),
-				Format:        pointer.Pointer("tmpfs"),
+				Device:        new("tmpfs"),
+				Format:        new("tmpfs"),
 				Label:         "",
 				Mountoptions:  []string{"noexec"},
 				Path:          "/tmp",
 			},
 		},
-		ID: pointer.Pointer("2"),
+		ID: new("2"),
 		Logicalvolumes: []*models.V1LogicalVolume{
 			{
-				Lvmtype:     pointer.Pointer("linear"),
-				Name:        pointer.Pointer("varlib"),
-				Size:        pointer.Pointer(int64(5000)),
-				Volumegroup: pointer.Pointer("lvm"),
+				Lvmtype:     new("linear"),
+				Name:        new("varlib"),
+				Size:        new(int64(5000)),
+				Volumegroup: new("lvm"),
 			},
 		},
 		Name: "fsl2",
@@ -120,7 +119,7 @@ var (
 		Volumegroups: []*models.V1VolumeGroup{
 			{
 				Devices: []string{"/dev/nvme0n1"},
-				Name:    pointer.Pointer("lvm"),
+				Name:    new("lvm"),
 				Tags:    []string{},
 			},
 		},
@@ -148,24 +147,24 @@ func Test_FilesystemLayoutCmd_MultiResult(t *testing.T) {
 				fsl1,
 				fsl2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
 1   fsl 1        /tmp       tmpfs      size1  os-image *
                  /boot/efi  /dev/sda1
 2   fsl 2        /tmp  tmpfs           size1  os-image *
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
 1   fsl 1        /tmp       tmpfs      size1  os-image *
                  /boot/efi  /dev/sda1
 2   fsl 2        /tmp  tmpfs           size1  os-image *
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 fsl1
 2 fsl2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | DESCRIPTION | FILESYSTEMS          | SIZES | IMAGES     |
 |----|-------------|----------------------|-------|------------|
 | 1  | fsl 1       | /tmp       tmpfs     | size1 | os-image * |
@@ -275,21 +274,21 @@ func Test_FilesystemLayoutCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: fsl1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
 1   fsl 1        /tmp       tmpfs      size1  os-image *
 			/boot/efi  /dev/sda1
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  DESCRIPTION  FILESYSTEMS           SIZES  IMAGES
 1   fsl 1        /tmp       tmpfs      size1  os-image *
             /boot/efi  /dev/sda1
 		`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 fsl1
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | DESCRIPTION | FILESYSTEMS          | SIZES | IMAGES     |
 |----|-------------|----------------------|-------|------------|
 | 1  | fsl 1       | /tmp       tmpfs     | size1 | os-image * |

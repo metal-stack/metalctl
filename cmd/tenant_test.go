@@ -9,7 +9,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -88,12 +87,12 @@ func Test_TenantCmd_MultiResult(t *testing.T) {
 				tenant1,
 				tenant2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME      DESCRIPTION
 1   tenant-1  tenant 1
 2   tenant-2  tenant 2
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME      DESCRIPTION  LABELS  ANNOTATIONS  QUOTAS
 1   tenant-1  tenant 1     c       a=b          1 Cluster(s)
                                                     3 Machine(s)
@@ -102,12 +101,12 @@ ID  NAME      DESCRIPTION  LABELS  ANNOTATIONS  QUOTAS
                                                     ∞ Machine(s)
                                                     ∞ IP(s)
 `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
 1 tenant-1
 2 tenant-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME     | DESCRIPTION |
 |----|----------|-------------|
 | 1  | tenant-1 | tenant 1    |
@@ -139,21 +138,21 @@ ID  NAME      DESCRIPTION  LABELS  ANNOTATIONS  QUOTAS
 			want: []*models.V1TenantResponse{
 				tenant1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME      DESCRIPTION
 1   tenant-1  tenant 1
         `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME      DESCRIPTION  LABELS  ANNOTATIONS  QUOTAS
 1   tenant-1  tenant 1     c       a=b          1 Cluster(s)
                                                     3 Machine(s)
                                                     2 IP(s)
         `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
         1 tenant-1
         `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME     | DESCRIPTION |
 |----|----------|-------------|
 | 1  | tenant-1 | tenant 1    |
@@ -267,21 +266,21 @@ func Test_TenantCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: tenant1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME      DESCRIPTION
 1   tenant-1  tenant 1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME      DESCRIPTION  LABELS  ANNOTATIONS  QUOTAS
 1   tenant-1  tenant 1     c       a=b          1 Cluster(s)
                                                     3 Machine(s)
                                                     2 IP(s)
 `),
-			template: pointer.Pointer("{{ .meta.id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .meta.id }} {{ .name }}"),
+			wantTemplate: new(`
 1 tenant-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME     | DESCRIPTION |
 |----|----------|-------------|
 | 1  | tenant-1 | tenant 1    |

@@ -6,7 +6,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -16,28 +15,28 @@ import (
 
 var (
 	rv1 = &models.V1SizeReservationResponse{
-		Amount:      pointer.Pointer(int32(3)),
+		Amount:      new(int32(3)),
 		Description: "this is reservation 1",
-		ID:          pointer.Pointer("r1"),
+		ID:          new("r1"),
 		Labels: map[string]string{
 			"a": "b",
 		},
 		Name:         "reservation 1",
 		Partitionids: []string{"partition-a", "partition-b"},
-		Projectid:    pointer.Pointer("project-a"),
-		Sizeid:       pointer.Pointer("size-a"),
+		Projectid:    new("project-a"),
+		Sizeid:       new("size-a"),
 	}
 	rv2 = &models.V1SizeReservationResponse{
-		Amount:      pointer.Pointer(int32(2)),
+		Amount:      new(int32(2)),
 		Description: "this is reservation 2",
-		ID:          pointer.Pointer("r2"),
+		ID:          new("r2"),
 		Labels: map[string]string{
 			"b": "c",
 		},
 		Name:         "reservation 2",
 		Partitionids: []string{"partition-b"},
-		Projectid:    pointer.Pointer("project-b"),
-		Sizeid:       pointer.Pointer("size-b"),
+		Projectid:    new("project-b"),
+		Sizeid:       new("size-b"),
 	}
 )
 
@@ -62,22 +61,22 @@ func Test_SizeReservationCmd_MultiResult(t *testing.T) {
 				rv1,
 				rv2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT
 r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3
 r2  size-b  project-b  partition-b               this is reservation 2  2
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT  LABELS
 r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3       a=b
 r2  size-b  project-b  partition-b               this is reservation 2  2       b=c
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 r1 reservation 1
 r2 reservation 2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | SIZE   | PROJECT   | PARTITIONS               | DESCRIPTION           | AMOUNT |
 |----|--------|-----------|--------------------------|-----------------------|--------|
 | r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 | 3      |
@@ -167,19 +166,19 @@ func Test_SizeReservationCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: rv1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT
 r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  SIZE    PROJECT    PARTITIONS                DESCRIPTION            AMOUNT  LABELS
 r1  size-a  project-a  partition-a, partition-b  this is reservation 1  3       a=b
 		`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 r1 reservation 1
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | SIZE   | PROJECT   | PARTITIONS               | DESCRIPTION           | AMOUNT |
 |----|--------|-----------|--------------------------|-----------------------|--------|
 | r1 | size-a | project-a | partition-a, partition-b | this is reservation 1 | 3      |

@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 
 	"github.com/spf13/cobra"
@@ -175,8 +174,8 @@ func (c *fslCmd) filesystemTry() error {
 
 func (c *fslCmd) filesystemMatch() error {
 	match := models.V1FilesystemLayoutMatchRequest{
-		Machine:          pointer.Pointer(viper.GetString("machine")),
-		Filesystemlayout: pointer.Pointer(viper.GetString("filesystemlayout")),
+		Machine:          new(viper.GetString("machine")),
+		Filesystemlayout: new(viper.GetString("filesystemlayout")),
 	}
 
 	resp, err := c.client.Filesystemlayout().MatchFilesystemLayout(fsmodel.NewMatchFilesystemLayoutParams().WithBody(&match), nil)

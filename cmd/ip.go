@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/tag"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
@@ -204,9 +203,9 @@ func (c *ipCmd) createRequestFromCLI() (*ipAllocateRequest, error) {
 		V1IPAllocateRequest: &models.V1IPAllocateRequest{
 			Description:   viper.GetString("description"),
 			Name:          viper.GetString("name"),
-			Networkid:     pointer.Pointer(viper.GetString("network")),
-			Projectid:     pointer.Pointer(viper.GetString("project")),
-			Type:          pointer.Pointer(viper.GetString("type")),
+			Networkid:     new(viper.GetString("network")),
+			Projectid:     new(viper.GetString("project")),
+			Type:          new(viper.GetString("type")),
 			Tags:          viper.GetStringSlice("tags"),
 			Addressfamily: viper.GetString("addressfamily"),
 		},

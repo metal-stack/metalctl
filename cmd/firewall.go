@@ -191,7 +191,7 @@ func firewallResponseToCreate(r *models.V1FirewallResponse) *models.V1FirewallCr
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
 		networks = append(networks, &models.V1MachineAllocationNetwork{
-			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
+			Autoacquire: new(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
 	}

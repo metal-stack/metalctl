@@ -11,7 +11,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -234,7 +233,7 @@ func (c *switchCmd) List() ([]*models.V1SwitchResponse, error) {
 }
 
 func (c *switchCmd) Delete(id string) (*models.V1SwitchResponse, error) {
-	resp, err := c.client.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id).WithForce(pointer.Pointer(viper.GetBool("force"))), nil)
+	resp, err := c.client.SwitchOperations().DeleteSwitch(switch_operations.NewDeleteSwitchParams().WithID(id).WithForce(new(viper.GetBool("force"))), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -388,8 +387,8 @@ func (c *switchCmd) switchMigrate(args []string) error {
 	}
 
 	resp, err := c.client.SwitchOperations().MigrateSwitch(switch_operations.NewMigrateSwitchParams().WithBody(&models.V1SwitchMigrateRequest{
-		OldSwitchID: pointer.Pointer(args[0]),
-		NewSwitchID: pointer.Pointer(args[1]),
+		OldSwitchID: new(args[0]),
+		NewSwitchID: new(args[1]),
 	}), nil)
 	if err != nil {
 		return err

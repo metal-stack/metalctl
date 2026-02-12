@@ -35,10 +35,10 @@ func newImageCmd(c *config) *cobra.Command {
 		ListPrinter:     func() printers.Printer { return c.listPrinter },
 		CreateRequestFromCLI: func() (*models.V1ImageCreateRequest, error) {
 			return &models.V1ImageCreateRequest{
-				ID:          pointer.Pointer(viper.GetString("id")),
+				ID:          new(viper.GetString("id")),
 				Name:        viper.GetString("name"),
 				Description: viper.GetString("description"),
-				URL:         pointer.Pointer(viper.GetString("url")),
+				URL:         new(viper.GetString("url")),
 				Features:    viper.GetStringSlice("features"),
 			}, nil
 		},
@@ -91,7 +91,7 @@ func (c imageCmd) List() ([]*models.V1ImageResponse, error) {
 		Name:           viper.GetString("name"),
 		Os:             viper.GetString("os"),
 		Version:        viper.GetString("version"),
-	}).WithShowUsage(pointer.Pointer(viper.GetBool("show-usage"))), nil)
+	}).WithShowUsage(new(viper.GetBool("show-usage"))), nil)
 	if err != nil {
 		return nil, err
 	}

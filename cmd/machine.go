@@ -657,7 +657,7 @@ func machineResponseToCreate(r *models.V1MachineResponse) *models.V1MachineAlloc
 	for _, s := range allocation.Networks {
 		ips = append(ips, s.Ips...)
 		networks = append(networks, &models.V1MachineAllocationNetwork{
-			Autoacquire: pointer.Pointer(len(s.Ips) == 0),
+			Autoacquire: new(len(s.Ips) == 0),
 			Networkid:   s.Networkid,
 		})
 	}
@@ -763,22 +763,22 @@ func machineCreateRequest() (*models.V1MachineAllocateRequest, error) {
 	}
 
 	for _, s := range dnsServersArgument {
-		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: new(s)})
 	}
 
 	for _, s := range ntpServersArgument {
-		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: new(s)})
 	}
 
 	mcr := &models.V1MachineAllocateRequest{
 		Description: viper.GetString("description"),
-		Partitionid: pointer.Pointer(viper.GetString("partition")),
+		Partitionid: new(viper.GetString("partition")),
 		Hostname:    viper.GetString("hostname"),
-		Imageid:     pointer.Pointer(viper.GetString("image")),
+		Imageid:     new(viper.GetString("image")),
 		Name:        viper.GetString("name"),
 		UUID:        viper.GetString("id"),
-		Projectid:   pointer.Pointer(viper.GetString("project")),
-		Sizeid:      pointer.Pointer(viper.GetString("size")),
+		Projectid:   new(viper.GetString("project")),
+		Sizeid:      new(viper.GetString("size")),
 		SSHPubKeys:  keys,
 		Tags:        viper.GetStringSlice("tags"),
 		UserData:    userDataArgument,
@@ -826,8 +826,8 @@ func (c *machineCmd) updateRequestFromCLI(args []string) (*models.V1MachineUpdat
 	// SSHPublicKeys should can not be updated by metalctl
 	// nolint:exhaustruct
 	return &models.V1MachineUpdateRequest{
-		ID:          pointer.Pointer(id),
-		Description: pointer.Pointer(viper.GetString("description")),
+		ID:          new(id),
+		Description: new(viper.GetString("description")),
 		Tags:        newTags,
 	}, nil
 }
@@ -842,7 +842,7 @@ func (c *machineCmd) machineConsolePassword(args []string) error {
 
 	resp, err := c.client.Machine().GetMachineConsolePassword(machine.NewGetMachineConsolePasswordParams().WithBody(&models.V1MachineConsolePasswordRequest{
 		ID:     &id,
-		Reason: pointer.Pointer(viper.GetString("reason")),
+		Reason: new(viper.GetString("reason")),
 	}), nil)
 	if err != nil {
 		return err
@@ -1092,7 +1092,7 @@ func (c *machineCmd) machineIdentifyOn(args []string) error {
 		return err
 	}
 
-	description := pointer.Pointer(viper.GetString("description"))
+	description := new(viper.GetString("description"))
 	resp, err := c.client.Machine().ChassisIdentifyLEDOn(machine.NewChassisIdentifyLEDOnParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
@@ -1107,7 +1107,7 @@ func (c *machineCmd) machineIdentifyOff(args []string) error {
 		return err
 	}
 
-	description := pointer.Pointer(viper.GetString("description"))
+	description := new(viper.GetString("description"))
 	resp, err := c.client.Machine().ChassisIdentifyLEDOff(machine.NewChassisIdentifyLEDOffParams().WithID(id).WithBody(emptyBody).WithDescription(description), nil)
 	if err != nil {
 		return err
@@ -1124,7 +1124,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 
 	if viper.GetBool("remove") {
 		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
-			Description: pointer.Pointer(""),
+			Description: new(""),
 			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
 		}), nil)
 		if err != nil {
@@ -1135,7 +1135,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
-		Description: pointer.Pointer(viper.GetString("description")),
+		Description: new(viper.GetString("description")),
 		Value:       pointer.Pointer(models.V1MachineStateValueRESERVED),
 	}), nil)
 	if err != nil {
@@ -1153,7 +1153,7 @@ func (c *machineCmd) machineLock(args []string) error {
 
 	if viper.GetBool("remove") {
 		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
-			Description: pointer.Pointer(""),
+			Description: new(""),
 			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
 		}), nil)
 		if err != nil {
@@ -1164,7 +1164,7 @@ func (c *machineCmd) machineLock(args []string) error {
 	}
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
-		Description: pointer.Pointer(viper.GetString("description")),
+		Description: new(viper.GetString("description")),
 		Value:       pointer.Pointer(models.V1MachineStateValueLOCKED),
 	}), nil)
 	if err != nil {
@@ -1181,9 +1181,9 @@ func (c *machineCmd) machineReinstall(args []string) error {
 	}
 
 	resp, err := c.client.Machine().ReinstallMachine(machine.NewReinstallMachineParams().WithID(id).WithBody(&models.V1MachineReinstallRequest{
-		ID:          pointer.Pointer(id),
+		ID:          new(id),
 		Description: viper.GetString("description"),
-		Imageid:     pointer.Pointer(viper.GetString("image")),
+		Imageid:     new(viper.GetString("image")),
 	}), nil)
 	if err != nil {
 		return err
