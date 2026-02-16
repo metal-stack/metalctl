@@ -6,7 +6,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/sizeimageconstraint"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -22,7 +21,7 @@ var (
 			},
 		},
 		Description: "sic 1",
-		ID:          pointer.Pointer("1"),
+		ID:          new("1"),
 		Name:        "sic-1",
 	}
 	sic2 = &models.V1SizeImageConstraintResponse{
@@ -32,7 +31,7 @@ var (
 			},
 		},
 		Description: "sic 2",
-		ID:          pointer.Pointer("2"),
+		ID:          new("2"),
 		Name:        "sic-2",
 	}
 )
@@ -58,22 +57,22 @@ func Test_SizeImageConstraintCmd_MultiResult(t *testing.T) {
 				sic1,
 				sic2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
 1   sic-1  sic 1        os-image  *
 2   sic-2  sic 2        os-image  *
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
 1   sic-1  sic 1        os-image  *
 2   sic-2  sic 2        os-image  *
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 sic-1
 2 sic-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME  | DESCRIPTION | IMAGE    | CONSTRAINT |
 |----|-------|-------------|----------|------------|
 | 1  | sic-1 | sic 1       | os-image | *          |
@@ -163,19 +162,19 @@ func Test_SizeImageConstraintCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: sic1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
 1   sic-1  sic 1        os-image  *
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME   DESCRIPTION  IMAGE     CONSTRAINT
 1   sic-1  sic 1        os-image  *
 		`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 sic-1
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | NAME  | DESCRIPTION | IMAGE    | CONSTRAINT |
 |----|-------|-------------|----------|------------|
 | 1  | sic-1 | sic 1       | os-image | *          |

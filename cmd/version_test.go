@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/version"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metalctl/pkg/api"
 	"github.com/metal-stack/v"
@@ -25,7 +24,7 @@ func Test_VersionCmd(t *testing.T) {
 				Version: func(mock *mock.Mock) {
 					mock.On("Info", testcommon.MatchIgnoreContext(t, version.NewInfoParams()), nil).Return(&version.InfoOK{
 						Payload: &models.RestVersion{
-							Version: pointer.Pointer("server v1.0.0"),
+							Version: new("server v1.0.0"),
 						},
 					}, nil)
 				},
@@ -33,7 +32,7 @@ func Test_VersionCmd(t *testing.T) {
 			want: &api.Version{
 				Client: "client v1.0.0, " + runtime.Version(),
 				Server: &models.RestVersion{
-					Version: pointer.Pointer("server v1.0.0"),
+					Version: new("server v1.0.0"),
 				},
 			},
 		},

@@ -194,15 +194,15 @@ func (c *partitionCmd) createRequestFromCLI() (*models.V1PartitionCreateRequest,
 	ntpServersArgument := viper.GetStringSlice("ntpservers")
 
 	for _, s := range dnsServersArgument {
-		dnsServers = append(dnsServers, &models.V1DNSServer{IP: pointer.Pointer(s)})
+		dnsServers = append(dnsServers, &models.V1DNSServer{IP: new(s)})
 	}
 
 	for _, s := range ntpServersArgument {
-		ntpServers = append(ntpServers, &models.V1NTPServer{Address: pointer.Pointer(s)})
+		ntpServers = append(ntpServers, &models.V1NTPServer{Address: new(s)})
 	}
 
 	pcr := &models.V1PartitionCreateRequest{
-		ID:                 pointer.Pointer(viper.GetString("id")),
+		ID:                 new(viper.GetString("id")),
 		Description:        viper.GetString("description"),
 		Name:               viper.GetString("name"),
 		Mgmtserviceaddress: viper.GetString("mgmtserver"),

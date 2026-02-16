@@ -23,139 +23,139 @@ var (
 	machine1 = &models.V1MachineResponse{
 		Allocation: &models.V1MachineAllocation{
 			BootInfo: &models.V1BootInfo{
-				Bootloaderid: pointer.Pointer("bootloaderid"),
-				Cmdline:      pointer.Pointer("cmdline"),
-				ImageID:      pointer.Pointer("imageid"),
-				Initrd:       pointer.Pointer("initrd"),
-				Kernel:       pointer.Pointer("kernel"),
-				OsPartition:  pointer.Pointer("ospartition"),
-				PrimaryDisk:  pointer.Pointer("primarydisk"),
+				Bootloaderid: new("bootloaderid"),
+				Cmdline:      new("cmdline"),
+				ImageID:      new("imageid"),
+				Initrd:       new("initrd"),
+				Kernel:       new("kernel"),
+				OsPartition:  new("ospartition"),
+				PrimaryDisk:  new("primarydisk"),
 			},
-			Created:          pointer.Pointer(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
-			Creator:          pointer.Pointer("creator"),
+			Created:          new(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
+			Creator:          new("creator"),
 			Description:      "machine allocation 1",
 			Filesystemlayout: fsl1,
-			Hostname:         pointer.Pointer("machine-hostname-1"),
+			Hostname:         new("machine-hostname-1"),
 			Image:            image1,
-			Name:             pointer.Pointer("machine-1"),
+			Name:             new("machine-1"),
 			Networks: []*models.V1MachineNetwork{
 				{
-					Asn:                 pointer.Pointer(int64(200)),
+					Asn:                 new(int64(200)),
 					Destinationprefixes: []string{"2.2.2.2"},
 					Ips:                 []string{"1.1.1.1"},
-					Nat:                 pointer.Pointer(false),
-					Networkid:           pointer.Pointer("private"),
+					Nat:                 new(false),
+					Networkid:           new("private"),
 					Networktype:         pointer.Pointer(net.PrivatePrimaryUnshared),
 					Prefixes:            []string{"prefixes"},
-					Private:             pointer.Pointer(true),
-					Underlay:            pointer.Pointer(false),
-					Vrf:                 pointer.Pointer(int64(100)),
+					Private:             new(true),
+					Underlay:            new(false),
+					Vrf:                 new(int64(100)),
 				},
 			},
-			Project:    pointer.Pointer("project-1"),
-			Reinstall:  pointer.Pointer(false),
+			Project:    new("project-1"),
+			Reinstall:  new(false),
 			Role:       pointer.Pointer(models.V1MachineAllocationRoleMachine),
 			SSHPubKeys: []string{"sshpubkey"},
-			Succeeded:  pointer.Pointer(true),
+			Succeeded:  new(true),
 			UserData:   "---userdata---",
-			DNSServers: []*models.V1DNSServer{{IP: pointer.Pointer("8.8.8.8")}},
-			NtpServers: []*models.V1NTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
+			DNSServers: []*models.V1DNSServer{{IP: new("8.8.8.8")}},
+			NtpServers: []*models.V1NTPServer{{Address: new("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
-			Date:    pointer.Pointer("biosdata"),
-			Vendor:  pointer.Pointer("biosvendor"),
-			Version: pointer.Pointer("biosversion"),
+			Date:    new("biosdata"),
+			Vendor:  new("biosvendor"),
+			Version: new("biosversion"),
 		},
 		Description: "machine 1",
 		Events: &models.V1MachineRecentProvisioningEvents{
-			CrashLoop:            pointer.Pointer(false),
-			FailedMachineReclaim: pointer.Pointer(false),
+			CrashLoop:            new(false),
+			FailedMachineReclaim: new(false),
 			LastErrorEvent: &models.V1MachineProvisioningEvent{
-				Event:   pointer.Pointer("Crashed"),
+				Event:   new("Crashed"),
 				Message: "crash",
 				Time:    strfmt.DateTime(testTime.Add(-10 * 24 * time.Hour)),
 			},
 			LastEventTime: strfmt.DateTime(testTime.Add(-7 * 24 * time.Hour)),
 			Log: []*models.V1MachineProvisioningEvent{
 				{
-					Event:   pointer.Pointer("Phoned Home"),
+					Event:   new("Phoned Home"),
 					Message: "phoning home",
 					Time:    strfmt.DateTime(testTime.Add(-7 * 24 * time.Hour)),
 				},
 			},
 		},
 		Hardware: &models.V1MachineHardware{
-			CPUCores: pointer.Pointer(int32(16)),
+			CPUCores: new(int32(16)),
 			Disks:    []*models.V1MachineBlockDevice{},
-			Memory:   pointer.Pointer(int64(32)),
+			Memory:   new(int64(32)),
 			Nics:     []*models.V1MachineNic{},
 		},
-		ID: pointer.Pointer("1"),
+		ID: new("1"),
 		Ledstate: &models.V1ChassisIdentifyLEDState{
-			Description: pointer.Pointer(""),
-			Value:       pointer.Pointer(""),
+			Description: new(""),
+			Value:       new(""),
 		},
-		Liveliness: pointer.Pointer("Alive"),
+		Liveliness: new("Alive"),
 		Name:       "machine-1",
 		Partition:  partition1,
 		Rackid:     "rack-1",
 		Size:       size1,
 		State: &models.V1MachineState{
-			Description:        pointer.Pointer("state"),
+			Description:        new("state"),
 			Issuer:             "issuer",
-			MetalHammerVersion: pointer.Pointer("version"),
-			Value:              pointer.Pointer(""),
+			MetalHammerVersion: new("version"),
+			Value:              new(""),
 		},
 		Tags: []string{"a"},
 	}
 	machine2 = &models.V1MachineResponse{
 		Bios: &models.V1MachineBIOS{
-			Date:    pointer.Pointer("biosdata"),
-			Vendor:  pointer.Pointer("biosvendor"),
-			Version: pointer.Pointer("biosversion"),
+			Date:    new("biosdata"),
+			Vendor:  new("biosvendor"),
+			Version: new("biosversion"),
 		},
 		Description: "machine 2",
 		Events: &models.V1MachineRecentProvisioningEvents{
-			CrashLoop:            pointer.Pointer(false),
-			FailedMachineReclaim: pointer.Pointer(false),
+			CrashLoop:            new(false),
+			FailedMachineReclaim: new(false),
 			LastErrorEvent:       &models.V1MachineProvisioningEvent{},
 			LastEventTime:        strfmt.DateTime(testTime.Add(-1 * time.Minute)),
 			Log: []*models.V1MachineProvisioningEvent{
 				{
-					Event:   pointer.Pointer("Waiting"),
+					Event:   new("Waiting"),
 					Message: "waiting",
 					Time:    strfmt.DateTime{},
 				},
 			},
 		},
 		Hardware: &models.V1MachineHardware{
-			CPUCores: pointer.Pointer(int32(16)),
+			CPUCores: new(int32(16)),
 			Disks:    []*models.V1MachineBlockDevice{},
-			Memory:   pointer.Pointer(int64(32)),
+			Memory:   new(int64(32)),
 			Nics:     []*models.V1MachineNic{},
 		},
-		ID: pointer.Pointer("2"),
+		ID: new("2"),
 		Ledstate: &models.V1ChassisIdentifyLEDState{
-			Description: pointer.Pointer(""),
-			Value:       pointer.Pointer(""),
+			Description: new(""),
+			Value:       new(""),
 		},
-		Liveliness: pointer.Pointer("Alive"),
+		Liveliness: new("Alive"),
 		Name:       "machine-2",
 		Partition:  partition1,
 		Rackid:     "rack-1",
 		Size:       size1,
 		State: &models.V1MachineState{
-			Description:        pointer.Pointer("state"),
+			Description:        new("state"),
 			Issuer:             "issuer",
-			MetalHammerVersion: pointer.Pointer("version"),
-			Value:              pointer.Pointer(""),
+			MetalHammerVersion: new("version"),
+			Value:              new(""),
 		},
 		Tags: []string{"b"},
 	}
 	ipmiMachine1 = &models.V1MachineIPMIResponse{
 		Allocation: machine1.Allocation,
 		Bios: &models.V1MachineBIOS{
-			Version: pointer.Pointer("2.0"),
+			Version: new("2.0"),
 		},
 		Changed:     machine1.Changed,
 		Created:     machine1.Created,
@@ -164,19 +164,19 @@ var (
 		Hardware:    machine1.Hardware,
 		ID:          machine1.ID,
 		Ipmi: &models.V1MachineIPMI{
-			Address:    pointer.Pointer("1.2.3.4"),
-			Bmcversion: pointer.Pointer("1.1"),
+			Address:    new("1.2.3.4"),
+			Bmcversion: new("1.1"),
 			Fru: &models.V1MachineFru{
 				BoardPartNumber:   "part123",
 				ChassisPartSerial: "chassis123",
 				ProductSerial:     "product123",
 			},
-			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
-			Mac:         pointer.Pointer("1.2.3.4"),
+			LastUpdated: new(strfmt.DateTime(testTime.Add(-5 * time.Second))),
+			Mac:         new("1.2.3.4"),
 			Powermetric: &models.V1PowerMetric{
-				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
+				Averageconsumedwatts: new(float32(16.0)),
 			},
-			Powerstate: pointer.Pointer("ON"),
+			Powerstate: new("ON"),
 		},
 		Ledstate:   &models.V1ChassisIdentifyLEDState{},
 		Liveliness: machine1.Liveliness,
@@ -190,7 +190,7 @@ var (
 	ipmiMachine2 = &models.V1MachineIPMIResponse{
 		Allocation: machine1.Allocation,
 		Bios: &models.V1MachineBIOS{
-			Version: pointer.Pointer("2.0"),
+			Version: new("2.0"),
 		},
 		Changed:     machine1.Changed,
 		Created:     machine1.Created,
@@ -199,22 +199,22 @@ var (
 		Hardware:    machine1.Hardware,
 		ID:          machine1.ID,
 		Ipmi: &models.V1MachineIPMI{
-			Address:    pointer.Pointer("1.2.3.4"),
-			Bmcversion: pointer.Pointer("1.1"),
+			Address:    new("1.2.3.4"),
+			Bmcversion: new("1.1"),
 			Fru: &models.V1MachineFru{
 				BoardPartNumber:   "part123",
 				ChassisPartSerial: "chassis123",
 				ProductSerial:     "product123",
 			},
-			LastUpdated: pointer.Pointer(strfmt.DateTime(testTime.Add(-5 * time.Second))),
-			Mac:         pointer.Pointer("1.2.3.4"),
+			LastUpdated: new(strfmt.DateTime(testTime.Add(-5 * time.Second))),
+			Mac:         new("1.2.3.4"),
 			Powermetric: &models.V1PowerMetric{
-				Averageconsumedwatts: pointer.Pointer(float32(16.0)),
+				Averageconsumedwatts: new(float32(16.0)),
 			},
-			Powerstate: pointer.Pointer("ON"),
+			Powerstate: new("ON"),
 			Powersupplies: []*models.V1PowerSupply{
-				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("OK")}},
-				{Status: &models.V1PowerSupplyStatus{Health: pointer.Pointer("NOT-OK")}},
+				{Status: &models.V1PowerSupplyStatus{Health: new("OK")}},
+				{Status: &models.V1PowerSupplyStatus{Health: new("NOT-OK")}},
 			},
 		},
 		Ledstate:   &models.V1ChassisIdentifyLEDState{},
@@ -228,18 +228,18 @@ var (
 	}
 
 	machineIssue1 = &models.V1MachineIssue{
-		Description: pointer.Pointer("this is a test issue 1"),
-		Details:     pointer.Pointer("more details 1"),
-		ID:          pointer.Pointer("issue-1-id"),
-		RefURL:      pointer.Pointer("https://url-1"),
-		Severity:    pointer.Pointer("minor"),
+		Description: new("this is a test issue 1"),
+		Details:     new("more details 1"),
+		ID:          new("issue-1-id"),
+		RefURL:      new("https://url-1"),
+		Severity:    new("minor"),
 	}
 	machineIssue2 = &models.V1MachineIssue{
-		Description: pointer.Pointer("this is a test issue 2"),
-		Details:     pointer.Pointer("more details 2"),
-		ID:          pointer.Pointer("issue-2-id"),
-		RefURL:      pointer.Pointer("https://url-2"),
-		Severity:    pointer.Pointer("major"),
+		Description: new("this is a test issue 2"),
+		Details:     new("more details 2"),
+		ID:          new("issue-2-id"),
+		RefURL:      new("https://url-2"),
+		Severity:    new("major"),
 	}
 )
 
@@ -270,22 +270,22 @@ func Test_MachineCmd_MultiResult(t *testing.T) {
 				machine2,
 				machine1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID    LAST EVENT   WHEN  AGE  HOSTNAME            PROJECT    SIZE  IMAGE        PARTITION  RACK
 2     Waiting      1m                                        1                  1          rack-1
 1     Phoned Home  7d    14d  machine-hostname-1  project-1  1     debian-name  1          rack-1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  LAST EVENT   WHEN  AGE  DESCRIPTION           NAME       HOSTNAME            PROJECT    IPS      SIZE  IMAGE        PARTITION  RACK    STARTED               TAGS  LOCK / RESERVE  
 2   Waiting      1m                                                                                  1                  1          rack-1                        b                   
 1   Phoned Home  7d    14d  machine allocation 1  machine-1  machine-hostname-1  project-1  1.1.1.1  1     debian-name  1          rack-1  2022-05-05T01:02:03Z  a
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 2 machine-2
 1 machine-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID |  | LAST EVENT  | WHEN | AGE | HOSTNAME           | PROJECT   | SIZE | IMAGE       | PARTITION | RACK   |
 |----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
 | 2  |  | Waiting     | 1m   |     |                    |           | 1    |             | 1         | rack-1 |
@@ -370,19 +370,19 @@ func Test_MachineCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: machine1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 		ID    LAST EVENT   WHEN  AGE  HOSTNAME            PROJECT    SIZE  IMAGE        PARTITION  RACK
 		1     Phoned Home  7d    14d  machine-hostname-1  project-1  1     debian-name  1          rack-1
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 		ID  LAST EVENT   WHEN  AGE  DESCRIPTION           NAME       HOSTNAME            PROJECT    IPS      SIZE  IMAGE        PARTITION  RACK    STARTED               TAGS  LOCK / RESERVE
 		1   Phoned Home  7d    14d  machine allocation 1  machine-1  machine-hostname-1  project-1  1.1.1.1  1     debian-name  1          rack-1  2022-05-05T01:02:03Z  a
 		`),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 		1 machine-1
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 		| ID |  | LAST EVENT  | WHEN | AGE | HOSTNAME           | PROJECT   | SIZE | IMAGE       | PARTITION | RACK   |
 		|----|--|-------------|------|-----|--------------------|-----------|------|-------------|-----------|--------|
 		| 1  |  | Phoned Home | 7d   | 14d | machine-hostname-1 | project-1 | 1    | debian-name | 1         | rack-1 |
@@ -508,19 +508,19 @@ func Test_MachineIPMICmd_MultiResult(t *testing.T) {
 			want: []*models.V1MachineIPMIResponse{
 				ipmiMachine1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID    POWER  IP       MAC      BOARD PART NUMBER  BIOS  BMC  SIZE  PARTITION  RACK    UPDATED
 1     ⏻ 16W  1.2.3.4  1.2.3.4  part123            2.0   1.1  1     1          rack-1  5s ago
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  LAST EVENT   STATUS  POWER   IP       MAC      BOARD PART NUMBER  CHASSIS SERIAL  PRODUCT SERIAL  BIOS VERSION  BMC VERSION  SIZE  PARTITION  RACK    UPDATED
 1   Phoned Home          ON 16W  1.2.3.4  1.2.3.4  part123            chassis123      product123      2.0           1.1          1     1          rack-1  5s ago
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 machine-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID |  | POWER | IP      | MAC     | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION | RACK   | UPDATED |
 |----|--|-------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
 | 1  |  | ⏻ 16W | 1.2.3.4 | 1.2.3.4 | part123           | 2.0  | 1.1 | 1    | 1         | rack-1 | 5s ago  |
@@ -549,19 +549,19 @@ ID  LAST EVENT   STATUS  POWER   IP       MAC      BOARD PART NUMBER  CHASSIS SE
 			want: []*models.V1MachineIPMIResponse{
 				ipmiMachine2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID    POWER  IP       MAC      BOARD PART NUMBER  BIOS  BMC  SIZE  PARTITION  RACK    UPDATED
 1     ⏻ 16W  1.2.3.4  1.2.3.4  part123            2.0   1.1  1     1          rack-1  5s ago
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  LAST EVENT   STATUS  POWER                       IP       MAC      BOARD PART NUMBER  CHASSIS SERIAL  PRODUCT SERIAL  BIOS VERSION  BMC VERSION  SIZE  PARTITION  RACK    UPDATED
 1   Phoned Home          ON Power Supply NOT-OK 16W  1.2.3.4  1.2.3.4  part123            chassis123      product123      2.0           1.1          1     1          rack-1  5s ago
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 machine-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID |  | POWER | IP      | MAC     | BOARD PART NUMBER | BIOS | BMC | SIZE | PARTITION | RACK   | UPDATED |
 |----|--|-------|---------|---------|-------------------|------|-----|------|-----------|--------|---------|
 | 1  |  | ⏻ 16W | 1.2.3.4 | 1.2.3.4 | part123           | 2.0  | 1.1 | 1    | 1         | rack-1 | 5s ago  |
@@ -594,22 +594,22 @@ func Test_MachineIssuesListCmd_MultiResult(t *testing.T) {
 				machineIssue2,
 				machineIssue1,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID          SEVERITY  DESCRIPTION             REFERENCE URL
 issue-2-id  major     this is a test issue 2  https://url-2
 issue-1-id  minor     this is a test issue 1  https://url-1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID          SEVERITY  DESCRIPTION             REFERENCE URL
 issue-2-id  major     this is a test issue 2  https://url-2
 issue-1-id  minor     this is a test issue 1  https://url-1
 `),
-			template: pointer.Pointer("{{ .id }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }}"),
+			wantTemplate: new(`
 			issue-2-id
 issue-1-id
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID         | SEVERITY | DESCRIPTION            | REFERENCE URL |
 |------------|----------|------------------------|---------------|
 | issue-2-id | major    | this is a test issue 2 | https://url-2 |
@@ -677,18 +677,18 @@ func Test_MachineIssuesCmd(t *testing.T) {
 				},
 			},
 			want: machineWithIssues,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  POWER  ALLOCATED    LOCK REASON  LAST EVENT   WHEN  ISSUES
 1   ⏻ 16W  yes          state        Phoned Home  7d    this is a test issue 1 (issue-1-id)
 							this is a test issue 2 (issue-2-id)
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  NAME       PARTITION  PROJECT    POWER   STATE  LOCK REASON  LAST EVENT   WHEN  ISSUES                               REF URL        DETAILS
 1   machine-1  1          project-1  ON 16W         state        Phoned Home  7d    this is a test issue 1 (issue-1-id)  https://url-1  more details 1
 																					this is a test issue 2 (issue-2-id)  https://url-2  more details 2
 
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | POWER | ALLOCATED |  | LOCK REASON | LAST EVENT  | WHEN | ISSUES                              |
 |----|-------|-----------|--|-------------|-------------|------|-------------------------------------|
 | 1  | ⏻ 16W | yes       |  | state       | Phoned Home | 7d   | this is a test issue 1 (issue-1-id) |

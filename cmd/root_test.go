@@ -51,10 +51,10 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 		{
 			name: "overwrite api-url and api-token from config-file",
 			fsMocks: func(fs afero.Fs, want *rest.HealthResponse) {
-				require.NoError(t, afero.WriteFile(fs, fmt.Sprintf("/etc/%s/config.yaml", binaryName), []byte(fmt.Sprintf(`---
+				require.NoError(t, afero.WriteFile(fs, fmt.Sprintf("/etc/%s/config.yaml", binaryName), fmt.Appendf(nil, `---
 api-url: "%s"
 api-token: "i-am-token"
-`, ts.URL)), 0755))
+`, ts.URL), 0755))
 			},
 			cmd: func(want *rest.HealthResponse) []string {
 				return []string{"health"}
@@ -67,10 +67,10 @@ api-token: "i-am-token"
 		{
 			name: "overwrite api-url and api-token from user-given config-file path",
 			fsMocks: func(fs afero.Fs, want *rest.HealthResponse) {
-				require.NoError(t, afero.WriteFile(fs, "/config.yaml", []byte(fmt.Sprintf(`---
+				require.NoError(t, afero.WriteFile(fs, "/config.yaml", fmt.Appendf(nil, `---
 api-url: "%s"
 api-token: "i-am-token"
-`, ts.URL)), 0755))
+`, ts.URL), 0755))
 			},
 			cmd: func(want *rest.HealthResponse) []string {
 				return []string{"health", "--config", "/config.yaml"}

@@ -17,22 +17,22 @@ import (
 
 var (
 	ip1 = &models.V1IPResponse{
-		Allocationuuid: pointer.Pointer("1"),
+		Allocationuuid: new("1"),
 		Description:    "ip 1",
-		Ipaddress:      pointer.Pointer("1.1.1.1"),
+		Ipaddress:      new("1.1.1.1"),
 		Name:           "ip-1",
-		Networkid:      pointer.Pointer("internet"),
-		Projectid:      pointer.Pointer("project-1"),
+		Networkid:      new("internet"),
+		Projectid:      new("project-1"),
 		Tags:           []string{"a"},
 		Type:           pointer.Pointer(models.V1IPAllocateRequestTypeEphemeral),
 	}
 	ip2 = &models.V1IPResponse{
-		Allocationuuid: pointer.Pointer("2"),
+		Allocationuuid: new("2"),
 		Description:    "ip 2",
-		Ipaddress:      pointer.Pointer("2.2.2.2"),
+		Ipaddress:      new("2.2.2.2"),
 		Name:           "ip-2",
-		Networkid:      pointer.Pointer("internet"),
-		Projectid:      pointer.Pointer("project-2"),
+		Networkid:      new("internet"),
+		Projectid:      new("project-2"),
 		Tags:           []string{"b"},
 		Type:           pointer.Pointer(models.V1IPAllocateRequestTypeStatic),
 	}
@@ -61,22 +61,22 @@ func Test_IPCmd_MultiResult(t *testing.T) {
 				ip1,
 				ip2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 IP       DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
 1.1.1.1  ip 1         ip-1  internet  project-1  ephemeral  a
 2.2.2.2  ip 2         ip-2  internet  project-2  static     b
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 IP       ALLOCATION UUID  DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
 1.1.1.1  1                ip 1         ip-1  internet  project-1  ephemeral  a
 2.2.2.2  2                ip 2         ip-2  internet  project-2  static     b
 `),
-			template: pointer.Pointer("{{ .ipaddress }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .ipaddress }} {{ .name }}"),
+			wantTemplate: new(`
 1.1.1.1 ip-1
 2.2.2.2 ip-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | IP      | DESCRIPTION | NAME | NETWORK  | PROJECT   | TYPE      | TAGS |
 |---------|-------------|------|----------|-----------|-----------|------|
 | 1.1.1.1 | ip 1        | ip-1 | internet | project-1 | ephemeral | a    |
@@ -185,19 +185,19 @@ func Test_IPCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: ip1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 IP       DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
 1.1.1.1  ip 1         ip-1  internet  project-1  ephemeral  a
 		`),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 IP       ALLOCATION UUID  DESCRIPTION  NAME  NETWORK   PROJECT    TYPE       TAGS
 1.1.1.1  1                ip 1         ip-1  internet  project-1  ephemeral  a
 		`),
-			template: pointer.Pointer("{{ .ipaddress }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .ipaddress }} {{ .name }}"),
+			wantTemplate: new(`
 1.1.1.1 ip-1
 		`),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | IP      | DESCRIPTION | NAME | NETWORK  | PROJECT   | TYPE      | TAGS |
 |---------|-------------|------|----------|-----------|-----------|------|
 | 1.1.1.1 | ip 1        | ip-1 | internet | project-1 | ephemeral | a    |

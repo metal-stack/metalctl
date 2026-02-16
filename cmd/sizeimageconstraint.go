@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -130,8 +129,8 @@ func sizeImageConstraintResponseToUpdate(r *models.V1SizeImageConstraintResponse
 
 func (c *sizeImageConstraintCmd) try() error {
 	_, err := c.client.Sizeimageconstraint().TrySizeImageConstraint(sizemodel.NewTrySizeImageConstraintParams().WithBody(&models.V1SizeImageConstraintTryRequest{
-		Size:  pointer.Pointer(viper.GetString("size")),
-		Image: pointer.Pointer(viper.GetString("image")),
+		Size:  new(viper.GetString("size")),
+		Image: new(viper.GetString("image")),
 	}), nil)
 	if err != nil {
 		return err

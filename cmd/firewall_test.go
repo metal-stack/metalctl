@@ -19,170 +19,170 @@ var (
 	firewall1 = &models.V1FirewallResponse{
 		Allocation: &models.V1MachineAllocation{
 			BootInfo: &models.V1BootInfo{
-				Bootloaderid: pointer.Pointer("bootloaderid"),
-				Cmdline:      pointer.Pointer("cmdline"),
-				ImageID:      pointer.Pointer("imageid"),
-				Initrd:       pointer.Pointer("initrd"),
-				Kernel:       pointer.Pointer("kernel"),
-				OsPartition:  pointer.Pointer("ospartition"),
-				PrimaryDisk:  pointer.Pointer("primarydisk"),
+				Bootloaderid: new("bootloaderid"),
+				Cmdline:      new("cmdline"),
+				ImageID:      new("imageid"),
+				Initrd:       new("initrd"),
+				Kernel:       new("kernel"),
+				OsPartition:  new("ospartition"),
+				PrimaryDisk:  new("primarydisk"),
 			},
-			Created:          pointer.Pointer(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
-			Creator:          pointer.Pointer("creator"),
+			Created:          new(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
+			Creator:          new("creator"),
 			Description:      "firewall allocation 1",
 			Filesystemlayout: fsl1,
-			Hostname:         pointer.Pointer("firewall-hostname-1"),
+			Hostname:         new("firewall-hostname-1"),
 			Image:            image1,
-			Name:             pointer.Pointer("firewall-1"),
+			Name:             new("firewall-1"),
 			Networks: []*models.V1MachineNetwork{
 				{
-					Asn:                 pointer.Pointer(int64(200)),
+					Asn:                 new(int64(200)),
 					Destinationprefixes: []string{"2.2.2.2"},
 					Ips:                 []string{"1.1.1.1"},
-					Nat:                 pointer.Pointer(false),
-					Networkid:           pointer.Pointer("private"),
+					Nat:                 new(false),
+					Networkid:           new("private"),
 					Networktype:         pointer.Pointer(net.PrivatePrimaryUnshared),
 					Prefixes:            []string{"prefixes"},
-					Private:             pointer.Pointer(true),
-					Underlay:            pointer.Pointer(false),
-					Vrf:                 pointer.Pointer(int64(100)),
+					Private:             new(true),
+					Underlay:            new(false),
+					Vrf:                 new(int64(100)),
 				},
 			},
-			Project:    pointer.Pointer("project-1"),
-			Reinstall:  pointer.Pointer(false),
+			Project:    new("project-1"),
+			Reinstall:  new(false),
 			Role:       pointer.Pointer(models.V1MachineAllocationRoleFirewall),
 			SSHPubKeys: []string{"sshpubkey"},
-			Succeeded:  pointer.Pointer(true),
+			Succeeded:  new(true),
 			UserData:   "---userdata---",
-			DNSServers: []*models.V1DNSServer{{IP: pointer.Pointer("8.8.8.8")}},
-			NtpServers: []*models.V1NTPServer{{Address: pointer.Pointer("1.pool.ntp.org")}},
+			DNSServers: []*models.V1DNSServer{{IP: new("8.8.8.8")}},
+			NtpServers: []*models.V1NTPServer{{Address: new("1.pool.ntp.org")}},
 		},
 		Bios: &models.V1MachineBIOS{
-			Date:    pointer.Pointer("biosdata"),
-			Vendor:  pointer.Pointer("biosvendor"),
-			Version: pointer.Pointer("biosversion"),
+			Date:    new("biosdata"),
+			Vendor:  new("biosvendor"),
+			Version: new("biosversion"),
 		},
 		Description: "firewall 1",
 		Events: &models.V1MachineRecentProvisioningEvents{
-			CrashLoop:            pointer.Pointer(false),
-			FailedMachineReclaim: pointer.Pointer(false),
+			CrashLoop:            new(false),
+			FailedMachineReclaim: new(false),
 			LastErrorEvent: &models.V1MachineProvisioningEvent{
-				Event:   pointer.Pointer("Crashed"),
+				Event:   new("Crashed"),
 				Message: "crash",
 				Time:    strfmt.DateTime(testTime.Add(-10 * 24 * time.Hour)),
 			},
 			LastEventTime: strfmt.DateTime(testTime.Add(-7 * 24 * time.Hour)),
 			Log: []*models.V1MachineProvisioningEvent{
 				{
-					Event:   pointer.Pointer("Phoned Home"),
+					Event:   new("Phoned Home"),
 					Message: "phoning home",
 					Time:    strfmt.DateTime(testTime.Add(-7 * 24 * time.Hour)),
 				},
 			},
 		},
 		Hardware: &models.V1MachineHardware{
-			CPUCores: pointer.Pointer(int32(16)),
+			CPUCores: new(int32(16)),
 			Disks:    []*models.V1MachineBlockDevice{},
-			Memory:   pointer.Pointer(int64(32)),
+			Memory:   new(int64(32)),
 			Nics:     []*models.V1MachineNic{},
 		},
-		ID: pointer.Pointer("1"),
+		ID: new("1"),
 		Ledstate: &models.V1ChassisIdentifyLEDState{
-			Description: pointer.Pointer(""),
-			Value:       pointer.Pointer(""),
+			Description: new(""),
+			Value:       new(""),
 		},
-		Liveliness: pointer.Pointer("Alive"),
+		Liveliness: new("Alive"),
 		Name:       "firewall-1",
 		Partition:  partition1,
 		Rackid:     "rack-1",
 		Size:       size1,
 		State: &models.V1MachineState{
-			Description:        pointer.Pointer("state"),
+			Description:        new("state"),
 			Issuer:             "issuer",
-			MetalHammerVersion: pointer.Pointer("version"),
-			Value:              pointer.Pointer(""),
+			MetalHammerVersion: new("version"),
+			Value:              new(""),
 		},
 		Tags: []string{"a"},
 	}
 	firewall2 = &models.V1FirewallResponse{
 		Allocation: &models.V1MachineAllocation{
 			BootInfo: &models.V1BootInfo{
-				Bootloaderid: pointer.Pointer("bootloaderid"),
-				Cmdline:      pointer.Pointer("cmdline"),
-				ImageID:      pointer.Pointer("imageid"),
-				Initrd:       pointer.Pointer("initrd"),
-				Kernel:       pointer.Pointer("kernel"),
-				OsPartition:  pointer.Pointer("ospartition"),
-				PrimaryDisk:  pointer.Pointer("primarydisk"),
+				Bootloaderid: new("bootloaderid"),
+				Cmdline:      new("cmdline"),
+				ImageID:      new("imageid"),
+				Initrd:       new("initrd"),
+				Kernel:       new("kernel"),
+				OsPartition:  new("ospartition"),
+				PrimaryDisk:  new("primarydisk"),
 			},
-			Created:          pointer.Pointer(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
-			Creator:          pointer.Pointer("creator"),
+			Created:          new(strfmt.DateTime(testTime.Add(-14 * 24 * time.Hour))),
+			Creator:          new("creator"),
 			Description:      "firewall allocation 2",
 			Filesystemlayout: fsl1,
-			Hostname:         pointer.Pointer("firewall-hostname-2"),
+			Hostname:         new("firewall-hostname-2"),
 			Image:            image1,
-			Name:             pointer.Pointer("firewall-2"),
+			Name:             new("firewall-2"),
 			Networks: []*models.V1MachineNetwork{
 				{
-					Asn:                 pointer.Pointer(int64(200)),
+					Asn:                 new(int64(200)),
 					Destinationprefixes: []string{"2.2.2.2"},
 					Ips:                 []string{"1.1.1.1"},
-					Nat:                 pointer.Pointer(false),
-					Networkid:           pointer.Pointer("private"),
+					Nat:                 new(false),
+					Networkid:           new("private"),
 					Networktype:         pointer.Pointer(net.PrivatePrimaryUnshared),
 					Prefixes:            []string{"prefixes"},
-					Private:             pointer.Pointer(true),
-					Underlay:            pointer.Pointer(false),
-					Vrf:                 pointer.Pointer(int64(100)),
+					Private:             new(true),
+					Underlay:            new(false),
+					Vrf:                 new(int64(100)),
 				},
 			},
-			Project:    pointer.Pointer("project-1"),
-			Reinstall:  pointer.Pointer(false),
+			Project:    new("project-1"),
+			Reinstall:  new(false),
 			Role:       pointer.Pointer(models.V1MachineAllocationRoleFirewall),
 			SSHPubKeys: []string{"sshpubkey"},
-			Succeeded:  pointer.Pointer(true),
+			Succeeded:  new(true),
 			UserData:   "---userdata---",
 		},
 		Bios: &models.V1MachineBIOS{
-			Date:    pointer.Pointer("biosdata"),
-			Vendor:  pointer.Pointer("biosvendor"),
-			Version: pointer.Pointer("biosversion"),
+			Date:    new("biosdata"),
+			Vendor:  new("biosvendor"),
+			Version: new("biosversion"),
 		},
 		Description: "firewall 2",
 		Events: &models.V1MachineRecentProvisioningEvents{
-			CrashLoop:            pointer.Pointer(false),
-			FailedMachineReclaim: pointer.Pointer(false),
+			CrashLoop:            new(false),
+			FailedMachineReclaim: new(false),
 			LastErrorEvent:       &models.V1MachineProvisioningEvent{},
 			LastEventTime:        strfmt.DateTime(testTime.Add(-1 * time.Minute)),
 			Log: []*models.V1MachineProvisioningEvent{
 				{
-					Event:   pointer.Pointer("Phoned Home"),
+					Event:   new("Phoned Home"),
 					Message: "phoning home",
 					Time:    strfmt.DateTime{},
 				},
 			},
 		},
 		Hardware: &models.V1MachineHardware{
-			CPUCores: pointer.Pointer(int32(16)),
+			CPUCores: new(int32(16)),
 			Disks:    []*models.V1MachineBlockDevice{},
-			Memory:   pointer.Pointer(int64(32)),
+			Memory:   new(int64(32)),
 			Nics:     []*models.V1MachineNic{},
 		},
-		ID: pointer.Pointer("2"),
+		ID: new("2"),
 		Ledstate: &models.V1ChassisIdentifyLEDState{
-			Description: pointer.Pointer(""),
-			Value:       pointer.Pointer(""),
+			Description: new(""),
+			Value:       new(""),
 		},
-		Liveliness: pointer.Pointer("Alive"),
+		Liveliness: new("Alive"),
 		Name:       "firewall-2",
 		Partition:  partition1,
 		Rackid:     "rack-1",
 		Size:       size1,
 		State: &models.V1MachineState{
-			Description:        pointer.Pointer("state"),
+			Description:        new("state"),
 			Issuer:             "issuer",
-			MetalHammerVersion: pointer.Pointer("version"),
-			Value:              pointer.Pointer(""),
+			MetalHammerVersion: new("version"),
+			Value:              new(""),
 		},
 		Tags: []string{"b"},
 	}
@@ -212,22 +212,22 @@ func Test_FirewallCmd_MultiResult(t *testing.T) {
 				firewall1,
 				firewall2,
 			},
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
 1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 2   14d  firewall-hostname-2  project-1  private   1.1.1.1  1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
 1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 2   14d  firewall-hostname-2  project-1  private   1.1.1.1  1
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 firewall-1
 2 firewall-2
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | AGE | HOSTNAME            | PROJECT   | NETWORKS | IPS     | PARTITION |
 |----|-----|---------------------|-----------|----------|---------|-----------|
 | 1  | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 | 1         |
@@ -255,19 +255,19 @@ func Test_FirewallCmd_SingleResult(t *testing.T) {
 				},
 			},
 			want: firewall1,
-			wantTable: pointer.Pointer(`
+			wantTable: new(`
 ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
 1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 `),
-			wantWideTable: pointer.Pointer(`
+			wantWideTable: new(`
 ID  AGE  HOSTNAME             PROJECT    NETWORKS  IPS      PARTITION
 1   14d  firewall-hostname-1  project-1  private   1.1.1.1  1
 `),
-			template: pointer.Pointer("{{ .id }} {{ .name }}"),
-			wantTemplate: pointer.Pointer(`
+			template: new("{{ .id }} {{ .name }}"),
+			wantTemplate: new(`
 1 firewall-1
 `),
-			wantMarkdown: pointer.Pointer(`
+			wantMarkdown: new(`
 | ID | AGE | HOSTNAME            | PROJECT   | NETWORKS | IPS     | PARTITION |
 |----|-----|---------------------|-----------|----------|---------|-----------|
 | 1  | 14d | firewall-hostname-1 | project-1 | private  | 1.1.1.1 | 1         |
