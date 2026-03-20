@@ -10,7 +10,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/afero"
@@ -39,12 +38,12 @@ var (
 		Description: "switch 1",
 		ID:          new("1"),
 		LastSync: &models.V1SwitchSync{
-			Duration: pointer.Pointer(int64(1 * time.Second)),
+			Duration: new(int64(1 * time.Second)),
 			Error:    "",
 			Time:     new(strfmt.DateTime(testTime)),
 		},
 		LastSyncError: &models.V1SwitchSync{
-			Duration: pointer.Pointer(int64(2 * time.Second)),
+			Duration: new(int64(2 * time.Second)),
 			Error:    "error",
 			Time:     new(strfmt.DateTime(testTime.Add(-5 * time.Minute))),
 		},
@@ -91,12 +90,12 @@ var (
 		Description: "switch 2",
 		ID:          new("2"),
 		LastSync: &models.V1SwitchSync{
-			Duration: pointer.Pointer(int64(1 * time.Second)),
+			Duration: new(int64(1 * time.Second)),
 			Error:    "",
 			Time:     new(strfmt.DateTime(testTime)),
 		},
 		LastSyncError: &models.V1SwitchSync{
-			Duration: pointer.Pointer(int64(2 * time.Second)),
+			Duration: new(int64(2 * time.Second)),
 			Error:    "error",
 			Time:     new(strfmt.DateTime(testTime.Add(-5 * time.Minute))),
 		},

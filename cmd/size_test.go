@@ -8,7 +8,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/size"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -22,22 +21,22 @@ var (
 			{
 				Max:  int64(2),
 				Min:  int64(1),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
+				Type: new(models.V1SizeConstraintTypeStorage),
 			},
 			{
 				Max:  int64(4),
 				Min:  int64(3),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
+				Type: new(models.V1SizeConstraintTypeMemory),
 			},
 			{
 				Max:  int64(6),
 				Min:  int64(5),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
+				Type: new(models.V1SizeConstraintTypeCores),
 			},
 			{
 				Max:        int64(1),
 				Min:        int64(1),
-				Type:       pointer.Pointer(models.V1SizeConstraintTypeGpu),
+				Type:       new(models.V1SizeConstraintTypeGpu),
 				Identifier: "AD120GL*",
 			},
 		},
@@ -54,17 +53,17 @@ var (
 			{
 				Max:  int64(2),
 				Min:  int64(1),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
+				Type: new(models.V1SizeConstraintTypeStorage),
 			},
 			{
 				Max:  int64(4),
 				Min:  int64(3),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
+				Type: new(models.V1SizeConstraintTypeMemory),
 			},
 			{
 				Max:  int64(6),
 				Min:  int64(5),
-				Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
+				Type: new(models.V1SizeConstraintTypeCores),
 			},
 		},
 		Description: "size 2",
@@ -301,17 +300,17 @@ ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE      
 							{
 								Max:  int64(2),
 								Min:  int64(1),
-								Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
+								Type: new(models.V1SizeConstraintTypeStorage),
 							},
 							{
 								Max:  int64(4),
 								Min:  int64(3),
-								Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
+								Type: new(models.V1SizeConstraintTypeMemory),
 							},
 							{
 								Max:  int64(6),
 								Min:  int64(5),
-								Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
+								Type: new(models.V1SizeConstraintTypeCores),
 							},
 						},
 					}, nil)
@@ -322,17 +321,17 @@ ID  NAME    DESCRIPTION  CPU RANGE  MEMORY RANGE  STORAGE RANGE  GPU RANGE      
 					{
 						Max:  int64(2),
 						Min:  int64(1),
-						Type: pointer.Pointer(models.V1SizeConstraintTypeStorage),
+						Type: new(models.V1SizeConstraintTypeStorage),
 					},
 					{
 						Max:  int64(4),
 						Min:  int64(3),
-						Type: pointer.Pointer(models.V1SizeConstraintTypeMemory),
+						Type: new(models.V1SizeConstraintTypeMemory),
 					},
 					{
 						Max:  int64(6),
 						Min:  int64(5),
-						Type: pointer.Pointer(models.V1SizeConstraintTypeCores),
+						Type: new(models.V1SizeConstraintTypeCores),
 					},
 				},
 				Description: "foo",

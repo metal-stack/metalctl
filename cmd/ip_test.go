@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/client/ip"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/spf13/afero"
 
@@ -24,7 +23,7 @@ var (
 		Networkid:      new("internet"),
 		Projectid:      new("project-1"),
 		Tags:           []string{"a"},
-		Type:           pointer.Pointer(models.V1IPAllocateRequestTypeEphemeral),
+		Type:           new(models.V1IPAllocateRequestTypeEphemeral),
 	}
 	ip2 = &models.V1IPResponse{
 		Allocationuuid: new("2"),
@@ -34,7 +33,7 @@ var (
 		Networkid:      new("internet"),
 		Projectid:      new("project-2"),
 		Tags:           []string{"b"},
-		Type:           pointer.Pointer(models.V1IPAllocateRequestTypeStatic),
+		Type:           new(models.V1IPAllocateRequestTypeStatic),
 	}
 )
 

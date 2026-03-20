@@ -1125,7 +1125,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 	if viper.GetBool("remove") {
 		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 			Description: new(""),
-			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
+			Value:       new(models.V1MachineStateValueEmpty),
 		}), nil)
 		if err != nil {
 			return err
@@ -1136,7 +1136,7 @@ func (c *machineCmd) machineReserve(args []string) error {
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 		Description: new(viper.GetString("description")),
-		Value:       pointer.Pointer(models.V1MachineStateValueRESERVED),
+		Value:       new(models.V1MachineStateValueRESERVED),
 	}), nil)
 	if err != nil {
 		return err
@@ -1154,7 +1154,7 @@ func (c *machineCmd) machineLock(args []string) error {
 	if viper.GetBool("remove") {
 		resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 			Description: new(""),
-			Value:       pointer.Pointer(models.V1MachineStateValueEmpty),
+			Value:       new(models.V1MachineStateValueEmpty),
 		}), nil)
 		if err != nil {
 			return err
@@ -1165,7 +1165,7 @@ func (c *machineCmd) machineLock(args []string) error {
 
 	resp, err := c.client.Machine().SetMachineState(machine.NewSetMachineStateParams().WithID(id).WithBody(&models.V1MachineState{
 		Description: new(viper.GetString("description")),
-		Value:       pointer.Pointer(models.V1MachineStateValueLOCKED),
+		Value:       new(models.V1MachineStateValueLOCKED),
 	}), nil)
 	if err != nil {
 		return err
