@@ -7,7 +7,6 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
 	"github.com/metal-stack/metal-lib/pkg/healthstatus"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/stretchr/testify/mock"
@@ -24,7 +23,7 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(&health.HealthOK{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(healthstatus.HealthStatusHealthy)),
+							Status:  new(string(healthstatus.HealthStatusHealthy)),
 							Message: new("ok"),
 						},
 					}, nil)
@@ -45,7 +44,7 @@ func Test_HealthCmd(t *testing.T) {
 				Health: func(mock *mock.Mock) {
 					mock.On("Health", testcommon.MatchIgnoreContext(t, health.NewHealthParams()), nil).Return(nil, &health.HealthInternalServerError{
 						Payload: &models.RestHealthResponse{
-							Status:  pointer.Pointer(string(healthstatus.HealthStatusUnhealthy)),
+							Status:  new(string(healthstatus.HealthStatusUnhealthy)),
 							Message: new("error"),
 						},
 					})

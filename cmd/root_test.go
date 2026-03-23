@@ -10,7 +10,6 @@ import (
 
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/healthstatus"
-	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/rest"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +38,7 @@ func Test_BasicRootCmdStuff(t *testing.T) {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, err := w.Write(mustMarshal(t, &models.RestHealthResponse{
-			Status: pointer.Pointer(string(healthstatus.HealthStatusHealthy)),
+			Status: new(string(healthstatus.HealthStatusHealthy)),
 		}))
 		if err != nil {
 			t.Errorf("error writing response: %s", err)
