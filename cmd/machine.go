@@ -83,6 +83,8 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("manufacturer", "", "fru manufacturer to filter [optional]")
 	cmd.Flags().String("product-part-number", "", "fru product part number to filter [optional]")
 	cmd.Flags().String("product-serial", "", "fru product serial to filter [optional]")
+	cmd.Flags().String("chassis-part-number", "", "fru chassis part number to filter [optional]")
+	cmd.Flags().String("chassis-part-serial", "", "fru chassis part serial to filter [optional]")
 	cmd.Flags().String("bmc-address", "", "bmc ipmi address (needs to include port) to filter [optional]")
 	cmd.Flags().String("bmc-mac", "", "bmc mac address to filter [optional]")
 	cmd.Flags().String("network-destination-prefixes", "", "network destination prefixes to filter [optional]")
@@ -583,6 +585,8 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 		FruProductManufacturer:     viper.GetString("manufacturer"),
 		FruProductPartNumber:       viper.GetString("product-part-number"),
 		FruProductSerial:           viper.GetString("product-serial"),
+		FruChassisPartNumber:       viper.GetString("chassis-part-number"),
+		FruChassisPartSerial:       viper.GetString("chassis-part-serial"),
 		ID:                         viper.GetString("id"),
 		IpmiAddress:                viper.GetString("bmc-address"),
 		IpmiMacAddress:             viper.GetString("bmc-mac"),

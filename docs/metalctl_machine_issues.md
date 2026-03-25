@@ -28,6 +28,8 @@ metalctl machine issues [<machine ID>] [flags]
       --bmc-address string                    bmc ipmi address (needs to include port) to filter [optional]
       --bmc-mac string                        bmc mac address to filter [optional]
       --board-part-number string              fru board part number to filter [optional]
+      --chassis-part-number string            fru chassis part number to filter [optional]
+      --chassis-part-serial string            fru chassis part serial to filter [optional]
   -h, --help                                  help for issues
       --hostname string                       allocation hostname to filter [optional]
       --id string                             ID to filter [optional]

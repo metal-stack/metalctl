@@ -31,7 +31,7 @@ func (t *TablePrinter) MachineTable(data []*models.V1MachineResponse, wide bool)
 
 	for _, machine := range data {
 		machineID := *machine.ID
-		if machine.Ledstate != nil && *machine.Ledstate.Value == "LED-ON" {
+		if machine.Ledstate != nil && machine.Ledstate.Value != nil && *machine.Ledstate.Value == "LED-ON" {
 			blue := color.New(color.FgBlue).SprintFunc()
 			machineID = blue(machineID)
 		}
@@ -163,6 +163,11 @@ func (t *TablePrinter) MachineIPMITable(data []*models.V1MachineIPMIResponse, wi
 		id := pointer.SafeDeref(machine.ID)
 		partition := pointer.SafeDeref(pointer.SafeDeref(machine.Partition).ID)
 		size := pointer.SafeDeref(pointer.SafeDeref(machine.Size).ID)
+
+		if machine.Ledstate != nil && machine.Ledstate.Value != nil && *machine.Ledstate.Value == "LED-ON" {
+			blue := color.New(color.FgBlue).SprintFunc()
+			id = blue(id)
+		}
 
 		ipAddress := ""
 		mac := ""
@@ -449,6 +454,11 @@ func (t *TablePrinter) MachineIpmiChassisTable(data MachineIpmiChassisTable, wid
 				rack      = m.Rackid
 				hostname  = pointer.SafeDeref(pointer.SafeDeref(m.Allocation).Hostname)
 			)
+
+			if m.Ledstate != nil && m.Ledstate.Value != nil && *m.Ledstate.Value == "LED-ON" {
+				blue := color.New(color.FgBlue).SprintFunc()
+				id = blue(id)
+			}
 
 			if ipmi != nil {
 				fru := ipmi.Fru
