@@ -242,6 +242,8 @@ func (c *firewallCmd) createRequestFromCLI() (*models.V1FirewallCreateRequest, e
 		Networks:           mcr.Networks,
 		Ips:                mcr.Ips,
 		FirewallRules:      firewallRules,
+		DNSServers:         mcr.DNSServers,
+		NtpServers:         mcr.NtpServers,
 	}, nil
 }
 func parseFirewallRulesFile() (*models.V1FirewallRules, error) {
