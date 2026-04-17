@@ -48,6 +48,8 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/go-build.yaml@optional-docker-push
     secrets: inherit
     with:
+      test: false
+      lint: false
       push: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
       build-command: make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
       artifact-files: |
