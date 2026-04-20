@@ -12,8 +12,8 @@ on:
     branches:
       - master
 
-env:
-  GCS_BUCKET: images.metal-pod.io
+# env:
+#   GCS_BUCKET: images.metal-pod.io
 
 jobs:
   draft:
@@ -68,6 +68,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: ${{ needs.go-build.outputs.go-build-artifact-name }}
+          merge-multiple: true
 
       - run: |
           ls
