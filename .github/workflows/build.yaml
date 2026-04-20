@@ -66,9 +66,6 @@ jobs:
     needs: go-build
     steps:
       - uses: actions/download-artifact@v8
-        with:
-          name: ${{ needs.go-build.outputs.go-build-artifact-name }}
-          merge-multiple: true
 
       - run: |
           ls
