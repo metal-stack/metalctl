@@ -67,7 +67,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+          name: ${{ needs.go-build.outputs.go-build-artifact-name }}
 
       - run: |
           ls
