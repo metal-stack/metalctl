@@ -47,6 +47,7 @@ metalctl machine ipmi [<machine ID>] [flags]
       --project string                        allocation project to filter [optional]
       --rack string                           rack to filter [optional]
       --role string                           allocation role to filter [optional]
+      --room string                           room to filter [optional]
       --size string                           size to filter [optional]
       --sort-by strings                       sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: age|bios|bmc|event|id|liveliness|partition|project|rack|size|when
       --state string                          state to filter [optional]

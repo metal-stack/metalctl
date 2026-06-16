@@ -16,6 +16,7 @@ metalctl switch detail [flags]
       --os-version string   OS version of this switch.
       --partition string    Partition of this switch.
       --rack string         Rack of this switch.
+      --room string         Room of this switch.
 ```
 
 ### Options inherited from parent commands
