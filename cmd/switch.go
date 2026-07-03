@@ -506,10 +506,6 @@ func (c *switchCmd) dumpPortState(rsp *models.V1SwitchResponse, portid string) e
 		}
 	}
 
-	if state.Actual.Nic == nil {
-		return fmt.Errorf("no machine connected to port %s on switch %s", portid, *rsp.ID)
-	}
-
 	return c.describePrinter.Print(state)
 }
 
