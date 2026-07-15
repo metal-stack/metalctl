@@ -15,6 +15,7 @@ metalctl firewall ssh <firewall ID> [flags]
 ```
   -h, --help              help for ssh
   -i, --identity string   specify identity file to SSH to the firewall like: -i path/to/id_rsa (default "~/.ssh/id_rsa")
+      --reason string     the reason why to connect to the firewall through SSH
 ```
 
 ### Options inherited from parent commands

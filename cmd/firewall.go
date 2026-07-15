@@ -122,6 +122,7 @@ ingress:
 		ValidArgsFunction: c.comp.FirewallListCompletion,
 	}
 	firewallSSHCmd.Flags().StringP("identity", "i", "~/.ssh/id_rsa", "specify identity file to SSH to the firewall like: -i path/to/id_rsa")
+	firewallSSHCmd.Flags().String("reason", "", "the reason why to connect to the firewall through SSH")
 	return genericcli.NewCmds(cmdsConfig, firewallSSHCmd)
 }
 
