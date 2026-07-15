@@ -71,6 +71,7 @@ var (
 		},
 		ManagementIP:   "1.2.3.4",
 		ManagementUser: "root",
+		RoomID:         "room01",
 	}
 	switch2 = &models.V1SwitchResponse{
 		Connections: []*models.V1SwitchConnection{

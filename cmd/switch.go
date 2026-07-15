@@ -278,6 +278,7 @@ func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRe
 		Name:           r.Name,
 		Os:             switchOS,
 		RackID:         r.RackID,
+		RoomID:         r.RoomID,
 	}
 }
 
@@ -373,6 +374,7 @@ func (c *switchCmd) switchReplace(args []string) error {
 		Name:           resp.Name,
 		Os:             switchOS,
 		RackID:         resp.RackID,
+		RoomID:         resp.RoomID,
 	})
 	if err != nil {
 		return err
