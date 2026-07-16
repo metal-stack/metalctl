@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -62,7 +62,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Fetch tags # fetch-tags does not work
         run: git fetch --prune --unshallow --tags
 
@@ -71,12 +71,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - uses: google-github-actions/auth@v2
+      - uses: google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
       - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Make tag
         run: |
@@ -93,7 +93,7 @@ jobs:
           make build GOOS=${{ matrix.os }} GOARCH=${{ matrix.arch }}
 
       - name: Log in to the container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.DOCKER_REGISTRY_USER }}
@@ -101,11 +101,11 @@ jobs:
         if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
         if: ${{ matrix.os == 'linux' && matrix.arch == 'amd64' }}
 
       - name: Build and push image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
@@ -133,7 +133,7 @@ jobs:
         run: gsutil -m cp -r -p metalctl gs://$GCS_BUCKET
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |

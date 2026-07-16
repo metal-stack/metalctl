@@ -9,6 +9,7 @@ import (
 
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	metalssh "github.com/metal-stack/metal-lib/pkg/ssh"
 	metalvpn "github.com/metal-stack/metal-lib/pkg/vpn"
 	"github.com/spf13/viper"
@@ -23,6 +24,7 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 	authKeyResp, err := c.client.VPN().GetVPNAuthKey(vpn.NewGetVPNAuthKeyParams().WithBody(&models.V1VPNRequest{
 		Pid:       projectID,
 		Ephemeral: new(true),
+		Reason:    pointer.PointerOrNil(viper.GetString("reason")),
 	}), nil)
 	if err != nil {
 		return fmt.Errorf("failed to get VPN auth key: %w", err)
