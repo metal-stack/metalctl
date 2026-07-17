@@ -10,6 +10,7 @@ import (
 	"github.com/metal-stack/metal-go/api/client/switch_operations"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-go/test/client"
+	"github.com/metal-stack/metal-lib/pkg/pointer"
 	"github.com/metal-stack/metal-lib/pkg/testcommon"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/afero"
@@ -70,6 +71,7 @@ var (
 		},
 		ManagementIP:   "1.2.3.4",
 		ManagementUser: "root",
+		RoomID:         "room01",
 	}
 	switch2 = &models.V1SwitchResponse{
 		Connections: []*models.V1SwitchConnection{
@@ -428,10 +430,10 @@ func Test_SwitchCmd_ToggleResult(t *testing.T) {
 	require.NoError(t, err)
 	sw1Down.Nics[0].Actual = new("DOWN")
 
-	tests := []*test[currentSwitchPortStateDump]{
+	tests := []*test[models.V1SwitchConnection]{
 		{
 			name: "query state",
-			cmd: func(want currentSwitchPortStateDump) []string {
+			cmd: func(want models.V1SwitchConnection) []string {
 				return []string{"switch", "port", "describe", *switch1.ID, "--port", *switch1.Nics[0].Name}
 			},
 			mocks: &client.MetalMockFns{
@@ -441,14 +443,11 @@ func Test_SwitchCmd_ToggleResult(t *testing.T) {
 					}, nil)
 				},
 			},
-			want: currentSwitchPortStateDump{
-				Actual:  *switch1.Connections[0],
-				Desired: *switch1.Nics[0],
-			},
+			want: pointer.SafeDeref(pointer.SafeDeref(switch1).Connections[0]),
 		},
 		{
 			name: "toggle down",
-			cmd: func(want currentSwitchPortStateDump) []string {
+			cmd: func(want models.V1SwitchConnection) []string {
 				return []string{"switch", "port", "down", *switch1.ID, "--port", *switch1.Nics[0].Name}
 			},
 			mocks: &client.MetalMockFns{
@@ -466,10 +465,7 @@ func Test_SwitchCmd_ToggleResult(t *testing.T) {
 					}, nil)
 				},
 			},
-			want: currentSwitchPortStateDump{
-				Actual:  *sw1Down.Connections[0],
-				Desired: *sw1Down.Nics[0],
-			},
+			want: pointer.SafeDeref(sw1Down.Connections[0]),
 		},
 	}
 	for _, tt := range tests {

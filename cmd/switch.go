@@ -477,7 +477,7 @@ func (c *switchCmd) describePort(args []string) error {
 	if err != nil {
 		return err
 	}
-	return c.dumpPortState(resp.Payload, portid)
+	return c.printNicWithConnectedMachine(resp.Payload, portid)
 }
 
 func (c *switchCmd) togglePort(args []string, status string) error {
@@ -498,33 +498,30 @@ func (c *switchCmd) togglePort(args []string, status string) error {
 	if err != nil {
 		return err
 	}
-	return c.dumpPortState(resp.Payload, portid)
+	return c.printNicWithConnectedMachine(resp.Payload, portid)
 }
 
-func (c *switchCmd) dumpPortState(rsp *models.V1SwitchResponse, portid string) error {
-	var state currentSwitchPortStateDump
+func (c *switchCmd) printNicWithConnectedMachine(s *models.V1SwitchResponse, portid string) error {
+	connection := models.V1SwitchConnection{}
 
-	for _, con := range rsp.Connections {
+	for _, con := range s.Connections {
+		if con == nil || con.Nic == nil || con.Nic.Name == nil {
+			continue
+		}
 		if *con.Nic.Name == portid {
-			state.Actual = *con
-			break
-		}
-	}
-	for _, desired := range rsp.Nics {
-		if *desired.Name == portid {
-			state.Desired = *desired
-			break
+			return c.describePrinter.Print(con)
 		}
 	}
 
-	if state.Actual.Nic == nil {
-		return fmt.Errorf("no machine connected to port %s on switch %s", portid, *rsp.ID)
+	for _, nic := range s.Nics {
+		if nic == nil || nic.Name == nil {
+			continue
+		}
+		if *nic.Name == portid {
+			connection.Nic = nic
+			break
+		}
 	}
 
-	return c.describePrinter.Print(state)
-}
-
-type currentSwitchPortStateDump struct {
-	Actual  models.V1SwitchConnection `json:"actual" yaml:"actual"`
-	Desired models.V1SwitchNic        `json:"desired" yaml:"desired"`
+	return c.describePrinter.Print(connection)
 }
