@@ -11,6 +11,7 @@ import (
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/genericcli"
 	"github.com/metal-stack/metal-lib/pkg/genericcli/printers"
+
 	"github.com/metal-stack/metalctl/cmd/sorters"
 	"github.com/metal-stack/metalctl/cmd/tableprinters"
 	"github.com/spf13/cobra"
@@ -51,11 +52,13 @@ func newSwitchCmd(c *config) *cobra.Command {
 			cmd.Flags().String("os-version", "", "OS version of this switch.")
 			cmd.Flags().String("partition", "", "Partition of this switch.")
 			cmd.Flags().String("rack", "", "Rack of this switch.")
+			cmd.Flags().String("room", "", "Room of this switch.")
 
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+			genericcli.Must(cmd.RegisterFlagCompletionFunc("room", c.comp.SwitchRoomListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("os-vendor", c.comp.SwitchOSVendorListCompletion))
 			genericcli.Must(cmd.RegisterFlagCompletionFunc("os-version", c.comp.SwitchOSVersionListCompletion))
 		},
@@ -79,11 +82,13 @@ func newSwitchCmd(c *config) *cobra.Command {
 	switchDetailCmd.Flags().String("os-version", "", "OS version of this switch.")
 	switchDetailCmd.Flags().String("partition", "", "Partition of this switch.")
 	switchDetailCmd.Flags().String("rack", "", "Rack of this switch.")
+	switchDetailCmd.Flags().String("room", "", "Room of this switch.")
 
 	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("id", c.comp.SwitchListCompletion))
 	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
 	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	genericcli.Must(switchDetailCmd.RegisterFlagCompletionFunc("room", c.comp.SwitchRoomListCompletion))
 
 	switchMachinesCmd := &cobra.Command{
 		Use:   "connected-machines",
@@ -108,6 +113,7 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 	switchMachinesCmd.Flags().String("os-version", "", "OS version of this switch.")
 	switchMachinesCmd.Flags().String("partition", "", "Partition of this switch.")
 	switchMachinesCmd.Flags().String("rack", "", "Rack of this switch.")
+	switchMachinesCmd.Flags().String("room", "", "Room of this switch.")
 	switchMachinesCmd.Flags().String("size", "", "Size of the connected machines.")
 	switchMachinesCmd.Flags().String("machine-id", "", "The id of the connected machine, ignores size flag if set.")
 
@@ -115,6 +121,7 @@ r01leaf01,swp2,44e3a522-5f48-4f3c-9188-41025f9e401e,<b-serial>
 	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("name", c.comp.SwitchNameListCompletion))
 	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("partition", c.comp.PartitionListCompletion))
 	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("rack", c.comp.SwitchRackListCompletion))
+	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("room", c.comp.SwitchRoomListCompletion))
 	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("size", c.comp.SizeListCompletion))
 	genericcli.Must(switchMachinesCmd.RegisterFlagCompletionFunc("machine-id", c.comp.MachineListCompletion))
 
@@ -224,6 +231,7 @@ func (c *switchCmd) List() ([]*models.V1SwitchResponse, error) {
 		Osversion:   viper.GetString("os-version"),
 		Partitionid: viper.GetString("partition"),
 		Rackid:      viper.GetString("rack"),
+		Roomid:      viper.GetString("room"),
 	}), nil)
 	if err != nil {
 		return nil, err
@@ -278,6 +286,7 @@ func switchResponseToUpdate(r *models.V1SwitchResponse) *models.V1SwitchUpdateRe
 		Name:           r.Name,
 		Os:             switchOS,
 		RackID:         r.RackID,
+		RoomID:         r.RoomID,
 	}
 }
 
@@ -322,6 +331,7 @@ func (c *switchCmd) switchMachines() error {
 			ID:          viper.GetString("machine-id"),
 			PartitionID: viper.GetString("partition"),
 			Rackid:      viper.GetString("rack"),
+			Roomid:      viper.GetString("room"),
 			Sizeid:      viper.GetString("size"),
 		}), nil)
 		if err != nil {
@@ -373,6 +383,7 @@ func (c *switchCmd) switchReplace(args []string) error {
 		Name:           resp.Name,
 		Os:             switchOS,
 		RackID:         resp.RackID,
+		RoomID:         resp.RoomID,
 	})
 	if err != nil {
 		return err

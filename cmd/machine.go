@@ -46,6 +46,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 		{flagName: "size", f: c.comp.SizeListCompletion},
 		{flagName: "project", f: c.comp.ProjectListCompletion},
 		{flagName: "rack", f: c.comp.MachineRackListCompletion},
+		{flagName: "room", f: c.comp.MachineRoomListCompletion},
 		{flagName: "id", f: c.comp.MachineListCompletion},
 		{flagName: "image", f: c.comp.ImageListCompletion},
 		{flagName: "state", f: cobra.FixedCompletions([]string{
@@ -70,6 +71,7 @@ func (c *machineCmd) listCmdFlags(cmd *cobra.Command, lastEventErrorThresholdDef
 	cmd.Flags().String("partition", "", "partition to filter [optional]")
 	cmd.Flags().String("size", "", "size to filter [optional]")
 	cmd.Flags().String("rack", "", "rack to filter [optional]")
+	cmd.Flags().String("room", "", "room to filter [optional]")
 	cmd.Flags().String("state", "", "state to filter [optional]")
 	cmd.Flags().String("name", "", "allocation name to filter [optional]")
 	cmd.Flags().String("project", "", "allocation project to filter [optional]")
@@ -597,6 +599,7 @@ func machineFindRequestFromCLI() *models.V1MachineFindRequest {
 		NicsMacAddresses:           macs,
 		PartitionID:                viper.GetString("partition"),
 		Rackid:                     viper.GetString("rack"),
+		Roomid:                     viper.GetString("room"),
 		Sizeid:                     viper.GetString("size"),
 		StateValue:                 viper.GetString("state"),
 		Tags:                       viper.GetStringSlice("tags"),

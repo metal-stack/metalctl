@@ -168,7 +168,7 @@ ID  PARTITION  RACK    OS           METALCORE  IP       MODE         LAST SYNC  
 		{
 			name: "list with filters",
 			cmd: func(want []*models.V1SwitchResponse) []string {
-				args := []string{"switch", "list", "--id", *want[0].ID, "--name", want[0].Name, "--os-vendor", want[0].Os.Vendor, "--os-version", want[0].Os.Version, "--partition", *want[0].Partition.ID, "--rack", *want[0].RackID}
+				args := []string{"switch", "list", "--id", *want[0].ID, "--name", want[0].Name, "--os-vendor", want[0].Os.Vendor, "--os-version", want[0].Os.Version, "--partition", *want[0].Partition.ID, "--rack", *want[0].RackID, "--room", "room-a"}
 				assertExhaustiveArgs(t, args, "sort-by")
 				return args
 			},
@@ -181,6 +181,7 @@ ID  PARTITION  RACK    OS           METALCORE  IP       MODE         LAST SYNC  
 						Osversion:   switch1.Os.Version,
 						Partitionid: *switch1.Partition.ID,
 						Rackid:      *switch1.RackID,
+						Roomid:      "room-a",
 					})), nil).Return(&switch_operations.FindSwitchesOK{
 						Payload: []*models.V1SwitchResponse{
 							switch1,

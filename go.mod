@@ -10,7 +10,7 @@ require (
 	github.com/go-openapi/strfmt v0.26.4
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/metal-stack/metal-go v0.44.1
+	github.com/metal-stack/metal-go v0.45.0
 	github.com/metal-stack/metal-lib v0.25.2
 	github.com/metal-stack/updater v1.3.1
 	github.com/metal-stack/v v1.0.3
@@ -57,7 +57,7 @@ require (
 	github.com/go-openapi/jsonpointer v1.0.0 // indirect
 	github.com/go-openapi/jsonreference v1.0.0 // indirect
 	github.com/go-openapi/loads v0.24.0 // indirect
-	github.com/go-openapi/runtime/server-middleware v0.30.0 // indirect
+	github.com/go-openapi/runtime/server-middleware v0.32.4 // indirect
 	github.com/go-openapi/spec v0.22.6 // indirect
 	github.com/go-openapi/swag v0.27.0 // indirect
 	github.com/go-openapi/swag/cmdutils v0.27.0 // indirect
