@@ -16,6 +16,7 @@ metalctl switch list [flags]
       --os-version string   OS version of this switch.
       --partition string    Partition of this switch.
       --rack string         Rack of this switch.
+      --room string         Room of this switch.
       --sort-by strings     sort by (comma separated) column(s), sort direction can be changed by appending :asc or :desc behind the column identifier. possible values: description|id|name
 ```
 

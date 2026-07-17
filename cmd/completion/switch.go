@@ -94,3 +94,18 @@ func (c *Completion) SwitchListPorts(cmd *cobra.Command, args []string, toComple
 	}
 	return names, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (c *Completion) SwitchRoomListCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	resp, err := c.client.SwitchOperations().ListSwitches(switch_operations.NewListSwitchesParams(), nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	var names []string
+	for _, p := range resp.Payload {
+		if p.RoomID == "" {
+			continue
+		}
+		names = append(names, p.RoomID)
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
+}
