@@ -466,7 +466,6 @@ In case the machine did not register properly a direct ipmi console access is av
 
 	machineConsoleCmd.Flags().StringP("sshidentity", "i", "", "SSH key file, if not given the default ssh key will be used if present [optional].")
 	machineConsoleCmd.Flags().BoolP("ipmi", "", false, "use ipmitool with direct network access (admin only).")
-	machineConsoleCmd.Flags().BoolP("admin", "", false, "authenticate as admin (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmiuser", "", "", "overwrite ipmi user (admin only).")
 	machineConsoleCmd.Flags().StringP("ipmipassword", "", "", "overwrite ipmi password (admin only).")
 
@@ -1306,7 +1305,7 @@ func (c *machineCmd) machineConsole(args []string) error {
 		token = authContext.IDToken
 	}
 
-	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &token, viper.GetBool("admin"))
+	err = sshClient(id, viper.GetString("sshidentity"), parsedurl.Host, bmcConsolePort, &token)
 	if err != nil {
 		return fmt.Errorf("machine console error:%w", err)
 	}

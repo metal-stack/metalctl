@@ -59,35 +59,33 @@ func (c *firewallCmd) firewallSSHViaVPN(firewall *models.V1FirewallResponse) (er
 }
 
 // sshClient opens an interactive ssh session to the host on port with user, authenticated by the key.
-func sshClient(user, keyfile, host string, port int, idToken *string, passwordAuth bool) error {
+func sshClient(user, keyfile, host string, port int, idToken *string) error {
 
 	var opts []metalssh.ConnectOpt
-	if passwordAuth {
-		opts = append(opts, metalssh.ConnectOptOutputPassword(*idToken))
-	} else {
-		if keyfile == "" {
-			var err error
-			keyfile, err = searchSSHKey()
-			if err != nil {
-				return err
-			}
-		}
-
-		privateKey, err := os.ReadFile(keyfile)
+	if keyfile == "" {
+		var err error
+		keyfile, err = searchSSHKey()
 		if err != nil {
 			return err
 		}
-
-		opts = append(opts, metalssh.ConnectOptOutputPrivateKey(privateKey))
 	}
+
+	privateKey, err := os.ReadFile(keyfile)
+	if err != nil {
+		return err
+	}
+
+	opts = append(opts, metalssh.ConnectOptOutputPrivateKey(privateKey))
 
 	s, err := metalssh.NewClient(user, host, port, opts...)
 	if err != nil {
 		return err
 	}
-	var env *metalssh.Env
-	if idToken != nil {
-		env = &metalssh.Env{"LC_METAL_STACK_OIDC_TOKEN": *idToken}
+
+	env := map[string]string{
+		"LC_METAL_STACK_OIDC_TOKEN": pointer.SafeDeref(idToken),
 	}
-	return s.Connect(env)
+	sshEnv := metalssh.Env(env)
+
+	return s.Connect(&sshEnv)
 }
