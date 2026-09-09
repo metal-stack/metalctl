@@ -296,7 +296,7 @@ func (c *firewallCmd) firewallPureSSH(fwAllocation *models.V1MachineAllocation) 
 		}
 		for _, ip := range nw.Ips {
 			if portOpen(ip, "22", time.Second) {
-				err = sshClient("metal", viper.GetString("identity"), ip, 22, nil, false)
+				err = sshClient("metal", viper.GetString("identity"), ip, 22, nil)
 				if err != nil {
 					return err
 				}
