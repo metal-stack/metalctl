@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	consoleapi "github.com/metal-stack/metal-console/api"
 	"github.com/metal-stack/metal-go/api/client/vpn"
 	"github.com/metal-stack/metal-go/api/models"
 	"github.com/metal-stack/metal-lib/pkg/pointer"
@@ -83,7 +84,7 @@ func sshClient(user, keyfile, host string, port int, idToken *string) error {
 	}
 
 	env := map[string]string{
-		"LC_METAL_STACK_OIDC_TOKEN": pointer.SafeDeref(idToken),
+		consoleapi.OidcTokenEnv: pointer.SafeDeref(idToken),
 	}
 	sshEnv := metalssh.Env(env)
 
