@@ -1,0 +1,55 @@
+---
+name: metal-stack component release
+on:
+  pull_request:
+    branches:
+      - master
+  release:
+    types:
+      - published
+  push:
+    branches:
+      - master
+
+jobs:
+  draft:
+    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@v1
+
+  spell-check:
+    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@v1
+
+  go-build:
+    uses: metal-stack/actions-common/.github/workflows/go-build-multiarch.yaml@v1
+    secrets: inherit
+    with:
+      platforms: |
+        [
+          {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-26.04-arm"},
+          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "goarm": "7", "runner": "ubuntu-26.04-arm"},
+          {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
+          {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"},
+          {"build_only": true, "goos": "darwin", "goarch": "arm64", "runner": "ubuntu-26.04-arm"}
+        ]
+      build-command: make build
+      artifact-files: |
+        bin/metalctl*
+
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@v1
+    needs:
+      - go-build
+    with:
+      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+      files: |
+        ./bin/*
+
+  gcp-bucket-push:
+    uses: metal-stack/actions-common/.github/workflows/gcp-bucket-push.yaml@v1
+    secrets: inherit
+    needs:
+      - go-build
+    with:
+      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+      bucket: images.metal-pod.io
+      default-branch-folder: latest
