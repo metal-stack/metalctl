@@ -110,6 +110,8 @@ func (t *TablePrinter) SwitchTable(data []*models.V1SwitchResponse, wide bool) (
 				osIcon = "🐢"
 			case "sonic":
 				osIcon = "🦔"
+			case "bisdn":
+				osIcon = "🐻"
 			default:
 				osIcon = s.Os.Vendor
 			}
