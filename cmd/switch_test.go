@@ -122,6 +122,23 @@ var (
 			Version: "2",
 		},
 	}
+	switch3 = &models.V1SwitchResponse{
+		Description: "switch 3",
+		ID:          new("3"),
+		LastSync: &models.V1SwitchSync{
+			Duration: new(int64(1 * time.Second)),
+			Error:    "",
+			Time:     new(strfmt.DateTime(testTime)),
+		},
+		Mode:      "operational",
+		Name:      "switch-3",
+		Partition: partition1,
+		RackID:    new("rack-1"),
+		Os: &models.V1SwitchOS{
+			Vendor:  "BISDN",
+			Version: "6.0.0",
+		},
+	}
 )
 
 func Test_SwitchCmd_MultiResult(t *testing.T) {
@@ -135,6 +152,7 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 				SwitchOperations: func(mock *mock.Mock) {
 					mock.On("FindSwitches", testcommon.MatchIgnoreContext(t, switch_operations.NewFindSwitchesParams().WithBody(&models.V1SwitchFindRequest{})), nil).Return(&switch_operations.FindSwitchesOK{
 						Payload: []*models.V1SwitchResponse{
+							switch3,
 							switch2,
 							switch1,
 						},
@@ -144,27 +162,32 @@ func Test_SwitchCmd_MultiResult(t *testing.T) {
 			want: []*models.V1SwitchResponse{
 				switch1,
 				switch2,
+				switch3,
 			},
 			wantTable: new(`
 ID  PARTITION  RACK    OS  STATUS  LAST SYNC
 1   1          rack-1  🦔  ●       0s ago
 2   1          rack-1  🐢  ●       0s ago
+3   1          rack-1  🐻  ●       0s ago
 `),
 			wantWideTable: new(`
-ID  PARTITION  RACK    OS           METALCORE  IP       MODE         LAST SYNC  SYNC DURATION  LAST ERROR
-1   1          rack-1  SONiC (1)    1.2.3      1.2.3.4  operational  0s ago     1s             5m ago: error
-2   1          rack-1  Cumulus (2)                      operational  0s ago     1s             5m ago: error
+ID  PARTITION  RACK    OS             METALCORE  IP       MODE         LAST SYNC  SYNC DURATION  LAST ERROR
+1   1          rack-1  SONiC (1)      1.2.3      1.2.3.4  operational  0s ago     1s             5m ago: error
+2   1          rack-1  Cumulus (2)                        operational  0s ago     1s             5m ago: error
+3   1          rack-1  BISDN (6.0.0)                      operational  0s ago     1s
 `),
 			template: new("{{ .id }} {{ .name }}"),
 			wantTemplate: new(`
 1 switch-1
 2 switch-2
+3 switch-3
 `),
 			wantMarkdown: new(`
 | ID | PARTITION | RACK   | OS | STATUS | LAST SYNC |
 |----|-----------|--------|----|--------|-----------|
 | 1  | 1         | rack-1 | 🦔 | ●      | 0s ago    |
 | 2  | 1         | rack-1 | 🐢 | ●      | 0s ago    |
+| 3  | 1         | rack-1 | 🐻 | ●      | 0s ago    |
 `),
 		},
 		{
